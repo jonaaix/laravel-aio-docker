@@ -7,49 +7,78 @@ FROM $IMAGENAME
 ###############  GENERAL DEPENDENCIES ######################
 ############################################################
 
-# Basic
-RUN apk update
-RUN apk add bash
-RUN apk add curl
-RUN apk add git
-RUN apk add zip
-RUN apk add imagemagick
-RUN apk add mysql-client
-RUN apk add nano
-RUN apk add nodejs
-RUN apk add npm
+# Install dependencies including Nginx, Supervisor, and Cron
+RUN apk update && apk add --no-cache \
+    bash \
+    curl \
+    git \
+    zip \
+    imagemagick \
+    mysql-client \
+    postgresql-client \
+    nano \
+    nodejs \
+    npm \
+    redis \
+    nginx \
+    supervisor \
+    && rm -rf /var/cache/apk/*
 
+# PHP Extension installer
 ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
 
-RUN chmod +x /usr/local/bin/install-php-extensions
-RUN install-php-extensions @composer
-RUN install-php-extensions gd
-RUN install-php-extensions bcmath
-RUN install-php-extensions bz2
-RUN install-php-extensions calendar
-RUN install-php-extensions iconv
-RUN install-php-extensions intl
-RUN install-php-extensions mbstring
-RUN install-php-extensions mysqli
-RUN install-php-extensions opcache
-RUN install-php-extensions pdo_mysql
-RUN install-php-extensions pdo_pgsql
-RUN install-php-extensions soap
-RUN install-php-extensions zip
-RUN install-php-extensions gd
-RUN install-php-extensions gmp
-RUN install-php-extensions ldap
-RUN install-php-extensions exif
-RUN install-php-extensions memcached
-RUN install-php-extensions redis
-RUN install-php-extensions imap
-RUN install-php-extensions imagick
-RUN install-php-extensions pcntl
+# Install PHP Extensions
+RUN chmod +x /usr/local/bin/install-php-extensions && \
+    install-php-extensions \
+    @composer \
+    gd \
+    bcmath \
+    bz2 \
+    calendar \
+    iconv \
+    intl \
+    mbstring \
+    mysqli \
+    pdo_mysql \
+    pdo_pgsql \
+    soap \
+    zip \
+    gmp \
+    ldap \
+    exif \
+    memcached \
+    redis \
+    imap \
+    imagick \
+    pcntl \
+    openssl \
+    tokenizer \
+    xml \
+    ctype \
+    json
 
-############################################################
-############ END GENERAL DEPENDENCIES ######################
-############################################################
+# Configure Nginx
+# Add your Nginx configuration file here. This will depend on your Laravel application.
+COPY ./build/php-fpm/nginx.conf /etc/nginx/nginx.conf
 
-RUN rm -f /var/cache/apk/*
+# Configure Supervisor
+# Add your Supervisor configuration files here.
+COPY ./build/php-fpm/laravel-worker.conf /etc/supervisor/conf.d/laravel-worker.conf
 
-WORKDIR /var/www/html/site
+# Configure Cron Jobs (if needed)
+# You can add cron jobs by creating a crontab file and copying it into the container.
+COPY ./build/php-fpm/laravel-cron /etc/cron.d/laravel-cron
+
+# Set up the application working directory
+WORKDIR /app
+
+# Copy the entrypoint script into the container
+# This script should start Supervisor, which in turn will manage Nginx and PHP-FPM.
+COPY ./build/php-fpm/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Expose the port Nginx is reachable on
+EXPOSE 80
+
+# Define the command to run on container start
+CMD ["/entrypoint.sh"]
