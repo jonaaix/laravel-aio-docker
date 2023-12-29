@@ -59,7 +59,7 @@ RUN chmod +x /usr/local/bin/install-php-extensions && \
 
 # Configure Nginx
 # Add your Nginx configuration file here. This will depend on your Laravel application.
-COPY ./build/php-fpm/nginx.conf /etc/nginx/conf.d/laravel.conf
+COPY ./build/php-fpm/nginx.conf /etc/nginx/http.d/default.conf
 
 # Configure Supervisor
 # Add your Supervisor configuration files here.
@@ -67,7 +67,7 @@ COPY ./build/php-fpm/laravel-worker.conf /etc/supervisor/conf.d/laravel-worker.c
 
 # Configure Cron Jobs (if needed)
 # You can add cron jobs by creating a crontab file and copying it into the container.
-COPY ./build/php-fpm/laravel-cron /etc/cron.d/laravel-cron
+COPY ./build/php-fpm/laravel-cron /etc/crontabs/www-data
 
 # Copy custom php.ini configuration
 COPY ./build/php-fpm/php.ini /usr/local/etc/php/
@@ -84,4 +84,4 @@ RUN chmod +x /entrypoint.sh
 EXPOSE 80
 
 # Define the command to run on container start
-CMD ["/entrypoint.sh"]
+ENTRYPOINT ["/entrypoint.sh"]
