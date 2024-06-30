@@ -37,14 +37,6 @@ else
     echo "START_REDIS is set to false. Redis will not be started."
 fi
 
-# Start PHP-FPM if not running
-if ! pgrep "php-fpm" > /dev/null; then
-   echo "Starting PHP-FPM..."
-   php-fpm &
-else
-    echo "PHP-FPM is already running."
-fi
-
 # Start Nginx if not running
 if ! pgrep "nginx" > /dev/null; then
    echo "Starting Nginx..."
@@ -87,6 +79,19 @@ fi
 echo "=========================="
 echo "=== Composer installed ==="
 echo "=========================="
+
+# check if laravel/octane is installed
+if [ ! -d "vendor/laravel/octane" ]; then
+   echo "Laravel Octane is not installed. Installing..."
+   composer require laravel/octane --no-interaction --prefer-dist
+   php artisan octane:install --server=roadrunner --no-interaction
+else
+   echo "Laravel Octane is already installed."
+fi
+echo "=========================="
+echo "===  Octane installed  ==="
+echo "=========================="
+
 
 
 echo "Installing NPM..."
@@ -149,6 +154,7 @@ echo "============================"
 echo "=== Cron service started ==="
 echo "============================"
 
+
 if [ "$START_SUPERVISOR" = "true" ]; then
 
    cat /etc/supervisor/conf.d/supervisor-header.conf > /etc/supervisor/conf.d/laravel-worker-compiled.conf
@@ -187,6 +193,15 @@ if [ "$START_SUPERVISOR" = "true" ]; then
 fi
 
 
+if [ "$ENV_DEV" = "true" ]; then
+   php artisan octane:roadrunner --no-interaction --watch &
+else
+   php artisan octane:roadrunner --no-interaction &
+fi
+echo "============================"
+echo "===    Octane started    ==="
+echo "============================"
+
 echo "============================"
 echo "===      PHP READY       ==="
 echo "============================"
@@ -196,4 +211,3 @@ while true; do
    tail -f /dev/null &
    wait ${!}
 done
-

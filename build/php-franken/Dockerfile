@@ -1,5 +1,5 @@
 ARG INPUT_PHP
-ARG IMAGENAME=php:${INPUT_PHP}-fpm-alpine
+ARG IMAGENAME=dunglas/frankenphp:php${INPUT_PHP}-alpine
 
 FROM $IMAGENAME
 
@@ -14,18 +14,18 @@ RUN apk update && apk add --no-cache \
     git \
     zip \
     imagemagick \
+    vips \
     mysql-client \
     postgresql-client \
     nano \
     nodejs \
     npm \
     redis \
-    nginx \
     supervisor \
     && rm -rf /var/cache/apk/*
 
 # PHP Extension installer
-ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions?v=1 /usr/local/bin/
 
 # Install PHP Extensions
 RUN chmod +x /usr/local/bin/install-php-extensions && \
@@ -56,7 +56,6 @@ RUN chmod +x /usr/local/bin/install-php-extensions && \
     ctype \
     json
 
-
 # Install packages with issues separately
 RUN chmod +x /usr/local/bin/install-php-extensions && \
     install-php-extensions \
@@ -74,31 +73,31 @@ RUN chmod +x /usr/local/bin/install-php-extensions && \
 
 # Configure Nginx
 # Add your Nginx configuration file here. This will depend on your Laravel application.
-COPY ./build/php-fpm/nginx.conf /etc/nginx/http.d/default.conf
+COPY ./build/php-franken/nginx.conf /etc/nginx/http.d/default.conf
 
 # Configure Supervisor
 # Add your Supervisor configuration files here.
-COPY ./build/php-roadrunner/supervisor/supervisor-header.conf /etc/supervisor/conf.d/supervisor-header.conf
-COPY ./build/php-roadrunner/supervisor/queue-worker.conf /etc/supervisor/conf.d/queue-worker.conf
-COPY ./build/php-roadrunner/supervisor/horizon-worker.conf /etc/supervisor/conf.d/horizon-worker.conf
+COPY ./build/php-franken/supervisor/supervisor-header.conf /etc/supervisor/conf.d/supervisor-header.conf
+COPY ./build/php-franken/supervisor/queue-worker.conf /etc/supervisor/conf.d/queue-worker.conf
+COPY ./build/php-franken/supervisor/horizon-worker.conf /etc/supervisor/conf.d/horizon-worker.conf
 
 # Configure Cron Jobs (if needed)
 # You can add cron jobs by creating a crontab file and copying it into the container.
-COPY ./build/php-fpm/laravel-cron /etc/crontabs/www-data
+COPY ./build/php-franken/laravel-cron /etc/crontabs/www-data
 
 # Copy custom php.ini configuration
-COPY ./build/php-fpm/php.ini /usr/local/etc/php/
+COPY ./build/php-franken/php.ini /usr/local/etc/php/
 
 # Set up the application working directory
 WORKDIR /app
 
 # Copy the entrypoint script into the container
-# This script should start Supervisor, which in turn will manage Nginx and PHP-FPM.
-COPY ./build/php-fpm/entrypoint.sh /entrypoint.sh
+# This script should start Supervisor, which in turn will manage Nginx and php-franken.
+COPY ./build/php-franken/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # Expose the port Nginx is reachable on
-EXPOSE 8000
+EXPOSE 80
 
 # Define the command to run on container start
 ENTRYPOINT ["/entrypoint.sh"]

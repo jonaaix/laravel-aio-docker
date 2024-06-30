@@ -37,21 +37,20 @@ else
     echo "START_REDIS is set to false. Redis will not be started."
 fi
 
-# Start PHP-FPM if not running
-if ! pgrep "php-fpm" > /dev/null; then
-   echo "Starting PHP-FPM..."
-   php-fpm &
-else
-    echo "PHP-FPM is already running."
+# Ensure all basic services are running
+if [ "$START_REDIS" = "true" ]; then
+   if ! pgrep "redis-server" > /dev/null; then
+       echo "Redis-server failed to start."
+       failed=true
+   fi
 fi
 
-# Start Nginx if not running
-if ! pgrep "nginx" > /dev/null; then
-   echo "Starting Nginx..."
-   nginx &
-else
-    echo "Nginx is already running."
+
+if [ "$failed" = true ]; then
+    echo "One or more services failed to start. Exiting..."
+    exit 1
 fi
+
 
 # Create cache paths: mkdir -p storage/framework/{sessions,views,cache}
 echo "Creating cache paths..."
@@ -88,6 +87,19 @@ echo "=========================="
 echo "=== Composer installed ==="
 echo "=========================="
 
+# check if laravel/octane is installed
+if [ ! -d "vendor/laravel/octane" ]; then
+   echo "Laravel Octane is not installed. Installing..."
+   composer require laravel/octane --no-interaction --prefer-dist
+   php artisan octane:install --server=frankenphp --no-interaction
+else
+   echo "Laravel Octane is already installed."
+fi
+echo "=========================="
+echo "===  Octane installed  ==="
+echo "=========================="
+
+
 
 echo "Installing NPM..."
 if [ "$ENV_DEV" = "true" ]; then
@@ -105,8 +117,7 @@ echo "=========================="
 
 echo "Building NPM..."
 if [ "$ENV_DEV" = "true" ]; then
-   # npm run dev -- --host &
-   echo "skipping dev server"
+   npm run dev -- --host &
 else
    npm run build
 fi
@@ -149,6 +160,7 @@ echo "============================"
 echo "=== Cron service started ==="
 echo "============================"
 
+
 if [ "$START_SUPERVISOR" = "true" ]; then
 
    cat /etc/supervisor/conf.d/supervisor-header.conf > /etc/supervisor/conf.d/laravel-worker-compiled.conf
@@ -187,6 +199,15 @@ if [ "$START_SUPERVISOR" = "true" ]; then
 fi
 
 
+if [ "$ENV_DEV" = "true" ]; then
+   php artisan octane:frankenphp --no-interaction --watch &
+else
+   php artisan octane:frankenphp --no-interaction &
+fi
+echo "============================"
+echo "===    Octane started    ==="
+echo "============================"
+
 echo "============================"
 echo "===      PHP READY       ==="
 echo "============================"
@@ -196,4 +217,3 @@ while true; do
    tail -f /dev/null &
    wait ${!}
 done
-
