@@ -20,6 +20,7 @@ services:
 
    laravel:
       image: umex/php8.3-laravel-aio:1.0-franken-alpine
+      stop_grace_period: 60s
       volumes:
          - ./:/app
          - redis_volume:/var/lib/redis

@@ -1,16 +1,29 @@
-#!/bin/sh
+#!/bin/bash
 
-shutdownHandler() {
+echo "Running entrypoint.sh..."
+
+shutdown_handler() {
+   # NOTE: In the most recent Docker version, logging is disabled once stop signal received :( However it still works.
    echo "STOP signal received..."
    # Add any cleanup or graceful shutdown tasks here
-   echo "Shutting down Laravel Horizon..."
+
+   echo "Killing Supervisor..."
+   killall supervisord
+
+   echo "Stopping Laravel Octane..."
+   php artisan octane:stop
+
+   echo "Terminating Laravel Horizon..."
    php artisan horizon:terminate
-   echo "Creating Redis snapshot..."
-   redis-cli SAVE
+
+   if [ "$START_REDIS" = "true" ]; then
+      echo "Creating Redis snapshot..."
+      redis-cli -a $REDIS_PASS SAVE
+   fi
 
    exit 0
 }
-trap 'shutdownHandler' TERM INT
+trap 'shutdown_handler' SIGINT SIGQUIT SIGTERM
 
 cd /app || exit 1
 
@@ -117,7 +130,7 @@ echo "=========================="
 
 echo "Migrating database..."
 if [ "$ENV_DEV" = "true" ]; then
-   echo "No automatic migrations will be run in DEV environment."
+   echo "No automatic migrations will run with ENV_DEV=true."
 else
    php artisan migrate --force
 fi
@@ -185,7 +198,6 @@ if [ "$START_SUPERVISOR" = "true" ]; then
    echo "===  Supervisor started  ==="
    echo "============================"
 fi
-
 
 echo "============================"
 echo "===      PHP READY       ==="

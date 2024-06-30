@@ -1,6 +1,6 @@
 #!/bin/sh
 
-phpVersion=8.2
+phpVersion=8.3
 imageVersion=1.0
 imageType=franken-alpine
 imageTag=umex/php"${phpVersion}"-laravel-aio:"${imageVersion}"-"${imageType}"
