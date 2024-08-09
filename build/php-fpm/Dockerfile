@@ -60,6 +60,7 @@ RUN install-php-extensions imagick/imagick@master
 RUN install-php-extensions vips
 RUN install-php-extensions ffi
 RUN install-php-extensions sockets
+RUN install-php-extensions opcache
 
 # Configure Nginx
 # Add your Nginx configuration file here. This will depend on your Laravel application.

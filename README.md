@@ -18,7 +18,7 @@ volumes:
 
 services:
 
-   laravel:
+   php:
       image: umex/php8.3-laravel-aio:1.0-franken-alpine
       stop_grace_period: 60s
       volumes:
@@ -29,10 +29,13 @@ services:
          START_SUPERVISOR: false
          ENABLE_QUEUE_WORKER: false
          ENABLE_HORIZON_WORKER: true
+         ENABLE_NPM_RUN_DEV: true
          ENV_DEV: true
          REDIS_PASS: e1nmalh1nallesdr1n
       ports:
-         - "8000:8000"
+         - "8000:8000" # php
+         - "5173:5173" # vite
+         - "6379:6379" # redis
 
    mysql:
       container_name: ${APP_NAME}_mysql

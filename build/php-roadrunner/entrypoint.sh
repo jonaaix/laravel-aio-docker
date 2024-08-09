@@ -8,13 +8,13 @@ shutdown_handler() {
    # Add any cleanup or graceful shutdown tasks here
 
    echo "Killing Supervisor..."
-   killall supervisord
+   killall supervisord || true
 
    echo "Stopping Laravel Octane..."
-   php artisan octane:stop
+   php artisan octane:stop || true
 
    echo "Terminating Laravel Horizon..."
-   php artisan horizon:terminate
+   php artisan horizon:terminate || true
 
    if [ "$START_REDIS" = "true" ]; then
       echo "Creating Redis snapshot..."
@@ -74,8 +74,13 @@ echo "============================"
 
 # Fix storage permissions
 echo "Fixing storage permissions..."
-chmod -R 755 storage
-chown -R www-data:www-data storage
+chmod -R 775 storage
+chmod -R 775 bootstrap/cache/
+chmod 775 database/database.sqlite || true
+
+chown -R $USER:www-data storage
+chown -R $USER:www-data bootstrap/cache
+chown $USER:www-data database/database.sqlite || true
 echo "============================"
 echo "===  Permissions fixed   ==="
 echo "============================"
@@ -85,6 +90,8 @@ echo "Installing Composer..."
 if [ "$ENV_DEV" = "true" ]; then
    if [ ! -d "vendor" ]; then
       composer install --optimize-autoloader --no-interaction --prefer-dist
+   else
+      echo "vendor already exists. Skipping composer install."
    fi
 else
    composer install --optimize-autoloader --no-interaction --no-progress --prefer-dist
@@ -111,6 +118,8 @@ echo "Installing NPM..."
 if [ "$ENV_DEV" = "true" ]; then
    if [ ! -d "node_modules" ]; then
       npm ci --no-audit
+   else
+      echo "node_modules already exists. Skipping npm install."
    fi
 else
    npm ci --no-audit
@@ -123,8 +132,11 @@ echo "=========================="
 
 echo "Building NPM..."
 if [ "$ENV_DEV" = "true" ]; then
-   # npm run dev -- --host &
-   echo "skipping dev server"
+   if [ "$ENABLE_NPM_RUN_DEV" = "true" ]; then
+      npm run dev -- --host &
+   else
+      echo "skipping dev server"
+   fi
 else
    npm run build
 fi
@@ -194,7 +206,7 @@ if [ "$START_SUPERVISOR" = "true" ]; then
       fi
 
       echo "============================"
-      echo "===   Horizon started    ==="
+      echo "===    Horizon added     ==="
       echo "============================"
    fi
 

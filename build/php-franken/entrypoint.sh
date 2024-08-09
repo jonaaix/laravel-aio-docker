@@ -8,13 +8,13 @@ shutdown_handler() {
    # Add any cleanup or graceful shutdown tasks here
 
    echo "Killing Supervisor..."
-   killall supervisord
+   killall supervisord || true
 
    echo "Stopping Laravel Octane..."
-   php artisan octane:stop
+   php artisan octane:stop || true
 
    echo "Terminating Laravel Horizon..."
-   php artisan horizon:terminate
+   php artisan horizon:terminate || true
 
    if [ "$START_REDIS" = "true" ]; then
       echo "Creating Redis snapshot..."
@@ -50,19 +50,6 @@ else
     echo "START_REDIS is set to false. Redis will not be started."
 fi
 
-# Ensure all basic services are running
-if [ "$START_REDIS" = "true" ]; then
-   if ! pgrep "redis-server" > /dev/null; then
-       echo "Redis-server failed to start."
-       failed=true
-   fi
-fi
-
-
-if [ "$failed" = true ]; then
-    echo "One or more services failed to start. Exiting..."
-    exit 1
-fi
 
 
 # Create cache paths: mkdir -p storage/framework/{sessions,views,cache}
@@ -81,8 +68,13 @@ echo "============================"
 
 # Fix storage permissions
 echo "Fixing storage permissions..."
-chmod -R 755 storage
-chown -R www-data:www-data storage
+chmod -R 775 storage
+chmod -R 775 bootstrap/cache/
+chmod 775 database/database.sqlite || true
+
+chown -R $USER:www-data storage
+chown -R $USER:www-data bootstrap/cache
+chown $USER:www-data database/database.sqlite || true
 echo "============================"
 echo "===  Permissions fixed   ==="
 echo "============================"
@@ -92,6 +84,8 @@ echo "Installing Composer..."
 if [ "$ENV_DEV" = "true" ]; then
    if [ ! -d "vendor" ]; then
       composer install --optimize-autoloader --no-interaction --prefer-dist
+   else
+      echo "vendor already exists. Skipping composer install."
    fi
 else
    composer install --optimize-autoloader --no-interaction --no-progress --prefer-dist
@@ -118,6 +112,8 @@ echo "Installing NPM..."
 if [ "$ENV_DEV" = "true" ]; then
    if [ ! -d "node_modules" ]; then
       npm ci --no-audit
+   else
+      echo "node_modules already exists. Skipping npm install."
    fi
 else
    npm ci --no-audit
@@ -130,7 +126,11 @@ echo "=========================="
 
 echo "Building NPM..."
 if [ "$ENV_DEV" = "true" ]; then
-   npm run dev -- --host &
+   if [ "$ENABLE_NPM_RUN_DEV" = "true" ]; then
+      npm run dev -- --host &
+   else
+      echo "skipping dev server"
+   fi
 else
    npm run build
 fi
@@ -200,7 +200,7 @@ if [ "$START_SUPERVISOR" = "true" ]; then
       fi
 
       echo "============================"
-      echo "===   Horizon started    ==="
+      echo "===    Horizon added     ==="
       echo "============================"
    fi
 
