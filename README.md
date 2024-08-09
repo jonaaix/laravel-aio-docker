@@ -4,9 +4,9 @@
 
 ```yml
 networks:
-   group_public:
+   public:
       external: false
-   group_app:
+   app:
       external: false
    
    
@@ -19,7 +19,8 @@ volumes:
 services:
 
    php:
-      image: umex/php8.3-laravel-aio:1.0-franken-alpine
+      container_name: ${APP_NAME}_php
+      image: umex/php8.3-laravel-aio:1.0-fpm-alpine
       stop_grace_period: 60s
       volumes:
          - ./:/app
@@ -31,15 +32,19 @@ services:
          ENABLE_HORIZON_WORKER: true
          ENABLE_NPM_RUN_DEV: true
          ENV_DEV: true
-         REDIS_PASS: e1nmalh1nallesdr1n
+         REDIS_PASS: ${REDIS_PASSWORD}
       ports:
          - "8000:8000" # php
          - "5173:5173" # vite
          - "6379:6379" # redis
+      restart: unless-stopped
+      networks:
+         - app
+         - public
 
    mysql:
       container_name: ${APP_NAME}_mysql
-      image: mariadb:10.11.2
+      image: mariadb:lts
       command:
          - '--character-set-server=utf8mb4'
          - '--collation-server=utf8mb4_unicode_ci'
@@ -57,8 +62,8 @@ services:
          MYSQL_PASSWORD: ${DB_PASSWORD}
          MYSQL_DATABASE: ${DB_DATABASE}
       ports:
-         - "3308:3306"
+         - "3306:3306"
       restart: unless-stopped
       networks:
-         - apc_group_app
+         - app
 ```
