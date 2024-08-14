@@ -25,6 +25,10 @@ shutdown_handler() {
 }
 trap 'shutdown_handler' SIGINT SIGQUIT SIGTERM
 
+run_as_www_data() {
+   su -s /bin/sh -c "$*" www-data
+}
+
 cd /app || exit 1
 
 echo "alias pa=\"php artisan\"" > ~/.bashrc
@@ -149,7 +153,7 @@ echo "Migrating database..."
 if [ "$ENV_DEV" = "true" ]; then
    echo "No automatic migrations will run with ENV_DEV=true."
 else
-   php artisan migrate --force
+   run_as_www_data "php artisan migrate --force"
 fi
 echo "============================"
 echo "=== Migrations completed ==="
@@ -158,17 +162,17 @@ echo "============================"
 
 echo "Optimizing Laravel..."
 if [ "$ENV_DEV" = "true" ]; then
-   php artisan config:clear
-   php artisan route:clear
+   run_as_www_data "php artisan config:clear"
+   run_as_www_data "php artisan route:clear"
 else
-   php artisan config:cache
-   php artisan route:cache
+   run_as_www_data "php artisan config:cache"
+   run_as_www_data "php artisan route:cache"
 
 fi
 
-php artisan view:cache
-php artisan icons:cache
-php artisan filament:cache-components
+run_as_www_data "php artisan view:cache"
+run_as_www_data "php artisan icons:cache"
+run_as_www_data "php artisan filament:cache-components"
 echo "============================"
 echo "===  Laravel optimized   ==="
 echo "============================"
