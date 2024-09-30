@@ -1,4 +1,5 @@
-# docker-container-laravel
+# laravel-aio-docker
+[![Docker Pulls](https://img.shields.io/docker/pulls/umex/php8.3-laravel-aio)](https://hub.docker.com/r/umex/php8.3-laravel-aio)
 
 This all-in-one Docker runtime image is designed specifically for Laravel applications, providing a complete, pre-configured
 environment that works seamlessly with any Laravel project. It streamlines setup and handles all essential configurations,
