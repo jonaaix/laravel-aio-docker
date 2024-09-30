@@ -1,0 +1,101 @@
+# WARNING: Make sure the project-folder-name is unique on your server!
+# You should disable port-exposure in production!
+
+# Using main-nginx-proxy: https://github.com/umexco/main-nginx-proxy
+
+networks:
+    app:
+        external: false
+    main-nginx-proxy:
+        external: true
+
+volumes:
+    db_volume:
+        driver: local
+    redis_volume:
+        driver: local
+
+services:
+    php:
+        container_name: ${APP_NAME}_php
+        image: umex/php8.3-laravel-aio:1.1-fpm-alpine
+        stop_grace_period: 60s
+        volumes:
+            - ./:/app
+        environment:
+            PROD_RUN_ARTISAN_MIGRATE: true
+            PROD_RUN_ARTISAN_SEED: true
+            ENABLE_SUPERVISOR: true
+            ENABLE_HORIZON_WORKER: true
+            # Proxy
+            LETSENCRYPT_HOST: domain.com
+            VIRTUAL_HOST: domain.com
+            VIRTUAL_PORT: 8000
+        restart: unless-stopped
+        depends_on:
+            - mysql
+            - redis
+        networks:
+            - app
+            - main-nginx-proxy
+
+    mysql:
+        container_name: ${APP_NAME}_mysql
+        image: mariadb:lts
+        # image: mysql:lts
+        command:
+            - '--character-set-server=utf8mb4'
+            - '--collation-server=utf8mb4_unicode_ci'
+            - '--skip-name-resolve' # Disable DNS lookups (not needed in Docker, improves performance)
+        volumes:
+            - db_volume:/var/lib/mysql/:delegated
+        cap_add:
+            - SYS_NICE # Allow the container to adjust process priority (optional for performance tuning)
+        environment:
+            MYSQL_ALLOW_EMPTY_PASSWORD: 'false' # Disallow empty password
+            MYSQL_INITDB_SKIP_TZINFO: '1' # Skip loading DB time zone tables (improves performance)
+            ### Database initialization ###
+            MYSQL_ROOT_PASSWORD: ${DB_INIT_ROOT_PASSWORD}
+            MYSQL_USER: ${DB_USERNAME}
+            MYSQL_PASSWORD: ${DB_PASSWORD}
+            MYSQL_DATABASE: ${DB_DATABASE}
+        restart: unless-stopped
+        networks:
+            - app
+
+    redis:
+        container_name: ${APP_NAME}_redis
+        image: redis:7-alpine
+        volumes:
+            - redis_volume:/data
+        command: [ "redis-server", "--requirepass", "${REDIS_PASSWORD}" ]
+        restart: unless-stopped
+        networks:
+            - app
+
+    pma:
+        container_name: ${APP_NAME}_pma
+        image: phpmyadmin/phpmyadmin:latest
+        environment:
+            PMA_HOST: mysql
+            PMA_PORT: 3306
+            APACHE_PORT: 8080
+            UPLOAD_LIMIT: 1G
+            # Proxy
+            LETSENCRYPT_HOST: pma.domain.com
+            VIRTUAL_HOST: pma.domain.com
+            VIRTUAL_PORT: 8080
+        restart: unless-stopped
+        depends_on:
+            - mysql
+        networks:
+            - app
+
+    wkhtmltopdf:
+        container_name: ${APP_NAME}_wkhtmltopdf
+        image: umex/wkhtmltopdf-microservice:1.2-alpine
+        restart: unless-stopped
+        environment:
+            MAX_BODY: '150mb'
+        networks:
+            - app

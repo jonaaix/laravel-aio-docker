@@ -7,18 +7,19 @@ shutdown_handler() {
    echo "STOP signal received..."
    # Add any cleanup or graceful shutdown tasks here
 
-   echo "Killing Supervisor..."
-   killall supervisord || true
+   if pgrep supervisord > /dev/null; then
+       echo "Killing Supervisor..."
+       killall supervisord || true
+   fi
 
-   echo "Stopping Laravel Octane..."
-   php artisan octane:stop || true
+   if php artisan | grep -q "octane"; then
+       echo "Stopping Laravel Octane..."
+       php artisan octane:stop || true
+   fi
 
-   echo "Terminating Laravel Horizon..."
-   php artisan horizon:terminate || true
-
-   if [ "$START_REDIS" = "true" ]; then
-      echo "Creating Redis snapshot..."
-      redis-cli -a $REDIS_PASS SAVE
+   if php artisan | grep -q "horizon"; then
+       echo "Terminating Laravel Horizon..."
+       php artisan horizon:terminate || true
    fi
 
    exit 0
@@ -41,33 +42,37 @@ else
     echo "Laravel application found in /app."
 fi
 
-
-# Start Redis if not running
-if [ "$START_REDIS" = "true" ]; then
-   if ! pgrep "redis-server" > /dev/null; then
-      echo "Starting Redis..."
-      redis-server --requirepass $REDIS_PASS &
+# Enable xdebug if needed
+if [ "$DEV_ENABLE_XDEBUG" = "true" ]; then
+   if [ "$ENV_DEV" = "true" ]; then
+      echo "Enabling Xdebug..."
+      mv /usr/local/etc/php/conf.d/xdebug.ini.disabled /usr/local/etc/php/conf.d/xdebug.ini || true
    else
-       echo "Redis-server is already running."
+      echo "Disabling Xdebug..."
+      mv /usr/local/etc/php/conf.d/xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini.disabled || true
+      echo "ERROR: Xdebug can only be enabled in DEV environment."
    fi
 else
-    echo "START_REDIS is set to false. Redis will not be started."
+   echo "Disabling Xdebug..."
+   mv /usr/local/etc/php/conf.d/xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini.disabled || true
 fi
 
-# Start PHP-FPM if not running
-if ! pgrep "php-fpm" > /dev/null; then
-   echo "Starting PHP-FPM..."
-   php-fpm &
-else
-    echo "PHP-FPM is already running."
-fi
+if [ "$PHP_RUNTIME_CONFIG" = "PHP_FPM" ]
+   # Start PHP-FPM if not running
+   if ! pgrep "php-fpm" > /dev/null; then
+      echo "Starting PHP-FPM..."
+      php-fpm &
+   else
+       echo "PHP-FPM is already running."
+   fi
 
-# Start Nginx if not running
-if ! pgrep "nginx" > /dev/null; then
-   echo "Starting Nginx..."
-   nginx &
-else
-    echo "Nginx is already running."
+   # Start Nginx if not running
+   if ! pgrep "nginx" > /dev/null; then
+      echo "Starting Nginx..."
+      nginx &
+   else
+       echo "Nginx is already running."
+   fi
 fi
 
 # Create cache paths: mkdir -p storage/framework/{sessions,views,cache}
@@ -88,7 +93,10 @@ echo "============================"
 echo "Fixing storage permissions..."
 chown -R www-data:www-data storage
 chown -R www-data:www-data bootstrap/cache
-chown www-data:www-data database/database.sqlite || true
+
+if [ -f "database/database.sqlite" ]; then
+    chown www-data:www-data database/database.sqlite
+fi
 
 find storage -type d -exec chmod 775 {} \;
 find storage -type f -exec chmod 664 {} \;
@@ -96,7 +104,9 @@ find storage -type f -exec chmod 664 {} \;
 find bootstrap/cache -type d -exec chmod 775 {} \;
 find bootstrap/cache -type f -exec chmod 664 {} \;
 
-chmod 664 database/database.sqlite || true
+if [ -f "database/database.sqlite" ]; then
+    chmod 664 database/database.sqlite || true
+fi
 
 echo "============================"
 echo "===  Permissions fixed   ==="
@@ -117,10 +127,40 @@ echo "=========================="
 echo "=== Composer installed ==="
 echo "=========================="
 
+if [ "$PHP_RUNTIME_CONFIG" = "PHP_FRANKEN" ]
+   # check if laravel/octane is installed
+   if ! php artisan | grep -q "octane"; then
+       echo "Laravel Octane/FrankenPHP is not installed. Installing..."
+       composer require laravel/octane --no-interaction --prefer-dist
+       php artisan octane:install --server=frankenphp --no-interaction
+   else
+       echo "Laravel Octane is already installed."
+   fi
+   echo "=========================="
+   echo "===  Octane installed  ==="
+   echo "=========================="
+fi
+
+if [ "$PHP_RUNTIME_CONFIG" = "PHP_ROADRUNNER" ]
+   # check if laravel/octane is installed
+   if ! php artisan | grep -q "octane"; then
+      echo "Laravel Octane/Roadrunner is not installed. Installing..."
+      composer require laravel/octane --no-interaction --prefer-dist
+      php artisan octane:install --server=roadrunner --no-interaction
+   else
+       echo "Laravel Octane is already installed."
+   fi
+   echo "=========================="
+   echo "===  Octane installed  ==="
+   echo "=========================="
+fi
+
 
 echo "Installing NPM..."
 if [ "$ENV_DEV" = "true" ]; then
    if [ ! -d "node_modules" ]; then
+      npm install --no-audit
+   elif [ "$DEV_FORCE_NPM_INSTALL" = "true" ]; then
       npm install --no-audit
    else
       echo "node_modules already exists. Skipping npm install."
@@ -136,10 +176,10 @@ echo "=========================="
 
 echo "Building NPM..."
 if [ "$ENV_DEV" = "true" ]; then
-   if [ "$ENABLE_NPM_RUN_DEV" = "true" ]; then
+   if [ "$DEV_NPM_RUN_DEV" = "true" ]; then
       npm run dev -- --host &
    else
-      echo "skipping dev server"
+      echo "Skipping DEV-Server..."
    fi
 else
    npm run build
@@ -153,38 +193,68 @@ echo "Migrating database..."
 if [ "$ENV_DEV" = "true" ]; then
    echo "No automatic migrations will run with ENV_DEV=true."
 else
-   run_as_www_data "php artisan migrate --force"
+   if [ "$PROD_RUN_ARTISAN_MIGRATE" = "true" ]; then
+      run_as_www_data "php artisan migrate --force"
+   else
+      echo "Automatic migrations are disabled..."
+   fi
 fi
 echo "============================"
 echo "=== Migrations completed ==="
 echo "============================"
 
 
+echo "Seeding database..."
+if [ "$ENV_DEV" = "true" ]; then
+   echo "No automatic seeding will run with ENV_DEV=true."
+else
+   if [ "$PROD_RUN_ARTISAN_DBSEED" = "true" ]; then
+      run_as_www_data "php artisan db:seed --force"
+   else
+      echo "Automatic seeding is disabled..."
+   fi
+fi
+echo "============================"
+echo "===   Seeding completed  ==="
+echo "============================"
+
+
 echo "Optimizing Laravel..."
 if [ "$ENV_DEV" = "true" ]; then
+   run_as_www_data "php artisan optimize:clear"
+   run_as_www_data "php artisan view:clear"
    run_as_www_data "php artisan config:clear"
    run_as_www_data "php artisan route:clear"
 else
+   run_as_www_data "php artisan optimize"
+   run_as_www_data "php artisan view:cache"
    run_as_www_data "php artisan config:cache"
    run_as_www_data "php artisan route:cache"
-
 fi
-
-run_as_www_data "php artisan view:cache"
-run_as_www_data "php artisan icons:cache"
-run_as_www_data "php artisan filament:cache-components"
 echo "============================"
 echo "===  Laravel optimized   ==="
 echo "============================"
 
+echo "Optimizing Laravel Filament..."
+if php artisan | grep -q "filament"; then
+   if [ "$ENV_DEV" = "true" ]; then
+      run_as_www_data "php artisan filament:optimize-clear"
+   else
+      run_as_www_data "php artisan filament:optimize"
+   fi
+fi
+echo "============================"
+echo "===  Filament optimized  ==="
+echo "============================"
 
-crond start -f -l 8 &
+# Start cron in foreground with minimal logging (level 1)
+crond start -f -l 1 &
 echo "============================"
 echo "=== Cron service started ==="
 echo "============================"
 
 
-if [ "$START_SUPERVISOR" = "true" ]; then
+if [ "$ENABLE_SUPERVISOR" = "true" ]; then
 
    cat /etc/supervisor/conf.d/supervisor-header.conf > /etc/supervisor/conf.d/laravel-worker-compiled.conf
 
@@ -193,7 +263,7 @@ if [ "$START_SUPERVISOR" = "true" ]; then
       echo "" >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
       cat /etc/supervisor/conf.d/queue-worker.conf >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
 
-      if [ "$DEV_ENV" = "true" ]; then
+      if [ "$ENV_DEV" = "true" ]; then
          # Change the log output to stdout
          sed -i 's|stdout_logfile=/app/storage/logs/supervisor/queue-worker.log|stdout_logfile=/dev/stdout|' /etc/supervisor/conf.d/laravel-worker-compiled.conf
       fi
@@ -204,7 +274,7 @@ if [ "$START_SUPERVISOR" = "true" ]; then
       echo "" >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
       cat /etc/supervisor/conf.d/horizon-worker.conf >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
 
-      if [ "$DEV_ENV" = "true" ]; then
+      if [ "$ENV_DEV" = "true" ]; then
          # Change the log output to stdout
          sed -i 's|stdout_logfile=/app/storage/logs/supervisor/horizon-worker.log|stdout_logfile=/dev/stdout|' /etc/supervisor/conf.d/laravel-worker-compiled.conf
       fi
@@ -218,6 +288,28 @@ if [ "$START_SUPERVISOR" = "true" ]; then
 
    echo "============================"
    echo "===  Supervisor started  ==="
+   echo "============================"
+fi
+
+if [ "$PHP_RUNTIME_CONFIG" = "PHP_FRANKEN" ]
+   if [ "$ENV_DEV" = "true" ]; then
+      php artisan octane:frankenphp --no-interaction --watch &
+   else
+      php artisan octane:frankenphp --no-interaction &
+   fi
+   echo "============================"
+   echo "===    Octane started    ==="
+   echo "============================"
+fi
+
+if [ "$PHP_RUNTIME_CONFIG" = "PHP_ROADRUNNER" ]
+   if [ "$ENV_DEV" = "true" ]; then
+      php artisan octane:roadrunner --no-interaction --watch &
+   else
+      php artisan octane:roadrunner --no-interaction &
+   fi
+   echo "============================"
+   echo "===    Octane started    ==="
    echo "============================"
 fi
 
