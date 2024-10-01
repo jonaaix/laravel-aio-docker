@@ -90,6 +90,7 @@ services:
             - mysql
         networks:
             - app
+            - main-nginx-proxy
 
     wkhtmltopdf:
         container_name: ${APP_NAME}_wkhtmltopdf
