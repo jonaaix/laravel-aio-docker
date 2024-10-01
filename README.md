@@ -50,7 +50,7 @@ You can connect to the xdebug server on port `9003`.
    - Name: `laravel`
    - Host: `localhost`
    - Port: `8000`
-   - Debugger: `Xdebug
+   - Debugger: `Xdebug`
    - **ENABLE**: `Use path mappings`: `path/to/your/project` -> `/app`
 7. Install browser extension and enable it in the correct tab.
 8. Activate telephone icon in PHPStorm to listen for incoming connections.
