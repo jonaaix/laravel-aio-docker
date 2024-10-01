@@ -36,9 +36,24 @@ Nested flags are only available if the parent flag is enabled.
 
 **Check the examples directory for full example docker-compose configurations.**
 
-## xdebug
+## Xdebug
 To enable xdebug, set `DEV_ENABLE_XDEBUG` to `true` in your `docker-compose.yml` file.
 You can connect to the xdebug server on port `9003`.
+
+#### PHPStorm Configuration
+1. Go to `Settings` -> `PHP` -> `Debug`
+2. External Connections: **DISABLE** `Break at first line in PHP scripts`
+3. Xdebug: **DISABLE** `Force break at first line when no path mapping specified`
+4. Xdebug: **DISABLE** `Force break at first line when a script is outside the project`
+5. Go to `Settings` -> `PHP` -> `Servers`
+6. Add a new server with name "laravel" according to the docker-compose configuration:
+   - Name: `laravel`
+   - Host: `localhost`
+   - Port: `8000`
+   - Debugger: `Xdebug
+   - **ENABLE**: `Use path mappings`: `path/to/your/project` -> `/app`
+7. Install browser extension and enable it in the correct tab.
+8. Activate telephone icon in PHPStorm to listen for incoming connections.
 
 ### Example docker-compose.yml for DEVELOPMENT
 
@@ -151,6 +166,24 @@ wkhtmltopdf:
    restart: unless-stopped
    environment:
       MAX_BODY: '150mb'
+   networks:
+      - app
+```
+
+
+### Adding PhpMyAdmin
+```yaml
+pma:
+   container_name: ${APP_NAME}_pma
+   image: phpmyadmin/phpmyadmin:latest
+   environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      APACHE_PORT: 8080
+      UPLOAD_LIMIT: 1G
+   restart: unless-stopped
+   depends_on:
+      - mysql
    networks:
       - app
 ```

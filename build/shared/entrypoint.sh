@@ -57,7 +57,7 @@ else
    mv /usr/local/etc/php/conf.d/xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini.disabled || true
 fi
 
-if [ "$PHP_RUNTIME_CONFIG" = "PHP_FPM" ]
+if [ "$PHP_RUNTIME_CONFIG" = "PHP_FPM" ]; then
    # Start PHP-FPM if not running
    if ! pgrep "php-fpm" > /dev/null; then
       echo "Starting PHP-FPM..."
@@ -127,7 +127,7 @@ echo "=========================="
 echo "=== Composer installed ==="
 echo "=========================="
 
-if [ "$PHP_RUNTIME_CONFIG" = "PHP_FRANKEN" ]
+if [ "$PHP_RUNTIME_CONFIG" = "PHP_FRANKEN" ]; then
    # check if laravel/octane is installed
    if ! php artisan | grep -q "octane"; then
        echo "Laravel Octane/FrankenPHP is not installed. Installing..."
@@ -141,7 +141,7 @@ if [ "$PHP_RUNTIME_CONFIG" = "PHP_FRANKEN" ]
    echo "=========================="
 fi
 
-if [ "$PHP_RUNTIME_CONFIG" = "PHP_ROADRUNNER" ]
+if [ "$PHP_RUNTIME_CONFIG" = "PHP_ROADRUNNER" ]; then
    # check if laravel/octane is installed
    if ! php artisan | grep -q "octane"; then
       echo "Laravel Octane/Roadrunner is not installed. Installing..."
@@ -266,6 +266,7 @@ if [ "$ENABLE_SUPERVISOR" = "true" ]; then
       if [ "$ENV_DEV" = "true" ]; then
          # Change the log output to stdout
          sed -i 's|stdout_logfile=/app/storage/logs/supervisor/queue-worker.log|stdout_logfile=/dev/stdout|' /etc/supervisor/conf.d/laravel-worker-compiled.conf
+         sed -i 's|stderr_logfile=/app/storage/logs/supervisor/queue-worker-error.log|stderr_logfile=/dev/stderr|' /etc/supervisor/conf.d/laravel-worker-compiled.conf
       fi
    fi
 
@@ -277,6 +278,7 @@ if [ "$ENABLE_SUPERVISOR" = "true" ]; then
       if [ "$ENV_DEV" = "true" ]; then
          # Change the log output to stdout
          sed -i 's|stdout_logfile=/app/storage/logs/supervisor/horizon-worker.log|stdout_logfile=/dev/stdout|' /etc/supervisor/conf.d/laravel-worker-compiled.conf
+         sed -i 's|stderr_logfile=/app/storage/logs/supervisor/horizon-worker-error.log|stderr_logfile=/dev/stderr|' /etc/supervisor/conf.d/laravel-worker-compiled.conf
       fi
 
       echo "============================"
@@ -291,7 +293,7 @@ if [ "$ENABLE_SUPERVISOR" = "true" ]; then
    echo "============================"
 fi
 
-if [ "$PHP_RUNTIME_CONFIG" = "PHP_FRANKEN" ]
+if [ "$PHP_RUNTIME_CONFIG" = "PHP_FRANKEN" ]; then
    if [ "$ENV_DEV" = "true" ]; then
       php artisan octane:frankenphp --no-interaction --watch &
    else
@@ -302,7 +304,7 @@ if [ "$PHP_RUNTIME_CONFIG" = "PHP_FRANKEN" ]
    echo "============================"
 fi
 
-if [ "$PHP_RUNTIME_CONFIG" = "PHP_ROADRUNNER" ]
+if [ "$PHP_RUNTIME_CONFIG" = "PHP_ROADRUNNER" ]; then
    if [ "$ENV_DEV" = "true" ]; then
       php artisan octane:roadrunner --no-interaction --watch &
    else

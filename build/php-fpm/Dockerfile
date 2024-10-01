@@ -67,6 +67,7 @@ EXPOSE 8000
 SHELL ["/bin/bash", "-c"]
 
 ENV PHP_RUNTIME_CONFIG=PHP_FPM
+ENV PHP_IDE_CONFIG="serverName=laravel"
 
 # Define the command to run on container start
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
