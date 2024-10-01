@@ -87,7 +87,6 @@ services:
       ports:
          - "8000:8000" # php
          - "5173:5173" # vite
-         - "9003:9003" # xdebug
       restart: unless-stopped
       depends_on:
          - mysql
