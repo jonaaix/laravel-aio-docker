@@ -55,6 +55,42 @@ You can connect to the xdebug server on port `9003`.
 7. Install browser extension and enable it in the correct tab.
 8. Activate telephone icon in PHPStorm to listen for incoming connections.
 
+## Serving Javascript app with integrated nginx
+Create a custom nginx.conf in your repository, and mount it in place of the default one.
+Also, mount your javascript app in the `/my-app` directory.
+```yml
+services:
+   php:
+      volumes:
+         - ./nginx.conf:/etc/nginx/http.d/default.conf
+         - ../my-app:/js-app
+```
+
+In the config file, add the following location block (after `/basic_status`) to serve your javascript app.
+```nginx
+location /app {
+
+    alias /js-app;
+    
+    location ~* \.(?:manifest|appcache|html?|xml|json)$ {
+      expires -1;
+    }
+    
+    location ~* \.(jpg|jpeg|png|gif|ico|woff|otf|js|svg|css|txt|wav|mp3|aff|dic)$ {
+        add_header Cache-Control "public";
+        expires 365d;
+        access_log off;
+    }
+    
+    index index.html;
+    try_files $uri $uri/ /index.html =404;
+}
+
+location = / {
+    return 301 /app;
+}
+```
+
 ### Example docker-compose.yml for DEVELOPMENT
 
 ```yml
