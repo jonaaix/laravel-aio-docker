@@ -28,6 +28,7 @@ Nested flags are only available if the parent flag is enabled.
 - `ENV_DEV`: Set to `false` (default) to enable production mode.
    - `PROD_RUN_ARTISAN_MIGRATE`: Set to `true` to run `php artisan migrate` on container start.
    - `PROD_RUN_ARTISAN_DBSEED`: Set to `true` to run `php artisan db:seed` on container start.
+   - `PROD_SKIP_OPTIMIZE`: Set to `true` to skip optimizations on container start.
 
 
 - `START_SUPERVISOR`: Set to `true` to start the supervisor service.

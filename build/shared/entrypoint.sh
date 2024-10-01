@@ -235,10 +235,14 @@ if [ "$ENV_DEV" = "true" ]; then
    run_as_www_data "php artisan config:clear"
    run_as_www_data "php artisan route:clear"
 else
-   run_as_www_data "php artisan optimize"
-   run_as_www_data "php artisan view:cache"
-   run_as_www_data "php artisan config:cache"
-   run_as_www_data "php artisan route:cache"
+   if [ "$PROD_SKIP_OPTIMIZE" = "true" ]; then
+      echo "Skipping Laravel optimization..."
+   else
+      run_as_www_data "php artisan optimize"
+      run_as_www_data "php artisan view:cache"
+      run_as_www_data "php artisan config:cache"
+      run_as_www_data "php artisan route:cache"
+   fi
 fi
 echo "============================"
 echo "===  Laravel optimized   ==="
