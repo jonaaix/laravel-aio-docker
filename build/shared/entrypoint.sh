@@ -263,23 +263,15 @@ if [ "$ENABLE_SUPERVISOR" = "true" ]; then
       echo "" >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
       cat /etc/supervisor/conf.d/queue-worker.conf >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
 
-      if [ "$ENV_DEV" = "true" ]; then
-         # Change the log output to stdout
-         sed -i 's|stdout_logfile=/app/storage/logs/supervisor/queue-worker.log|stdout_logfile=/dev/stdout|' /etc/supervisor/conf.d/laravel-worker-compiled.conf
-         sed -i 's|stderr_logfile=/app/storage/logs/supervisor/queue-worker-error.log|stderr_logfile=/dev/stderr|' /etc/supervisor/conf.d/laravel-worker-compiled.conf
-      fi
+      echo "============================"
+      echo "===  Queue Worker added  ==="
+      echo "============================"
    fi
 
    if [ "$ENABLE_HORIZON_WORKER" = "true" ]; then
       echo "Adding horizon supervisor config..."
       echo "" >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
       cat /etc/supervisor/conf.d/horizon-worker.conf >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
-
-      if [ "$ENV_DEV" = "true" ]; then
-         # Change the log output to stdout
-         sed -i 's|stdout_logfile=/app/storage/logs/supervisor/horizon-worker.log|stdout_logfile=/dev/stdout|' /etc/supervisor/conf.d/laravel-worker-compiled.conf
-         sed -i 's|stderr_logfile=/app/storage/logs/supervisor/horizon-worker-error.log|stderr_logfile=/dev/stderr|' /etc/supervisor/conf.d/laravel-worker-compiled.conf
-      fi
 
       echo "============================"
       echo "===    Horizon added     ==="
