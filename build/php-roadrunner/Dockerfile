@@ -37,7 +37,7 @@ RUN chmod +x /usr/local/bin/install-php-extensions && \
     gd bcmath bz2 calendar iconv intl mbstring \
     mysqli pdo_mysql pdo_pgsql soap zip gmp ldap \
     exif memcached redis imap pcntl openssl tokenizer \
-    xml ctype json imagick/imagick@master vips ffi sockets xdebug
+    xml ctype json imagick/imagick@master vips ffi sockets opcache xdebug
 
 # Configure Nginx. Add your Nginx configuration file here. This will depend on your Laravel application.
 COPY ./build/php-roadrunner/nginx.conf /etc/nginx/http.d/default.conf
