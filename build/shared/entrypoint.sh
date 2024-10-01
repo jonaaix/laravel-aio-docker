@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# Run any custom scripts that are mounted to /custom-scripts/before-boot
+if [ -d "/custom-scripts/before-boot" ]; then
+   echo "Running custom scripts..."
+   for f in /custom-scripts/before-boot/*.sh; do
+      echo "Running $f..."
+      bash "$f" || true
+   done
+fi
+
 echo "Running entrypoint.sh..."
 
 shutdown_handler() {
@@ -310,6 +319,15 @@ fi
 echo "============================"
 echo "===      PHP READY       ==="
 echo "============================"
+
+# Run any custom scripts that are mounted to /custom-scripts/after-boot
+if [ -d "/custom-scripts/after-boot" ]; then
+   echo "Running custom scripts..."
+   for f in /custom-scripts/after-boot/*.sh; do
+      echo "Running $f..."
+      bash "$f" || true
+   done
+fi
 
 # wait forever
 while true; do

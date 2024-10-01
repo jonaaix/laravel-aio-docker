@@ -91,6 +91,18 @@ location = / {
 }
 ```
 
+## Custom scripts
+You can hook into the boot process by mounting your custom script directories.
+The scripts will be executed in alphabetical order.
+
+```yml
+services:
+   php:
+      volumes:
+         - ./docker/before-boot:/custom-scripts/before-boot
+         - ./docker/after-boot:/custom-scripts/after-boot
+```
+
 ### Example docker-compose.yml for DEVELOPMENT
 
 ```yml
