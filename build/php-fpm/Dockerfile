@@ -21,8 +21,8 @@ RUN apk update && apk add --no-cache \
     npm \
     nginx \
     supervisor \
-    tzdata \
     ca-certificates \
+    tzdata \
     && rm -rf /var/cache/apk/*
 
 # PHP Extension installer

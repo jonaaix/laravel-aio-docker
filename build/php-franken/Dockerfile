@@ -19,6 +19,7 @@ RUN apk update && apk add --no-cache \
     nano \
     nodejs \
     npm \
+    nginx \
     supervisor \
     ca-certificates \
     tzdata \
