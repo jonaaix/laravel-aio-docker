@@ -74,14 +74,14 @@ if [ "$PHP_RUNTIME_CONFIG" = "PHP_FPM" ]; then
    else
        echo "PHP-FPM is already running."
    fi
+fi
 
-   # Start Nginx if not running
-   if ! pgrep "nginx" > /dev/null; then
-      echo "Starting Nginx..."
-      nginx &
-   else
-       echo "Nginx is already running."
-   fi
+# Start Nginx if not running
+if ! pgrep "nginx" > /dev/null; then
+   echo "Starting Nginx..."
+   nginx &
+else
+    echo "Nginx is already running."
 fi
 
 # Create cache paths: mkdir -p storage/framework/{sessions,views,cache}
@@ -300,9 +300,9 @@ fi
 
 if [ "$PHP_RUNTIME_CONFIG" = "PHP_FRANKEN" ]; then
    if [ "$ENV_DEV" = "true" ]; then
-      php artisan octane:frankenphp --no-interaction --watch &
+      php artisan octane:frankenphp --no-interaction --port=8080 --watch &
    else
-      php artisan octane:frankenphp --no-interaction &
+      php artisan octane:frankenphp --no-interaction --port=8080 &
    fi
    echo "============================"
    echo "===    Octane started    ==="
@@ -311,9 +311,9 @@ fi
 
 if [ "$PHP_RUNTIME_CONFIG" = "PHP_ROADRUNNER" ]; then
    if [ "$ENV_DEV" = "true" ]; then
-      php artisan octane:roadrunner --no-interaction --watch &
+      php artisan octane:roadrunner --no-interaction --port=8080 --watch &
    else
-      php artisan octane:roadrunner --no-interaction &
+      php artisan octane:roadrunner --no-interaction --port=8080 &
    fi
    echo "============================"
    echo "===    Octane started    ==="
