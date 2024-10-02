@@ -145,6 +145,9 @@ if [ "$PHP_RUNTIME_CONFIG" = "PHP_FRANKEN" ]; then
    else
        echo "Laravel Octane is already installed."
    fi
+
+   npm install --save-dev chokidar
+
    echo "=========================="
    echo "===  Octane installed  ==="
    echo "=========================="
@@ -159,6 +162,9 @@ if [ "$PHP_RUNTIME_CONFIG" = "PHP_ROADRUNNER" ]; then
    else
        echo "Laravel Octane is already installed."
    fi
+
+   npm install --save-dev chokidar
+
    echo "=========================="
    echo "===  Octane installed  ==="
    echo "=========================="
@@ -300,7 +306,7 @@ fi
 
 if [ "$PHP_RUNTIME_CONFIG" = "PHP_FRANKEN" ]; then
    if [ "$ENV_DEV" = "true" ]; then
-      php artisan octane:frankenphp --no-interaction --port=8080 --watch &
+      php artisan octane:frankenphp --no-interaction --port=8080 --workers=4 --watch &
    else
       php artisan octane:frankenphp --no-interaction --port=8080 &
    fi
@@ -311,7 +317,7 @@ fi
 
 if [ "$PHP_RUNTIME_CONFIG" = "PHP_ROADRUNNER" ]; then
    if [ "$ENV_DEV" = "true" ]; then
-      php artisan octane:roadrunner --no-interaction --port=8080 --watch &
+      php artisan octane:roadrunner --no-interaction --port=8080 --workers=4 --watch &
    else
       php artisan octane:roadrunner --no-interaction --port=8080 &
    fi

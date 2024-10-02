@@ -37,7 +37,7 @@ RUN chmod +x /usr/local/bin/install-php-extensions && \
     xml ctype json imagick/imagick@master vips ffi sockets opcache xdebug
 
 # Configure Nginx. Add your Nginx configuration file here. This will depend on your Laravel application.
-COPY ./build/php-franken/nginx.conf /etc/nginx/http.d/default.conf
+COPY ./build/shared/nginx.octane.conf /etc/nginx/http.d/default.conf
 
 # Configure Supervisor. Add your Supervisor configuration files here.
 COPY ./build/shared/supervisor/supervisor-header.conf /etc/supervisor/conf.d/supervisor-header.conf
