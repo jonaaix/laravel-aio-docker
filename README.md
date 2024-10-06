@@ -72,20 +72,23 @@ services:
 
 In the config file, add the following location block (after `/basic_status`) to serve your javascript app.
 ```nginx
+####################################
+####### Start serving JS app #######
+####################################
 location /app {
 
     alias /js-app;
-    
+
     location ~* \.(?:manifest|appcache|html?|xml|json)$ {
-      expires -1;
+        expires -1;
     }
-    
+
     location ~* \.(jpg|jpeg|png|gif|ico|woff|otf|js|svg|css|txt|wav|mp3|aff|dic)$ {
         add_header Cache-Control "public";
         expires 365d;
         access_log off;
     }
-    
+
     index index.html;
     try_files $uri $uri/ /index.html =404;
 }
@@ -93,6 +96,9 @@ location /app {
 location = / {
     return 301 /app;
 }
+####################################
+####### End serving JS app #########
+####################################
 ```
 
 ## Custom scripts
