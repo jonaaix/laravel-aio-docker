@@ -75,7 +75,7 @@ services:
 
     pma:
         container_name: ${APP_NAME}_pma
-        image: phpmyadmin/phpmyadmin:latest
+        image: phpmyadmin:latest
         environment:
             PMA_HOST: mysql
             PMA_PORT: 3306

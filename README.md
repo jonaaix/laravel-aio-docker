@@ -120,8 +120,8 @@ services:
 # You should disable port-exposure in production!
 
 networks:
-   public:
-      external: false
+   main-nginx-proxy:
+      external: true
    app:
       external: false
 
@@ -151,7 +151,7 @@ services:
          # - redis
       networks:
          - app
-         - public
+         - main-nginx-proxy
 
    mysql:
       container_name: ${APP_NAME}_mysql
@@ -232,7 +232,7 @@ wkhtmltopdf:
 ```yaml
 pma:
    container_name: ${APP_NAME}_pma
-   image: phpmyadmin/phpmyadmin:latest
+   image: phpmyadmin:latest
    environment:
       PMA_HOST: mysql
       PMA_PORT: 3306
@@ -243,6 +243,7 @@ pma:
       - mysql
    networks:
       - app
+      - main-nginx-proxy
 ```
 
 ### Debugging nginx configuration
