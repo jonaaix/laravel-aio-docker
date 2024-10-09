@@ -30,7 +30,7 @@ services:
             # Proxy
             LETSENCRYPT_HOST: domain.com
             VIRTUAL_HOST: domain.com
-            VIRTUAL_PORT: 8000
+            VIRTUAL_PORT: 80
         restart: unless-stopped
         depends_on:
             - mysql

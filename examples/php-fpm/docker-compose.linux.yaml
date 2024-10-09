@@ -25,7 +25,7 @@ services:
             ENABLE_SUPERVISOR: true
             ENABLE_HORIZON_WORKER: true
         ports:
-            - "8000:8000" # php
+            - "8000:80" # php
             - "5173:5173" # vite
         restart: unless-stopped
         depends_on:
