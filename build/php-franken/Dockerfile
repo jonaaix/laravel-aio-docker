@@ -52,21 +52,24 @@ COPY ./build/shared/php.ini /usr/local/etc/php/
 
 # Yes, different path for xdebug config, disabled by default
 COPY ./build/shared/xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini.disabled
+# Remove xdebug ini file from extension installer
+RUN rm /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 
 # Set up the application working directory
 WORKDIR /app
 
 # Copy the entrypoint script into the container
-COPY ./build/shared/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+COPY ./build/shared/entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
 # Expose the port Nginx is reachable on
-EXPOSE 8000
+EXPOSE 80
 
 # Set Bash as the default shell
 SHELL ["/bin/bash", "-c"]
 
 ENV PHP_RUNTIME_CONFIG=PHP_FRANKEN
+ENV PHP_IDE_CONFIG="serverName=laravel"
 
 # Define the command to run on container start
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+ENTRYPOINT ["/docker-entrypoint.sh"]

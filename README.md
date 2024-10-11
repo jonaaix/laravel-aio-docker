@@ -38,6 +38,9 @@ Nested flags are only available if the parent flag is enabled.
    - `ENABLE_QUEUE_WORKER`: Set to `true` to start the queue worker.
    - `ENABLE_HORIZON_WORKER`: Set to `true` to start the horizon worker.
 
+
+- `SKIP_LARAVEL_BOOT`: Set to `true` to skip the Laravel boot process. Useful for other PHP applications.
+
 **Check the examples directory for full example docker-compose configurations.**
 
 ## Xdebug

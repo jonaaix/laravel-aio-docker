@@ -1,14 +1,5 @@
 #!/bin/bash
 
-# Run any custom scripts that are mounted to /custom-scripts/before-boot
-if [ -d "/custom-scripts/before-boot" ]; then
-   echo "Running custom scripts..."
-   for f in /custom-scripts/before-boot/*.sh; do
-      echo "Running $f..."
-      bash "$f" || true
-   done
-fi
-
 echo "Running entrypoint.sh..."
 
 shutdown_handler() {
@@ -39,16 +30,13 @@ run_as_www_data() {
    su -s /bin/sh -c "$*" www-data
 }
 
-cd /app || exit 1
-
-echo "alias pa=\"php artisan\"" > ~/.bashrc
-
-# Check if the Laravel application is not present in /app
-if [ ! -f "/app/artisan" ]; then
-    echo "No Laravel application found in /app. Exiting..."
-    exit 1
-else
-    echo "Laravel application found in /app."
+# Run any custom scripts that are mounted to /custom-scripts/before-boot
+if [ -d "/custom-scripts/before-boot" ]; then
+   echo "Running custom scripts..."
+   for f in /custom-scripts/before-boot/*.sh; do
+      echo "Running $f..."
+      bash "$f" || true
+   done
 fi
 
 # Enable xdebug if needed
@@ -82,6 +70,28 @@ if ! pgrep "nginx" > /dev/null; then
    nginx &
 else
     echo "Nginx is already running."
+fi
+
+# Skip Laravel boot
+if [ "$SKIP_LARAVEL_BOOT" = "true" ]; then
+   echo "Skipping Laravel boot..."
+   # wait forever
+   while true; do
+      tail -f /dev/null &
+      wait ${!}
+   done
+fi
+
+cd /app || exit 1
+
+echo "alias pa=\"php artisan\"" > ~/.bashrc
+
+# Check if the Laravel application is not present in /app
+if [ ! -f "/app/artisan" ]; then
+    echo "No Laravel application found in /app. Exiting..."
+    exit 1
+else
+    echo "Laravel application found in /app."
 fi
 
 # Create cache paths: mkdir -p storage/framework/{sessions,views,cache}
@@ -159,6 +169,23 @@ if [ "$PHP_RUNTIME_CONFIG" = "PHP_ROADRUNNER" ]; then
       echo "Laravel Octane/Roadrunner is not installed. Installing..."
       composer require laravel/octane --no-interaction --prefer-dist
       php artisan octane:install --server=roadrunner --no-interaction
+   else
+       echo "Laravel Octane is already installed."
+   fi
+
+   npm install --save-dev chokidar
+
+   echo "=========================="
+   echo "===  Octane installed  ==="
+   echo "=========================="
+fi
+
+if [ "$PHP_RUNTIME_CONFIG" = "PHP_OPENSWOOLE" ]; then
+   # check if laravel/octane is installed
+   if ! php artisan | grep -q "octane"; then
+      echo "Laravel Octane/Swoole is not installed. Installing..."
+      composer require laravel/octane --no-interaction --prefer-dist
+      php artisan octane:install --server=swoole --no-interaction
    else
        echo "Laravel Octane is already installed."
    fi
@@ -320,6 +347,17 @@ if [ "$PHP_RUNTIME_CONFIG" = "PHP_ROADRUNNER" ]; then
       php artisan octane:roadrunner --no-interaction --port=8080 --workers=4 --watch &
    else
       php artisan octane:roadrunner --no-interaction --port=8080 &
+   fi
+   echo "============================"
+   echo "===    Octane started    ==="
+   echo "============================"
+fi
+
+if [ "$PHP_RUNTIME_CONFIG" = "PHP_OPENSWOOLE" ]; then
+   if [ "$ENV_DEV" = "true" ]; then
+      php artisan octane:swoole --no-interaction --port=8080 --workers=4 --watch &
+   else
+      php artisan octane:swoole --no-interaction --port=8080 &
    fi
    echo "============================"
    echo "===    Octane started    ==="

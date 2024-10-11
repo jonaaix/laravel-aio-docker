@@ -1,7 +1,7 @@
 ARG INPUT_PHP="8.3"
-ARG IMAGENAME=php:${INPUT_PHP}-fpm-alpine
+ARG IMAGENAME=php:${INPUT_PHP}-cli-alpine
 
-FROM ${IMAGENAME}
+FROM $IMAGENAME
 
 ############################################################
 ###############  GENERAL DEPENDENCIES ######################
@@ -34,10 +34,10 @@ RUN chmod +x /usr/local/bin/install-php-extensions && \
     gd bcmath bz2 calendar iconv intl mbstring \
     mysqli pdo_mysql pdo_pgsql soap zip gmp ldap \
     exif memcached redis imap pcntl openssl tokenizer \
-    xml ctype json imagick/imagick@master vips ffi sockets opcache xdebug
+    xml ctype json imagick/imagick@master vips ffi sockets opcache xdebug openswoole
 
 # Configure Nginx. Add your Nginx configuration file here. This will depend on your Laravel application.
-COPY ./build/shared/nginx.fpm.conf /etc/nginx/http.d/default.conf
+COPY ./build/shared/nginx.octane.conf /etc/nginx/http.d/default.conf
 
 # Configure Supervisor. Add your Supervisor configuration files here.
 COPY ./build/shared/supervisor/supervisor-header.conf /etc/supervisor/conf.d/supervisor-header.conf
@@ -68,7 +68,7 @@ EXPOSE 80
 # Set Bash as the default shell
 SHELL ["/bin/bash", "-c"]
 
-ENV PHP_RUNTIME_CONFIG=PHP_FPM
+ENV PHP_RUNTIME_CONFIG=PHP_OPENSWOOLE
 ENV PHP_IDE_CONFIG="serverName=laravel"
 
 # Define the command to run on container start
