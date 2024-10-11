@@ -10,6 +10,7 @@ ensuring your Laravel application is ready to run out of the box with minimal ef
 - `umex/php8.3-laravel-aio:1.1-fpm-alpine`
 - `umex/php8.3-laravel-aio:1.1-roadrunner-alpine`
 - `umex/php8.3-laravel-aio:1.1-franken-alpine`
+- `umex/php8.3-laravel-aio:1.1-openswoole-alpine`
 
 When switching to a Laravel Octane based image (roadrunner or franken) for the first time,
 the entrypoint will automatically set up all requirements. You can commit the changes to your repository.
@@ -56,7 +57,7 @@ You can connect to the xdebug server on port `9003`.
 6. Add a new server with name "laravel" according to the docker-compose configuration:
    - Name: `laravel`
    - Host: `localhost`
-   - Port: `8000`
+   - Port: `80`
    - Debugger: `Xdebug`
    - **ENABLE**: `Use path mappings`: `path/to/your/project` -> `/app`
 7. Install browser extension and enable it in the correct tab.
@@ -146,7 +147,7 @@ services:
          ENABLE_SUPERVISOR: true
          ENABLE_HORIZON_WORKER: true
       ports:
-         - "8000:8000" # php
+         - "8000:80" # php
          - "5173:5173" # vite
       restart: unless-stopped
       depends_on:
