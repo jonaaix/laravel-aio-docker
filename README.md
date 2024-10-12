@@ -124,8 +124,6 @@ services:
 # You should disable port-exposure in production!
 
 networks:
-   main-nginx-proxy:
-      external: true
    app:
       external: false
 
@@ -155,7 +153,6 @@ services:
          # - redis
       networks:
          - app
-         - main-nginx-proxy
 
    mysql:
       container_name: ${APP_NAME}_mysql
