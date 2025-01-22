@@ -10,19 +10,20 @@ volumes:
         driver: local
     redis_volume:
         driver: local
+    app_sync_volume:
+        driver: local
 
 services:
     php:
         container_name: ${APP_NAME}_php
-        image: umex/php8.3-laravel-aio:1.1-fpm-alpine
+        image: umex/php8.4-laravel-aio:1.2-fpm-alpine
         stop_grace_period: 60s
         volumes:
-            - ./:/app
+            - app_sync_volume:/app
         environment:
             ENV_DEV: true
             DEV_NPM_RUN_DEV: true
             DEV_ENABLE_XDEBUG: true
-            ENABLE_SUPERVISOR: true
             ENABLE_HORIZON_WORKER: true
         ports:
             - "8000:80" # php
@@ -86,11 +87,21 @@ services:
 #        networks:
 #            - app
 
-#    wkhtmltopdf:
-#        container_name: ${APP_NAME}_wkhtmltopdf
-#        image: umex/wkhtmltopdf-microservice:1.2-alpine
-#        restart: unless-stopped
-#        environment:
-#            MAX_BODY: '150mb'
-#        networks:
-#            - app
+
+# Development only
+x-mutagen:
+    sync:
+        defaults:
+            ignore:
+                vcs: true
+        code:
+            alpha: "."
+            beta: "volume://app_sync_volume"
+            # mode: "one-way-safe"
+            mode: "two-way-resolved" # This is a dangerous option, since it can modify your codebase!!! Be careful deleting volumes!
+            configurationBeta:
+                permissions:
+                    defaultOwner: "id:82"
+                    defaultGroup: "id:82"
+                    defaultFileMode: 0o664
+                    defaultDirectoryMode: 0o775

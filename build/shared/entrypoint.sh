@@ -2,6 +2,21 @@
 
 echo "Running entrypoint.sh..."
 
+echo "
+
+██╗      █████╗ ██████╗  █████╗ ██╗   ██╗███████╗██╗          █████╗   ██╗   ██████╗
+██║     ██╔══██╗██╔══██╗██╔══██╗██║   ██║██╔════╝██║         ██╔══██╗  ██║  ██╔═══██╗
+██║     ███████║██████╔╝███████║██║   ██║█████╗  ██║         ███████║  ██║  ██║   ██║
+██║     ██╔══██║██╔══██╗██╔══██║╚██╗ ██╔╝██╔══╝  ██║         ██╔══██║  ██║  ██║   ██║
+███████╗██║  ██║██║  ██║██║  ██║ ╚████╔╝ ███████╗███████╗    ██║  ██║  ██║  ╚██████╔╝
+╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝  ╚═══╝  ╚══════╝╚══════╝    ╚═╝  ╚═╝  ╚═╝   ╚═════╝
+
+"
+echo
+echo "User: $(whoami), UID: $(id -u)"
+echo
+
+
 shutdown_handler() {
    # NOTE: In the most recent Docker version, logging is disabled once stop signal received :( However it still works.
    echo "STOP signal received..."
@@ -54,7 +69,8 @@ else
    mv /usr/local/etc/php/conf.d/xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini.disabled || true
 fi
 
-if [ "$PHP_RUNTIME_CONFIG" = "PHP_FPM" ]; then
+# Starting earlier to allow hosting non-Laravel apps
+if [ "$PHP_RUNTIME_CONFIG" = "fpm" ]; then
    # Start PHP-FPM if not running
    if ! pgrep "php-fpm" > /dev/null; then
       echo "Starting PHP-FPM..."
@@ -84,7 +100,7 @@ fi
 
 cd /app || exit 1
 
-echo "alias pa=\"php artisan\"" > ~/.bashrc
+echo "alias pa=\"php artisan\"; alias ll=\"ls -lsah\"" > ~/.bashrc
 
 # Check if the Laravel application is not present in /app
 if [ ! -f "/app/artisan" ]; then
@@ -110,11 +126,11 @@ echo "============================"
 
 # Fix storage permissions
 echo "Fixing storage permissions..."
-chown -R www-data:www-data storage
-chown -R www-data:www-data bootstrap/cache
+chown -R root:www-data storage
+chown -R root:www-data bootstrap/cache
 
 if [ -f "database/database.sqlite" ]; then
-    chown www-data:www-data database/database.sqlite
+    chown root:www-data database/database.sqlite
 fi
 
 find storage -type d -exec chmod 775 {} \;
@@ -146,7 +162,7 @@ echo "=========================="
 echo "=== Composer installed ==="
 echo "=========================="
 
-if [ "$PHP_RUNTIME_CONFIG" = "PHP_FRANKEN" ]; then
+if [ "$PHP_RUNTIME_CONFIG" = "frankenphp" ]; then
    # check if laravel/octane is installed
    if ! php artisan | grep -q "octane"; then
        echo "Laravel Octane/FrankenPHP is not installed. Installing..."
@@ -163,7 +179,7 @@ if [ "$PHP_RUNTIME_CONFIG" = "PHP_FRANKEN" ]; then
    echo "=========================="
 fi
 
-if [ "$PHP_RUNTIME_CONFIG" = "PHP_ROADRUNNER" ]; then
+if [ "$PHP_RUNTIME_CONFIG" = "roadrunner" ]; then
    # check if laravel/octane is installed
    if ! php artisan | grep -q "octane"; then
       echo "Laravel Octane/Roadrunner is not installed. Installing..."
@@ -180,7 +196,7 @@ if [ "$PHP_RUNTIME_CONFIG" = "PHP_ROADRUNNER" ]; then
    echo "=========================="
 fi
 
-if [ "$PHP_RUNTIME_CONFIG" = "PHP_OPENSWOOLE" ]; then
+if [ "$PHP_RUNTIME_CONFIG" = "swoole" ]; then
    # check if laravel/octane is installed
    if ! php artisan | grep -q "octane"; then
       echo "Laravel Octane/Swoole is not installed. Installing..."
@@ -300,69 +316,72 @@ echo "=== Cron service started ==="
 echo "============================"
 
 
-if [ "$ENABLE_SUPERVISOR" = "true" ]; then
+# Read laravel .env file
+if [ -f "/app/.env" ]; then
+   declare -A LARAVEL_ENV
+   while IFS='=' read -r key value; do
+      if [[ $key != "" && $key != \#* ]]; then
+         LARAVEL_ENV[$key]=$value
+      fi
+   done < "/app/.env"
+fi
 
-   cat /etc/supervisor/conf.d/supervisor-header.conf > /etc/supervisor/conf.d/laravel-worker-compiled.conf
 
-   if [ "$ENABLE_QUEUE_WORKER" = "true" ]; then
-      echo "Adding queue supervisor config..."
-      echo "" >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
-      cat /etc/supervisor/conf.d/queue-worker.conf >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
 
-      echo "============================"
-      echo "===  Queue Worker added  ==="
-      echo "============================"
-   fi
+cat /etc/supervisor/conf.d/supervisor-header.conf > /etc/supervisor/conf.d/laravel-worker-compiled.conf
 
-   if [ "$ENABLE_HORIZON_WORKER" = "true" ]; then
-      echo "Adding horizon supervisor config..."
-      echo "" >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
-      cat /etc/supervisor/conf.d/horizon-worker.conf >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
-
-      echo "============================"
-      echo "===    Horizon added     ==="
-      echo "============================"
-   fi
-
-   supervisord -n -c /etc/supervisor/conf.d/laravel-worker-compiled.conf &
+if [ "$ENABLE_QUEUE_WORKER" = "true" ]; then
+   echo "Adding queue supervisor config..."
+   echo "" >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
+   cat /etc/supervisor/conf.d/queue-worker.conf >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
 
    echo "============================"
-   echo "===  Supervisor started  ==="
+   echo "===  Queue Worker added  ==="
    echo "============================"
 fi
 
-if [ "$PHP_RUNTIME_CONFIG" = "PHP_FRANKEN" ]; then
+if [ "$ENABLE_HORIZON_WORKER" = "true" ]; then
+   echo "Adding horizon supervisor config..."
+   echo "" >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
+   cat /etc/supervisor/conf.d/horizon-worker.conf >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
+
+   echo "============================"
+   echo "===    Horizon added     ==="
+   echo "============================"
+fi
+
+if [ "$PHP_RUNTIME_CONFIG" != "fpm" ]; then
+   OCTANE_SERVER=${LARAVEL_ENV[OCTANE_SERVER]}
+
+   if [ -z "$OCTANE_SERVER" ]; then
+      echo "ERROR: <OCTANE_SERVER> is not set. Please define it in your .env file."
+      exit 1
+   fi
+
+   if [ "$PHP_RUNTIME_CONFIG" != "$OCTANE_SERVER" ]; then
+      echo "ERROR: Mismatch between PHP_RUNTIME_CONFIG ($PHP_RUNTIME_CONFIG) and LARAVEL_ENV[OCTANE_SERVER] ($OCTANE_SERVER)."
+      echo "Please ensure they are consistent."
+      exit 1
+   fi
+
+   echo "Adding Octane supervisor config..."
    if [ "$ENV_DEV" = "true" ]; then
-      php artisan octane:frankenphp --no-interaction --port=8080 --workers=4 --watch &
+      cat /etc/supervisor/conf.d/octane-worker-dev.conf >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
    else
-      php artisan octane:frankenphp --no-interaction --port=8080 &
+      cat /etc/supervisor/conf.d/octane-worker-prod.conf >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
    fi
    echo "============================"
-   echo "===    Octane started    ==="
+   echo "===     Octane added     ==="
    echo "============================"
+else
+   echo "PHP_RUNTIME_CONFIG is set to <fpm>. Skipping Octane start."
 fi
 
-if [ "$PHP_RUNTIME_CONFIG" = "PHP_ROADRUNNER" ]; then
-   if [ "$ENV_DEV" = "true" ]; then
-      php artisan octane:roadrunner --no-interaction --port=8080 --workers=4 --watch &
-   else
-      php artisan octane:roadrunner --no-interaction --port=8080 &
-   fi
-   echo "============================"
-   echo "===    Octane started    ==="
-   echo "============================"
-fi
+supervisord -n -c /etc/supervisor/conf.d/laravel-worker-compiled.conf &
 
-if [ "$PHP_RUNTIME_CONFIG" = "PHP_OPENSWOOLE" ]; then
-   if [ "$ENV_DEV" = "true" ]; then
-      php artisan octane:swoole --no-interaction --port=8080 --workers=4 --watch &
-   else
-      php artisan octane:swoole --no-interaction --port=8080 &
-   fi
-   echo "============================"
-   echo "===    Octane started    ==="
-   echo "============================"
-fi
+echo "============================"
+echo "===  Supervisor started  ==="
+echo "============================"
 
 echo "============================"
 echo "===      PHP READY       ==="

@@ -1,5 +1,6 @@
 # laravel-aio-docker
-[![Docker Pulls](https://img.shields.io/docker/pulls/umex/php8.3-laravel-aio)](https://hub.docker.com/r/umex/php8.3-laravel-aio)
+[![8.3 Docker Pulls](https://img.shields.io/docker/pulls/umex/php8.3-laravel-aio)](https://hub.docker.com/r/umex/php8.3-laravel-aio)
+[![8.4 Docker Pulls](https://img.shields.io/docker/pulls/umex/php8.4-laravel-aio)](https://hub.docker.com/r/umex/php8.4-laravel-aio)
 
 This all-in-one Docker runtime image is designed specifically for Laravel applications, providing a complete, pre-configured
 environment that works seamlessly with any Laravel project. It streamlines setup and handles all essential configurations,
@@ -7,15 +8,22 @@ ensuring your Laravel application is ready to run out of the box with minimal ef
 
 ## Images
 #### Recent
+##### Laravel 11
+- `umex/php8.4-laravel-aio:1.2-fpm-alpine`
+- `umex/php8.4-laravel-aio:1.2-roadrunner-alpine`
+##### Laravel 10
+- `umex/php8.3-laravel-aio:1.2-fpm-alpine`
+- `umex/php8.3-laravel-aio:1.2-roadrunner-alpine`
+
+When switching to a Laravel Octane based image (roadrunner/franken/swoole) for the first time,
+the entrypoint will automatically set up all requirements if not already available. 
+You can commit the changes to your repository.
+
+#### Legacy
 - `umex/php8.3-laravel-aio:1.1-fpm-alpine`
 - `umex/php8.3-laravel-aio:1.1-roadrunner-alpine`
 - `umex/php8.3-laravel-aio:1.1-franken-alpine`
 - `umex/php8.3-laravel-aio:1.1-openswoole-alpine`
-
-When switching to a Laravel Octane based image (roadrunner or franken) for the first time,
-the entrypoint will automatically set up all requirements. You can commit the changes to your repository.
-
-#### Legacy
 - `umex/php8.3-laravel-aio:1.0-fpm-alpine`
 
 ## Configuration
@@ -35,14 +43,24 @@ Nested flags are only available if the parent flag is enabled.
    - `PROD_SKIP_OPTIMIZE`: Set to `true` to skip optimizations on container start.
 
 
-- `START_SUPERVISOR`: Set to `true` to start the supervisor service.
+- Supervisor will be always started. But workers are partially optional.
    - `ENABLE_QUEUE_WORKER`: Set to `true` to start the queue worker.
    - `ENABLE_HORIZON_WORKER`: Set to `true` to start the horizon worker.
 
 
-- `SKIP_LARAVEL_BOOT`: Set to `true` to skip the Laravel boot process. Useful for other PHP applications.
+- `SKIP_LARAVEL_BOOT`: Set to `true` to skip the Laravel boot process. Useful for other PHP applications. Only available in `fpm` images.
 
 **Check the examples directory for full example docker-compose configurations.**
+
+## Project Directory Ownership
+Linux
+```bash
+sudo chown -R $USER:www-data /path/to/app
+```
+MacOS
+```bash
+sudo chown -R $(whoami):staff /path/to/app
+```
 
 ## Xdebug
 To enable xdebug, set `DEV_ENABLE_XDEBUG` to `true` in your `docker-compose.yml` file.
@@ -134,7 +152,7 @@ volumes:
 services:
    php:
       container_name: ${APP_NAME}_php
-      image: umex/php8.3-laravel-aio:1.1-fpm-alpine
+      image: umex/php8.4-laravel-aio:1.2-fpm-alpine
       stop_grace_period: 60s
       volumes:
          - ./:/app
@@ -142,7 +160,6 @@ services:
          ENV_DEV: true
          DEV_NPM_RUN_DEV: true
          DEV_ENABLE_XDEBUG: true
-         ENABLE_SUPERVISOR: true
          ENABLE_HORIZON_WORKER: true
       ports:
          - "8000:80" # php
@@ -213,7 +230,63 @@ You might remove `predis/predis` from your `composer.json` file if you are using
 ]
 ```
 
-### Adding wkhtmltopdf
+### Adding Chromium PDF
+
+To add Chromium PDF to your project, create the following script in `docker/before-boot/setup-pdf-printer.sh`:
+```shell
+#!/bin/sh
+
+# Update and install necessary tools
+apk update && apk add --no-cache \
+  chromium \
+  nss \
+  freetype \
+  harfbuzz \
+  ca-certificates \
+  ttf-freefont \
+  libc6-compat \
+  gcompat
+
+export PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+```
+
+Then mount it
+```yml
+services:
+   php:
+      volumes:
+         - ./docker/before-boot:/custom-scripts/before-boot
+```
+
+Install the package `spatie/laravel-pdf` and configure it to use the `chrome` driver.
+
+```shell
+composer require spatie/laravel-pdf
+```
+
+```php
+<?php
+
+namespace App\Services;
+
+use Spatie\Browsershot\Browsershot;
+use Spatie\LaravelPdf\PdfBuilder;
+
+class PDF {
+   /**
+    * Get printer instance
+    */
+   public static function getPrinter(): PdfBuilder {
+      return \Spatie\LaravelPdf\Support\pdf()->withBrowsershot(function (Browsershot $browsershot) {
+         $browsershot->setOption('executablePath', '/usr/bin/chromium-browser');
+      });
+   }
+}
+
+```
+
+
+### Adding wkhtmltopdf (deprecated)
 
 To add wkhtmltopdf to your project, add the following service to your `docker-compose.yml` file:
 

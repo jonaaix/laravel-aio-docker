@@ -34,15 +34,14 @@ RUN chmod +x /usr/local/bin/install-php-extensions && \
     gd bcmath bz2 calendar iconv intl mbstring \
     mysqli pdo_mysql pdo_pgsql soap zip gmp ldap \
     exif memcached redis imap pcntl openssl tokenizer \
-    xml ctype json imagick/imagick@master vips ffi sockets opcache xdebug openswoole
+    xml ctype json imagick sockets opcache xdebug openswoole
 
 # Configure Nginx. Add your Nginx configuration file here. This will depend on your Laravel application.
 COPY ./build/shared/nginx.octane.conf /etc/nginx/http.d/default.conf
 
 # Configure Supervisor. Add your Supervisor configuration files here.
-COPY ./build/shared/supervisor/supervisor-header.conf /etc/supervisor/conf.d/supervisor-header.conf
-COPY ./build/shared/supervisor/queue-worker.conf /etc/supervisor/conf.d/queue-worker.conf
-COPY ./build/shared/supervisor/horizon-worker.conf /etc/supervisor/conf.d/horizon-worker.conf
+COPY ./build/shared/supervisor/ /tmp/supervisor/
+RUN mkdir -p /etc/supervisor/conf.d/ && cp -n /tmp/supervisor/* /etc/supervisor/conf.d/ && rm -r /tmp/supervisor/
 
 # Configure Cron Jobs (if needed). You can add cron jobs by creating a crontab file and copying it into the container.
 COPY ./build/shared/laravel-cron /etc/crontabs/www-data
@@ -68,7 +67,7 @@ EXPOSE 80
 # Set Bash as the default shell
 SHELL ["/bin/bash", "-c"]
 
-ENV PHP_RUNTIME_CONFIG=PHP_OPENSWOOLE
+ENV PHP_RUNTIME_CONFIG=swoole
 ENV PHP_IDE_CONFIG="serverName=laravel"
 
 # Define the command to run on container start

@@ -18,14 +18,13 @@ volumes:
 services:
     php:
         container_name: ${APP_NAME}_php
-        image: umex/php8.3-laravel-aio:1.1-fpm-alpine
+        image: umex/php8.4-laravel-aio:1.2-fpm-alpine
         stop_grace_period: 60s
         volumes:
             - ./:/app
         environment:
             PROD_RUN_ARTISAN_MIGRATE: true
             PROD_RUN_ARTISAN_SEED: true
-            ENABLE_SUPERVISOR: true
             ENABLE_HORIZON_WORKER: true
             # Proxy
             LETSENCRYPT_HOST: domain.com
@@ -91,12 +90,3 @@ services:
         networks:
             - app
             - main-nginx-proxy
-
-    wkhtmltopdf:
-        container_name: ${APP_NAME}_wkhtmltopdf
-        image: umex/wkhtmltopdf-microservice:1.2-alpine
-        restart: unless-stopped
-        environment:
-            MAX_BODY: '150mb'
-        networks:
-            - app
