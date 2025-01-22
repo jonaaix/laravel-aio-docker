@@ -6,7 +6,7 @@
 - Booting `roadrunner/frankenphp/swoole` will require having a matching `OCTANE_SERVER` set in `.env`
 - Laravel Octane will be automatically handled by supervisor
 - Storage and cache permissions are now set to `root:www-data`. This will fix bidirectional issues when using a directory mount.
-  However, it requires your host user to be in www-data group `sudo usermod -aG www-data $USERNAME`.
+  However, it requires your host user (only on Linux) to be in www-data group `sudo usermod -aG www-data $USERNAME`.
 - Removed `fii/vips` driver in favor of `zend.max_allowed_stack_size` to enhance security. ImageMagick would have just slightly worse performance.
 - Added `ll` alias for `ls -lsah`
 
