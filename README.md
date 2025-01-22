@@ -262,6 +262,7 @@ Install the package `spatie/laravel-pdf` and configure it to use the `chrome` dr
 
 ```shell
 composer require spatie/laravel-pdf
+npm install -S puppeteer
 ```
 
 ```php
