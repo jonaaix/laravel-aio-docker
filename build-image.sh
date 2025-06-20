@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Usage: ./build-image.sh <phpVersion> <imageType> <arch>
 # Example: ./build-image.sh 8.4 fpm-alpine arm64
