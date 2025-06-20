@@ -61,12 +61,16 @@ if [ "$DEV_ENABLE_XDEBUG" = "true" ]; then
       mv /usr/local/etc/php/conf.d/xdebug.ini.disabled /usr/local/etc/php/conf.d/xdebug.ini || true
    else
       echo "Disabling Xdebug..."
-      mv /usr/local/etc/php/conf.d/xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini.disabled || true
+      if [ -f /usr/local/etc/php/conf.d/xdebug.ini ]; then
+          mv /usr/local/etc/php/conf.d/xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini.disabled
+      fi
       echo "ERROR: Xdebug can only be enabled in DEV environment."
    fi
 else
    echo "Disabling Xdebug..."
-   mv /usr/local/etc/php/conf.d/xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini.disabled || true
+   if [ -f /usr/local/etc/php/conf.d/xdebug.ini ]; then
+       mv /usr/local/etc/php/conf.d/xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini.disabled
+   fi
 fi
 
 # Starting earlier to allow hosting non-Laravel apps
@@ -125,22 +129,14 @@ echo "============================"
 
 
 # Fix storage permissions
-echo "Fixing storage permissions..."
-chown -R root:www-data storage
-chown -R root:www-data bootstrap/cache
+echo "Fixing storage and cache permissions to allow writing for www-data..."
+chown -R laravel:www-data storage bootstrap/cache
+find storage bootstrap/cache -type d -exec chmod 775 {} \;
+find storage bootstrap/cache -type f -exec chmod 664 {} \;
 
 if [ -f "database/database.sqlite" ]; then
-    chown root:www-data database/database.sqlite
-fi
-
-find storage -type d -exec chmod 775 {} \;
-find storage -type f -exec chmod 664 {} \;
-
-find bootstrap/cache -type d -exec chmod 775 {} \;
-find bootstrap/cache -type f -exec chmod 664 {} \;
-
-if [ -f "database/database.sqlite" ]; then
-    chmod 664 database/database.sqlite || true
+    chown laravel:www-data database/database.sqlite
+    chmod 664 database/database.sqlite
 fi
 
 echo "============================"
@@ -164,7 +160,7 @@ echo "=========================="
 
 if [ "$PHP_RUNTIME_CONFIG" = "frankenphp" ]; then
    # check if laravel/octane is installed
-   if ! php artisan | grep -q "octane"; then
+   if ! jq -e '.require["laravel/octane"] // .["require-dev"]?["laravel/octane"]' composer.json; then
        echo "Laravel Octane/FrankenPHP is not installed. Installing..."
        composer require laravel/octane --no-interaction --prefer-dist
        php artisan octane:install --server=frankenphp --no-interaction
@@ -181,7 +177,7 @@ fi
 
 if [ "$PHP_RUNTIME_CONFIG" = "roadrunner" ]; then
    # check if laravel/octane is installed
-   if ! php artisan | grep -q "octane"; then
+   if ! jq -e '.require["laravel/octane"] // .["require-dev"]?["laravel/octane"]' composer.json; then
       echo "Laravel Octane/Roadrunner is not installed. Installing..."
       composer require laravel/octane --no-interaction --prefer-dist
       php artisan octane:install --server=roadrunner --no-interaction
@@ -198,7 +194,7 @@ fi
 
 if [ "$PHP_RUNTIME_CONFIG" = "swoole" ]; then
    # check if laravel/octane is installed
-   if ! php artisan | grep -q "octane"; then
+   if ! jq -e '.require["laravel/octane"] // .["require-dev"]?["laravel/octane"]' composer.json; then
       echo "Laravel Octane/Swoole is not installed. Installing..."
       composer require laravel/octane --no-interaction --prefer-dist
       php artisan octane:install --server=swoole --no-interaction
@@ -354,7 +350,12 @@ if [ "$PHP_RUNTIME_CONFIG" != "fpm" ]; then
    OCTANE_SERVER=${LARAVEL_ENV[OCTANE_SERVER]}
 
    if [ -z "$OCTANE_SERVER" ]; then
-      echo "ERROR: <OCTANE_SERVER> is not set. Please define it in your .env file."
+      # Try to read from config/octane.php
+      OCTANE_SERVER=$(grep -E 'env\(\s*["'"'"']OCTANE_SERVER["'"'"']\s*,\s*["'"'"'][^"'"'"']+["'"'"']' config/octane.php | sed -E 's/.*OCTANE_SERVER["'"'"']\s*,\s*["'"'"']([^"'"'"']+)["'"'"'].*/\1/')
+   fi
+
+   if [ -z "$OCTANE_SERVER" ]; then
+      echo "ERROR: Could not <OCTANE_SERVER> in .env or config/octane.php."
       exit 1
    fi
 

@@ -7,6 +7,11 @@ FROM $IMAGENAME
 ###############  GENERAL DEPENDENCIES ######################
 ############################################################
 
+# Create non-root user with UID 1000 to match host user
+RUN addgroup -g 1000 laravel \
+ && adduser -D -u 1000 -G laravel -s /bin/sh laravel \
+ && addgroup laravel www-data
+
 # Install dependencies including Nginx, Supervisor, Cron, and security tools
 RUN apk update && apk add --no-cache \
     bash \
@@ -23,7 +28,19 @@ RUN apk update && apk add --no-cache \
     supervisor \
     ca-certificates \
     tzdata \
-    && rm -rf /var/cache/apk/*
+    jq
+
+# Install puppeteer PDF tools dependencies
+RUN apk update && apk add --no-cache \
+      chromium \
+      nss \
+      freetype \
+      harfbuzz \
+      ttf-freefont \
+      libc6-compat \
+      gcompat
+
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 # PHP Extension installer
 ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
@@ -36,8 +53,11 @@ RUN chmod +x /usr/local/bin/install-php-extensions && \
     exif memcached redis imap pcntl openssl tokenizer \
     xml ctype json imagick sockets opcache xdebug
 
-# Configure Nginx. Add your Nginx configuration file here. This will depend on your Laravel application.
-COPY ./build/shared/nginx.octane.conf /etc/nginx/http.d/default.conf
+# Configure Nginx
+COPY ./build/shared/nginx/nginx.base.conf /etc/nginx/nginx.conf
+COPY ./build/shared/nginx/nginx.octane.conf /etc/nginx/http.d/default.conf
+RUN mkdir -p /var/run/nginx /var/lib/nginx/tmp && \
+    chown -R laravel:laravel /var/lib/nginx /var/run/nginx /var/log/nginx
 
 # Configure Supervisor. Add your Supervisor configuration files here.
 COPY ./build/shared/supervisor/ /tmp/supervisor/
@@ -57,12 +77,21 @@ RUN rm /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 # Set up the application working directory
 WORKDIR /app
 
-# Copy the entrypoint script into the container
-COPY ./build/shared/entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
+# Copy entire scripts folder into container
+COPY ./build/shared/scripts /scripts
+
+# Make all *.sh files in /scripts executable
+RUN find /scripts -type f -name "*.sh" -exec chmod +x {} \;
+
+# Set secure ownership and permissions for Supervisor config directory
+RUN chown -R laravel:laravel /etc/supervisor/conf.d \
+ && chmod -R 755 /etc/supervisor/conf.d
+
+# Set the user to run the container
+USER laravel
 
 # Expose the port Nginx is reachable on
-EXPOSE 80
+EXPOSE 8000
 
 # Set Bash as the default shell
 SHELL ["/bin/bash", "-c"]
@@ -71,4 +100,4 @@ ENV PHP_RUNTIME_CONFIG=frankenphp
 ENV PHP_IDE_CONFIG="serverName=laravel"
 
 # Define the command to run on container start
-ENTRYPOINT ["/docker-entrypoint.sh"]
+ENTRYPOINT ["/scripts/entrypoint.sh"]

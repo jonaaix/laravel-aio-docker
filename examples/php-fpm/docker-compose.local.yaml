@@ -13,7 +13,6 @@ volumes:
 
 services:
     php:
-        container_name: ${APP_NAME}_php
         image: umex/php8.4-laravel-aio:1.2-fpm-alpine
         stop_grace_period: 60s
         volumes:
@@ -24,7 +23,7 @@ services:
             DEV_ENABLE_XDEBUG: true
             ENABLE_HORIZON_WORKER: true
         ports:
-            - "8000:80" # php
+            - "8000:8000" # php
             - "5173:5173" # vite
         restart: unless-stopped
         depends_on:
@@ -34,7 +33,6 @@ services:
             - app
 
     mysql:
-        container_name: ${APP_NAME}_mysql
         image: mariadb:lts
         # image: mysql:lts
         command:
@@ -60,7 +58,6 @@ services:
             - app
 
     redis:
-        container_name: ${APP_NAME}_redis
         image: redis:7-alpine
         volumes:
             - redis_volume:/data
@@ -72,7 +69,6 @@ services:
             - app
 
 #    pma:
-#        container_name: ${APP_NAME}_pma
 #        image: phpmyadmin/phpmyadmin:latest
 #        environment:
 #            PMA_HOST: mysql

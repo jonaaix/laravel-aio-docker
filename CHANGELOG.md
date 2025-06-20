@@ -1,5 +1,14 @@
 # Changelog
 
+## Version 1.3 (PHP 8.3, PHP 8.4)
+- Add `jq` package to the Docker image for JSON processing.
+- Check for `laravel/octane` package in `composer.json` instead of running `php artisan`.
+- Add `chromium` and dependencies for painless puppeteer PDF generation.
+- Make OCTANE_SERVER in `.env` optional, read from `config/octane.php` if not set.
+- Run container as `laravel` user with UID 1000 and GID 1000 by default.
+- BREAKING: Default port changed from `80` to `8000` due to reduction of privileges.
+- Added a permission fixer script to reset file and dir permissions correctly.
+
 ## Version 1.2 (PHP 8.3, PHP 8.4)
 
 - Removed `ENABLE_SUPERVISOR` flag. It will be enabled by default.

@@ -8,23 +8,36 @@ ensuring your Laravel application is ready to run out of the box with minimal ef
 
 ## Images
 #### Recent
-##### Laravel 11
-- `umex/php8.4-laravel-aio:1.2-fpm-alpine`
-- `umex/php8.4-laravel-aio:1.2-roadrunner-alpine`
+##### Laravel 11 & 12
+- `umex/php8.4-laravel-aio:1.3-fpm-alpine`
+- `umex/php8.4-laravel-aio:1.3-openswoole-alpine`
+- `umex/php8.4-laravel-aio:1.3-roadrunner-alpine`
+- `umex/php8.4-laravel-aio:1.3-franken-alpine`
 ##### Laravel 10
-- `umex/php8.3-laravel-aio:1.2-fpm-alpine`
-- `umex/php8.3-laravel-aio:1.2-roadrunner-alpine`
+- `umex/php8.3-laravel-aio:1.3-fpm-alpine`
+- `umex/php8.3-laravel-aio:1.3-openswoole-alpine`
+- `umex/php8.3-laravel-aio:1.3-roadrunner-alpine`
+- `umex/php8.3-laravel-aio:1.3-franken-alpine`
 
 When switching to a Laravel Octane based image (roadrunner/franken/swoole) for the first time,
 the entrypoint will automatically set up all requirements if not already available. 
 You can commit the changes to your repository.
 
-#### Legacy
+#### Legacy (outdated)
 - `umex/php8.3-laravel-aio:1.1-fpm-alpine`
 - `umex/php8.3-laravel-aio:1.1-roadrunner-alpine`
 - `umex/php8.3-laravel-aio:1.1-franken-alpine`
 - `umex/php8.3-laravel-aio:1.1-openswoole-alpine`
 - `umex/php8.3-laravel-aio:1.0-fpm-alpine`
+
+## Upgrading from 1.1/1.2 to 1.3
+Version 1.3 introduces several changes that may require adjustments to your existing setup:
+- The container run now as uid 1000, to match the host user on most systems.
+- Your local project permissions may need to be reset to the correct defaults (1000:1000).
+- You can use the fixer to automatically adjust your project permissions:
+```bash
+docker compose exec --user root php sh -c "/scripts/fix-laravel-project-permissions.sh"
+```
 
 ## Configuration
 
@@ -53,14 +66,15 @@ Nested flags are only available if the parent flag is enabled.
 **Check the examples directory for full example docker-compose configurations.**
 
 ## Project Directory Ownership
-Linux
+For a full reset of permissions, you can run the following command in your project directory:
 ```bash
-sudo chown -R $USER:www-data /path/to/app
+docker compose exec --user root php sh -c "/scripts/fix-laravel-project-permissions.sh"
 ```
-MacOS
+But on macOS the default group is `staff`, so you might need to run the following command afterwards:
 ```bash
 sudo chown -R $(whoami):staff /path/to/app
 ```
+
 
 ## Xdebug
 To enable xdebug, set `DEV_ENABLE_XDEBUG` to `true` in your `docker-compose.yml` file.
@@ -75,7 +89,7 @@ You can connect to the xdebug server on port `9003`.
 6. Add a new server with name "laravel" according to the docker-compose configuration:
    - Name: `laravel`
    - Host: `localhost`
-   - Port: `80`
+   - Port: `8000`
    - Debugger: `Xdebug`
    - **ENABLE**: `Use path mappings`: `path/to/your/project` -> `/app`
 7. Install browser extension and enable it in the correct tab.
@@ -162,7 +176,7 @@ services:
          DEV_ENABLE_XDEBUG: true
          ENABLE_HORIZON_WORKER: true
       ports:
-         - "8000:80" # php
+         - "8000:8000" # php
          - "5173:5173" # vite
       restart: unless-stopped
       depends_on:
