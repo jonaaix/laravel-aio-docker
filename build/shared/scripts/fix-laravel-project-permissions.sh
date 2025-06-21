@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "🔧 Full Laravel project permission reset (Container Mode)..."
+echo "🔧 Full Laravel project permission reset..."
 
 # 1. Reset ownership
 echo "→ Resetting ownership to 1000:1000..."
@@ -40,4 +40,4 @@ echo "📋 Executables:"
 ls -l artisan vendor/bin/* 2>/dev/null || echo "→ No executables found."
 echo
 
-echo "✅ Laravel project permissions fully reset (Container Mode)."
+echo "✅ Laravel project permissions fully reset."
