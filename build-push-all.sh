@@ -18,6 +18,10 @@ imageTypes=("fpm-alpine" "franken-alpine" "roadrunner-alpine" "openswoole-alpine
 
 for phpVersion in "${phpVersions[@]}"; do
   for imageType in "${imageTypes[@]}"; do
+     echo
+     echo "--------------------------------------------------"
+     echo "️⚽️ Building and pushing umex/php${phpVersion}-laravel-aio:${imageType} for architecture ${arch}..."
+     echo "--------------------------------------------------"
     ./build-image.sh "$phpVersion" "$imageType" "$arch"
   done
 

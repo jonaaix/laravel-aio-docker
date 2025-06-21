@@ -15,7 +15,7 @@ arch="${3:-amd64}" # default to amd64 if not specified
 imageTag="umex/php${phpVersion}-laravel-aio:${imageVersion}-${imageType}"
 dockerfilePath="./build/php-${imageType%*-alpine}/Dockerfile"
 
-echo "Building image: ${imageTag} for architecture: ${arch}"
+echo "⚪️ Building image: ${imageTag} for architecture: ${arch}"
 echo "Using Dockerfile: ${dockerfilePath}"
 
 docker buildx build \
