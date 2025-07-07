@@ -41,10 +41,6 @@ shutdown_handler() {
 }
 trap 'shutdown_handler' SIGINT SIGQUIT SIGTERM
 
-run_as_www_data() {
-   su -s /bin/sh -c "$*" www-data
-}
-
 # Run any custom scripts that are mounted to /custom-scripts/before-boot
 if [ -d "/custom-scripts/before-boot" ]; then
    echo "Running custom scripts..."
@@ -130,12 +126,12 @@ echo "============================"
 
 # Fix storage permissions
 echo "Fixing storage and cache permissions to allow writing for www-data..."
-chown -R laravel:www-data storage bootstrap/cache
+chown -R $USER:www-data storage bootstrap/cache
 find storage bootstrap/cache -type d -exec chmod 775 {} \;
 find storage bootstrap/cache -type f -exec chmod 664 {} \;
 
 if [ -f "database/database.sqlite" ]; then
-    chown laravel:www-data database/database.sqlite
+    chown $USER:www-data database/database.sqlite
     chmod 664 database/database.sqlite
 fi
 
@@ -157,6 +153,9 @@ fi
 echo "=========================="
 echo "=== Composer installed ==="
 echo "=========================="
+echo
+echo "PHP runtime configuration: $PHP_RUNTIME_CONFIG"
+echo
 
 if [ "$PHP_RUNTIME_CONFIG" = "frankenphp" ]; then
    # check if laravel/octane is installed
@@ -248,7 +247,7 @@ if [ "$ENV_DEV" = "true" ]; then
    echo "No automatic migrations will run with ENV_DEV=true."
 else
    if [ "$PROD_RUN_ARTISAN_MIGRATE" = "true" ]; then
-      run_as_www_data "php artisan migrate --force"
+      php artisan migrate --force
    else
       echo "Automatic migrations are disabled..."
    fi
@@ -263,7 +262,7 @@ if [ "$ENV_DEV" = "true" ]; then
    echo "No automatic seeding will run with ENV_DEV=true."
 else
    if [ "$PROD_RUN_ARTISAN_DBSEED" = "true" ]; then
-      run_as_www_data "php artisan db:seed --force"
+      php artisan db:seed --force
    else
       echo "Automatic seeding is disabled..."
    fi
@@ -275,18 +274,18 @@ echo "============================"
 
 echo "Optimizing Laravel..."
 if [ "$ENV_DEV" = "true" ]; then
-   run_as_www_data "php artisan optimize:clear"
-   run_as_www_data "php artisan view:clear"
-   run_as_www_data "php artisan config:clear"
-   run_as_www_data "php artisan route:clear"
+   php artisan optimize:clear
+   php artisan view:clear
+   php artisan config:clear
+   php artisan route:clear
 else
    if [ "$PROD_SKIP_OPTIMIZE" = "true" ]; then
       echo "Skipping Laravel optimization..."
    else
-      run_as_www_data "php artisan optimize"
-      run_as_www_data "php artisan view:cache"
-      run_as_www_data "php artisan config:cache"
-      run_as_www_data "php artisan route:cache"
+      php artisan optimize
+      php artisan view:cache
+      php artisan config:cache
+      php artisan route:cache
    fi
 fi
 echo "============================"
@@ -296,9 +295,9 @@ echo "============================"
 echo "Optimizing Laravel Filament..."
 if php artisan | grep -q "filament"; then
    if [ "$ENV_DEV" = "true" ]; then
-      run_as_www_data "php artisan filament:optimize-clear"
+      php artisan filament:optimize-clear
    else
-      run_as_www_data "php artisan filament:optimize"
+      php artisan filament:optimize
    fi
 fi
 echo "============================"

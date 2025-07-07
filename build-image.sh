@@ -1,8 +1,9 @@
 #!/bin/bash
 
-# Usage: ./build-image.sh <phpVersion> <imageType> <arch>
-# Example: ./build-image.sh 8.4 fpm-alpine arm64
-# Example: ./build-image.sh 8.3 openswoole-alpine amd64
+# Usage: ./build-image.sh <phpVersion> <imageType> [--push]
+# Example: ./build-image.sh 8.4 fpm-alpine
+# Example: ./build-image.sh 8.3 openswoole-alpine --push
+# Example: ./build-image.sh 8.4 openswoole-alpine --push
 
 imageVersion=1.3
 
@@ -10,21 +11,31 @@ set -e
 
 phpVersion="$1"
 imageType="$2"
-arch="${3:-amd64}" # default to amd64 if not specified
+push="$3"
 
 imageTag="umex/php${phpVersion}-laravel-aio:${imageVersion}-${imageType}"
 dockerfilePath="./build/php-${imageType%*-alpine}/Dockerfile"
 
-echo "⚪️ Building image: ${imageTag} for architecture: ${arch}"
+echo "⚪️ Building image: ${imageTag}"
 echo "Using Dockerfile: ${dockerfilePath}"
 
+# Decide whether to push or load
+if [ "$push" == "--push" ]; then
+  outputFlag="--push"
+  echo "📤 Push enabled: Image will be pushed to the registry"
+else
+  outputFlag="--load"
+  echo "📦 Local load enabled: Image will be loaded locally"
+fi
+
 docker buildx build \
-  --platform "linux/${arch}" \
+  --platform "linux/amd64,linux/arm64" \
   --build-arg INPUT_PHP="${phpVersion}" \
   --tag "${imageTag}" \
   --file "${dockerfilePath}" \
-  --load .
+  ${outputFlag} .
 
 echo
-echo "✅ Image built successfully: ${imageTag} [${arch}]"
+echo "✅ Image built successfully: ${imageTag}"
+[ "$push" == "--push" ] && echo "🌍 Image pushed to registry"
 echo
