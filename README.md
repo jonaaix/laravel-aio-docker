@@ -246,31 +246,7 @@ You might remove `predis/predis` from your `composer.json` file if you are using
 
 ### Adding Chromium PDF
 
-To add Chromium PDF to your project, create the following script in `docker/before-boot/setup-pdf-printer.sh`:
-```shell
-#!/bin/sh
-
-# Update and install necessary tools
-apk update && apk add --no-cache \
-  chromium \
-  nss \
-  freetype \
-  harfbuzz \
-  ca-certificates \
-  ttf-freefont \
-  libc6-compat \
-  gcompat
-
-export PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
-```
-
-Then mount it
-```yml
-services:
-   php:
-      volumes:
-         - ./docker/before-boot:/custom-scripts/before-boot
-```
+Chromium is included in the `1.3` images, so you can use it to generate PDFs in your Laravel application.
 
 Install the package `spatie/laravel-pdf` and configure it to use the `chrome` driver.
 
@@ -298,22 +274,6 @@ class PDF {
    }
 }
 
-```
-
-
-### Adding wkhtmltopdf (deprecated)
-
-To add wkhtmltopdf to your project, add the following service to your `docker-compose.yml` file:
-
-```yml
-wkhtmltopdf:
-   container_name: ${APP_NAME}_wkhtmltopdf
-   image: umex/wkhtmltopdf-microservice:1.2-alpine
-   restart: unless-stopped
-   environment:
-      MAX_BODY: '150mb'
-   networks:
-      - app
 ```
 
 
