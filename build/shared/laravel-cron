@@ -1,2 +1,2 @@
-# Laravel Cron Handler
-* * * * * /usr/local/bin/php /app/artisan schedule:run
+# Supercronic configuration
+# * * * * * /usr/local/bin/php /app/artisan my-example-command

@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 1.3.1 (PHP 8.4)
+- Replace Laravel Scheduler cron with Supervisor task
+- Install supercronic instead of cron, config via /etc/supercronic.txt
+- Supervisor log output to stdout/stderr
+
+
 ## Version 1.3 (PHP 8.3, PHP 8.4)
 - Add `jq` package to the Docker image for JSON processing.
 - Check for `laravel/octane` package in `composer.json` instead of running `php artisan`.

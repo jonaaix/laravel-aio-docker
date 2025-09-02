@@ -4,6 +4,8 @@ ARG IMAGENAME=php:${INPUT_PHP}-cli-alpine
 FROM ghcr.io/roadrunner-server/roadrunner:latest AS roadrunner
 FROM $IMAGENAME
 
+ARG TARGETARCH
+
 COPY --from=roadrunner /usr/bin/rr /usr/local/bin/rr
 
 ############################################################
@@ -66,8 +68,12 @@ RUN mkdir -p /var/run/nginx /var/lib/nginx/tmp && \
 COPY ./build/shared/supervisor/ /tmp/supervisor/
 RUN mkdir -p /etc/supervisor/conf.d/ && cp -n /tmp/supervisor/* /etc/supervisor/conf.d/ && rm -r /tmp/supervisor/
 
-# Configure Cron Jobs (if needed). You can add cron jobs by creating a crontab file and copying it into the container.
-COPY ./build/shared/laravel-cron /etc/crontabs/www-data
+# Download and install Supercronic
+RUN curl -sSL -o /usr/local/bin/supercronic https://github.com/aptible/supercronic/releases/latest/download/supercronic-linux-${TARGETARCH} \
+ && chmod +x /usr/local/bin/supercronic
+# Configure Cron Jobs (if needed). You can add cron jobs by creating a crontab file and mounting it into the container.
+COPY ./build/shared/laravel-cron /etc/supercronic.txt
+RUN chown 1000:1000 /etc/supercronic.txt
 
 # Copy custom php.ini configuration
 COPY ./build/shared/php.ini /usr/local/etc/php/

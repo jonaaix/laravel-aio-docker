@@ -321,9 +321,23 @@ if [ -f "/app/.env" ]; then
    done < "/app/.env"
 fi
 
-
-
 cat /etc/supervisor/conf.d/supervisor-header.conf > /etc/supervisor/conf.d/laravel-worker-compiled.conf
+
+echo "Adding supercronic supervisor config..."
+echo "" >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
+cat /etc/supervisor/conf.d/supercronic-worker.conf >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
+
+echo "============================"
+echo "=== Supercronic added    ==="
+echo "============================"
+
+echo "Adding schedule supervisor config..."
+echo "" >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
+cat /etc/supervisor/conf.d/schedule-worker.conf >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
+
+echo "=================================="
+echo "===   Schedule Worker added    ==="
+echo "=================================="
 
 if [ "$ENABLE_QUEUE_WORKER" = "true" ]; then
    echo "Adding queue supervisor config..."
