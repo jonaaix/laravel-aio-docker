@@ -111,9 +111,18 @@ In the config file, add the following location block (after `/basic_status`) to 
 ####################################
 ####### Start serving JS app #######
 ####################################
+location = / {
+    return 301 /app;
+}
+
+location = /app {
+    return 301 /app/;
+}
+
 location /app {
 
     alias /js-app;
+    try_files $uri $uri/ /app/index.html =404;
 
     location ~* \.(?:manifest|appcache|html?|xml|json)$ {
         expires -1;
@@ -124,13 +133,6 @@ location /app {
         expires 365d;
         access_log off;
     }
-
-    index index.html;
-    try_files $uri $uri/ /index.html =404;
-}
-
-location = / {
-    return 301 /app;
 }
 ####################################
 ####### End serving JS app #########
