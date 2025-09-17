@@ -112,16 +112,17 @@ In the config file, add the following location block (after `/basic_status`) to 
 ####### Start serving JS app #######
 ####################################
 location = / {
-    return 301 /app;
+    return 301 $real_scheme://$http_host/app/;
 }
 
 location = /app {
-    return 301 /app/;
+    return 301 $real_scheme://$http_host/app/;
 }
 
 location /app {
 
     alias /js-app;
+    index index.html;
     try_files $uri $uri/ /app/index.html =404;
 
     location ~* \.(?:manifest|appcache|html?|xml|json)$ {
