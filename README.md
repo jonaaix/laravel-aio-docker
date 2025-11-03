@@ -119,19 +119,20 @@ location = /app {
     return 301 $real_scheme://$http_host/app/;
 }
 
-location /app {
-
-    alias /js-app;
+# Handle all SPA routes under /app/*
+location ^~ /app/ {
+    alias /js-app/;
     index index.html;
-    try_files $uri $uri/ /app/index.html =404;
+
+    # SPA fallback: this ensures /app/* routes always hit the frontend
+    try_files $uri $uri/ /app/index.html;
 
     location ~* \.(?:manifest|appcache|html?|xml|json)$ {
         expires -1;
     }
 
-    location ~* \.(jpg|jpeg|png|gif|ico|woff|otf|js|svg|css|txt|wav|mp3|aff|dic)$ {
-        add_header Cache-Control "public";
-        expires 365d;
+    location ~* \.(jpg|jpeg|png|gif|ico|woff2?|otf|ttf|js|svg|css|txt|wav|mp3|aff|dic)$ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
         access_log off;
     }
 }
