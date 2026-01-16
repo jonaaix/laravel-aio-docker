@@ -1,0 +1,5 @@
+self-hosted-runner:
+  # Custom runner labels for this repository
+  labels:
+    - ubuntu-24.04-arm64
+    - ubuntu-latest-arm64
