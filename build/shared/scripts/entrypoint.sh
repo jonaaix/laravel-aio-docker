@@ -110,6 +110,26 @@ else
     echo "Laravel application found in /app."
 fi
 
+# Check and generate APP_KEY if needed
+if [ -f "/app/.env" ]; then
+    APP_KEY=$(grep -E "^APP_KEY=" /app/.env | cut -d '=' -f2- | xargs)
+    if [ -z "$APP_KEY" ]; then
+        echo "APP_KEY is empty. Generating new application key..."
+        if php artisan key:generate; then
+            echo "============================"
+            echo "===  APP_KEY generated   ==="
+            echo "============================"
+        else
+            echo "ERROR: Failed to generate APP_KEY. Please check your Laravel installation."
+            exit 1
+        fi
+    else
+        echo "APP_KEY is already set."
+    fi
+else
+    echo "No .env file found. Skipping APP_KEY generation."
+fi
+
 # Create cache paths: mkdir -p storage/framework/{sessions,views,cache}
 echo "Creating cache paths..."
 mkdir -p storage/framework/sessions
