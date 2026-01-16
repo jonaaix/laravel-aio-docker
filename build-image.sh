@@ -13,7 +13,7 @@ phpVersion="$1"
 imageType="$2"
 push="$3"
 
-imageTag="umex/php${phpVersion}-laravel-aio:${imageVersion}-${imageType}"
+imageTag="ghcr.io/jonaaix/php${phpVersion}-laravel-aio:${imageVersion}-${imageType}"
 dockerfilePath="./build/php-${imageType%*-alpine}/Dockerfile"
 
 echo "⚪️ Building image: ${imageTag}"

@@ -12,11 +12,11 @@ for phpVersion in "${phpVersions[@]}"; do
   for imageType in "${imageTypes[@]}"; do
      echo
      echo "--------------------------------------------------"
-     echo "️⚽️ Building and pushing umex/php${phpVersion}-laravel-aio:${imageType}..."
+     echo "️⚽️ Building and pushing ghcr.io/jonaaix/php${phpVersion}-laravel-aio:${imageType}..."
      echo "--------------------------------------------------"
     ./build-image.sh "$phpVersion" "$imageType"
   done
 
   # After building all image types for one PHP version, push the tag family
-  docker image push "umex/php${phpVersion}-laravel-aio" -a
+  docker image push "ghcr.io/jonaaix/php${phpVersion}-laravel-aio" -a
 done
