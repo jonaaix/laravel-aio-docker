@@ -1,0 +1,113 @@
+name: Build and Push Multi-Arch Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_tag:
+        description: 'Version tag for the images (e.g., 1.3)'
+        required: true
+        default: '1.3'
+      force_build:
+        description: 'Force rebuild even if image exists'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  packages: write
+  contents: read
+
+jobs:
+  build-amd64:
+    name: Build AMD64 Images
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php_version: ['8.4', '8.5']
+        variant: ['fpm', 'franken', 'roadrunner', 'openswoole']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push AMD64 image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./src/php-${{ matrix.variant }}/Dockerfile
+          platforms: linux/amd64
+          build-args: |
+            INPUT_PHP=${{ matrix.php_version }}
+          tags: ghcr.io/jonaaix/php${{ matrix.php_version }}-laravel-aio:${{ inputs.version_tag }}-${{ matrix.variant }}-alpine-amd64
+          push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-arm64:
+    name: Build ARM64 Images
+    runs-on: ubuntu-24.04-arm
+    strategy:
+      matrix:
+        php_version: ['8.4', '8.5']
+        variant: ['fpm', 'franken', 'roadrunner', 'openswoole']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push ARM64 image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./src/php-${{ matrix.variant }}/Dockerfile
+          platforms: linux/arm64
+          build-args: |
+            INPUT_PHP=${{ matrix.php_version }}
+          tags: ghcr.io/jonaaix/php${{ matrix.php_version }}-laravel-aio:${{ inputs.version_tag }}-${{ matrix.variant }}-alpine-arm64
+          push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  merge-manifests:
+    name: Merge Multi-Arch Manifests
+    runs-on: ubuntu-latest
+    needs: [build-amd64, build-arm64]
+    strategy:
+      matrix:
+        php_version: ['8.4', '8.5']
+        variant: ['fpm', 'franken', 'roadrunner', 'openswoole']
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and push manifest list
+        run: |
+          # Create manifest list combining both architectures
+          docker buildx imagetools create -t \
+            ghcr.io/jonaaix/php${{ matrix.php_version }}-laravel-aio:${{ inputs.version_tag }}-${{ matrix.variant }}-alpine \
+            ghcr.io/jonaaix/php${{ matrix.php_version }}-laravel-aio:${{ inputs.version_tag }}-${{ matrix.variant }}-alpine-amd64 \
+            ghcr.io/jonaaix/php${{ matrix.php_version }}-laravel-aio:${{ inputs.version_tag }}-${{ matrix.variant }}-alpine-arm64
+
+          echo "✅ Multi-arch manifest created: ghcr.io/jonaaix/php${{ matrix.php_version }}-laravel-aio:${{ inputs.version_tag }}-${{ matrix.variant }}-alpine"
