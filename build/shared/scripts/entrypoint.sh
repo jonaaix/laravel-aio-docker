@@ -112,7 +112,7 @@ fi
 
 # Check and generate APP_KEY if needed
 if [ -f "/app/.env" ]; then
-    APP_KEY=$(grep -E "^APP_KEY=" /app/.env | cut -d '=' -f2)
+    APP_KEY=$(grep -E "^APP_KEY=" /app/.env | cut -d '=' -f2 | xargs)
     if [ -z "$APP_KEY" ] || [ "$APP_KEY" = "" ]; then
         echo "APP_KEY is empty. Generating new application key..."
         php artisan key:generate
