@@ -10,6 +10,15 @@ imageVersion=1.3
 
 set -e
 
+# Validate required arguments
+if [ $# -lt 2 ]; then
+  echo "❌ Error: Missing required arguments"
+  echo "Usage: $0 <phpVersion> <imageType> [--push] [--platform=<platform>]"
+  echo "Example: $0 8.4 fpm-alpine"
+  echo "Example: $0 8.4 fpm-alpine --push --platform=linux/arm64"
+  exit 1
+fi
+
 phpVersion="$1"
 imageType="$2"
 shift 2
