@@ -1,0 +1,20 @@
+name: GHCR Cleanup
+
+on:
+    schedule:
+        -   cron: "0 3 * * *"
+    workflow_dispatch:
+
+permissions:
+    packages: write
+
+jobs:
+    cleanup:
+        runs-on: ubuntu-latest
+        steps:
+            -   name: Delete untagged images
+                uses: actions/delete-package-versions@v5
+                with:
+                    package-name: laravel-aio
+                    package-type: container
+                    delete-only-untagged-versions: true
