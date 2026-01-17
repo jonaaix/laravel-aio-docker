@@ -12,7 +12,7 @@ for phpVersion in "${phpVersions[@]}"; do
   for imageType in "${imageTypes[@]}"; do
      echo
      echo "--------------------------------------------------"
-     echo "️⚽️ Building and pushing ghcr.io/jonaaix/laravel-aio:*-php${phpVersion}-${imageType}..."
+     echo "️⚽️ Building and pushing ghcr.io/jonaaix/laravel-aio:1.3-php${phpVersion}-${imageType}..."
      echo "--------------------------------------------------"
     ./build-image.sh "$phpVersion" "$imageType"
   done
