@@ -1,3 +1,25 @@
+<p align="center">
+  <a href="https://github.com/jonaaix/laravel-aio-docker">
+    <img src="./assets/logo.png" alt="Laravel AIO Docker Logo" width="150">
+  </a>
+</p>
+
+<h1 align="center">Laravel AIO Docker Image</h1>
+
+<p align="center">
+This all-in-one Docker runtime image is designed specifically for Laravel applications, providing a complete, pre-configured
+environment that works seamlessly with any Laravel project. It streamlines setup and handles all essential configurations,
+ensuring your Laravel application is ready to run out of the box with minimal effort.
+</p>
+
+<p align="center">
+   <a href="https://github.com/jonaaix/laravel-aio-docker/pkgs/container/laravel-aio"><img src="https://img.shields.io/badge/variants-fpm | roadrunner | frankenphp | openswoole-lightblue?style=flat-square" alt="FPM Variant"></a>
+   <a href="https://github.com/jonaaix/laravel-aio-docker/actions/workflows/build-and-push.yml"><img src="https://img.shields.io/github/actions/workflow/status/jonaaix/laravel-aio-docker/build-and-push.yml?style=flat-square&label=build" alt="Build Status"></a>
+   <a href="./LICENSE"><img src="https://img.shields.io/packagist/l/aaix/laravel-easy-backups.svg?style=flat-square" alt="License"></a>
+</p>
+
+---
+
 # laravel-aio-docker
 [![8.3 Docker Pulls](https://img.shields.io/docker/pulls/umex/php8.3-laravel-aio)](https://hub.docker.com/r/umex/php8.3-laravel-aio)
 [![8.4 Docker Pulls](https://img.shields.io/docker/pulls/umex/php8.4-laravel-aio)](https://hub.docker.com/r/umex/php8.4-laravel-aio)
@@ -8,64 +30,86 @@ ensuring your Laravel application is ready to run out of the box with minimal ef
 
 ## Images
 #### Recent
-##### Laravel 11 & 12
-- `umex/php8.4-laravel-aio:1.3-fpm-alpine`
-- `umex/php8.4-laravel-aio:1.3-openswoole-alpine`
-- `umex/php8.4-laravel-aio:1.3-roadrunner-alpine`
-- `umex/php8.4-laravel-aio:1.3-franken-alpine`
-##### Laravel 10
-- `umex/php8.3-laravel-aio:1.3-fpm-alpine`
-- `umex/php8.3-laravel-aio:1.3-openswoole-alpine`
-- `umex/php8.3-laravel-aio:1.3-roadrunner-alpine`
-- `umex/php8.3-laravel-aio:1.3-franken-alpine`
+##### Laravel 12 & 13
+###### PHP 8.5
+- `ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm`
+- `ghcr.io/jonaaix/laravel-aio:1.3-php8.5-roadrunner`
+- `ghcr.io/jonaaix/laravel-aio:1.3-php8.5-franken`
+- _openswoole is not compatible with PHP 8.5 yet_
+
+##### Laravel 10 & 11
+###### PHP 8.4
+- `ghcr.io/jonaaix/laravel-aio:1.3-php8.4-fpm`
+- `ghcr.io/jonaaix/laravel-aio:1.3-php8.4-roadrunner`
+- `ghcr.io/jonaaix/laravel-aio:1.3-php8.4-franken`
+- `ghcr.io/jonaaix/laravel-aio:1.3-php8.4-openswoole`
 
 When switching to a Laravel Octane based image (roadrunner/franken/swoole) for the first time,
 the entrypoint will automatically set up all requirements if not already available. 
 You can commit the changes to your repository.
 
-#### Legacy (outdated)
-- `umex/php8.3-laravel-aio:1.1-fpm-alpine`
-- `umex/php8.3-laravel-aio:1.1-roadrunner-alpine`
-- `umex/php8.3-laravel-aio:1.1-franken-alpine`
-- `umex/php8.3-laravel-aio:1.1-openswoole-alpine`
-- `umex/php8.3-laravel-aio:1.0-fpm-alpine`
-
-## Upgrading from 1.1/1.2 to 1.3
-Version 1.3 introduces several changes that may require adjustments to your existing setup:
-- The container run now as uid 1000, to match the host user on most systems.
-- Your local project permissions may need to be reset to the correct defaults (1000:1000).
-- You can use the fixer to automatically adjust your project permissions:
-```bash
-docker compose exec --user root php sh -c "/scripts/fix-laravel-project-permissions.sh"
-```
-
 ## Configuration
 
-All environment flags are opt-in. Enable them by setting them to `true`.
-Nested flags are only available if the parent flag is enabled.
+Configuration is managed via environment variables. All flags are **opt-in** (default: `false`).
 
-- `ENV_DEV`: Set to `true` to enable development mode.
-   - `DEV_FORCE_NPM_INSTALL`: Set to `true` to force npm install on every container start.
-   - `DEV_NPM_RUN_DEV`: Set to `true` to run `npm run dev` on every container start.
-   - `DEV_ENABLE_XDEBUG`: Set to `true` to enable xdebug.
+### 1. Operation Mode
+The system runs in **Production Mode** by default.
 
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `ENV_DEV` | `false` | Set to `true` to enable **Development Mode**. |
 
-- `ENV_DEV`: Set to `false` (default) to enable production mode.
-   - `PROD_RUN_ARTISAN_MIGRATE`: Set to `true` to run `php artisan migrate` on container start.
-   - `PROD_RUN_ARTISAN_DBSEED`: Set to `true` to run `php artisan db:seed` on container start.
-   - `PROD_SKIP_OPTIMIZE`: Set to `true` to skip optimizations on container start.
+### 2. Development Features
+> **Requirement:** Active only when `ENV_DEV=true`.
 
+| Variable | Description |
+| :--- | :--- |
+| `DEV_FORCE_NPM_INSTALL` | Forces `npm install` on every container start. |
+| `DEV_NPM_RUN_DEV` | Runs `npm run dev` (Vite) on container start. |
+| `DEV_ENABLE_XDEBUG` | Enables Xdebug extension. |
 
-- Supervisor will be always started. But workers are partially optional.
-   - `ENABLE_QUEUE_WORKER`: Set to `true` to start the queue worker.
-   - `ENABLE_HORIZON_WORKER`: Set to `true` to start the horizon worker.
+### 3. Production Automation
+> **Requirement:** Active only when `ENV_DEV=false` (default).
 
+| Variable | Description |
+| :--- | :--- |
+| `PROD_RUN_ARTISAN_MIGRATE` | Runs `php artisan migrate --force` on boot. |
+| `PROD_RUN_ARTISAN_DBSEED` | Runs `php artisan db:seed --force` on boot. |
+| `PROD_SKIP_OPTIMIZE` | Skips standard Laravel caching/optimization commands. |
 
-- `SKIP_LARAVEL_BOOT`: Set to `true` to skip the Laravel boot process. Useful for other PHP applications. Only available in `fpm` images.
+### 4. Background Services & System
+Supervisor always runs, but specific workers are optional.
+
+| Variable | Context | Description |
+| :--- | :--- | :--- |
+| `ENABLE_QUEUE_WORKER` | Worker | Starts the standard Laravel Queue Worker. |
+| `ENABLE_HORIZON_WORKER` | Worker | Starts the Laravel Horizon process. |
+| `SKIP_LARAVEL_BOOT` | System | **FPM only.** Skips Laravel boot (useful for non-Laravel PHP apps). |
+
 
 **Check the examples directory for full example docker-compose configurations.**
 
+A typical dev setup might look like this:
+```yml
+sevices:
+   php:
+      image: ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm
+      volumes:
+         - ./:/app:rw
+      environment:
+         ENV_DEV: true
+         DEV_NPM_RUN_DEV: true
+         ENABLE_SUPERVISOR: true
+         ENABLE_HORIZON_WORKER: true
+      ports:
+         - "8000:8000" # php
+         - "5173:5173" # vite
+```
+
 ## Project Directory Ownership
+- The container runs as uid 1000, to match the host user on most systems.
+- Your local project permissions may need to be reset to the correct defaults (1000:1000).
+
 For a full reset of permissions, you can run the following command in your project directory:
 ```bash
 docker compose exec --user root php sh -c "/scripts/fix-laravel-project-permissions.sh"
@@ -79,6 +123,9 @@ sudo chown -R $(whoami):staff /path/to/app
 ## Xdebug
 To enable xdebug, set `DEV_ENABLE_XDEBUG` to `true` in your `docker-compose.yml` file.
 You can connect to the xdebug server on port `9003`.
+
+<details>
+<summary>PHPStorm Configuration (click to expand)</summary>
 
 #### PHPStorm Configuration
 1. Go to `Settings` -> `PHP` -> `Debug`
@@ -94,6 +141,8 @@ You can connect to the xdebug server on port `9003`.
    - **ENABLE**: `Use path mappings`: `path/to/your/project` -> `/app`
 7. Install [browser extension](https://www.jetbrains.com/help/phpstorm/browser-debugging-extensions.html) and enable it in the correct tab.
 8. Activate telephone icon in PHPStorm to listen for incoming connections.
+</details>
+
 
 ## Serving Javascript app with integrated nginx
 Create a custom nginx.conf in your repository, and mount it in place of the default one.
@@ -107,6 +156,10 @@ services:
 ```
 
 In the config file, add the following location block (after `/basic_status`) to serve your javascript app.
+
+<details>
+<summary>nginx config for JS app serving (click to expand)</summary>
+
 ```nginx
 ####################################
 ####### Start serving JS app #######
@@ -140,6 +193,9 @@ location ^~ /app/ {
 ####### End serving JS app #########
 ####################################
 ```
+</details>  
+
+
 
 ## Custom scripts
 You can hook into the boot process by mounting your custom script directories.
@@ -154,14 +210,12 @@ services:
 ```
 
 ### Example docker-compose.yml for DEVELOPMENT
+<details>
+<summary>docker-compose.yml (click to expand)</summary>
 
-```yml
+```yaml
 # WARNING: Make sure the project-folder-name is unique on your server!
 # You should disable port-exposure in production!
-
-networks:
-   app:
-      external: false
 
 volumes:
    db_volume:
@@ -170,7 +224,7 @@ volumes:
 services:
    php:
       container_name: ${APP_NAME}_php
-      image: umex/php8.4-laravel-aio:1.2-fpm-alpine
+      image: ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm
       stop_grace_period: 60s
       volumes:
          - ./:/app
@@ -202,19 +256,20 @@ services:
       cap_add:
          - SYS_NICE # Allow the container to adjust process priority (optional for performance tuning)
       environment:
-         MYSQL_ALLOW_EMPTY_PASSWORD: 'false' # Disallow empty password
-         MYSQL_INITDB_SKIP_TZINFO: '1' # Skip loading DB time zone tables (improves performance)
+         # MySQL specific configuration
+         # MYSQL_ALLOW_EMPTY_PASSWORD: 'false' # Disallow empty password
+         # MYSQL_INITDB_SKIP_TZINFO: '1' # Skip loading DB time zone tables (improves performance)
          ### Database initialization ###
-         MYSQL_ROOT_PASSWORD: ${DB_INIT_ROOT_PASSWORD}
+         MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
          MYSQL_USER: ${DB_USERNAME}
          MYSQL_PASSWORD: ${DB_PASSWORD}
          MYSQL_DATABASE: ${DB_DATABASE}
       ports:
          - "3306:3306"
       restart: unless-stopped
-      networks:
-         - app
 ```
+</details>
+
 
 ### Adding Redis
 
@@ -236,16 +291,6 @@ redis:
    restart: unless-stopped
    networks:
       - app
-```
-
-Configure Laravel to use Redis by adding the following to your `config/database.php` file.
-You might remove `predis/predis` from your `composer.json` file if you are using phpredis.
-
-```php
-'redis' => [
-    'client' => 'phpredis',
-    // other Redis configurations...
-]
 ```
 
 ### Adding Chromium PDF
@@ -295,12 +340,15 @@ pma:
    depends_on:
       - mysql
    networks:
-      - app
-      - main-nginx-proxy
+      - default
+      - main-proxy
 ```
 
 ### Debugging nginx configuration
 You can print all variables by adding this location in your `nginx.conf` file.
+<details>
+<summary>nginx config (click to expand)</summary>
+
 ```nginx
  location /debug_status {
      default_type text/plain;
@@ -337,3 +385,4 @@ You can print all variables by adding this location in your `nginx.conf` file.
      ";
  }
 ```
+</details>

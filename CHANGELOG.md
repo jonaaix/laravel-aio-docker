@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 1.3.2 (PHP 8.4 and PHP 8.5)
+- Moved image registry to GitHub (ghcr.io)
+- Automatically generate `APP_KEY` on first run if not set to prevent boot errors
+
 ## Version 1.3.1 (PHP 8.4)
 - Replace Laravel Scheduler cron with Supervisor task
 - Install supercronic instead of cron, config via /etc/supercronic.txt
