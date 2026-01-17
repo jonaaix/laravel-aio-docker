@@ -6,17 +6,17 @@ set -e
 # Example: ./build-push-all.sh
 
 phpVersions=("8.4" "8.3")
-imageTypes=("fpm-alpine" "franken-alpine" "roadrunner-alpine" "openswoole-alpine")
+imageTypes=("fpm" "franken" "roadrunner" "openswoole")
 
 for phpVersion in "${phpVersions[@]}"; do
   for imageType in "${imageTypes[@]}"; do
      echo
      echo "--------------------------------------------------"
-     echo "️⚽️ Building and pushing ghcr.io/jonaaix/php${phpVersion}-laravel-aio:${imageType}..."
+     echo "️⚽️ Building and pushing ghcr.io/jonaaix/laravel-aio:1.3-php${phpVersion}-${imageType}..."
      echo "--------------------------------------------------"
     ./build-image.sh "$phpVersion" "$imageType"
   done
 
-  # After building all image types for one PHP version, push the tag family
-  docker image push "ghcr.io/jonaaix/php${phpVersion}-laravel-aio" -a
+  # After building all image types for one PHP version, push all tags
+  docker image push "ghcr.io/jonaaix/laravel-aio" -a
 done

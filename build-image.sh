@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Usage: ./build-image.sh <phpVersion> <imageType> [--push] [--platform=<platform>]
-# Example: ./build-image.sh 8.4 fpm-alpine
-# Example: ./build-image.sh 8.3 openswoole-alpine --push
-# Example: ./build-image.sh 8.4 openswoole-alpine --platform=linux/arm64
-# Example: ./build-image.sh 8.4 fpm-alpine --push --platform=linux/amd64
+# Example: ./build-image.sh 8.4 fpm
+# Example: ./build-image.sh 8.3 openswoole --push
+# Example: ./build-image.sh 8.4 openswoole --platform=linux/arm64
+# Example: ./build-image.sh 8.4 fpm --push --platform=linux/amd64
 
 imageVersion=1.3
 
@@ -14,8 +14,8 @@ set -e
 if [ $# -lt 2 ]; then
   echo "❌ Error: Missing required arguments"
   echo "Usage: $0 <phpVersion> <imageType> [--push] [--platform=<platform>]"
-  echo "Example: $0 8.4 fpm-alpine"
-  echo "Example: $0 8.4 fpm-alpine --push --platform=linux/arm64"
+  echo "Example: $0 8.4 fpm"
+  echo "Example: $0 8.4 fpm --push --platform=linux/arm64"
   exit 1
 fi
 
@@ -42,8 +42,8 @@ for arg in "$@"; do
   esac
 done
 
-imageTag="ghcr.io/jonaaix/php${phpVersion}-laravel-aio:${imageVersion}-${imageType}"
-dockerfilePath="./src/php-${imageType%*-alpine}/Dockerfile"
+imageTag="ghcr.io/jonaaix/laravel-aio:${imageVersion}-php${phpVersion}-${imageType}"
+dockerfilePath="./src/php-${imageType}/Dockerfile"
 
 echo "⚪️ Building image: ${imageTag}"
 echo "Using Dockerfile: ${dockerfilePath}"
