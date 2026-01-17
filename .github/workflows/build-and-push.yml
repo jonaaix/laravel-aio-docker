@@ -59,10 +59,10 @@ jobs:
           VERSION_NUM=$((MAJOR_VERSION * 100 + MINOR_VERSION))  # e.g., 8.5 -> 805, 8.4 -> 804
           OPENSWOOLE_MIN_INCOMPATIBLE=805  # PHP 8.5 and higher
           if [[ "$VERSION_NUM" -ge "$OPENSWOOLE_MIN_INCOMPATIBLE" ]]; then
-            echo 'variants=["fpm", "franken", "roadrunner"]' >> $GITHUB_OUTPUT
+            echo 'variants=["fpm", "frankenphp", "roadrunner"]' >> $GITHUB_OUTPUT
             echo "⚠️  OpenSwoole variant excluded for PHP ${PHP_VERSION} due to compatibility issues"
           else
-            echo 'variants=["fpm", "franken", "roadrunner", "openswoole"]' >> $GITHUB_OUTPUT
+            echo 'variants=["fpm", "frankenphp", "roadrunner", "openswoole"]' >> $GITHUB_OUTPUT
           fi
 
   build-and-push:
