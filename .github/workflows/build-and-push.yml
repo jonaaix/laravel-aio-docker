@@ -56,7 +56,7 @@ jobs:
           # OpenSwoole 25.2.0 does not support PHP 8.5's internal API changes yet
           # See: https://github.com/openswoole/ext-openswoole/issues
           # This applies to PHP >= 8.5 (including future versions like 9.x if incompatibility persists)
-          VERSION_NUM=$(echo "${MAJOR_VERSION}${MINOR_VERSION}" | awk '{printf "%02d%02d", $1, $2}')
+          VERSION_NUM=$((MAJOR_VERSION * 100 + MINOR_VERSION))
           if [[ "$VERSION_NUM" -ge 805 ]]; then
             echo 'variants=["fpm", "franken", "roadrunner"]' >> $GITHUB_OUTPUT
             echo "⚠️  OpenSwoole variant excluded for PHP ${PHP_VERSION} due to compatibility issues"
