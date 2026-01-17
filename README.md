@@ -20,16 +20,6 @@ ensuring your Laravel application is ready to run out of the box with minimal ef
 
 ---
 
-# laravel-aio-docker
-[![8.3 Docker Pulls](https://img.shields.io/docker/pulls/umex/php8.3-laravel-aio)](https://hub.docker.com/r/umex/php8.3-laravel-aio)
-[![8.4 Docker Pulls](https://img.shields.io/docker/pulls/umex/php8.4-laravel-aio)](https://hub.docker.com/r/umex/php8.4-laravel-aio)
-
-This all-in-one Docker runtime image is designed specifically for Laravel applications, providing a complete, pre-configured
-environment that works seamlessly with any Laravel project. It streamlines setup and handles all essential configurations,
-ensuring your Laravel application is ready to run out of the box with minimal effort.
-
-## Images
-#### Recent
 ##### Laravel 12 & 13
 ###### PHP 8.5
 - `ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm`
