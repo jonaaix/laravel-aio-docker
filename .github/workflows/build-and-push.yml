@@ -54,10 +54,11 @@ jobs:
           
           # Skip openswoole for PHP 8.5+ due to compilation incompatibility
           # OpenSwoole 25.2.0 does not support PHP 8.5's internal API changes yet
-          # See: https://github.com/openswoole/ext-openswoole/issues
+          # Reference: OpenSwoole extension is not yet compatible with PHP 8.5+
           # This applies to PHP >= 8.5 (including future versions like 9.x if incompatibility persists)
-          VERSION_NUM=$((MAJOR_VERSION * 100 + MINOR_VERSION))
-          if [[ "$VERSION_NUM" -ge 805 ]]; then
+          VERSION_NUM=$((MAJOR_VERSION * 100 + MINOR_VERSION))  # e.g., 8.5 -> 805, 8.4 -> 804
+          OPENSWOOLE_MIN_INCOMPATIBLE=805  # PHP 8.5 and higher
+          if [[ "$VERSION_NUM" -ge "$OPENSWOOLE_MIN_INCOMPATIBLE" ]]; then
             echo 'variants=["fpm", "franken", "roadrunner"]' >> $GITHUB_OUTPUT
             echo "⚠️  OpenSwoole variant excluded for PHP ${PHP_VERSION} due to compatibility issues"
           else
