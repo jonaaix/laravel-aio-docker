@@ -42,7 +42,7 @@ for arg in "$@"; do
   esac
 done
 
-imageTag="ghcr.io/jonaaix/php${phpVersion}-laravel-aio:${imageVersion}-${imageType}"
+imageTag="ghcr.io/jonaaix/laravel-aio:${imageVersion}-php${phpVersion}-${imageType}"
 dockerfilePath="./src/php-${imageType%*-alpine}/Dockerfile"
 
 echo "⚪️ Building image: ${imageTag}"

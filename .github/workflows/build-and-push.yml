@@ -99,7 +99,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           build-args: |
             INPUT_PHP=${{ needs.setup.outputs.php_version }}
-          tags: ghcr.io/jonaaix/php${{ needs.setup.outputs.php_version }}-laravel-aio:${{ inputs.version_tag }}-${{ matrix.variant }}-alpine
+          tags: ghcr.io/jonaaix/laravel-aio:${{ inputs.version_tag }}-php${{ needs.setup.outputs.php_version }}-${{ matrix.variant }}-alpine
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
