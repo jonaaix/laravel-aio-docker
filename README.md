@@ -34,6 +34,7 @@ ensuring your Laravel application is ready to run out of the box with minimal ef
 - `ghcr.io/jonaaix/laravel-aio:1.3-php8.4-franken`
 - `ghcr.io/jonaaix/laravel-aio:1.3-php8.4-openswoole`
 
+#### Note:
 When switching to a Laravel Octane based image (roadrunner/franken/swoole) for the first time,
 the entrypoint will automatically set up all requirements if not already available. 
 You can commit the changes to your repository.
