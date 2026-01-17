@@ -115,6 +115,34 @@ But on macOS the default group is `staff`, so you might need to run the followin
 sudo chown -R $(whoami):staff /path/to/app
 ```
 
+## Laravel Boost MCP
+Using Laravel Boost with the docker container is totally possible with the following steps:
+##### 1. Create a bridge script mcp-boost.sh in your project root directory
+```bash
+#!/bin/bash
+# Bridge for Laravel Boost
+cd "$(dirname "$0")"
+$(which docker) compose exec -T php php artisan boost:mcp
+```
+Don't forget to make the script executable: `chmod +x mcp-boost.sh`
+
+##### 2. Setup your MCP configuration to use the bridge script
+```bash
+{
+  "mcpServers": {
+    "laravel-boost": {
+      "command": "./mcp-boost.sh",
+      "args": []
+    }
+  }
+}
+```
+
+##### 3. Make sure to set the working directory in the MCP settings to the project root directory
+e.g. for **JetBrains AI Assistant**:
+```
+Settings -> Tools -> AI Assistant -> MCP -> Edit Laravel Boost -> Working Directory
+```
 
 ## Xdebug
 To enable xdebug, set `DEV_ENABLE_XDEBUG` to `true` in your `docker-compose.yml` file.
