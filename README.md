@@ -306,7 +306,7 @@ volumes:
 
 redis:
    container_name: ${APP_NAME}_redis
-   image: redis:7-alpine
+   image: redis:8-alpine
    volumes:
       - redis_volume:/data
    command: [ "redis-server", "--requirepass", "${REDIS_PASSWORD}" ]
