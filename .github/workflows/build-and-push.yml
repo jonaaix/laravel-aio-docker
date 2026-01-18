@@ -107,5 +107,6 @@ jobs:
                     push: true
                     provenance: false
                     sbom: false
-                    cache-from: type=gha
-                    cache-to: type=gha,mode=max
+                    # Add explicit scope to isolate caches per variant
+                    cache-from: type=gha,scope=php-${{ matrix.variant }}
+                    cache-to: type=gha,mode=max,scope=php-${{ matrix.variant }}
