@@ -3,7 +3,7 @@ name: Cleanup Images
 on:
     workflow_dispatch:
     schedule:
-        - cron: '0 3 * * *' # Täglich um 03:00 Uhr
+        - cron: '0 3 * * *'
 
 permissions:
     packages: write
@@ -17,9 +17,11 @@ jobs:
                 uses: snok/container-retention-policy@v3.0.0
                 with:
                     image-names: laravel-aio
-                    cut-off: 1w
-                    keep-n-most-recent: 3
-                    account: ${{ github.actor }}
+                    # FIX: Must be literal "user" for personal accounts, not the username.
+                    account: user
                     token: ${{ secrets.GITHUB_TOKEN }}
-                    # Konzentriert sich nur auf Images ohne Tag (die "Leichen")
+                    # Focus on untagged images (orphans)
                     tag-selection: untagged
+                    # Safety buffer: 2 weeks to avoid breaking active multi-arch references
+                    cut-off: 2w
+                    keep-n-most-recent: 3
