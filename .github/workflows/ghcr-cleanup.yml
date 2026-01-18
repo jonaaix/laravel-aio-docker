@@ -1,0 +1,25 @@
+name: Cleanup Images
+
+on:
+    workflow_dispatch:
+    schedule:
+        - cron: '0 3 * * *'
+
+permissions:
+    packages: write
+
+jobs:
+    cleanup:
+        name: Cleanup Old Images
+        runs-on: ubuntu-latest
+        steps:
+            -   name: Prune images
+                uses: snok/container-retention-policy@v3.0.0
+                with:
+                    image-names: laravel-aio
+                    cut-off: 1 week ago UTC
+                    keep-at-least: 3
+                    account: ${{ github.actor }}
+                    token: ${{ secrets.GITHUB_TOKEN }}
+                    # IMPORTANT: This action checks whether an untagged image is part of a multi-arch index.
+                    # If so, it will NOT be deleted.
