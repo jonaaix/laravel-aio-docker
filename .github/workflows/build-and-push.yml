@@ -11,6 +11,22 @@ on:
                 description: 'Version tag for the images (e.g., 1.3)'
                 required: true
                 default: '1.3'
+            build_fpm:
+                description: 'Build FPM'
+                type: boolean
+                default: true
+            build_frankenphp:
+                description: 'Build FrankenPHP'
+                type: boolean
+                default: true
+            build_roadrunner:
+                description: 'Build RoadRunner'
+                type: boolean
+                default: true
+            build_openswoole:
+                description: 'Build OpenSwoole'
+                type: boolean
+                default: true
 
 permissions:
     packages: write
@@ -47,24 +63,40 @@ jobs:
 
                     echo "php_version=${PHP_VERSION}" >> $GITHUB_OUTPUT
 
-                    # Skip openswoole for PHP 8.5+ due to compilation incompatibility
-                    # OpenSwoole 25.2.0 does not support PHP 8.5's internal API changes yet
-                    # Reference: OpenSwoole extension is not yet compatible with PHP 8.5+
-                    # This applies to PHP >= 8.5 (including future versions like 9.x if incompatibility persists)
-                    VERSION_NUM=$((MAJOR_VERSION * 100 + MINOR_VERSION))  # e.g., 8.5 -> 805, 8.4 -> 804
-                    OPENSWOOLE_MIN_INCOMPATIBLE=805  # PHP 8.5 and higher
-                    if [[ "$VERSION_NUM" -ge "$OPENSWOOLE_MIN_INCOMPATIBLE" ]]; then
-                      echo 'variants=["fpm", "frankenphp", "roadrunner"]' >> $GITHUB_OUTPUT
-                      echo "⚠️  OpenSwoole variant excluded for PHP ${PHP_VERSION} due to compatibility issues"
-                    else
-                      echo 'variants=["fpm", "frankenphp", "roadrunner", "openswoole"]' >> $GITHUB_OUTPUT
+                    # Build variants array based on inputs
+                    variants=()
+
+                    if [[ "${{ inputs.build_fpm }}" == "true" ]]; then
+                        variants+=("fpm")
                     fi
+
+                    if [[ "${{ inputs.build_frankenphp }}" == "true" ]]; then
+                        variants+=("frankenphp")
+                    fi
+
+                    if [[ "${{ inputs.build_roadrunner }}" == "true" ]]; then
+                        variants+=("roadrunner")
+                    fi
+
+                    if [[ "${{ inputs.build_openswoole }}" == "true" ]]; then
+                        variants+=("openswoole")
+                    fi
+
+                    # Convert bash array to JSON using jq for safety
+                    if [ ${#variants[@]} -eq 0 ]; then
+                        echo "❌ Error: No variants selected."
+                        exit 1
+                    fi
+
+                    JSON_OUTPUT=$(printf '%s\n' "${variants[@]}" | jq -R . | jq -s -c .)
+                    echo "variants=${JSON_OUTPUT}" >> $GITHUB_OUTPUT
 
     build-and-push:
         name: Build Multi-Arch Images
         runs-on: ubuntu-latest
         needs: setup
         strategy:
+            fail-fast: false
             matrix:
                 variant: ${{ fromJson(needs.setup.outputs.variants) }}
         steps:
