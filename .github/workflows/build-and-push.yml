@@ -1,116 +1,111 @@
 name: Build and Push Multi-Arch Images
 
 on:
-  workflow_dispatch:
-    inputs:
-      php_version:
-        description: 'PHP version to build (e.g., 8.4, 8.5)'
-        required: true
-        default: '8.5'
-      version_tag:
-        description: 'Version tag for the images (e.g., 1.3)'
-        required: true
-        default: '1.3'
-      force_build:
-        description: 'Force rebuild even if image exists'
-        required: false
-        type: boolean
-        default: false
+    workflow_dispatch:
+        inputs:
+            php_version:
+                description: 'PHP version to build (e.g., 8.4, 8.5)'
+                required: true
+                default: '8.5'
+            version_tag:
+                description: 'Version tag for the images (e.g., 1.3)'
+                required: true
+                default: '1.3'
 
 permissions:
-  packages: write
-  contents: read
+    packages: write
+    contents: read
 
 jobs:
-  setup:
-    name: Setup Build Matrix
-    runs-on: ubuntu-latest
-    outputs:
-      php_version: ${{ steps.set-matrix.outputs.php_version }}
-      variants: ${{ steps.set-matrix.outputs.variants }}
-    steps:
-      - name: Set matrix values
-        id: set-matrix
-        run: |
-          PHP_VERSION="${{ inputs.php_version }}"
-          
-          # Validate PHP version format (must be X.Y where X and Y are digits)
-          if [[ ! "$PHP_VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
-            echo "❌ Error: Invalid PHP version format. Must be X.Y (e.g., 8.4, 8.5)"
-            exit 1
-          fi
-          
-          # Extract major and minor versions
-          MAJOR_VERSION="${PHP_VERSION%%.*}"
-          MINOR_VERSION="${PHP_VERSION##*.}"
-          
-          # Validate reasonable version ranges (PHP 7.0 - 9.9)
-          if [[ "$MAJOR_VERSION" -lt 7 || "$MAJOR_VERSION" -gt 9 ]]; then
-            echo "❌ Error: PHP major version must be between 7 and 9"
-            exit 1
-          fi
-          
-          echo "php_version=${PHP_VERSION}" >> $GITHUB_OUTPUT
-          
-          # Skip openswoole for PHP 8.5+ due to compilation incompatibility
-          # OpenSwoole 25.2.0 does not support PHP 8.5's internal API changes yet
-          # Reference: OpenSwoole extension is not yet compatible with PHP 8.5+
-          # This applies to PHP >= 8.5 (including future versions like 9.x if incompatibility persists)
-          VERSION_NUM=$((MAJOR_VERSION * 100 + MINOR_VERSION))  # e.g., 8.5 -> 805, 8.4 -> 804
-          OPENSWOOLE_MIN_INCOMPATIBLE=805  # PHP 8.5 and higher
-          if [[ "$VERSION_NUM" -ge "$OPENSWOOLE_MIN_INCOMPATIBLE" ]]; then
-            echo 'variants=["fpm", "frankenphp", "roadrunner"]' >> $GITHUB_OUTPUT
-            echo "⚠️  OpenSwoole variant excluded for PHP ${PHP_VERSION} due to compatibility issues"
-          else
-            echo 'variants=["fpm", "frankenphp", "roadrunner", "openswoole"]' >> $GITHUB_OUTPUT
-          fi
+    setup:
+        name: Setup Build Matrix
+        runs-on: ubuntu-latest
+        outputs:
+            php_version: ${{ steps.set-matrix.outputs.php_version }}
+            variants: ${{ steps.set-matrix.outputs.variants }}
+        steps:
+            -   name: Set matrix values
+                id: set-matrix
+                run: |
+                    PHP_VERSION="${{ inputs.php_version }}"
 
-  build-and-push:
-    name: Build Multi-Arch Images
-    runs-on: ubuntu-latest
-    needs: setup
-    strategy:
-      matrix:
-        variant: ${{ fromJson(needs.setup.outputs.variants) }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+                    # Validate PHP version format (must be X.Y where X and Y are digits)
+                    if [[ ! "$PHP_VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
+                      echo "❌ Error: Invalid PHP version format. Must be X.Y (e.g., 8.4, 8.5)"
+                      exit 1
+                    fi
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: linux/amd64,linux/arm64
+                    # Extract major and minor versions
+                    MAJOR_VERSION="${PHP_VERSION%%.*}"
+                    MINOR_VERSION="${PHP_VERSION##*.}"
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+                    # Validate reasonable version ranges (PHP 7.0 - 9.9)
+                    if [[ "$MAJOR_VERSION" -lt 7 || "$MAJOR_VERSION" -gt 9 ]]; then
+                      echo "❌ Error: PHP major version must be between 7 and 9"
+                      exit 1
+                    fi
 
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+                    echo "php_version=${PHP_VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/jonaaix/laravel-aio
-          tags: |
-            type=raw,value=${{ inputs.version_tag }}-php${{ needs.setup.outputs.php_version }}-${{ matrix.variant }}
+                    # Skip openswoole for PHP 8.5+ due to compilation incompatibility
+                    # OpenSwoole 25.2.0 does not support PHP 8.5's internal API changes yet
+                    # Reference: OpenSwoole extension is not yet compatible with PHP 8.5+
+                    # This applies to PHP >= 8.5 (including future versions like 9.x if incompatibility persists)
+                    VERSION_NUM=$((MAJOR_VERSION * 100 + MINOR_VERSION))  # e.g., 8.5 -> 805, 8.4 -> 804
+                    OPENSWOOLE_MIN_INCOMPATIBLE=805  # PHP 8.5 and higher
+                    if [[ "$VERSION_NUM" -ge "$OPENSWOOLE_MIN_INCOMPATIBLE" ]]; then
+                      echo 'variants=["fpm", "frankenphp", "roadrunner"]' >> $GITHUB_OUTPUT
+                      echo "⚠️  OpenSwoole variant excluded for PHP ${PHP_VERSION} due to compatibility issues"
+                    else
+                      echo 'variants=["fpm", "frankenphp", "roadrunner", "openswoole"]' >> $GITHUB_OUTPUT
+                    fi
 
-      - name: Build and push multi-arch image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./src/php-${{ matrix.variant }}/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          build-args: |
-            INPUT_PHP=${{ needs.setup.outputs.php_version }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          push: true
-          provenance: false
-          sbom: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+    build-and-push:
+        name: Build Multi-Arch Images
+        runs-on: ubuntu-latest
+        needs: setup
+        strategy:
+            matrix:
+                variant: ${{ fromJson(needs.setup.outputs.variants) }}
+        steps:
+            -   name: Checkout code
+                uses: actions/checkout@v4
+
+            -   name: Set up QEMU
+                uses: docker/setup-qemu-action@v3
+                with:
+                    platforms: linux/amd64,linux/arm64
+
+            -   name: Set up Docker Buildx
+                uses: docker/setup-buildx-action@v3
+
+            -   name: Log in to GitHub Container Registry
+                uses: docker/login-action@v3
+                with:
+                    registry: ghcr.io
+                    username: ${{ github.actor }}
+                    password: ${{ secrets.GITHUB_TOKEN }}
+
+            -   name: Extract metadata (tags, labels) for Docker
+                id: meta
+                uses: docker/metadata-action@v5
+                with:
+                    images: ghcr.io/jonaaix/laravel-aio
+                    tags: |
+                        type=raw,value=${{ inputs.version_tag }}-php${{ needs.setup.outputs.php_version }}-${{ matrix.variant }}
+
+            -   name: Build and push multi-arch image
+                uses: docker/build-push-action@v5
+                with:
+                    context: .
+                    file: ./src/php-${{ matrix.variant }}/Dockerfile
+                    platforms: linux/amd64,linux/arm64
+                    build-args: |
+                        INPUT_PHP=${{ needs.setup.outputs.php_version }}
+                    tags: ${{ steps.meta.outputs.tags }}
+                    labels: ${{ steps.meta.outputs.labels }}
+                    push: true
+                    provenance: false
+                    sbom: false
+                    cache-from: type=gha
+                    cache-to: type=gha,mode=max
