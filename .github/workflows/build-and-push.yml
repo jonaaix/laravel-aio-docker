@@ -91,6 +91,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/jonaaix/laravel-aio
+          tags: |
+            type=raw,value=${{ inputs.version_tag }}-php${{ needs.setup.outputs.php_version }}-${{ matrix.variant }}
+
       - name: Build and push multi-arch image
         uses: docker/build-push-action@v5
         with:
@@ -99,7 +107,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           build-args: |
             INPUT_PHP=${{ needs.setup.outputs.php_version }}
-          tags: ghcr.io/jonaaix/laravel-aio:${{ inputs.version_tag }}-php${{ needs.setup.outputs.php_version }}-${{ matrix.variant }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
