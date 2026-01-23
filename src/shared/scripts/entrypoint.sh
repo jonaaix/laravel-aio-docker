@@ -161,6 +161,7 @@ echo "============================"
 
 
 # Enable maintenance mode if requested
+MAINTENANCE_MODE_ENABLED=false
 if [ "$ENABLE_MAINTENANCE_BOOT" = "true" ]; then
    # Only enable maintenance mode if vendor directory exists (skip on initial deployment)
    if [ -f "vendor/autoload.php" ]; then
@@ -198,6 +199,7 @@ if [ "$ENABLE_MAINTENANCE_BOOT" = "true" ]; then
       
       # Execute the maintenance command
       if php artisan "${MAINTENANCE_ARGS[@]}"; then
+         MAINTENANCE_MODE_ENABLED=true
          echo "============================"
          echo "=== Maintenance enabled  ==="
          echo "============================"
@@ -480,16 +482,14 @@ if [ -d "/custom-scripts/after-boot" ]; then
 fi
 
 # Disable maintenance mode if it was enabled
-if [ "$ENABLE_MAINTENANCE_BOOT" = "true" ]; then
-   if [ -f "vendor/autoload.php" ]; then
-      echo "Disabling maintenance mode..."
-      if php artisan up; then
-         echo "============================"
-         echo "=== Maintenance disabled ==="
-         echo "============================"
-      else
-         echo "WARNING: Failed to disable maintenance mode"
-      fi
+if [ "$MAINTENANCE_MODE_ENABLED" = "true" ]; then
+   echo "Disabling maintenance mode..."
+   if php artisan up; then
+      echo "============================"
+      echo "=== Maintenance disabled ==="
+      echo "============================"
+   else
+      echo "WARNING: Failed to disable maintenance mode"
    fi
 fi
 
