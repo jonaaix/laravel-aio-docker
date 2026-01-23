@@ -1,45 +1,37 @@
 # WARNING: Make sure the project-folder-name is unique on your server!
 # You should disable port-exposure in production!
 
-# Using main-nginx-proxy: https://github.com/umexco/main-nginx-proxy
-
-networks:
-    app:
-        external: false
-    main-nginx-proxy:
-        external: true
-
-volumes:
-    db_volume:
-        driver: local
-    redis_volume:
-        driver: local
+# Using main-caddy-proxy: https://github.com/jonaaix/main-caddy-proxy
 
 services:
     php:
-        image: umex/php8.4-laravel-aio:1.2-fpm-alpine
+        container_name: ${APP_NAME}_php
+        image: ghcr.io/jonaaix/laravel-aio:1.3-php8.4-fpm
         stop_grace_period: 60s
         volumes:
-            - ./:/app
+            - ./:/app:cached
         environment:
-            PROD_RUN_ARTISAN_MIGRATE: true
-            PROD_RUN_ARTISAN_SEED: true
+            DEPLOYMENT_ID: ${DEPLOYMENT_ID}
             ENABLE_HORIZON_WORKER: true
-            # Proxy
-            LETSENCRYPT_HOST: domain.com
-            VIRTUAL_HOST: domain.com
-            VIRTUAL_PORT: 8000
-        restart: unless-stopped
+            PROD_RUN_ARTISAN_MIGRATE: true
+            PROD_RUN_ARTISAN_DBSEED: true
+            ENABLE_MAINTENANCE_BOOT: true
+        labels:
+            caddy: ${LARAVEL_DOMAIN}
+            caddy.reverse_proxy: "{{upstreams 8000}}"
         depends_on:
-            - mysql
+            - mariadb
             - redis
+        restart: unless-stopped
         networks:
-            - app
-            - main-nginx-proxy
+            - default
+            - main-proxy
 
-    mysql:
+    mariadb:
+        container_name: ${APP_NAME}_mariadb
         image: mariadb:lts
-        # image: mysql:lts
+        ports:
+            - "3306:3306" # Required for Metabase access
         command:
             - '--character-set-server=utf8mb4'
             - '--collation-server=utf8mb4_unicode_ci'
@@ -49,40 +41,48 @@ services:
         cap_add:
             - SYS_NICE # Allow the container to adjust process priority (optional for performance tuning)
         environment:
-            MYSQL_ALLOW_EMPTY_PASSWORD: 'false' # Disallow empty password
-            MYSQL_INITDB_SKIP_TZINFO: '1' # Skip loading DB time zone tables (improves performance)
-            ### Database initialization ###
-            MYSQL_ROOT_PASSWORD: ${DB_INIT_ROOT_PASSWORD}
-            MYSQL_USER: ${DB_USERNAME}
-            MYSQL_PASSWORD: ${DB_PASSWORD}
-            MYSQL_DATABASE: ${DB_DATABASE}
+            MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+            MARIADB_USER: ${DB_USERNAME}
+            MARIADB_PASSWORD: ${DB_PASSWORD}
+            MARIADB_DATABASE: ${DB_DATABASE}
         restart: unless-stopped
         networks:
-            - app
+            - default
 
     redis:
-        image: redis:7-alpine
+        container_name: ${APP_NAME}_redis
+        image: redis:8-alpine
         volumes:
             - redis_volume:/data
         command: [ "redis-server", "--requirepass", "${REDIS_PASSWORD}" ]
         restart: unless-stopped
         networks:
-            - app
+            - default
 
     pma:
+        container_name: ${APP_NAME}_phpmyadmin
         image: phpmyadmin:latest
         environment:
-            PMA_HOST: mysql
+            PMA_HOST: mariadb
             PMA_PORT: 3306
             APACHE_PORT: 8080
             UPLOAD_LIMIT: 1G
-            # Proxy
-            LETSENCRYPT_HOST: pma.domain.com
-            VIRTUAL_HOST: pma.domain.com
-            VIRTUAL_PORT: 8080
+        labels:
+            caddy: ${PMA_DOMAIN}
+            caddy.reverse_proxy: "{{upstreams 8080}}"
         restart: unless-stopped
         depends_on:
-            - mysql
+            - mariadb
         networks:
-            - app
-            - main-nginx-proxy
+            - default
+            - main-proxy
+
+
+volumes:
+    db_volume:
+    redis_volume:
+
+
+networks:
+    main-proxy:
+        external: true
