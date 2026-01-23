@@ -479,6 +479,20 @@ if [ -d "/custom-scripts/after-boot" ]; then
    done
 fi
 
+# Disable maintenance mode if it was enabled
+if [ "$ENABLE_MAINTENANCE_BOOT" = "true" ]; then
+   if [ -f "vendor/autoload.php" ]; then
+      echo "Disabling maintenance mode..."
+      if php artisan up; then
+         echo "============================"
+         echo "=== Maintenance disabled ==="
+         echo "============================"
+      else
+         echo "WARNING: Failed to disable maintenance mode"
+      fi
+   fi
+fi
+
 # wait forever
 while true; do
    tail -f /dev/null &
