@@ -160,6 +160,55 @@ echo "===  Permissions fixed   ==="
 echo "============================"
 
 
+# Enable maintenance mode if requested
+if [ "$ENABLE_MAINTENANCE_BOOT" = "true" ]; then
+   # Only enable maintenance mode if vendor directory exists (skip on initial deployment)
+   if [ -f "vendor/autoload.php" ]; then
+      echo "Enabling maintenance mode..."
+      
+      # Build the maintenance command arguments array
+      MAINTENANCE_ARGS=("down")
+      
+      # Add render option (use custom or default)
+      if [ -n "$MAINTENANCE_RENDER" ]; then
+         MAINTENANCE_ARGS+=("--render=$MAINTENANCE_RENDER")
+      else
+         MAINTENANCE_ARGS+=("--render=errors::503")
+      fi
+      
+      # Add secret option (use custom or generate automatically)
+      if [ -n "$MAINTENANCE_SECRET" ]; then
+         MAINTENANCE_ARGS+=("--secret=$MAINTENANCE_SECRET")
+      else
+         MAINTENANCE_ARGS+=("--with-secret")
+      fi
+      
+      # Add retry option (use custom or default)
+      if [ -n "$MAINTENANCE_RETRY" ]; then
+         # Validate that MAINTENANCE_RETRY is a number
+         if [[ "$MAINTENANCE_RETRY" =~ ^[0-9]+$ ]]; then
+            MAINTENANCE_ARGS+=("--retry=$MAINTENANCE_RETRY")
+         else
+            echo "WARNING: MAINTENANCE_RETRY must be a number. Using default value of 10."
+            MAINTENANCE_ARGS+=("--retry=10")
+         fi
+      else
+         MAINTENANCE_ARGS+=("--retry=10")
+      fi
+      
+      # Execute the maintenance command
+      if php artisan "${MAINTENANCE_ARGS[@]}"; then
+         echo "============================"
+         echo "=== Maintenance enabled  ==="
+         echo "============================"
+      else
+         echo "WARNING: Failed to enable maintenance mode"
+      fi
+   else
+      echo "vendor/autoload.php not found. Skipping maintenance mode (initial deployment)."
+   fi
+fi
+
 echo "Installing Composer..."
 if [ "$ENV_DEV" = "true" ]; then
    if [ ! -d "vendor" ]; then
@@ -323,55 +372,6 @@ fi
 echo "============================"
 echo "===  Filament optimized  ==="
 echo "============================"
-
-# Enable maintenance mode if requested
-if [ "$ENABLE_MAINTENANCE_BOOT" = "true" ]; then
-   # Only enable maintenance mode if vendor directory exists (skip on initial deployment)
-   if [ -f "vendor/autoload.php" ]; then
-      echo "Enabling maintenance mode..."
-      
-      # Build the maintenance command arguments array
-      MAINTENANCE_ARGS=("down")
-      
-      # Add render option (use custom or default)
-      if [ -n "$MAINTENANCE_RENDER" ]; then
-         MAINTENANCE_ARGS+=("--render=$MAINTENANCE_RENDER")
-      else
-         MAINTENANCE_ARGS+=("--render=errors::503")
-      fi
-      
-      # Add secret option (use custom or generate automatically)
-      if [ -n "$MAINTENANCE_SECRET" ]; then
-         MAINTENANCE_ARGS+=("--secret=$MAINTENANCE_SECRET")
-      else
-         MAINTENANCE_ARGS+=("--with-secret")
-      fi
-      
-      # Add retry option (use custom or default)
-      if [ -n "$MAINTENANCE_RETRY" ]; then
-         # Validate that MAINTENANCE_RETRY is a number
-         if [[ "$MAINTENANCE_RETRY" =~ ^[0-9]+$ ]]; then
-            MAINTENANCE_ARGS+=("--retry=$MAINTENANCE_RETRY")
-         else
-            echo "WARNING: MAINTENANCE_RETRY must be a number. Using default value of 10."
-            MAINTENANCE_ARGS+=("--retry=10")
-         fi
-      else
-         MAINTENANCE_ARGS+=("--retry=10")
-      fi
-      
-      # Execute the maintenance command
-      if php artisan "${MAINTENANCE_ARGS[@]}"; then
-         echo "============================"
-         echo "=== Maintenance enabled  ==="
-         echo "============================"
-      else
-         echo "WARNING: Failed to enable maintenance mode"
-      fi
-   else
-      echo "vendor/autoload.php not found. Skipping maintenance mode (initial deployment)."
-   fi
-fi
 
 # Start cron in foreground with minimal logging (level 1)
 crond start -f -l 1 &
