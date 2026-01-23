@@ -349,7 +349,13 @@ if [ "$ENABLE_MAINTENANCE_BOOT" = "true" ]; then
       
       # Add retry option (use custom or default)
       if [ -n "$MAINTENANCE_RETRY" ]; then
-         MAINTENANCE_ARGS+=("--retry=$MAINTENANCE_RETRY")
+         # Validate that MAINTENANCE_RETRY is a number
+         if [[ "$MAINTENANCE_RETRY" =~ ^[0-9]+$ ]]; then
+            MAINTENANCE_ARGS+=("--retry=$MAINTENANCE_RETRY")
+         else
+            echo "WARNING: MAINTENANCE_RETRY must be a number. Using default value of 10."
+            MAINTENANCE_ARGS+=("--retry=10")
+         fi
       else
          MAINTENANCE_ARGS+=("--retry=10")
       fi
