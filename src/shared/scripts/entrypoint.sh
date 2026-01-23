@@ -330,32 +330,32 @@ if [ "$ENABLE_MAINTENANCE_BOOT" = "true" ]; then
    if [ -d "vendor" ]; then
       echo "Enabling maintenance mode..."
       
-      # Build the maintenance command with base options
-      MAINTENANCE_CMD="php artisan down"
+      # Build the maintenance command arguments array
+      MAINTENANCE_ARGS=("down")
       
       # Add render option (use custom or default)
       if [ -n "$MAINTENANCE_RENDER" ]; then
-         MAINTENANCE_CMD="$MAINTENANCE_CMD --render=\"$MAINTENANCE_RENDER\""
+         MAINTENANCE_ARGS+=("--render=$MAINTENANCE_RENDER")
       else
-         MAINTENANCE_CMD="$MAINTENANCE_CMD --render=\"errors::503\""
+         MAINTENANCE_ARGS+=("--render=errors::503")
       fi
       
       # Add secret option (use custom or generate automatically)
       if [ -n "$MAINTENANCE_SECRET" ]; then
-         MAINTENANCE_CMD="$MAINTENANCE_CMD --secret=\"$MAINTENANCE_SECRET\""
+         MAINTENANCE_ARGS+=("--secret=$MAINTENANCE_SECRET")
       else
-         MAINTENANCE_CMD="$MAINTENANCE_CMD --with-secret"
+         MAINTENANCE_ARGS+=("--with-secret")
       fi
       
       # Add retry option (use custom or default)
       if [ -n "$MAINTENANCE_RETRY" ]; then
-         MAINTENANCE_CMD="$MAINTENANCE_CMD --retry=$MAINTENANCE_RETRY"
+         MAINTENANCE_ARGS+=("--retry=$MAINTENANCE_RETRY")
       else
-         MAINTENANCE_CMD="$MAINTENANCE_CMD --retry=10"
+         MAINTENANCE_ARGS+=("--retry=10")
       fi
       
       # Execute the maintenance command
-      eval $MAINTENANCE_CMD
+      php artisan "${MAINTENANCE_ARGS[@]}"
       
       echo "============================"
       echo "=== Maintenance enabled  ==="
