@@ -483,13 +483,17 @@ fi
 
 # Disable maintenance mode if it was enabled
 if [ "$MAINTENANCE_MODE_ENABLED" = "true" ]; then
-   echo "Disabling maintenance mode..."
-   if php artisan up; then
-      echo "============================"
-      echo "=== Maintenance disabled ==="
-      echo "============================"
+   if [ -f "vendor/autoload.php" ]; then
+      echo "Disabling maintenance mode..."
+      if php artisan up; then
+         echo "============================"
+         echo "=== Maintenance disabled ==="
+         echo "============================"
+      else
+         echo "WARNING: Failed to disable maintenance mode"
+      fi
    else
-      echo "WARNING: Failed to disable maintenance mode"
+      echo "WARNING: Cannot disable maintenance mode - vendor/autoload.php not found"
    fi
 fi
 
