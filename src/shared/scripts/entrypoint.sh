@@ -327,7 +327,7 @@ echo "============================"
 # Enable maintenance mode if requested
 if [ "$ENABLE_MAINTENANCE_BOOT" = "true" ]; then
    # Only enable maintenance mode if vendor directory exists (skip on initial deployment)
-   if [ -d "vendor" ]; then
+   if [ -f "vendor/autoload.php" ]; then
       echo "Enabling maintenance mode..."
       
       # Build the maintenance command arguments array
@@ -355,13 +355,15 @@ if [ "$ENABLE_MAINTENANCE_BOOT" = "true" ]; then
       fi
       
       # Execute the maintenance command
-      php artisan "${MAINTENANCE_ARGS[@]}"
-      
-      echo "============================"
-      echo "=== Maintenance enabled  ==="
-      echo "============================"
+      if php artisan "${MAINTENANCE_ARGS[@]}"; then
+         echo "============================"
+         echo "=== Maintenance enabled  ==="
+         echo "============================"
+      else
+         echo "WARNING: Failed to enable maintenance mode"
+      fi
    else
-      echo "vendor directory not found. Skipping maintenance mode (initial deployment)."
+      echo "vendor/autoload.php not found. Skipping maintenance mode (initial deployment)."
    fi
 fi
 
