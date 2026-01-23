@@ -61,6 +61,7 @@ RUN chmod +x /usr/local/bin/install-php-extensions && \
 # Configure Nginx
 COPY ./src/shared/nginx/nginx.base.conf /etc/nginx/nginx.conf
 COPY ./src/shared/nginx/nginx.octane.conf /etc/nginx/http.d/default.conf
+COPY ./src/shared/nginx/maintenance /etc/nginx/maintenance
 RUN mkdir -p /var/run/nginx /var/lib/nginx/tmp && \
     chown -R laravel:laravel /var/lib/nginx /var/run/nginx /var/log/nginx
 
