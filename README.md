@@ -82,6 +82,16 @@ Supervisor always runs, but specific workers are optional.
 | `ENABLE_HORIZON_WORKER` | Worker | Starts the Laravel Horizon process. |
 | `SKIP_LARAVEL_BOOT` | System | **FPM only.** Skips Laravel boot (useful for non-Laravel PHP apps). |
 
+### 5. Maintenance Mode
+Control Laravel's maintenance mode during container boot (e.g., for deployments).
+
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `ENABLE_MAINTENANCE_BOOT` | `false` | Enables maintenance mode during boot. Skipped if `vendor/` doesn't exist. |
+| `MAINTENANCE_SECRET` | _(auto-generated)_ | Custom secret for bypassing maintenance mode. |
+| `MAINTENANCE_RENDER` | `errors::503` | Custom view to render during maintenance. |
+| `MAINTENANCE_RETRY` | `10` | Retry-After header value in seconds. |
+
 
 **Check the examples directory for full example docker-compose configurations.**
 
