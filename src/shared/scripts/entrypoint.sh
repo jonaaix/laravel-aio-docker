@@ -324,6 +324,47 @@ echo "============================"
 echo "===  Filament optimized  ==="
 echo "============================"
 
+# Enable maintenance mode if requested
+if [ "$ENABLE_MAINTENANCE_BOOT" = "true" ]; then
+   # Only enable maintenance mode if vendor directory exists (skip on initial deployment)
+   if [ -d "vendor" ]; then
+      echo "Enabling maintenance mode..."
+      
+      # Build the maintenance command with base options
+      MAINTENANCE_CMD="php artisan down"
+      
+      # Add render option (use custom or default)
+      if [ -n "$MAINTENANCE_RENDER" ]; then
+         MAINTENANCE_CMD="$MAINTENANCE_CMD --render=\"$MAINTENANCE_RENDER\""
+      else
+         MAINTENANCE_CMD="$MAINTENANCE_CMD --render=\"errors::503\""
+      fi
+      
+      # Add secret option (use custom or generate automatically)
+      if [ -n "$MAINTENANCE_SECRET" ]; then
+         MAINTENANCE_CMD="$MAINTENANCE_CMD --secret=\"$MAINTENANCE_SECRET\""
+      else
+         MAINTENANCE_CMD="$MAINTENANCE_CMD --with-secret"
+      fi
+      
+      # Add retry option (use custom or default)
+      if [ -n "$MAINTENANCE_RETRY" ]; then
+         MAINTENANCE_CMD="$MAINTENANCE_CMD --retry=$MAINTENANCE_RETRY"
+      else
+         MAINTENANCE_CMD="$MAINTENANCE_CMD --retry=10"
+      fi
+      
+      # Execute the maintenance command
+      eval $MAINTENANCE_CMD
+      
+      echo "============================"
+      echo "=== Maintenance enabled  ==="
+      echo "============================"
+   else
+      echo "vendor directory not found. Skipping maintenance mode (initial deployment)."
+   fi
+fi
+
 # Start cron in foreground with minimal logging (level 1)
 crond start -f -l 1 &
 echo "============================"
