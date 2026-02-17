@@ -2,8 +2,6 @@ name: Cleanup Images
 
 on:
     workflow_dispatch:
-    schedule:
-        - cron: '0 3 * * *'
 
 permissions:
     packages: write
