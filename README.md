@@ -72,6 +72,9 @@ The system runs in **Production Mode** by default.
 | `PROD_RUN_ARTISAN_MIGRATE` | Runs `php artisan migrate --force` on boot. |
 | `PROD_RUN_ARTISAN_DBSEED` | Runs `php artisan db:seed --force` on boot. |
 | `PROD_SKIP_OPTIMIZE` | Skips standard Laravel caching/optimization commands. |
+| `SKIP_COMPOSER_INSTALL` | Skips `composer install` (and Octane-specific composer steps). Use when `vendor/` is already baked into the image. |
+| `SKIP_NPM_INSTALL` | Skips `npm install` (and Octane-specific chokidar install). Use when assets are pre-built in the image. |
+| `SKIP_NPM_BUILD` | Skips `npm run build`. Use when `public/build` is already present in the image. |
 
 ### 4. Background Services & System
 Supervisor always runs, but specific workers are optional.
@@ -110,6 +113,40 @@ sevices:
       ports:
          - "8000:8000" # php
          - "5173:5173" # vite
+```
+
+## Dockerfile Deployments
+
+When building a custom Docker image that already contains your application code, `vendor/`, and compiled assets (e.g. `public/build`), you can instruct the entrypoint to skip the build steps that were already performed during the image build:
+
+```yml
+services:
+   php:
+      build:
+         dockerfile: ./Docker/production/Dockerfile
+         context: ./
+      environment:
+         PROD_RUN_ARTISAN_MIGRATE: true
+         PROD_RUN_ARTISAN_DBSEED: true
+         ENABLE_QUEUE_WORKER: true
+         # Skip build steps already handled in the Dockerfile
+         SKIP_COMPOSER_INSTALL: true
+         SKIP_NPM_INSTALL: true
+         SKIP_NPM_BUILD: true
+```
+
+A minimal production `Dockerfile` that bakes in all build artifacts might look like:
+
+```dockerfile
+FROM ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm
+
+WORKDIR /app
+
+COPY . .
+
+RUN composer install --optimize-autoloader --no-interaction --no-dev --no-progress --prefer-dist
+
+RUN npm ci && npm run build && rm -rf node_modules
 ```
 
 ## Project Directory Ownership

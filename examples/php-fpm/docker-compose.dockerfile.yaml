@@ -1,0 +1,73 @@
+# Example: Dockerfile deployment (app code, vendor and assets baked into the image)
+# Use SKIP_COMPOSER_INSTALL, SKIP_NPM_INSTALL and SKIP_NPM_BUILD to skip build
+# steps that are already handled in your Dockerfile.
+
+# Using main-caddy-proxy: https://github.com/jonaaix/main-caddy-proxy
+
+services:
+    php:
+        container_name: ${APP_NAME}_php
+        build:
+            dockerfile: ./Docker/production/Dockerfile
+            context: ./
+        stop_grace_period: 60s
+        environment:
+            DEPLOYMENT_ID: ${DEPLOYMENT_ID}
+            ENABLE_HORIZON_WORKER: true
+            PROD_RUN_ARTISAN_MIGRATE: true
+            PROD_RUN_ARTISAN_DBSEED: true
+            ENABLE_MAINTENANCE_BOOT: true
+            # Skip build steps already handled in the Dockerfile
+            SKIP_COMPOSER_INSTALL: true
+            SKIP_NPM_INSTALL: true
+            SKIP_NPM_BUILD: true
+        labels:
+            caddy: ${LARAVEL_DOMAIN}
+            caddy.reverse_proxy: "{{upstreams 8000}}"
+        depends_on:
+            - mariadb
+            - redis
+        restart: unless-stopped
+        networks:
+            - default
+            - main-proxy
+
+    mariadb:
+        container_name: ${APP_NAME}_mariadb
+        image: mariadb:lts
+        command:
+            - '--character-set-server=utf8mb4'
+            - '--collation-server=utf8mb4_unicode_ci'
+            - '--skip-name-resolve' # Disable DNS lookups (not needed in Docker, improves performance)
+        volumes:
+            - db_volume:/var/lib/mysql/:delegated
+        cap_add:
+            - SYS_NICE # Allow the container to adjust process priority (optional for performance tuning)
+        environment:
+            MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+            MARIADB_USER: ${DB_USERNAME}
+            MARIADB_PASSWORD: ${DB_PASSWORD}
+            MARIADB_DATABASE: ${DB_DATABASE}
+        restart: unless-stopped
+        networks:
+            - default
+
+    redis:
+        container_name: ${APP_NAME}_redis
+        image: redis:8-alpine
+        volumes:
+            - redis_volume:/data
+        command: [ "redis-server", "--requirepass", "${REDIS_PASSWORD}" ]
+        restart: unless-stopped
+        networks:
+            - default
+
+
+volumes:
+    db_volume:
+    redis_volume:
+
+
+networks:
+    main-proxy:
+        external: true

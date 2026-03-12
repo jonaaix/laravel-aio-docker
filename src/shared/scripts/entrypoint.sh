@@ -211,34 +211,42 @@ if [ "$ENABLE_MAINTENANCE_BOOT" = "true" ]; then
    fi
 fi
 
-echo "Installing Composer..."
-if [ "$ENV_DEV" = "true" ]; then
-   if [ ! -d "vendor" ]; then
-      composer install --optimize-autoloader --no-interaction --prefer-dist
-   else
-      echo "vendor already exists. Skipping composer install."
-   fi
+if [ "$SKIP_COMPOSER_INSTALL" = "true" ]; then
+   echo "Skipping Composer install (SKIP_COMPOSER_INSTALL=true)..."
 else
-   composer install --optimize-autoloader --no-interaction --no-progress --prefer-dist
+   echo "Installing Composer..."
+   if [ "$ENV_DEV" = "true" ]; then
+      if [ ! -d "vendor" ]; then
+         composer install --optimize-autoloader --no-interaction --prefer-dist
+      else
+         echo "vendor already exists. Skipping composer install."
+      fi
+   else
+      composer install --optimize-autoloader --no-interaction --no-progress --prefer-dist
+   fi
+   echo "=========================="
+   echo "=== Composer installed ==="
+   echo "=========================="
 fi
-echo "=========================="
-echo "=== Composer installed ==="
-echo "=========================="
 echo
 echo "PHP runtime configuration: $PHP_RUNTIME_CONFIG"
 echo
 
 if [ "$PHP_RUNTIME_CONFIG" = "frankenphp" ]; then
    # check if laravel/octane is installed
-   if ! jq -e '.require["laravel/octane"] // .["require-dev"]?["laravel/octane"]' composer.json; then
-       echo "Laravel Octane/FrankenPHP is not installed. Installing..."
-       composer require laravel/octane --no-interaction --prefer-dist
-       php artisan octane:install --server=frankenphp --no-interaction
-   else
-       echo "Laravel Octane is already installed."
+   if [ "$SKIP_COMPOSER_INSTALL" != "true" ]; then
+      if ! jq -e '.require["laravel/octane"] // .["require-dev"]?["laravel/octane"]' composer.json; then
+         echo "Laravel Octane/FrankenPHP is not installed. Installing..."
+         composer require laravel/octane --no-interaction --prefer-dist
+         php artisan octane:install --server=frankenphp --no-interaction
+      else
+         echo "Laravel Octane is already installed."
+      fi
    fi
 
-   npm install --save-dev chokidar
+   if [ "$SKIP_NPM_INSTALL" != "true" ]; then
+      npm install --save-dev chokidar
+   fi
 
    echo "=========================="
    echo "===  Octane installed  ==="
@@ -247,15 +255,19 @@ fi
 
 if [ "$PHP_RUNTIME_CONFIG" = "roadrunner" ]; then
    # check if laravel/octane is installed
-   if ! jq -e '.require["laravel/octane"] // .["require-dev"]?["laravel/octane"]' composer.json; then
-      echo "Laravel Octane/Roadrunner is not installed. Installing..."
-      composer require laravel/octane --no-interaction --prefer-dist
-      php artisan octane:install --server=roadrunner --no-interaction
-   else
-       echo "Laravel Octane is already installed."
+   if [ "$SKIP_COMPOSER_INSTALL" != "true" ]; then
+      if ! jq -e '.require["laravel/octane"] // .["require-dev"]?["laravel/octane"]' composer.json; then
+         echo "Laravel Octane/Roadrunner is not installed. Installing..."
+         composer require laravel/octane --no-interaction --prefer-dist
+         php artisan octane:install --server=roadrunner --no-interaction
+      else
+         echo "Laravel Octane is already installed."
+      fi
    fi
 
-   npm install --save-dev chokidar
+   if [ "$SKIP_NPM_INSTALL" != "true" ]; then
+      npm install --save-dev chokidar
+   fi
 
    echo "=========================="
    echo "===  Octane installed  ==="
@@ -264,15 +276,19 @@ fi
 
 if [ "$PHP_RUNTIME_CONFIG" = "swoole" ]; then
    # check if laravel/octane is installed
-   if ! jq -e '.require["laravel/octane"] // .["require-dev"]?["laravel/octane"]' composer.json; then
-      echo "Laravel Octane/Swoole is not installed. Installing..."
-      composer require laravel/octane --no-interaction --prefer-dist
-      php artisan octane:install --server=swoole --no-interaction
-   else
-       echo "Laravel Octane is already installed."
+   if [ "$SKIP_COMPOSER_INSTALL" != "true" ]; then
+      if ! jq -e '.require["laravel/octane"] // .["require-dev"]?["laravel/octane"]' composer.json; then
+         echo "Laravel Octane/Swoole is not installed. Installing..."
+         composer require laravel/octane --no-interaction --prefer-dist
+         php artisan octane:install --server=swoole --no-interaction
+      else
+         echo "Laravel Octane is already installed."
+      fi
    fi
 
-   npm install --save-dev chokidar
+   if [ "$SKIP_NPM_INSTALL" != "true" ]; then
+      npm install --save-dev chokidar
+   fi
 
    echo "=========================="
    echo "===  Octane installed  ==="
@@ -280,37 +296,44 @@ if [ "$PHP_RUNTIME_CONFIG" = "swoole" ]; then
 fi
 
 
-echo "Installing NPM..."
-if [ "$ENV_DEV" = "true" ]; then
-   if [ ! -d "node_modules" ]; then
-      npm install --no-audit
-   elif [ "$DEV_FORCE_NPM_INSTALL" = "true" ]; then
-      npm install --no-audit
-   else
-      echo "node_modules already exists. Skipping npm install."
-   fi
+if [ "$SKIP_NPM_INSTALL" = "true" ]; then
+   echo "Skipping NPM install (SKIP_NPM_INSTALL=true)..."
 else
-   npm install --no-audit
+   echo "Installing NPM..."
+   if [ "$ENV_DEV" = "true" ]; then
+      if [ ! -d "node_modules" ]; then
+         npm install --no-audit
+      elif [ "$DEV_FORCE_NPM_INSTALL" = "true" ]; then
+         npm install --no-audit
+      else
+         echo "node_modules already exists. Skipping npm install."
+      fi
+   else
+      npm install --no-audit
+   fi
+   echo "=========================="
+   echo "===   NPM installed    ==="
+   echo "=========================="
 fi
 
-echo "=========================="
-echo "===   NPM installed    ==="
-echo "=========================="
 
-
-echo "Building NPM..."
-if [ "$ENV_DEV" = "true" ]; then
-   if [ "$DEV_NPM_RUN_DEV" = "true" ]; then
-      npm run dev -- --host &
-   else
-      echo "Skipping DEV-Server..."
-   fi
+if [ "$SKIP_NPM_BUILD" = "true" ]; then
+   echo "Skipping NPM build (SKIP_NPM_BUILD=true)..."
 else
-   npm run build
+   echo "Building NPM..."
+   if [ "$ENV_DEV" = "true" ]; then
+      if [ "$DEV_NPM_RUN_DEV" = "true" ]; then
+         npm run dev -- --host &
+      else
+         echo "Skipping DEV-Server..."
+      fi
+   else
+      npm run build
+   fi
+   echo "=========================="
+   echo "===     NPM built      ==="
+   echo "=========================="
 fi
-echo "=========================="
-echo "===     NPM built      ==="
-echo "=========================="
 
 
 echo "Optimizing Laravel..."
