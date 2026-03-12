@@ -313,6 +313,34 @@ echo "===     NPM built      ==="
 echo "=========================="
 
 
+echo "Optimizing Laravel..."
+if [ "$ENV_DEV" = "true" ]; then
+   php artisan optimize:clear
+else
+   if [ "$PROD_SKIP_OPTIMIZE" = "true" ]; then
+      echo "Skipping Laravel optimization..."
+   else
+      php artisan optimize:clear
+      php artisan optimize
+   fi
+fi
+echo "============================"
+echo "===  Laravel optimized   ==="
+echo "============================"
+
+echo "Optimizing Laravel Filament..."
+if php artisan | grep -q "filament"; then
+   if [ "$ENV_DEV" = "true" ]; then
+      php artisan filament:optimize-clear
+   else
+      php artisan filament:optimize-clear
+      php artisan filament:optimize
+   fi
+fi
+echo "============================"
+echo "===  Filament optimized  ==="
+echo "============================"
+
 echo "Migrating database..."
 if [ "$ENV_DEV" = "true" ]; then
    echo "No automatic migrations will run with ENV_DEV=true."
@@ -342,38 +370,6 @@ echo "============================"
 echo "===   Seeding completed  ==="
 echo "============================"
 
-
-echo "Optimizing Laravel..."
-if [ "$ENV_DEV" = "true" ]; then
-   php artisan optimize:clear
-   php artisan view:clear
-   php artisan config:clear
-   php artisan route:clear
-else
-   if [ "$PROD_SKIP_OPTIMIZE" = "true" ]; then
-      echo "Skipping Laravel optimization..."
-   else
-      php artisan optimize
-      php artisan view:cache
-      php artisan config:cache
-      php artisan route:cache
-   fi
-fi
-echo "============================"
-echo "===  Laravel optimized   ==="
-echo "============================"
-
-echo "Optimizing Laravel Filament..."
-if php artisan | grep -q "filament"; then
-   if [ "$ENV_DEV" = "true" ]; then
-      php artisan filament:optimize-clear
-   else
-      php artisan filament:optimize
-   fi
-fi
-echo "============================"
-echo "===  Filament optimized  ==="
-echo "============================"
 
 # Start cron in foreground with minimal logging (level 1)
 crond start -f -l 1 &
