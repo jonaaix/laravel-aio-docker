@@ -8,7 +8,7 @@
 #   docker build -t myapp:latest -f examples/php-fpm/Dockerfile .
 #   docker push myapp:latest
 
-FROM ghcr.io/jonaaix/laravel-aio:1.3-php8.4-fpm
+FROM ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm
 
 WORKDIR /app
 

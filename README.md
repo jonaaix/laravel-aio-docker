@@ -135,7 +135,7 @@ services:
 A minimal production `Dockerfile` that bakes in all build artifacts might look like:
 
 ```dockerfile
-FROM ghcr.io/jonaaix/laravel-aio:1.3-php8.4-fpm
+FROM ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm
 
 WORKDIR /app
 
