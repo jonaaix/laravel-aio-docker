@@ -211,8 +211,8 @@ if [ "$ENABLE_MAINTENANCE_BOOT" = "true" ]; then
    fi
 fi
 
-if [ "$SKIP_COMPOSER_INSTALL" = "true" ]; then
-   echo "Skipping Composer install (SKIP_COMPOSER_INSTALL=true)..."
+if [ "$PROD_ENABLE_DOCKERFILE_STRATEGY" = "true" ]; then
+   echo "Dockerfile strategy enabled (PROD_ENABLE_DOCKERFILE_STRATEGY=true). Skipping Composer install, NPM install and NPM build..."
 else
    echo "Installing Composer..."
    if [ "$ENV_DEV" = "true" ]; then
@@ -234,7 +234,7 @@ echo
 
 if [ "$PHP_RUNTIME_CONFIG" = "frankenphp" ]; then
    # check if laravel/octane is installed
-   if [ "$SKIP_COMPOSER_INSTALL" != "true" ]; then
+   if [ "$PROD_ENABLE_DOCKERFILE_STRATEGY" != "true" ]; then
       if ! jq -e '.require["laravel/octane"] // .["require-dev"]?["laravel/octane"]' composer.json; then
          echo "Laravel Octane/FrankenPHP is not installed. Installing..."
          composer require laravel/octane --no-interaction --prefer-dist
@@ -242,9 +242,7 @@ if [ "$PHP_RUNTIME_CONFIG" = "frankenphp" ]; then
       else
          echo "Laravel Octane is already installed."
       fi
-   fi
 
-   if [ "$SKIP_NPM_INSTALL" != "true" ]; then
       npm install --save-dev chokidar
    fi
 
@@ -255,7 +253,7 @@ fi
 
 if [ "$PHP_RUNTIME_CONFIG" = "roadrunner" ]; then
    # check if laravel/octane is installed
-   if [ "$SKIP_COMPOSER_INSTALL" != "true" ]; then
+   if [ "$PROD_ENABLE_DOCKERFILE_STRATEGY" != "true" ]; then
       if ! jq -e '.require["laravel/octane"] // .["require-dev"]?["laravel/octane"]' composer.json; then
          echo "Laravel Octane/Roadrunner is not installed. Installing..."
          composer require laravel/octane --no-interaction --prefer-dist
@@ -263,9 +261,7 @@ if [ "$PHP_RUNTIME_CONFIG" = "roadrunner" ]; then
       else
          echo "Laravel Octane is already installed."
       fi
-   fi
 
-   if [ "$SKIP_NPM_INSTALL" != "true" ]; then
       npm install --save-dev chokidar
    fi
 
@@ -276,7 +272,7 @@ fi
 
 if [ "$PHP_RUNTIME_CONFIG" = "swoole" ]; then
    # check if laravel/octane is installed
-   if [ "$SKIP_COMPOSER_INSTALL" != "true" ]; then
+   if [ "$PROD_ENABLE_DOCKERFILE_STRATEGY" != "true" ]; then
       if ! jq -e '.require["laravel/octane"] // .["require-dev"]?["laravel/octane"]' composer.json; then
          echo "Laravel Octane/Swoole is not installed. Installing..."
          composer require laravel/octane --no-interaction --prefer-dist
@@ -284,9 +280,7 @@ if [ "$PHP_RUNTIME_CONFIG" = "swoole" ]; then
       else
          echo "Laravel Octane is already installed."
       fi
-   fi
 
-   if [ "$SKIP_NPM_INSTALL" != "true" ]; then
       npm install --save-dev chokidar
    fi
 
@@ -296,9 +290,7 @@ if [ "$PHP_RUNTIME_CONFIG" = "swoole" ]; then
 fi
 
 
-if [ "$SKIP_NPM_INSTALL" = "true" ]; then
-   echo "Skipping NPM install (SKIP_NPM_INSTALL=true)..."
-else
+if [ "$PROD_ENABLE_DOCKERFILE_STRATEGY" != "true" ]; then
    echo "Installing NPM..."
    if [ "$ENV_DEV" = "true" ]; then
       if [ ! -d "node_modules" ]; then
@@ -317,9 +309,7 @@ else
 fi
 
 
-if [ "$SKIP_NPM_BUILD" = "true" ]; then
-   echo "Skipping NPM build (SKIP_NPM_BUILD=true)..."
-else
+if [ "$PROD_ENABLE_DOCKERFILE_STRATEGY" != "true" ]; then
    echo "Building NPM..."
    if [ "$ENV_DEV" = "true" ]; then
       if [ "$DEV_NPM_RUN_DEV" = "true" ]; then

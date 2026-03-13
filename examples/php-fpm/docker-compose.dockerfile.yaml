@@ -1,6 +1,5 @@
 # Example: Dockerfile deployment (app code, vendor and assets baked into the image)
-# Use SKIP_COMPOSER_INSTALL, SKIP_NPM_INSTALL and SKIP_NPM_BUILD to skip build
-# steps that are already handled in your Dockerfile.
+# Use PROD_ENABLE_DOCKERFILE_STRATEGY to skip build steps already handled in your Dockerfile.
 
 # Using main-caddy-proxy: https://github.com/jonaaix/main-caddy-proxy
 
@@ -17,10 +16,8 @@ services:
             PROD_RUN_ARTISAN_MIGRATE: true
             PROD_RUN_ARTISAN_DBSEED: true
             ENABLE_MAINTENANCE_BOOT: true
-            # Skip build steps already handled in the Dockerfile
-            SKIP_COMPOSER_INSTALL: true
-            SKIP_NPM_INSTALL: true
-            SKIP_NPM_BUILD: true
+            # Skip composer install, npm install and npm build — already done in the Dockerfile
+            PROD_ENABLE_DOCKERFILE_STRATEGY: true
         labels:
             caddy: ${LARAVEL_DOMAIN}
             caddy.reverse_proxy: "{{upstreams 8000}}"

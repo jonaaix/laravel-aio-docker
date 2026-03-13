@@ -72,9 +72,7 @@ The system runs in **Production Mode** by default.
 | `PROD_RUN_ARTISAN_MIGRATE` | Runs `php artisan migrate --force` on boot. |
 | `PROD_RUN_ARTISAN_DBSEED` | Runs `php artisan db:seed --force` on boot. |
 | `PROD_SKIP_OPTIMIZE` | Skips standard Laravel caching/optimization commands. |
-| `SKIP_COMPOSER_INSTALL` | Skips `composer install` (and Octane-specific composer steps). Use when `vendor/` is already baked into the image. |
-| `SKIP_NPM_INSTALL` | Skips `npm install` (and Octane-specific chokidar install). Use when assets are pre-built in the image. |
-| `SKIP_NPM_BUILD` | Skips `npm run build`. Use when `public/build` is already present in the image. |
+| `PROD_ENABLE_DOCKERFILE_STRATEGY` | Skips `composer install`, `npm install`, and `npm run build`. Use when all build artifacts are already baked into the image. |
 
 ### 4. Background Services & System
 Supervisor always runs, but specific workers are optional.
@@ -129,10 +127,8 @@ services:
          PROD_RUN_ARTISAN_MIGRATE: true
          PROD_RUN_ARTISAN_DBSEED: true
          ENABLE_QUEUE_WORKER: true
-         # Skip build steps already handled in the Dockerfile
-         SKIP_COMPOSER_INSTALL: true
-         SKIP_NPM_INSTALL: true
-         SKIP_NPM_BUILD: true
+         # Skip composer install, npm install and npm build — already done in the Dockerfile
+         PROD_ENABLE_DOCKERFILE_STRATEGY: true
 ```
 
 A minimal production `Dockerfile` that bakes in all build artifacts might look like:
