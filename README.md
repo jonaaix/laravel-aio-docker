@@ -112,6 +112,42 @@ sevices:
          - "5173:5173" # vite
 ```
 
+## Dockerfile Deployments
+
+When building a custom Docker image that already contains your application code, `vendor/`, and compiled assets (e.g. `public/build`), you can instruct the entrypoint to skip the build steps that were already performed during the image build.
+
+Set `ENABLE_DOCKERFILE_STRATEGY=true` to skip `composer install`, `npm install`, and `npm run build`. This flag works in both dev and production environments.
+
+```yml
+services:
+   php:
+      build:
+         dockerfile: ./Docker/production/Dockerfile
+         context: ./
+      environment:
+         PROD_RUN_ARTISAN_MIGRATE: true
+         PROD_RUN_ARTISAN_DBSEED: true
+         ENABLE_QUEUE_WORKER: true
+         # Skip composer install, npm install and npm build — already done in the Dockerfile
+         ENABLE_DOCKERFILE_STRATEGY: true
+```
+
+A minimal production `Dockerfile` that bakes in all build artifacts might look like:
+
+```dockerfile
+FROM ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm
+
+WORKDIR /app
+
+COPY . .
+
+RUN composer install --optimize-autoloader --no-interaction --no-dev --no-progress --prefer-dist
+
+RUN npm ci && npm run build && rm -rf node_modules
+```
+
+A full example is available at [`examples/php-fpm/Dockerfile`](examples/php-fpm/Dockerfile), paired with [`examples/php-fpm/docker-compose.dockerfile.yaml`](examples/php-fpm/docker-compose.dockerfile.yaml).
+
 ## Project Directory Ownership
 - The container runs as uid 1000, to match the host user on most systems.
 - Your local project permissions may need to be reset to the correct defaults (1000:1000).
