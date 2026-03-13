@@ -72,7 +72,6 @@ The system runs in **Production Mode** by default.
 | `PROD_RUN_ARTISAN_MIGRATE` | Runs `php artisan migrate --force` on boot. |
 | `PROD_RUN_ARTISAN_DBSEED` | Runs `php artisan db:seed --force` on boot. |
 | `PROD_SKIP_OPTIMIZE` | Skips standard Laravel caching/optimization commands. |
-| `PROD_ENABLE_DOCKERFILE_STRATEGY` | Skips `composer install`, `npm install`, and `npm run build`. Use when all build artifacts are already baked into the image. |
 
 ### 4. Background Services & System
 Supervisor always runs, but specific workers are optional.
@@ -115,7 +114,9 @@ sevices:
 
 ## Dockerfile Deployments
 
-When building a custom Docker image that already contains your application code, `vendor/`, and compiled assets (e.g. `public/build`), you can instruct the entrypoint to skip the build steps that were already performed during the image build:
+When building a custom Docker image that already contains your application code, `vendor/`, and compiled assets (e.g. `public/build`), you can instruct the entrypoint to skip the build steps that were already performed during the image build.
+
+Set `ENABLE_DOCKERFILE_STRATEGY=true` to skip `composer install`, `npm install`, and `npm run build`. This flag works in both dev and production environments.
 
 ```yml
 services:
@@ -128,7 +129,7 @@ services:
          PROD_RUN_ARTISAN_DBSEED: true
          ENABLE_QUEUE_WORKER: true
          # Skip composer install, npm install and npm build — already done in the Dockerfile
-         PROD_ENABLE_DOCKERFILE_STRATEGY: true
+         ENABLE_DOCKERFILE_STRATEGY: true
 ```
 
 A minimal production `Dockerfile` that bakes in all build artifacts might look like:
