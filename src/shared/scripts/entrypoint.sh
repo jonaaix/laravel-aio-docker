@@ -166,24 +166,24 @@ if [ "$ENABLE_MAINTENANCE_BOOT" = "true" ]; then
    # Only enable maintenance mode if vendor directory exists (skip on initial deployment)
    if [ -f "vendor/autoload.php" ]; then
       echo "Enabling maintenance mode..."
-      
+
       # Build the maintenance command arguments array
       MAINTENANCE_ARGS=("down")
-      
+
       # Add render option (use custom or default)
       if [ -n "$MAINTENANCE_RENDER" ]; then
          MAINTENANCE_ARGS+=("--render=$MAINTENANCE_RENDER")
       else
          MAINTENANCE_ARGS+=("--render=errors::503")
       fi
-      
+
       # Add secret option (use custom or generate automatically)
       if [ -n "$MAINTENANCE_SECRET" ]; then
          MAINTENANCE_ARGS+=("--secret=$MAINTENANCE_SECRET")
       else
          MAINTENANCE_ARGS+=("--with-secret")
       fi
-      
+
       # Add retry option (use custom or default)
       if [ -n "$MAINTENANCE_RETRY" ]; then
          # Validate that MAINTENANCE_RETRY is a number
@@ -196,7 +196,7 @@ if [ "$ENABLE_MAINTENANCE_BOOT" = "true" ]; then
       else
          MAINTENANCE_ARGS+=("--retry=10")
       fi
-      
+
       # Execute the maintenance command
       if php artisan "${MAINTENANCE_ARGS[@]}"; then
          MAINTENANCE_MODE_ENABLED=true
@@ -213,7 +213,7 @@ fi
 
 if [ "$ENABLE_DOCKERFILE_STRATEGY" = "true" ]; then
    echo "Dockerfile strategy enabled (ENABLE_DOCKERFILE_STRATEGY=true). Skipping Composer install, NPM install and NPM build..."
-   composer run-script post-autoload-dump --no-interaction || true
+   composer run-script post-autoload-dump --no-interaction
    echo "=================================="
    echo "=== post-autoload-dump done.   ==="
    echo "=================================="
