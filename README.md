@@ -116,7 +116,7 @@ sevices:
 
 When building a custom Docker image that already contains your application code, `vendor/`, and compiled assets (e.g. `public/build`), you can instruct the entrypoint to skip the build steps that were already performed during the image build.
 
-Set `ENABLE_DOCKERFILE_STRATEGY=true` to skip `composer install`, `npm install`, and `npm run build`. This flag works in both dev and production environments.
+Set `ENABLE_DOCKERFILE_STRATEGY=true` to skip `composer install`, `npm install`, and `npm run build`. This flag works in both dev and production environments. When enabled, the entrypoint will automatically run `composer run-script post-autoload-dump` at container startup to execute any scripts (e.g. `package:discover`, `filament:upgrade`) that were skipped during the build due to `--no-scripts`.
 
 ```yml
 services:
@@ -141,7 +141,10 @@ WORKDIR /app
 
 COPY . .
 
-RUN composer install --optimize-autoloader --no-interaction --no-dev --no-progress --prefer-dist
+# Use --no-scripts to prevent Laravel post-install scripts from running in the build
+# environment (no database/services available). The entrypoint will run
+# `composer run-script post-autoload-dump` at container startup instead.
+RUN composer install --optimize-autoloader --no-interaction --no-dev --no-progress --prefer-dist --no-scripts
 
 RUN npm ci && npm run build && rm -rf node_modules
 ```

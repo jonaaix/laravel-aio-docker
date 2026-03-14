@@ -213,6 +213,10 @@ fi
 
 if [ "$ENABLE_DOCKERFILE_STRATEGY" = "true" ]; then
    echo "Dockerfile strategy enabled (ENABLE_DOCKERFILE_STRATEGY=true). Skipping Composer install, NPM install and NPM build..."
+   composer run-script post-autoload-dump --no-interaction || true
+   echo "=================================="
+   echo "=== post-autoload-dump done.   ==="
+   echo "=================================="
 else
    echo "Installing Composer..."
    if [ "$ENV_DEV" = "true" ]; then
