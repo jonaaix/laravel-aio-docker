@@ -13,7 +13,7 @@ services:
         volumes:
             # Mount the storage directory to persist logs, uploads, sessions and cache
             # across deployments (not baked into the image).
-            - storage_volume:/app/storage
+            - ./storage:/app/storage:rw
         environment:
             DEPLOYMENT_ID: ${DEPLOYMENT_ID}
             ENABLE_HORIZON_WORKER: true
@@ -67,7 +67,6 @@ services:
 volumes:
     db_volume:
     redis_volume:
-    storage_volume:
 
 
 networks:

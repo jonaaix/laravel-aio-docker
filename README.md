@@ -127,16 +127,13 @@ services:
       volumes:
          # Mount the storage directory to persist logs, uploads, sessions and cache
          # across deployments (not baked into the image).
-         - storage_volume:/app/storage
+         - ./storage:/app/storage:rw
       environment:
          PROD_RUN_ARTISAN_MIGRATE: true
          PROD_RUN_ARTISAN_DBSEED: true
          ENABLE_QUEUE_WORKER: true
          # Skip composer install, npm install and npm build — already done in the Dockerfile
          ENABLE_DOCKERFILE_STRATEGY: true
-
-volumes:
-   storage_volume:
 ```
 
 A minimal production `Dockerfile` that bakes in all build artifacts might look like:
