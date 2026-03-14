@@ -69,17 +69,6 @@ else
    fi
 fi
 
-# Starting earlier to allow hosting non-Laravel apps
-if [ "$PHP_RUNTIME_CONFIG" = "fpm" ]; then
-   # Start PHP-FPM if not running
-   if ! pgrep "php-fpm" > /dev/null; then
-      echo "Starting PHP-FPM..."
-      php-fpm &
-   else
-       echo "PHP-FPM is already running."
-   fi
-fi
-
 # Start Nginx if not running
 if ! pgrep "nginx" > /dev/null; then
    echo "Starting Nginx..."
@@ -91,6 +80,15 @@ fi
 # Skip Laravel boot
 if [ "$SKIP_LARAVEL_BOOT" = "true" ]; then
    echo "Skipping Laravel boot..."
+
+   # Start PHP-FPM if not running
+   if ! pgrep "php-fpm" > /dev/null; then
+      echo "Starting PHP-FPM..."
+      php-fpm &
+   else
+       echo "PHP-FPM is already running."
+   fi
+
    # wait forever
    while true; do
       tail -f /dev/null &
@@ -108,6 +106,14 @@ if [ ! -f "/app/artisan" ]; then
     exit 1
 else
     echo "Laravel application found in /app."
+fi
+
+if [ "$ENABLE_DOCKERFILE_STRATEGY" = "true" ]; then
+   echo "Dockerfile strategy enabled (ENABLE_DOCKERFILE_STRATEGY=true). Skipping Composer install, NPM install and NPM build..."
+   composer run-script post-autoload-dump --no-interaction
+   echo "=================================="
+   echo "=== post-autoload-dump done.   ==="
+   echo "=================================="
 fi
 
 # Check and generate APP_KEY if needed
@@ -159,6 +165,16 @@ echo "============================"
 echo "===  Permissions fixed   ==="
 echo "============================"
 
+# Start PHP-FPM earlier to allow rendering of maintenance page
+if [ "$PHP_RUNTIME_CONFIG" = "fpm" ]; then
+   # Start PHP-FPM if not running
+   if ! pgrep "php-fpm" > /dev/null; then
+      echo "Starting PHP-FPM..."
+      php-fpm &
+   else
+       echo "PHP-FPM is already running."
+   fi
+fi
 
 # Enable maintenance mode if requested
 MAINTENANCE_MODE_ENABLED=false
@@ -211,13 +227,7 @@ if [ "$ENABLE_MAINTENANCE_BOOT" = "true" ]; then
    fi
 fi
 
-if [ "$ENABLE_DOCKERFILE_STRATEGY" = "true" ]; then
-   echo "Dockerfile strategy enabled (ENABLE_DOCKERFILE_STRATEGY=true). Skipping Composer install, NPM install and NPM build..."
-   composer run-script post-autoload-dump --no-interaction
-   echo "=================================="
-   echo "=== post-autoload-dump done.   ==="
-   echo "=================================="
-else
+if [ "$ENABLE_DOCKERFILE_STRATEGY" != "true" ]; then
    echo "Installing Composer..."
    if [ "$ENV_DEV" = "true" ]; then
       if [ ! -d "vendor" ]; then
