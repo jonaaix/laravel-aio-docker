@@ -141,7 +141,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN composer install --optimize-autoloader --no-interaction --no-dev --no-progress --prefer-dist
+RUN composer install --optimize-autoloader --no-interaction --no-dev --no-progress --prefer-dist --no-scripts
 
 RUN npm ci && npm run build && rm -rf node_modules
 ```

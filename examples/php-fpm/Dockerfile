@@ -16,12 +16,16 @@ WORKDIR /app
 COPY . .
 
 # Install PHP dependencies (no dev, optimised autoloader)
+# Use --no-scripts to prevent Laravel post-install scripts from running in the build
+# environment (no database/services available). The entrypoint will run
+# `composer run-script post-autoload-dump` at container startup instead.
 RUN composer install \
     --optimize-autoloader \
     --no-interaction \
     --no-dev \
     --no-progress \
-    --prefer-dist
+    --prefer-dist \
+    --no-scripts
 
 # Build front-end assets and discard node_modules to keep the image lean
 RUN npm ci && npm run build && rm -rf node_modules
