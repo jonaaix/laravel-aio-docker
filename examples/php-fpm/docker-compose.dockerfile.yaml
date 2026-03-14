@@ -10,6 +10,10 @@ services:
             dockerfile: ./Docker/production/Dockerfile
             context: ./
         stop_grace_period: 60s
+        volumes:
+            # Mount the storage directory to persist logs, uploads, sessions and cache
+            # across deployments (not baked into the image).
+            - ./storage:/app/storage:rw
         environment:
             DEPLOYMENT_ID: ${DEPLOYMENT_ID}
             ENABLE_HORIZON_WORKER: true

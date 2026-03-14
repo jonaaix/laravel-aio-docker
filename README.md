@@ -124,6 +124,10 @@ services:
       build:
          dockerfile: ./Docker/production/Dockerfile
          context: ./
+      volumes:
+         # Mount the storage directory to persist logs, uploads, sessions and cache
+         # across deployments (not baked into the image).
+         - ./storage:/app/storage:rw
       environment:
          PROD_RUN_ARTISAN_MIGRATE: true
          PROD_RUN_ARTISAN_DBSEED: true
@@ -139,6 +143,7 @@ A minimal production `Dockerfile` that bakes in all build artifacts might look l
 > vendor
 > node_modules
 > .git
+> storage
 > ```
 
 ```dockerfile
