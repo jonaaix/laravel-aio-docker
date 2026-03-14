@@ -10,21 +10,25 @@
 
 FROM ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm
 
+USER root
+RUN mkdir -p /app && chown -R laravel:laravel /app
+
 WORKDIR /app
+USER laravel
 
 # Copy application source
-COPY . .
+COPY --chown=laravel:laravel . .
 
 # Install PHP dependencies (no dev, optimised autoloader)
 # Use --no-scripts to prevent Laravel post-install scripts from running in the build
 # environment (no database/services available). The entrypoint will run
 # `composer run-script post-autoload-dump` at container startup instead.
 RUN composer install \
-    --optimize-autoloader \
-    --no-interaction \
     --no-dev \
+    --no-interaction \
     --no-progress \
     --prefer-dist \
+    --optimize-autoloader \
     --no-scripts
 
 # Build front-end assets and discard node_modules to keep the image lean
