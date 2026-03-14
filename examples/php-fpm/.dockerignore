@@ -1,0 +1,5 @@
+# Exclude directories that should not be copied into the image.
+# These are either re-built during the Docker image build or are not needed at runtime.
+vendor
+node_modules
+.git

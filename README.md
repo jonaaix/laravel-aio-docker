@@ -134,6 +134,13 @@ services:
 
 A minimal production `Dockerfile` that bakes in all build artifacts might look like:
 
+> **Important:** Create a `.dockerignore` file in your project root to prevent large or unnecessary directories from being copied into the image by the `COPY . .` instruction:
+> ```
+> vendor
+> node_modules
+> .git
+> ```
+
 ```dockerfile
 FROM ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm
 
@@ -149,7 +156,7 @@ RUN composer install --optimize-autoloader --no-interaction --no-dev --no-progre
 RUN npm ci && npm run build && rm -rf node_modules
 ```
 
-A full example is available at [`examples/php-fpm/Dockerfile`](examples/php-fpm/Dockerfile), paired with [`examples/php-fpm/docker-compose.dockerfile.yaml`](examples/php-fpm/docker-compose.dockerfile.yaml).
+A full example is available at [`examples/php-fpm/Dockerfile`](examples/php-fpm/Dockerfile), paired with [`examples/php-fpm/docker-compose.dockerfile.yaml`](examples/php-fpm/docker-compose.dockerfile.yaml) and [`examples/php-fpm/.dockerignore`](examples/php-fpm/.dockerignore).
 
 ## Project Directory Ownership
 - The container runs as uid 1000, to match the host user on most systems.
