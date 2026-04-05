@@ -461,7 +461,7 @@ fi
 if [ "$ENABLE_REVERB_SERVER" = "true" ]; then
    echo "Adding reverb supervisor config..."
    echo "" >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
-   cat /etc/supervisor/conf.d/reverb-worker.conf >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
+   cat /etc/supervisor/conf.d/reverb-server.conf >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
 
    echo "============================"
    echo "===     Reverb added     ==="
