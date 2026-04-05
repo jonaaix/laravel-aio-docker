@@ -13,6 +13,7 @@ services:
         environment:
             DEPLOYMENT_ID: ${DEPLOYMENT_ID}
             ENABLE_HORIZON_WORKER: true
+            # ENABLE_REVERB_SERVER: true
             PROD_RUN_ARTISAN_MIGRATE: true
             PROD_RUN_ARTISAN_DBSEED: true
             ENABLE_MAINTENANCE_BOOT: true

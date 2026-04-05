@@ -37,6 +37,11 @@ shutdown_handler() {
        php artisan horizon:terminate || true
    fi
 
+   if php artisan | grep -q "reverb"; then
+       echo "Terminating Laravel Reverb..."
+       php artisan reverb:restart || true
+   fi
+
    exit 0
 }
 trap 'shutdown_handler' SIGINT SIGQUIT SIGTERM
@@ -450,6 +455,16 @@ if [ "$ENABLE_HORIZON_WORKER" = "true" ]; then
 
    echo "============================"
    echo "===    Horizon added     ==="
+   echo "============================"
+fi
+
+if [ "$ENABLE_REVERB_SERVER" = "true" ]; then
+   echo "Adding reverb supervisor config..."
+   echo "" >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
+   cat /etc/supervisor/conf.d/reverb-worker.conf >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
+
+   echo "============================"
+   echo "===     Reverb added     ==="
    echo "============================"
 fi
 

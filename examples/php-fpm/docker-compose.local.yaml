@@ -11,9 +11,11 @@ services:
             ENV_DEV: true
             DEV_NPM_RUN_DEV: true
             ENABLE_HORIZON_WORKER: true
+            # ENABLE_REVERB_SERVER: true
         ports:
             - "8000:8000" # php
             - "5173:5173" # vite
+            # - "8080:8080" # reverb
         depends_on:
             - mariadb
             - redis

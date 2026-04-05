@@ -80,6 +80,7 @@ Supervisor always runs, but specific workers are optional.
 | :--- | :--- | :--- |
 | `ENABLE_QUEUE_WORKER` | Worker | Starts the standard Laravel Queue Worker. |
 | `ENABLE_HORIZON_WORKER` | Worker | Starts the Laravel Horizon process. |
+| `ENABLE_REVERB_SERVER` | Server | Starts the Laravel Reverb WebSocket server. |
 | `SKIP_LARAVEL_BOOT` | System | **FPM only.** Skips Laravel boot (useful for non-Laravel PHP apps). |
 
 ### 5. Maintenance Mode
@@ -107,9 +108,11 @@ sevices:
          DEV_NPM_RUN_DEV: true
          ENABLE_SUPERVISOR: true
          ENABLE_HORIZON_WORKER: true
+         ENABLE_REVERB_SERVER: true
       ports:
          - "8000:8000" # php
          - "5173:5173" # vite
+         - "8080:8080" # reverb
 ```
 
 ## Dockerfile Deployments
@@ -328,9 +331,11 @@ services:
          DEV_NPM_RUN_DEV: true
          DEV_ENABLE_XDEBUG: true
          ENABLE_HORIZON_WORKER: true
+         ENABLE_REVERB_SERVER: true
       ports:
          - "8000:8000" # php
          - "5173:5173" # vite
+         - "8080:8080" # reverb
       restart: unless-stopped
       depends_on:
          - mysql
