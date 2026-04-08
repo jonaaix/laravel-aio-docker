@@ -94,6 +94,21 @@ RUN find /scripts -type f -name "*.sh" -exec chmod +x {} \;
 RUN chown -R laravel:laravel /etc/supervisor/conf.d \
  && chmod -R 755 /etc/supervisor/conf.d
 
+# Prepare global helper commands
+ENV PATH=/usr/local/share/container-bin:${PATH}
+
+RUN mkdir -p /usr/local/share/container-bin \
+ && printf '%s\n' \
+    '#!/bin/sh' \
+    'exec php artisan "$@"' \
+    > /usr/local/share/container-bin/pa \
+ && chmod +x /usr/local/share/container-bin/pa \
+ && printf '%s\n' \
+    '#!/bin/sh' \
+    'exec ls -lsah "$@"' \
+    > /usr/local/share/container-bin/ll \
+ && chmod +x /usr/local/share/container-bin/ll
+
 # Set the user to run the container
 USER laravel
 
@@ -103,6 +118,7 @@ EXPOSE 8000
 # Set Bash as the default shell
 SHELL ["/bin/bash", "-c"]
 
+ENV TERM=xterm-256color
 ENV PHP_RUNTIME_CONFIG=fpm
 ENV PHP_IDE_CONFIG="serverName=laravel"
 
