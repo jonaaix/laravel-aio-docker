@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Init Claude config defaults if missing (e.g. fresh volume mount on ~/.claude)
+if [ "$IMAGE_VARIANT" = "fpm-claude" ]; then
+    mkdir -p /home/laravel/.claude
+    [ ! -f /home/laravel/.claude/settings.json ] && cp /home/laravel/.claude-defaults/settings.json /home/laravel/.claude/settings.json
+    [ ! -f /home/laravel/.claude/CLAUDE.md ] && cp /home/laravel/.claude-defaults/CLAUDE.md /home/laravel/.claude/CLAUDE.md
+fi
+
 echo "Running entrypoint.sh..."
 
 echo "

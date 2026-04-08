@@ -5,6 +5,7 @@ services:
         volumes:
             - ./:/app
             - ./docker/nginx/nginx.fpm.conf:/etc/nginx/http.d/default.conf
+            - claude_session:/home/laravel/.claude
         environment:
             ENV_DEV: true
             DEV_NPM_RUN_DEV: true
@@ -71,6 +72,7 @@ services:
             - mailpit-data:/data
 
 volumes:
+    claude_session:
     mailpit-data:
     redis_volume:
     db_volume:

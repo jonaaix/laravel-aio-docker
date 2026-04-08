@@ -144,26 +144,30 @@ RUN mkdir -p /home/laravel/.npm-global /home/laravel/.claude /home/laravel/.loca
 USER laravel
 RUN curl -fsSL https://claude.ai/install.sh | bash
 
-# Configure Claude globally for laravel user
-RUN printf '%s\n' \
+# Store Claude default config (will be copied on first boot if volume is empty)
+RUN mkdir -p /home/laravel/.claude-defaults \
+ && printf '%s\n' \
     '{' \
     '  "permissions": {' \
     '    "defaultMode": "bypassPermissions"' \
     '  },' \
     '  "skipDangerousModePermissionPrompt": true' \
     '}' \
-    > /home/laravel/.claude/settings.json \
+    > /home/laravel/.claude-defaults/settings.json \
  && printf '%s\n' \
     '# Container rules' \
     '- Use sudo without password for system changes.' \
     '- Use apk add for Alpine packages.' \
     '- Prefer user-space installs when root is unnecessary.' \
     '- Assume app root is /app.' \
-    > /home/laravel/.claude/CLAUDE.md
+    > /home/laravel/.claude-defaults/CLAUDE.md \
+ && cp /home/laravel/.claude-defaults/settings.json /home/laravel/.claude/settings.json \
+ && cp /home/laravel/.claude-defaults/CLAUDE.md /home/laravel/.claude/CLAUDE.md
 
 # Expose the port Nginx is reachable on
 EXPOSE 8000
 
+ENV IMAGE_VARIANT=fpm-claude
 ENV PHP_RUNTIME_CONFIG=fpm
 ENV PHP_IDE_CONFIG="serverName=laravel"
 

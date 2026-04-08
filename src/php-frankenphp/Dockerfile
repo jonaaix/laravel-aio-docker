@@ -119,6 +119,7 @@ EXPOSE 8000
 SHELL ["/bin/bash", "-c"]
 
 ENV TERM=xterm-256color
+ENV IMAGE_VARIANT=frankenphp
 ENV PHP_RUNTIME_CONFIG=frankenphp
 ENV PHP_IDE_CONFIG="serverName=laravel"
 
