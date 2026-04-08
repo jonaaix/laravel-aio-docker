@@ -12,10 +12,6 @@ ARG TARGETARCH
 # Install shell tools
 RUN apk add --no-cache \
     bash \
-    zsh \
-    zsh-vcs \
-    zsh-autosuggestions \
-    zsh-syntax-highlighting \
     curl \
     git \
     zip \
@@ -32,24 +28,22 @@ RUN apk add --no-cache \
     jq \
     sudo
 
+RUN curl -sS https://starship.rs/install.sh | sh -s -- -y -b /usr/local/bin
+
 # Create non-root user with UID 1000 to match host user
 RUN addgroup -g 1000 laravel \
- && adduser -D -u 1000 -G laravel -s /bin/zsh laravel \
+ && adduser -D -u 1000 -G laravel -s /bin/bash laravel \
  && addgroup laravel www-data
 
-RUN printf '%s\n' \
-    'autoload -Uz compinit' \
-    'compinit' \
-    'source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh' \
-    'source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh' \
-    'autoload -Uz vcs_info' \
-    'precmd() { vcs_info }' \
-    "zstyle ':vcs_info:git:*' formats '(%b) '" \
-    'setopt PROMPT_SUBST' \
-    "PROMPT='%n@%m %~ \${vcs_info_msg_0_}%# '" \
+RUN mkdir -p /home/laravel/.config \
+ && printf '%s\n' \
+    'eval "$(starship init bash)"' \
     'export PATH=/home/laravel/.local/bin:/home/laravel/.npm-global/bin:/usr/local/share/container-bin:$PATH' \
-    > /home/laravel/.zshrc \
- && chown laravel:laravel /home/laravel/.zshrc
+    > /home/laravel/.bashrc \
+ && printf '%s\n' \
+    'add_newline = false' \
+    > /home/laravel/.config/starship.toml \
+ && chown -R laravel:laravel /home/laravel
 
 # Set Bash as the default shell
 SHELL ["/bin/bash", "-c"]
