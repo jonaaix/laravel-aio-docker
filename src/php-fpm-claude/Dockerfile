@@ -13,6 +13,7 @@ ARG TARGETARCH
 RUN apk add --no-cache \
     bash \
     zsh \
+    zsh-vcs \
     zsh-autosuggestions \
     zsh-syntax-highlighting \
     curl \
@@ -44,6 +45,7 @@ RUN printf '%s\n' \
     'autoload -Uz vcs_info' \
     'precmd() { vcs_info }' \
     "zstyle ':vcs_info:git:*' formats '(%b) '" \
+    'setopt PROMPT_SUBST' \
     "PROMPT='%n@%m %~ \${vcs_info_msg_0_}%# '" \
     'export PATH=/home/laravel/.local/bin:/home/laravel/.npm-global/bin:/usr/local/share/container-bin:$PATH' \
     > /home/laravel/.zshrc \
