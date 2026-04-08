@@ -47,10 +47,10 @@ You can commit the changes to your repository.
 
 The `fpm-claude` variant extends the standard FPM image with a pre-installed [Claude Code](https://docs.anthropic.com/en/docs/claude-code) environment. It enables Claude to work directly inside the running container with full access to the Laravel project.
 
-A full example docker-compose setup is available at [`examples/php-fpm-claude/docker-compose.local.yaml`](examples/php-fpm-claude/docker-compose.local.yaml).
-
 <details>
 <summary>Usage and details (click to expand)</summary>
+
+A full example docker-compose setup is available at [`examples/php-fpm-claude/docker-compose.local.yaml`](examples/php-fpm-claude/docker-compose.local.yaml).
 
 **What's included on top of the standard FPM image:**
 - **Claude Code CLI** — pre-installed and pre-configured for the `laravel` user
