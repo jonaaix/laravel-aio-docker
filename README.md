@@ -61,6 +61,8 @@ To launch a zsh shell session:
 docker compose exec -it php_ai zsh
 ```
 
+A full example docker-compose setup is available at [`examples/php-fpm-claude/docker-compose.local.yaml`](examples/php-fpm-claude/docker-compose.local.yaml).
+
 ### Difference to Laravel Sail
 
 This image relies exclusively on **native Docker tooling** and intentionally avoids additional abstraction layers or custom APIs. It gives developers **full control over build, runtime, and configuration**, without being constrained by predefined conventions. Development and production setups are based on the same image and are fully reproducible.
