@@ -13,7 +13,7 @@ ensuring your Laravel application is ready to run out of the box with minimal ef
 </p>
 
 <p align="center">
-   <a href="https://github.com/jonaaix/laravel-aio-docker/pkgs/container/laravel-aio"><img src="https://img.shields.io/badge/variants-fpm | roadrunner | frankenphp | openswoole-blue?style=flat-square" alt="FPM Variant"></a>
+   <a href="https://github.com/jonaaix/laravel-aio-docker/pkgs/container/laravel-aio"><img src="https://img.shields.io/badge/variants-fpm | fpm--claude | roadrunner | frankenphp | openswoole-blue?style=flat-square" alt="FPM Variant"></a>
    <a href="https://github.com/jonaaix/laravel-aio-docker/actions/workflows/build-and-push.yml"><img src="https://img.shields.io/github/actions/workflow/status/jonaaix/laravel-aio-docker/build-and-push.yml?style=flat-square&label=build" alt="Build Status"></a>
    <a href="./LICENSE"><img src="https://img.shields.io/packagist/l/aaix/laravel-easy-backups.svg?style=flat-square" alt="License"></a>
 </p>
@@ -23,6 +23,7 @@ ensuring your Laravel application is ready to run out of the box with minimal ef
 ##### Laravel 12 & 13
 ###### PHP 8.5
 - `ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm`
+- `ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm-claude`
 - `ghcr.io/jonaaix/laravel-aio:1.3-php8.5-roadrunner`
 - `ghcr.io/jonaaix/laravel-aio:1.3-php8.5-frankenphp`
 - _openswoole is not compatible with PHP 8.5 yet_
@@ -30,6 +31,7 @@ ensuring your Laravel application is ready to run out of the box with minimal ef
 ##### Laravel 10 & 11
 ###### PHP 8.4
 - `ghcr.io/jonaaix/laravel-aio:1.3-php8.4-fpm`
+- `ghcr.io/jonaaix/laravel-aio:1.3-php8.4-fpm-claude`
 - `ghcr.io/jonaaix/laravel-aio:1.3-php8.4-roadrunner`
 - `ghcr.io/jonaaix/laravel-aio:1.3-php8.4-frankenphp`
 - `ghcr.io/jonaaix/laravel-aio:1.3-php8.4-openswoole`
@@ -38,6 +40,26 @@ ensuring your Laravel application is ready to run out of the box with minimal ef
 When switching to a Laravel Octane based image (roadrunner/frankenphp/swoole) for the first time,
 the entrypoint will automatically set up all requirements if not already available. 
 You can commit the changes to your repository.
+
+### Claude Code Variant (`fpm-claude`)
+
+> **Not intended for production use.** This variant is designed for local AI-assisted development only.
+
+The `fpm-claude` variant extends the standard FPM image with a pre-installed [Claude Code](https://docs.anthropic.com/en/docs/claude-code) environment. It enables Claude to work directly inside the running container with full access to the Laravel project.
+
+**What's included on top of the standard FPM image:**
+- **Claude Code CLI** — pre-installed and pre-configured for the `laravel` user
+- **Zsh** with autosuggestions, syntax highlighting and git branch display
+- **Sudo** access without password for the `laravel` user
+
+To start a Claude Code session inside the container:
+```bash
+docker compose exec -it php_ai claude
+```
+To launch a zsh shell session:
+```
+docker compose exec -it php_ai zsh
+```
 
 ### Difference to Laravel Sail
 

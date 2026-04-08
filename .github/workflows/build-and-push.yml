@@ -27,6 +27,10 @@ on:
                 description: 'Build OpenSwoole'
                 type: boolean
                 default: true
+            build_fpm_claude:
+                description: 'Build FPM Claude'
+                type: boolean
+                default: true
 
 permissions:
     packages: write
@@ -80,6 +84,10 @@ jobs:
 
                     if [[ "${{ inputs.build_openswoole }}" == "true" ]]; then
                         variants+=("openswoole")
+                    fi
+
+                    if [[ "${{ inputs.build_fpm_claude }}" == "true" ]]; then
+                        variants+=("fpm-claude")
                     fi
 
                     # Convert bash array to JSON using jq for safety

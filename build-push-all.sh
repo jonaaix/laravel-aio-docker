@@ -6,7 +6,7 @@ set -e
 # Example: ./build-push-all.sh
 
 phpVersions=("8.4" "8.3")
-imageTypes=("fpm" "frankenphp" "roadrunner" "openswoole")
+imageTypes=("fpm" "fpm-claude" "frankenphp" "roadrunner" "openswoole")
 
 for phpVersion in "${phpVersions[@]}"; do
   for imageType in "${imageTypes[@]}"; do
