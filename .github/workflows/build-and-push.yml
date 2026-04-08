@@ -15,6 +15,10 @@ on:
                 description: 'Build FPM'
                 type: boolean
                 default: true
+            build_fpm_claude:
+                description: 'Build FPM Claude'
+                type: boolean
+                default: true
             build_frankenphp:
                 description: 'Build FrankenPHP'
                 type: boolean
@@ -25,10 +29,6 @@ on:
                 default: true
             build_openswoole:
                 description: 'Build OpenSwoole'
-                type: boolean
-                default: true
-            build_fpm_claude:
-                description: 'Build FPM Claude'
                 type: boolean
                 default: true
 
