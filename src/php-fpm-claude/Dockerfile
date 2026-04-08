@@ -133,6 +133,7 @@ RUN printf '%s\n' \
 # Prepare environment for Claude
 ENV HOME=/home/laravel
 ENV SHELL=/bin/bash
+ENV TERM=xterm-256color
 ENV NPM_CONFIG_PREFIX=/home/laravel/.npm-global
 ENV PATH=/home/laravel/.local/bin:/home/laravel/.npm-global/bin:${PATH}
 
@@ -146,7 +147,9 @@ RUN curl -fsSL https://claude.ai/install.sh | bash
 # Configure Claude globally for laravel user
 RUN printf '%s\n' \
     '{' \
-    '  "defaultMode": "bypassPermissions",' \
+    '  "permissions": {' \
+    '    "defaultMode": "bypassPermissions"' \
+    '  },' \
     '  "skipDangerousModePermissionPrompt": true' \
     '}' \
     > /home/laravel/.claude/settings.json \

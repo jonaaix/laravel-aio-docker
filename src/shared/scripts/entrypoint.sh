@@ -103,8 +103,6 @@ fi
 
 cd /app || exit 1
 
-echo "alias pa=\"php artisan\"; alias ll=\"ls -lsah\"" > ~/.bashrc
-
 # Check if the Laravel application is not present in /app
 if [ ! -f "/app/artisan" ]; then
     echo "No Laravel application found in /app. Exiting..."

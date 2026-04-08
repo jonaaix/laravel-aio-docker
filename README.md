@@ -49,19 +49,38 @@ The `fpm-claude` variant extends the standard FPM image with a pre-installed [Cl
 
 **What's included on top of the standard FPM image:**
 - **Claude Code CLI** — pre-installed and pre-configured for the `laravel` user
-- **Zsh** with autosuggestions, syntax highlighting and git branch display
+- **Starship** prompt with git status display
 - **Sudo** access without password for the `laravel` user
 
 To start a Claude Code session inside the container:
 ```bash
 docker compose exec -it php_ai claude
 ```
-To launch a zsh shell session:
+To launch a bash shell session:
 ```
-docker compose exec -it php_ai zsh
+docker compose exec -it php_ai bash
 ```
 
 A full example docker-compose setup is available at [`examples/php-fpm-claude/docker-compose.local.yaml`](examples/php-fpm-claude/docker-compose.local.yaml).
+
+<details>
+<summary>Multi-line input in Docker (click to expand)</summary>
+
+Shift+Enter does not work for multi-line input when running Claude Code inside a Docker container. Use one of these alternatives instead:
+
+- **Ctrl+J** — sends a line feed character, works universally
+- **`\` + Enter** — backslash at the end of the line
+
+To make Shift+Enter work in **iTerm2**, you can map it to Ctrl+J:
+1. Go to **Settings → Profiles → Keys → Key Mappings**
+2. Click **+** to add a new mapping
+3. Set **Keyboard Shortcut** to Shift+Enter
+4. Set **Action** to "Send Hex Code"
+5. Enter `0x0A` as the hex code
+
+> **Note:** This remaps Shift+Enter globally in iTerm2, not just for Docker sessions. Consider using a separate iTerm2 profile if you want to limit this to container use.
+
+</details>
 
 ### Difference to Laravel Sail
 
