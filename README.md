@@ -42,11 +42,10 @@ the entrypoint will automatically set up all requirements if not already availab
 You can commit the changes to your repository.
 
 ### Claude Code Variant (`fpm-claude`)
+The `fpm-claude` variant extends the standard FPM image with a pre-installed [Claude Code](https://docs.anthropic.com/en/docs/claude-code) environment. It enables Claude to work directly inside the running container with full access to the Laravel project.
 
 > [!CAUTION]
 > **Not intended for production use.** This variant is designed for local AI-assisted development only.
-
-The `fpm-claude` variant extends the standard FPM image with a pre-installed [Claude Code](https://docs.anthropic.com/en/docs/claude-code) environment. It enables Claude to work directly inside the running container with full access to the Laravel project.
 
 <details>
 <summary>Usage and details (click to expand)</summary>
