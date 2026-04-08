@@ -8,8 +8,6 @@ services:
             - claude_session:/home/laravel/.claude
         environment:
             ENV_DEV: true
-            DEV_NPM_RUN_DEV: true
-            ENABLE_HORIZON_WORKER: true
             ENABLE_REVERB_SERVER: true
         restart: no
         depends_on:
