@@ -29,26 +29,33 @@ shutdown_handler() {
    echo "STOP signal received..."
    # Add any cleanup or graceful shutdown tasks here
 
+   # Cache artisan command list once to avoid booting Laravel multiple times
+   ARTISAN_COMMANDS=$(php artisan 2>/dev/null || true)
+
+   PIDS=""
+
+   # Stop services in parallel
    if pgrep supervisord > /dev/null; then
        echo "Killing Supervisor..."
        killall supervisord || true
    fi
 
-   if php artisan | grep -q "octane"; then
+   if echo "$ARTISAN_COMMANDS" | grep -q "octane"; then
        echo "Stopping Laravel Octane..."
-       php artisan octane:stop || true
+       php artisan octane:stop & PIDS="$PIDS $!"
    fi
 
-   if php artisan | grep -q "horizon"; then
+   if echo "$ARTISAN_COMMANDS" | grep -q "horizon"; then
        echo "Terminating Laravel Horizon..."
-       php artisan horizon:terminate || true
+       php artisan horizon:terminate & PIDS="$PIDS $!"
    fi
 
-   if php artisan | grep -q "reverb"; then
+   if echo "$ARTISAN_COMMANDS" | grep -q "reverb"; then
        echo "Terminating Laravel Reverb..."
-       php artisan reverb:restart || true
+       php artisan reverb:restart & PIDS="$PIDS $!"
    fi
 
+   [ -n "$PIDS" ] && wait $PIDS
    exit 0
 }
 trap 'shutdown_handler' SIGINT SIGQUIT SIGTERM
