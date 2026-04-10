@@ -69,7 +69,7 @@ ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/do
 # Install PHP Extensions (grouped in one layer for optimization)
 RUN chmod +x /usr/local/bin/install-php-extensions && \
     install-php-extensions @composer \
-    gd bcmath bz2 calendar iconv intl mbstring \
+    gd bcmath bz2 calendar iconv intl mbstring pcov \
     mysqli pdo_mysql pdo_pgsql soap zip gmp ldap \
     exif memcached redis imap pcntl openssl tokenizer \
     xml ctype json imagick sockets opcache xdebug
