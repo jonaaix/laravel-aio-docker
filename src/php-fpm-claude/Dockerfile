@@ -140,9 +140,17 @@ ENV PATH=/home/laravel/.local/bin:/home/laravel/.npm-global/bin:${PATH}
 RUN mkdir -p /home/laravel/.npm-global /home/laravel/.claude /home/laravel/.local/bin \
  && chown -R laravel:laravel /home/laravel
 
+# Install MCP server dependencies globally
+RUN npm install -g @playwright/mcp @upstash/context7-mcp \
+ && mkdir -p /home/laravel/.npm && chown -R laravel:laravel /home/laravel/.npm
+
 # Install Claude for laravel user which runs the container
 USER laravel
 RUN curl -fsSL https://claude.ai/install.sh | bash
+
+# Register MCP servers globally for all projects
+RUN claude mcp add --transport stdio --scope user playwright -- npx -y @playwright/mcp@latest \
+ && claude mcp add --transport stdio --scope user context7 -- npx -y @upstash/context7-mcp
 
 # Store Claude default config (will be copied on first boot if volume is empty)
 RUN mkdir -p /home/laravel/.claude-defaults \
@@ -162,7 +170,11 @@ RUN mkdir -p /home/laravel/.claude-defaults \
     '- Assume app root is /app.' \
     > /home/laravel/.claude-defaults/CLAUDE.md \
  && cp /home/laravel/.claude-defaults/settings.json /home/laravel/.claude/settings.json \
- && cp /home/laravel/.claude-defaults/CLAUDE.md /home/laravel/.claude/CLAUDE.md
+ && cp /home/laravel/.claude-defaults/CLAUDE.md /home/laravel/.claude/CLAUDE.md \
+ && cp /home/laravel/.claude.json /home/laravel/.claude-defaults/.claude.json
+
+# Copy MCP merge script
+COPY ./src/php-fpm-claude/merge-mcp-servers.js /scripts/merge-mcp-servers.js
 
 # Expose the port Nginx is reachable on
 EXPOSE 8000
