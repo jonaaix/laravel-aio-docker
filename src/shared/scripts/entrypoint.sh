@@ -343,13 +343,7 @@ fi
 
 if [ "$ENABLE_DOCKERFILE_STRATEGY" != "true" ]; then
    echo "Building NPM..."
-   if [ "$ENV_DEV" = "true" ]; then
-      if [ "$DEV_NPM_RUN_DEV" = "true" ]; then
-         npm run dev -- --host &
-      else
-         echo "Skipping DEV-Server..."
-      fi
-   else
+   if [ "$ENV_DEV" != "true" ]; then
       npm run build
    fi
    echo "=========================="
@@ -478,6 +472,16 @@ if [ "$ENABLE_REVERB_SERVER" = "true" ]; then
 
    echo "============================"
    echo "===     Reverb added     ==="
+   echo "============================"
+fi
+
+if [ "$DEV_NPM_RUN_DEV" = "true" ] && [ "$ENV_DEV" = "true" ]; then
+   echo "Adding Vite dev server supervisor config..."
+   echo "" >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
+   cat /etc/supervisor/conf.d/vite-dev-server.conf >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
+
+   echo "============================"
+   echo "===   Vite dev added     ==="
    echo "============================"
 fi
 
