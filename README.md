@@ -54,6 +54,7 @@ A full example docker-compose setup is available at [`examples/php-fpm-claude/do
 
 **What's included on top of the standard FPM image:**
 - **Claude Code CLI** — pre-installed and pre-configured for the `laravel` user
+- **[claude-threads](https://github.com/anneschuth/claude-threads)** — optional Mattermost/Slack bridge, enabled via `ENABLE_CLAUDE_THREADS=true`
 - **Starship** prompt with git status display
 - **Sudo** access without password for the `laravel` user
 
@@ -65,6 +66,35 @@ To launch a bash shell session:
 ```
 docker compose exec -it php_ai bash
 ```
+
+</details>
+
+<details>
+<summary>claude-threads: Mattermost/Slack bridge (click to expand)</summary>
+
+[claude-threads](https://github.com/anneschuth/claude-threads) wraps the Claude Code CLI and exposes it as a bot in a Mattermost or Slack channel. Each chat thread gets its own Claude session — useful to let non-technical teammates work on a Laravel project via chat.
+
+**Enable it** by setting `ENABLE_CLAUDE_THREADS=true`. Supervisor then keeps the bot running in the background and auto-restarts it on crashes.
+
+**Persistence.** Two host-mounted directories are recommended so state survives container rebuilds — both scoped per compose project:
+
+```yaml
+volumes:
+    - ${HOME}/.laravel-aio-claude/${COMPOSE_PROJECT_NAME}/session:/home/laravel/.claude
+    - ${HOME}/.laravel-aio-claude/${COMPOSE_PROJECT_NAME}/threads-config:/home/laravel/.config
+```
+
+- `.claude/` — Claude Code login/credentials
+- `.config/` — claude-threads wizard output (bot tokens, channel IDs)
+
+**One-time setup** per project:
+
+1. Bring up the stack with `ENABLE_CLAUDE_THREADS=true`. On first boot the bot will crash-loop until configured — that's expected.
+2. Log in to Claude: `docker compose exec -it php_ai claude` → run `/login` → follow the device-code flow.
+3. Run the config wizard: `docker compose exec -it php_ai claude-threads` → enter Mattermost/Slack credentials.
+4. Restart the container. Supervisor picks up the new config and the bot joins the channel.
+
+**Notes.** One claude-threads instance = one configured working directory + one Claude account. For multiple isolated projects, run multiple compose stacks (one per user/project) — `COMPOSE_PROJECT_NAME` keeps the host-mount paths separate. See the [claude-threads setup guide](https://github.com/anneschuth/claude-threads/blob/main/SETUP_GUIDE.md) for platform-specific steps.
 
 </details>
 
@@ -129,6 +159,7 @@ Supervisor always runs, but specific workers are optional.
 | `ENABLE_QUEUE_WORKER` | Worker | Starts the standard Laravel Queue Worker. |
 | `ENABLE_HORIZON_WORKER` | Worker | Starts the Laravel Horizon process. |
 | `ENABLE_REVERB_SERVER` | Server | Starts the Laravel Reverb WebSocket server. |
+| `ENABLE_CLAUDE_THREADS` | Bot | **`fpm-claude` only.** Starts the claude-threads Mattermost/Slack bridge. |
 | `SKIP_LARAVEL_BOOT` | System | **FPM only.** Skips Laravel boot (useful for non-Laravel PHP apps). |
 
 ### 5. Maintenance Mode

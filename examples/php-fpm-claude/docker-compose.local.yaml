@@ -5,10 +5,12 @@ services:
         volumes:
             - ./:/app
             - ./docker/nginx/nginx.fpm.conf:/etc/nginx/http.d/default.conf
-            - claude_session:/home/laravel/.claude
+            - ${HOME}/.laravel-aio-claude/${COMPOSE_PROJECT_NAME}/session:/home/laravel/.claude
+            - ${HOME}/.laravel-aio-claude/${COMPOSE_PROJECT_NAME}/threads-config:/home/laravel/.config
         environment:
             ENV_DEV: true
             ENABLE_REVERB_SERVER: true
+            ENABLE_CLAUDE_THREADS: true
         restart: no
         depends_on:
             - mariadb
@@ -70,7 +72,6 @@ services:
             - mailpit-data:/data
 
 volumes:
-    claude_session:
     mailpit-data:
     redis_volume:
     db_volume:

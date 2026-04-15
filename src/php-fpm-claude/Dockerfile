@@ -177,7 +177,7 @@ RUN mkdir -p /home/laravel/.npm-global /home/laravel/.claude /home/laravel/.loca
  && chown -R laravel:laravel /home/laravel
 
 # Install MCP server dependencies globally
-RUN npm install -g @playwright/mcp @upstash/context7-mcp \
+RUN npm install -g @playwright/mcp @upstash/context7-mcp claude-threads \
  && mkdir -p /home/laravel/.npm && chown -R laravel:laravel /home/laravel/.npm
 
 # Install Claude for laravel user which runs the container

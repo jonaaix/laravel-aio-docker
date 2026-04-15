@@ -475,6 +475,16 @@ if [ "$ENABLE_REVERB_SERVER" = "true" ]; then
    echo "============================"
 fi
 
+if [ "$IMAGE_VARIANT" = "fpm-claude" ] && [ "$ENABLE_CLAUDE_THREADS" = "true" ]; then
+   echo "Adding claude-threads supervisor config..."
+   echo "" >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
+   cat /etc/supervisor/conf.d/claude-threads.conf >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
+
+   echo "============================"
+   echo "=== claude-threads added ==="
+   echo "============================"
+fi
+
 if [ "$DEV_NPM_RUN_DEV" = "true" ] && [ "$ENV_DEV" = "true" ]; then
    echo "Adding Vite dev server supervisor config..."
    echo "" >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
