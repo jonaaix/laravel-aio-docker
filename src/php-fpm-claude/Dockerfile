@@ -189,32 +189,8 @@ RUN claude mcp add --transport stdio --scope user playwright -- npx -y @playwrig
  && claude mcp add --transport stdio --scope user context7 -- npx -y @upstash/context7-mcp
 
 # Store Claude default config (will be copied on first boot if volume is empty)
-RUN mkdir -p /home/laravel/.claude-defaults \
- && printf '%s\n' \
-    '{' \
-    '  "permissions": {' \
-    '    "defaultMode": "bypassPermissions"' \
-    '  },' \
-    '  "skipDangerousModePermissionPrompt": true' \
-    '}' \
-    > /home/laravel/.claude-defaults/settings.json \
- && printf '%s\n' \
-    '# Container rules' \
-    '- Use sudo without password for system changes.' \
-    '- Use apt-get for Debian packages (DEBIAN_FRONTEND=noninteractive is preset).' \
-    '- Prefer user-space installs when root is unnecessary.' \
-    '- Assume app root is /app.' \
-    > /home/laravel/.claude-defaults/CLAUDE.md \
- && printf '%s\n' \
-    '# Non-technical user mode' \
-    '- Your output is shown in a chat UI to a non-technical teammate.' \
-    '- Keep responses short and use plain language. Markdown works, terminal-only formatting does not.' \
-    '- Summarize tool outputs instead of pasting long diffs or file contents.' \
-    '- Proactively run required commands (migrate, install, build, etc.) instead of asking permission.' \
-    '- When a decision is needed, state 2-3 options briefly and recommend one.' \
-    '- Avoid jargon. Explain technical terms the first time they appear.' \
-    > /home/laravel/.claude-defaults/CLAUDE.nontech.md \
- && cp /home/laravel/.claude-defaults/settings.json /home/laravel/.claude/settings.json \
+COPY --chown=laravel:laravel ./src/php-fpm-claude/claude-defaults/ /home/laravel/.claude-defaults/
+RUN cp /home/laravel/.claude-defaults/settings.json /home/laravel/.claude/settings.json \
  && cp /home/laravel/.claude-defaults/CLAUDE.md /home/laravel/.claude/CLAUDE.md \
  && cp /home/laravel/.claude.json /home/laravel/.claude-defaults/.claude.json
 
