@@ -1,39 +1,50 @@
 ARG INPUT_PHP="8.5"
-ARG IMAGENAME=php:${INPUT_PHP}-fpm-alpine
+ARG IMAGENAME=php:${INPUT_PHP}-fpm
 
 FROM ${IMAGENAME}
 
 ARG TARGETARCH
+
+ENV DEBIAN_FRONTEND=noninteractive
 
 ############################################################
 ###############  GENERAL DEPENDENCIES ######################
 ############################################################
 
 # Install shell tools
-RUN apk add --no-cache \
-    bash \
-    curl \
-    git \
-    zip \
-    imagemagick \
-    mysql-client \
-    postgresql-client \
-    nano \
-    nodejs \
-    npm \
-    nginx \
-    supervisor \
-    ca-certificates \
-    tzdata \
-    jq \
-    sudo
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      bash \
+      curl \
+      git \
+      zip \
+      unzip \
+      imagemagick \
+      default-mysql-client \
+      postgresql-client \
+      nano \
+      nginx \
+      supervisor \
+      ca-certificates \
+      tzdata \
+      jq \
+      sudo \
+      gnupg \
+      procps \
+      psmisc \
+ && rm -rf /var/lib/apt/lists/*
+
+# Node.js via NodeSource (Debian's apt nodejs is outdated)
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+ && apt-get install -y --no-install-recommends nodejs \
+ && rm -rf /var/lib/apt/lists/*
 
 RUN curl -sS https://starship.rs/install.sh | sh -s -- -y -b /usr/local/bin
 
 # Create non-root user with UID 1000 to match host user
-RUN addgroup -g 1000 laravel \
- && adduser -D -u 1000 -G laravel -s /bin/bash laravel \
- && addgroup laravel www-data
+RUN groupadd -g 1000 laravel \
+ && useradd -m -u 1000 -g laravel -s /bin/bash laravel \
+ && usermod -aG www-data laravel
 
 RUN mkdir -p /home/laravel/.config \
  && printf '%s\n' \
@@ -51,17 +62,38 @@ SHELL ["/bin/bash", "-c"]
 RUN echo 'laravel ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/laravel \
  && chmod 0440 /etc/sudoers.d/laravel
 
-# Install puppeteer PDF tools dependencies
-RUN apk add --no-cache \
-      chromium \
-      nss \
-      freetype \
-      harfbuzz \
-      ttf-freefont \
-      libc6-compat \
-      gcompat
+# Headless browser deps + Google Chrome (amd64). On arm64 Playwright installs its own browsers.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      fonts-liberation \
+      fonts-freefont-ttf \
+      libnss3 \
+      libatk-bridge2.0-0 \
+      libatk1.0-0 \
+      libcups2 \
+      libxcomposite1 \
+      libxdamage1 \
+      libxfixes3 \
+      libxrandr2 \
+      libxkbcommon0 \
+      libdrm2 \
+      libgbm1 \
+      libasound2 \
+      libpango-1.0-0 \
+      libcairo2 \
+ && if [ "${TARGETARCH}" = "amd64" ]; then \
+      curl -fsSL https://dl.google.com/linux/linux_signing_key.pub \
+        | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
+      && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main" \
+        > /etc/apt/sources.list.d/google-chrome.list \
+      && apt-get update \
+      && apt-get install -y --no-install-recommends google-chrome-stable; \
+    fi \
+ && rm -rf /var/lib/apt/lists/*
 
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+# Path valid on amd64 (Google Chrome). On arm64, rely on Playwright's bundled browsers or override this.
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
 # PHP Extension installer
 ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
@@ -74,12 +106,15 @@ RUN chmod +x /usr/local/bin/install-php-extensions && \
     exif memcached redis imap pcntl openssl tokenizer \
     xml ctype json imagick sockets opcache xdebug
 
-# Configure Nginx
+# Configure Nginx. Shared base conf references /etc/nginx/http.d (Alpine); symlink it to Debian's conf.d.
+RUN rm -f /etc/nginx/sites-enabled/default /etc/nginx/sites-available/default \
+ && mkdir -p /etc/nginx/conf.d \
+ && ln -sfn /etc/nginx/conf.d /etc/nginx/http.d
 COPY ./src/shared/nginx/nginx.base.conf /etc/nginx/nginx.conf
-COPY ./src/shared/nginx/nginx.fpm.conf /etc/nginx/http.d/default.conf
+COPY ./src/shared/nginx/nginx.fpm.conf /etc/nginx/conf.d/default.conf
 COPY ./src/shared/nginx/maintenance /etc/nginx/maintenance
-RUN mkdir -p /var/run/nginx /var/lib/nginx/tmp && \
-    chown -R laravel:laravel /var/lib/nginx /var/run/nginx /var/log/nginx
+RUN mkdir -p /var/run/nginx /var/lib/nginx/tmp \
+ && chown -R laravel:laravel /var/lib/nginx /var/run/nginx /var/log/nginx
 
 # Configure Supervisor. Add your Supervisor configuration files here.
 COPY ./src/shared/supervisor/ /tmp/supervisor/
@@ -106,8 +141,9 @@ WORKDIR /app
 # Copy entire scripts folder into container
 COPY ./src/shared/scripts /scripts
 
-# Make all *.sh files in /scripts executable
-RUN find /scripts -type f -name "*.sh" -exec chmod +x {} \;
+# Shared entrypoint calls BusyBox `crond` which Debian lacks; supercronic runs via supervisor anyway.
+RUN sed -i 's|^crond start -f -l 1 &|command -v crond >/dev/null 2>\&1 \&\& crond start -f -l 1 \&|' /scripts/entrypoint.sh \
+ && find /scripts -type f -name "*.sh" -exec chmod +x {} \;
 
 # Set secure ownership and permissions for Supervisor config directory
 RUN chown -R laravel:laravel /etc/supervisor/conf.d \
@@ -165,7 +201,7 @@ RUN mkdir -p /home/laravel/.claude-defaults \
  && printf '%s\n' \
     '# Container rules' \
     '- Use sudo without password for system changes.' \
-    '- Use apk add for Alpine packages.' \
+    '- Use apt-get for Debian packages (DEBIAN_FRONTEND=noninteractive is preset).' \
     '- Prefer user-space installs when root is unnecessary.' \
     '- Assume app root is /app.' \
     > /home/laravel/.claude-defaults/CLAUDE.md \
