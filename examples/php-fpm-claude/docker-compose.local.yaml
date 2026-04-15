@@ -10,7 +10,7 @@ services:
         environment:
             ENV_DEV: true
             ENABLE_REVERB_SERVER: true
-            ENABLE_CLAUDE_THREADS: true
+            DEV_ENABLE_CLAUDE_THREADS: true
         restart: no
         depends_on:
             - mariadb

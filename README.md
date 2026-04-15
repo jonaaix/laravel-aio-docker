@@ -54,7 +54,7 @@ A full example docker-compose setup is available at [`examples/php-fpm-claude/do
 
 **What's included on top of the standard FPM image:**
 - **Claude Code CLI** — pre-installed and pre-configured for the `laravel` user
-- **[claude-threads](https://github.com/anneschuth/claude-threads)** — optional Mattermost/Slack bridge, enabled via `ENABLE_CLAUDE_THREADS=true`
+- **[claude-threads](https://github.com/anneschuth/claude-threads)** — optional Mattermost/Slack bridge, enabled via `DEV_ENABLE_CLAUDE_THREADS=true`
 - **Starship** prompt with git status display
 - **Sudo** access without password for the `laravel` user
 
@@ -74,7 +74,7 @@ docker compose exec -it php_ai bash
 
 [claude-threads](https://github.com/anneschuth/claude-threads) wraps the Claude Code CLI and exposes it as a bot in a Mattermost or Slack channel. Each chat thread gets its own Claude session — useful to let non-technical teammates work on a Laravel project via chat.
 
-**Enable it** by setting `ENABLE_CLAUDE_THREADS=true`. Supervisor then keeps the bot running in the background and auto-restarts it on crashes.
+**Enable it** by setting `DEV_ENABLE_CLAUDE_THREADS=true` (requires `ENV_DEV=true`). Supervisor then keeps the bot running in the background and auto-restarts it on crashes.
 
 **Persistence.** Two host-mounted directories are recommended so state survives container rebuilds — both scoped per compose project:
 
@@ -141,6 +141,7 @@ The system runs in **Production Mode** by default.
 | `DEV_FORCE_NPM_INSTALL` | Forces `npm install` on every container start. |
 | `DEV_NPM_RUN_DEV` | Runs `npm run dev` (Vite) on container start. |
 | `DEV_ENABLE_XDEBUG` | Enables Xdebug extension. |
+| `DEV_ENABLE_CLAUDE_THREADS` | **`fpm-claude` only.** Starts the claude-threads Mattermost/Slack bridge. |
 
 ### 3. Production Automation
 > **Requirement:** Active only when `ENV_DEV=false` (default).
@@ -159,7 +160,6 @@ Supervisor always runs, but specific workers are optional.
 | `ENABLE_QUEUE_WORKER` | Worker | Starts the standard Laravel Queue Worker. |
 | `ENABLE_HORIZON_WORKER` | Worker | Starts the Laravel Horizon process. |
 | `ENABLE_REVERB_SERVER` | Server | Starts the Laravel Reverb WebSocket server. |
-| `ENABLE_CLAUDE_THREADS` | Bot | **`fpm-claude` only.** Starts the claude-threads Mattermost/Slack bridge. |
 | `SKIP_LARAVEL_BOOT` | System | **FPM only.** Skips Laravel boot (useful for non-Laravel PHP apps). |
 
 ### 5. Maintenance Mode

@@ -475,7 +475,7 @@ if [ "$ENABLE_REVERB_SERVER" = "true" ]; then
    echo "============================"
 fi
 
-if [ "$IMAGE_VARIANT" = "fpm-claude" ] && [ "$ENABLE_CLAUDE_THREADS" = "true" ]; then
+if [ "$IMAGE_VARIANT" = "fpm-claude" ] && [ "$DEV_ENABLE_CLAUDE_THREADS" = "true" ] && [ "$ENV_DEV" = "true" ]; then
    echo "Adding claude-threads supervisor config..."
    echo "" >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
    cat /etc/supervisor/conf.d/claude-threads.conf >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
