@@ -5,6 +5,12 @@ if [ "$IMAGE_VARIANT" = "fpm-claude" ]; then
     mkdir -p /home/laravel/.claude
     cp /home/laravel/.claude-defaults/settings.json /home/laravel/.claude/settings.json
     cp /home/laravel/.claude-defaults/CLAUDE.md /home/laravel/.claude/CLAUDE.md
+
+    if [ "$DEV_ENABLE_CLAUDE_NONTECH_MODE" = "true" ] && [ "$ENV_DEV" = "true" ]; then
+        echo "" >> /home/laravel/.claude/CLAUDE.md
+        cat /home/laravel/.claude-defaults/CLAUDE.nontech.md >> /home/laravel/.claude/CLAUDE.md
+    fi
+
     node /scripts/merge-mcp-servers.js
 fi
 

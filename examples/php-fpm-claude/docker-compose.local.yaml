@@ -11,6 +11,7 @@ services:
             ENV_DEV: true
             ENABLE_REVERB_SERVER: true
             DEV_ENABLE_CLAUDE_THREADS: true
+            DEV_ENABLE_CLAUDE_NONTECH_MODE: true
         restart: no
         depends_on:
             - mariadb

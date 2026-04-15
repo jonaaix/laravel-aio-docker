@@ -142,6 +142,7 @@ The system runs in **Production Mode** by default.
 | `DEV_NPM_RUN_DEV` | Runs `npm run dev` (Vite) on container start. |
 | `DEV_ENABLE_XDEBUG` | Enables Xdebug extension. |
 | `DEV_ENABLE_CLAUDE_THREADS` | **`fpm-claude` only.** Starts the claude-threads Mattermost/Slack bridge. |
+| `DEV_ENABLE_CLAUDE_NONTECH_MODE` | **`fpm-claude` only.** Appends a chat-friendly system prompt (plain language, short answers, proactive) — use for non-technical end users. |
 
 ### 3. Production Automation
 > **Requirement:** Active only when `ENV_DEV=false` (default).
