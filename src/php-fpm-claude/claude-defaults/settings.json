@@ -2,5 +2,8 @@
   "permissions": {
     "defaultMode": "bypassPermissions"
   },
-  "skipDangerousModePermissionPrompt": true
+  "skipDangerousModePermissionPrompt": true,
+  "enabledPlugins": {
+    "php-lsp@claude-code-lsps": true
+  }
 }

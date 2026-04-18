@@ -1,0 +1,10 @@
+{
+  "claude-code-lsps": {
+    "source": {
+      "source": "github",
+      "repo": "Piebald-AI/claude-code-lsps"
+    },
+    "installLocation": "/home/laravel/.claude/plugins/marketplaces/claude-code-lsps",
+    "lastUpdated": "2026-04-18T00:00:00.000Z"
+  }
+}

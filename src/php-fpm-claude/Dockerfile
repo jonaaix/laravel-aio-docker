@@ -32,6 +32,7 @@ RUN apt-get update \
       gnupg \
       procps \
       psmisc \
+      pandoc \
  && rm -rf /var/lib/apt/lists/*
 
 # Node.js via NodeSource (Debian's apt nodejs is outdated)
@@ -182,11 +183,26 @@ RUN npm install -g @playwright/mcp @upstash/context7-mcp claude-threads \
 
 # Install Claude for laravel user which runs the container
 USER laravel
+
+# Install php-lsp (Rust-based PHP language server)
+RUN if [ "${TARGETARCH}" = "amd64" ]; then \
+      PHP_LSP_ARCH="x86_64-unknown-linux-gnu"; \
+    else \
+      PHP_LSP_ARCH="aarch64-unknown-linux-gnu"; \
+    fi \
+ && curl -Lo /tmp/php-lsp.tar.gz https://github.com/jorgsowa/php-lsp/releases/latest/download/php-lsp-${PHP_LSP_ARCH}.tar.gz \
+ && tar xzf /tmp/php-lsp.tar.gz -C /home/laravel/.local/bin/ \
+ && rm /tmp/php-lsp.tar.gz
+
 RUN curl -fsSL https://claude.ai/install.sh | bash
 
 # Register MCP servers globally for all projects
 RUN claude mcp add --transport stdio --scope user playwright -- npx -y @playwright/mcp@latest \
  && claude mcp add --transport stdio --scope user context7 -- npx -y @upstash/context7-mcp
+
+# Clone LSP marketplace for phpactor plugin
+RUN git clone --depth 1 https://github.com/Piebald-AI/claude-code-lsps.git \
+    /home/laravel/.claude-defaults/plugins/marketplaces/claude-code-lsps
 
 # Store Claude default config (will be copied on first boot if volume is empty)
 COPY --chown=laravel:laravel ./src/php-fpm-claude/claude-defaults/ /home/laravel/.claude-defaults/
@@ -194,8 +210,9 @@ RUN cp /home/laravel/.claude-defaults/settings.json /home/laravel/.claude/settin
  && cp /home/laravel/.claude-defaults/CLAUDE.md /home/laravel/.claude/CLAUDE.md \
  && cp /home/laravel/.claude.json /home/laravel/.claude-defaults/.claude.json
 
-# Copy MCP merge script
+# Copy MCP and plugin merge scripts
 COPY ./src/php-fpm-claude/merge-mcp-servers.js /scripts/merge-mcp-servers.js
+COPY ./src/php-fpm-claude/merge-plugins.js /scripts/merge-plugins.js
 
 # Expose the port Nginx is reachable on
 EXPOSE 8000

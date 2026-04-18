@@ -17,6 +17,7 @@ if [ "$IMAGE_VARIANT" = "fpm-claude" ]; then
     fi
 
     node /scripts/merge-mcp-servers.js
+    node /scripts/merge-plugins.js
 fi
 
 echo "Running entrypoint.sh..."

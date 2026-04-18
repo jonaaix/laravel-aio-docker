@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "plugins": {
+    "php-lsp@claude-code-lsps": [
+      {
+        "scope": "user",
+        "installPath": "/home/laravel/.claude/plugins/cache/claude-code-lsps/php-lsp/0.1.0",
+        "version": "0.1.0",
+        "installedAt": "2026-04-18T00:00:00.000Z",
+        "lastUpdated": "2026-04-18T00:00:00.000Z",
+        "gitCommitSha": "6d65ba8c4fbbaa8ba6ab3ceba8e2da061ddee006"
+      }
+    ]
+  }
+}
