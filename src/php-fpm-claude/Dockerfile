@@ -82,18 +82,12 @@ RUN apt-get update \
       libasound2 \
       libpango-1.0-0 \
       libcairo2 \
- && if [ "${TARGETARCH}" = "amd64" ]; then \
-      curl -fsSL https://dl.google.com/linux/linux_signing_key.pub \
-        | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
-      && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main" \
-        > /etc/apt/sources.list.d/google-chrome.list \
-      && apt-get update \
-      && apt-get install -y --no-install-recommends google-chrome-stable; \
-    fi \
+ && apt-get install -y --no-install-recommends chromium \
+ && mkdir -p /opt/google/chrome \
+ && ln -sf /usr/bin/chromium /opt/google/chrome/chrome \
  && rm -rf /var/lib/apt/lists/*
 
-# Path valid on amd64 (Google Chrome). On arm64, rely on Playwright's bundled browsers or override this.
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
+ENV PUPPETEER_EXECUTABLE_PATH=/opt/google/chrome/chrome
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
 # PHP Extension installer
