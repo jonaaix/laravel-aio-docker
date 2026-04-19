@@ -406,6 +406,15 @@ echo "============================"
 echo "===  Filament optimized  ==="
 echo "============================"
 
+# Blade Icons cache — critical for performance in production (dev: up to the developer)
+if [ "$ENV_DEV" != "true" ] && php artisan | grep -q "icons:cache"; then
+   echo "Caching Blade icons..."
+   php artisan icons:cache
+   echo "============================"
+   echo "===   Icons cached       ==="
+   echo "============================"
+fi
+
 echo "Migrating database..."
 if [ "$ENV_DEV" = "true" ]; then
    echo "No automatic migrations will run with ENV_DEV=true."
