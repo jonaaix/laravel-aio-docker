@@ -163,7 +163,23 @@ Supervisor always runs, but specific workers are optional.
 | `ENABLE_REVERB_SERVER` | Server | Starts the Laravel Reverb WebSocket server. |
 | `SKIP_LARAVEL_BOOT` | System | **FPM only.** Skips Laravel boot (useful for non-Laravel PHP apps). |
 
-### 5. Maintenance Mode
+### 5. PHP-FPM Pool Tuning
+> **Requirement:** Applies to FPM variants only (`fpm`, `fpm-claude`).
+
+The FPM worker pool auto-scales from a single knob. In most cases you only need to set `FPM_MAX_CHILDREN` — the spare-server settings derive from it automatically. Override individual values only for edge-case tuning.
+
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `FPM_MAX_CHILDREN` | `10` | Max concurrent PHP-FPM workers. Bump this when your container has more RAM available (~80MB per worker). |
+| `FPM_START_SERVERS` | `2` | Workers spawned at startup. Rarely needs tuning. |
+| `FPM_MIN_SPARE_SERVERS` | `max(1, max_children / 10)` | Minimum idle workers. Auto-derived from `FPM_MAX_CHILDREN`. |
+| `FPM_MAX_SPARE_SERVERS` | `max(3, max_children / 3)` | Maximum idle workers. Auto-derived from `FPM_MAX_CHILDREN`. |
+
+Hardcoded (not configurable): `pm = dynamic`, `pm.max_requests = 500` (worker recycle for memory leak mitigation), `request_terminate_timeout = 120s`.
+
+**Note on worker count:** PHP-FPM workers scale with available RAM, not CPU cores. PHP requests are mostly I/O-bound (waiting on DB, HTTP, filesystem), so many more workers than cores are expected and correct.
+
+### 6. Maintenance Mode
 Control Laravel's maintenance mode during container boot (e.g., for deployments).
 
 | Variable | Default | Description |

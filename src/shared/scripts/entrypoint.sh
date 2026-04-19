@@ -101,6 +101,20 @@ else
    fi
 fi
 
+# Render PHP-FPM pool config from template with sensible auto-scaled defaults
+if [ "$PHP_RUNTIME_CONFIG" = "fpm" ] && [ -f /usr/local/etc/php-fpm.d/www.conf.template ]; then
+   export FPM_MAX_CHILDREN="${FPM_MAX_CHILDREN:-10}"
+   MIN_SPARE_AUTO=$(( FPM_MAX_CHILDREN / 10 ))
+   [ "$MIN_SPARE_AUTO" -lt 1 ] && MIN_SPARE_AUTO=1
+   MAX_SPARE_AUTO=$(( FPM_MAX_CHILDREN / 3 ))
+   [ "$MAX_SPARE_AUTO" -lt 3 ] && MAX_SPARE_AUTO=3
+   export FPM_START_SERVERS="${FPM_START_SERVERS:-2}"
+   export FPM_MIN_SPARE_SERVERS="${FPM_MIN_SPARE_SERVERS:-$MIN_SPARE_AUTO}"
+   export FPM_MAX_SPARE_SERVERS="${FPM_MAX_SPARE_SERVERS:-$MAX_SPARE_AUTO}"
+   envsubst < /usr/local/etc/php-fpm.d/www.conf.template > /usr/local/etc/php-fpm.d/www.conf
+   echo "PHP-FPM pool: max_children=$FPM_MAX_CHILDREN, start=$FPM_START_SERVERS, min_spare=$FPM_MIN_SPARE_SERVERS, max_spare=$FPM_MAX_SPARE_SERVERS"
+fi
+
 # Start Nginx if not running
 if ! pgrep "nginx" > /dev/null; then
    echo "Starting Nginx..."

@@ -33,6 +33,7 @@ RUN apt-get update \
       procps \
       psmisc \
       pandoc \
+      gettext-base \
  && rm -rf /var/lib/apt/lists/*
 
 # Node.js via NodeSource (Debian's apt nodejs is outdated)
@@ -124,6 +125,8 @@ RUN chown 1000:1000 /etc/supercronic.txt
 
 # Copy custom php.ini configuration
 COPY ./src/shared/php.ini /usr/local/etc/php/
+COPY ./src/shared/php-fpm/www.conf.template /usr/local/etc/php-fpm.d/www.conf.template
+RUN rm -f /usr/local/etc/php-fpm.d/www.conf
 
 # Yes, different path for xdebug config, disabled by default
 COPY ./src/shared/xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini.disabled
