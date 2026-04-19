@@ -3,10 +3,14 @@ name: Build and Push Multi-Arch Images
 on:
     workflow_dispatch:
         inputs:
-            php_version:
-                description: 'PHP version to build (e.g., 8.4, 8.5)'
-                required: true
-                default: '8.5'
+            build_php84:
+                description: 'Build PHP 8.4'
+                type: boolean
+                default: true
+            build_php85:
+                description: 'Build PHP 8.5'
+                type: boolean
+                default: true
             version_tag:
                 description: 'Version tag for the images (e.g., 1.3)'
                 required: true
@@ -41,31 +45,30 @@ jobs:
         name: Setup Build Matrix
         runs-on: ubuntu-latest
         outputs:
-            php_version: ${{ steps.set-matrix.outputs.php_version }}
+            php_versions: ${{ steps.set-matrix.outputs.php_versions }}
             variants: ${{ steps.set-matrix.outputs.variants }}
         steps:
             -   name: Set matrix values
                 id: set-matrix
                 run: |
-                    PHP_VERSION="${{ inputs.php_version }}"
+                    # Build PHP versions array based on inputs
+                    php_versions=()
 
-                    # Validate PHP version format (must be X.Y where X and Y are digits)
-                    if [[ ! "$PHP_VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
-                      echo "❌ Error: Invalid PHP version format. Must be X.Y (e.g., 8.4, 8.5)"
-                      exit 1
+                    if [[ "${{ inputs.build_php84 }}" == "true" ]]; then
+                        php_versions+=("8.4")
                     fi
 
-                    # Extract major and minor versions
-                    MAJOR_VERSION="${PHP_VERSION%%.*}"
-                    MINOR_VERSION="${PHP_VERSION##*.}"
-
-                    # Validate reasonable version ranges (PHP 7.0 - 9.9)
-                    if [[ "$MAJOR_VERSION" -lt 7 || "$MAJOR_VERSION" -gt 9 ]]; then
-                      echo "❌ Error: PHP major version must be between 7 and 9"
-                      exit 1
+                    if [[ "${{ inputs.build_php85 }}" == "true" ]]; then
+                        php_versions+=("8.5")
                     fi
 
-                    echo "php_version=${PHP_VERSION}" >> $GITHUB_OUTPUT
+                    if [ ${#php_versions[@]} -eq 0 ]; then
+                        echo "❌ Error: No PHP versions selected."
+                        exit 1
+                    fi
+
+                    PHP_JSON=$(printf '%s\n' "${php_versions[@]}" | jq -R . | jq -s -c .)
+                    echo "php_versions=${PHP_JSON}" >> $GITHUB_OUTPUT
 
                     # Build variants array based on inputs
                     variants=()
@@ -106,6 +109,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
+                php_version: ${{ fromJson(needs.setup.outputs.php_versions) }}
                 variant: ${{ fromJson(needs.setup.outputs.variants) }}
         steps:
             -   name: Checkout code
@@ -132,7 +136,7 @@ jobs:
                 with:
                     images: ghcr.io/jonaaix/laravel-aio
                     tags: |
-                        type=raw,value=${{ inputs.version_tag }}-php${{ needs.setup.outputs.php_version }}-${{ matrix.variant }}
+                        type=raw,value=${{ inputs.version_tag }}-php${{ matrix.php_version }}-${{ matrix.variant }}
 
             -   name: Build and push multi-arch image
                 uses: docker/build-push-action@v5
@@ -141,12 +145,12 @@ jobs:
                     file: ./src/php-${{ matrix.variant }}/Dockerfile
                     platforms: linux/amd64,linux/arm64
                     build-args: |
-                        INPUT_PHP=${{ needs.setup.outputs.php_version }}
+                        INPUT_PHP=${{ matrix.php_version }}
                     tags: ${{ steps.meta.outputs.tags }}
                     labels: ${{ steps.meta.outputs.labels }}
                     push: true
                     provenance: false
                     sbom: false
                     # Add explicit scope to isolate caches per variant
-                    cache-from: type=gha,scope=php-${{ matrix.variant }}
-                    cache-to: type=gha,mode=max,scope=php-${{ matrix.variant }}
+                    cache-from: type=gha,scope=php${{ matrix.php_version }}-${{ matrix.variant }}
+                    cache-to: type=gha,mode=max,scope=php${{ matrix.php_version }}-${{ matrix.variant }}
