@@ -1,7 +1,6 @@
 [www]
 pm = dynamic
 pm.max_children = ${FPM_MAX_CHILDREN}
-pm.start_servers = ${FPM_START_SERVERS}
 pm.min_spare_servers = ${FPM_MIN_SPARE_SERVERS}
 pm.max_spare_servers = ${FPM_MAX_SPARE_SERVERS}
 pm.max_requests = 500

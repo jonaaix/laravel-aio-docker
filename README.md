@@ -171,11 +171,10 @@ The FPM worker pool auto-scales from a single knob. In most cases you only need 
 | Variable | Default | Description |
 | :--- | :--- | :--- |
 | `FPM_MAX_CHILDREN` | `10` | Max concurrent PHP-FPM workers. Bump this when your container has more RAM available (~80MB per worker). |
-| `FPM_START_SERVERS` | `2` | Workers spawned at startup. Rarely needs tuning. |
 | `FPM_MIN_SPARE_SERVERS` | `max(1, max_children / 10)` | Minimum idle workers. Auto-derived from `FPM_MAX_CHILDREN`. |
 | `FPM_MAX_SPARE_SERVERS` | `max(3, max_children / 3)` | Maximum idle workers. Auto-derived from `FPM_MAX_CHILDREN`. |
 
-Hardcoded (not configurable): `pm = dynamic`, `pm.max_requests = 500` (worker recycle for memory leak mitigation), `request_terminate_timeout = 120s`.
+Hardcoded (not configurable): `pm = dynamic`, `pm.max_requests = 500` (worker recycle for memory leak mitigation), `request_terminate_timeout = 120s`. `pm.start_servers` is intentionally omitted so PHP-FPM auto-calculates it as `(min_spare + max_spare) / 2` per its own documented default.
 
 **Note on worker count:** PHP-FPM workers scale with available RAM, not CPU cores. PHP requests are mostly I/O-bound (waiting on DB, HTTP, filesystem), so many more workers than cores are expected and correct.
 

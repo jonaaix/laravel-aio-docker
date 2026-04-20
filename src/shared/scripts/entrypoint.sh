@@ -45,30 +45,35 @@ shutdown_handler() {
    # Cache artisan command list once to avoid booting Laravel multiple times
    ARTISAN_COMMANDS=$(php artisan 2>/dev/null || true)
 
-   PIDS=""
+   # Stop services
+   if echo "$ARTISAN_COMMANDS" | grep -q "horizon"; then
+       echo "Terminating Laravel Horizon..."
+       php artisan horizon:terminate || true
+   fi
 
-   # Stop services in parallel
+   if echo "$ARTISAN_COMMANDS" | grep -q "reverb"; then
+       echo "Terminating Laravel Reverb..."
+       php artisan reverb:restart || true
+   fi
+
+   if echo "$ARTISAN_COMMANDS" | grep -q "octane"; then
+       echo "Stopping Laravel Octane..."
+       php artisan octane:stop || true
+   fi
+
+   # Wait for Horizon workers to finish their current jobs before killing Supervisor
+   # (compose stop_grace_period is 60s; cap at 50s to leave buffer for Supervisor shutdown).
+   TIMEOUT=50
+   while [ $TIMEOUT -gt 0 ] && pgrep -f "horizon:(work|supervisor)" > /dev/null; do
+       sleep 1
+       TIMEOUT=$((TIMEOUT - 1))
+   done
+
    if pgrep supervisord > /dev/null; then
        echo "Killing Supervisor..."
        killall supervisord || true
    fi
 
-   if echo "$ARTISAN_COMMANDS" | grep -q "octane"; then
-       echo "Stopping Laravel Octane..."
-       php artisan octane:stop & PIDS="$PIDS $!"
-   fi
-
-   if echo "$ARTISAN_COMMANDS" | grep -q "horizon"; then
-       echo "Terminating Laravel Horizon..."
-       php artisan horizon:terminate & PIDS="$PIDS $!"
-   fi
-
-   if echo "$ARTISAN_COMMANDS" | grep -q "reverb"; then
-       echo "Terminating Laravel Reverb..."
-       php artisan reverb:restart & PIDS="$PIDS $!"
-   fi
-
-   [ -n "$PIDS" ] && wait $PIDS
    exit 0
 }
 trap 'shutdown_handler' SIGINT SIGQUIT SIGTERM
@@ -102,18 +107,20 @@ else
 fi
 
 # Render PHP-FPM pool tuning override from template with sensible auto-scaled defaults
+# (pm.start_servers is omitted intentionally — PHP-FPM auto-calculates it as (min+max)/2).
 if [ "$PHP_RUNTIME_CONFIG" = "fpm" ] && [ -f /usr/local/etc/php-fpm.d/zz-pool-tuning.conf.template ]; then
    export FPM_MAX_CHILDREN="${FPM_MAX_CHILDREN:-10}"
    MIN_SPARE_AUTO=$(( FPM_MAX_CHILDREN / 10 ))
    [ "$MIN_SPARE_AUTO" -lt 1 ] && MIN_SPARE_AUTO=1
    MAX_SPARE_AUTO=$(( FPM_MAX_CHILDREN / 3 ))
    [ "$MAX_SPARE_AUTO" -lt 3 ] && MAX_SPARE_AUTO=3
-   export FPM_START_SERVERS="${FPM_START_SERVERS:-2}"
    export FPM_MIN_SPARE_SERVERS="${FPM_MIN_SPARE_SERVERS:-$MIN_SPARE_AUTO}"
    export FPM_MAX_SPARE_SERVERS="${FPM_MAX_SPARE_SERVERS:-$MAX_SPARE_AUTO}"
+   # Make writable for re-render on container restart, then lock down again.
+   chmod 644 /usr/local/etc/php-fpm.d/zz-pool-tuning.conf
    envsubst < /usr/local/etc/php-fpm.d/zz-pool-tuning.conf.template > /usr/local/etc/php-fpm.d/zz-pool-tuning.conf
    chmod 444 /usr/local/etc/php-fpm.d/zz-pool-tuning.conf
-   echo "PHP-FPM pool: max_children=$FPM_MAX_CHILDREN, start=$FPM_START_SERVERS, min_spare=$FPM_MIN_SPARE_SERVERS, max_spare=$FPM_MAX_SPARE_SERVERS"
+   echo "PHP-FPM pool: max_children=$FPM_MAX_CHILDREN, min_spare=$FPM_MIN_SPARE_SERVERS, max_spare=$FPM_MAX_SPARE_SERVERS (start auto)"
 fi
 
 # Start Nginx if not running
