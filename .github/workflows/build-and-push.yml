@@ -40,6 +40,9 @@ permissions:
     packages: write
     contents: read
 
+env:
+    FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
     setup:
         name: Setup Build Matrix
@@ -113,7 +116,7 @@ jobs:
                 variant: ${{ fromJson(needs.setup.outputs.variants) }}
         steps:
             -   name: Checkout code
-                uses: actions/checkout@v4
+                uses: actions/checkout@v5
 
             -   name: Set up QEMU
                 uses: docker/setup-qemu-action@v3
