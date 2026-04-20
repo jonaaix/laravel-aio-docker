@@ -561,6 +561,9 @@ if [ "$PHP_RUNTIME_CONFIG" != "fpm" ]; then
    if [ "$ENV_DEV" = "true" ]; then
       cat /etc/supervisor/conf.d/octane-worker-dev.conf >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
    else
+      # Best practice for Octane: 2x CPU cores (Laravel runs blocking PHP, so I/O waits stall workers).
+      export OCTANE_WORKERS=$(( $(nproc) * 2 ))
+      echo "Octane workers: $OCTANE_WORKERS ($(nproc) cores * 2)"
       cat /etc/supervisor/conf.d/octane-worker-prod.conf >> /etc/supervisor/conf.d/laravel-worker-compiled.conf
    fi
    echo "============================"
