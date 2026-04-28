@@ -208,6 +208,9 @@ chown -R $USER:www-data storage bootstrap/cache
 find storage bootstrap/cache -type d -exec chmod 775 {} \;
 find storage bootstrap/cache -type f -exec chmod 664 {} \;
 
+# Laravel Passport OAuth keys require 600 — Passport refuses keys with looser permissions.
+chmod 600 storage/oauth-*.key 2>/dev/null || true
+
 if [ -f "database/database.sqlite" ]; then
     chown $USER:www-data database/database.sqlite
     chmod 664 database/database.sqlite

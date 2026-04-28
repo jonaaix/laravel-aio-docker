@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 1.3.3 (PHP 8.4 and PHP 8.5)
+- Fix permission fixer overwriting Laravel Passport OAuth keys (`storage/oauth-*.key`) with `664`. Passport requires `600` and will refuse to load the private key otherwise.
+
 ## Version 1.3.2 (PHP 8.4 and PHP 8.5)
 - Moved image registry to GitHub (ghcr.io)
 - Automatically generate `APP_KEY` on first run if not set to prevent boot errors
