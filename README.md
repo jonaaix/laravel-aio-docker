@@ -78,15 +78,6 @@ docker compose exec -it php_ai bash
 
 **Persistence.** Two host-mounted directories are recommended so state survives container rebuilds — both scoped per compose project:
 
-```yaml
-volumes:
-    - ${HOME}/.laravel-aio-claude/${COMPOSE_PROJECT_NAME}/session:/home/laravel/.claude
-    - ${HOME}/.laravel-aio-claude/${COMPOSE_PROJECT_NAME}/threads-config:/home/laravel/.config
-```
-
-- `.claude/` — Claude Code login/credentials
-- `.config/` — claude-threads wizard output (bot tokens, channel IDs)
-
 **One-time setup** per project:
 
 1. Bring up the stack with `ENABLE_CLAUDE_THREADS=true`. On first boot the bot will crash-loop until configured — that's expected.
