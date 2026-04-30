@@ -52,11 +52,11 @@ RUN mkdir -p /home/laravel/.config \
  && printf '%s\n' \
     'eval "$(starship init bash)"' \
     'export PATH=/home/laravel/.local/bin:/home/laravel/.npm-global/bin:/usr/local/share/container-bin:$PATH' \
-    > /home/laravel/.bashrc \
- && printf '%s\n' \
-    'add_newline = false' \
-    > /home/laravel/.config/starship.toml \
- && chown -R laravel:laravel /home/laravel
+    > /home/laravel/.bashrc
+
+COPY src/php-fpm-claude/starship.toml /home/laravel/.config/starship.toml
+
+RUN chown -R laravel:laravel /home/laravel
 
 # Set Bash as the default shell
 SHELL ["/bin/bash", "-c"]
