@@ -16,6 +16,6 @@
 - If you find yourself on `main` or `dev`, checkout to an appropriate `ai/feature/*` branch immediately before making any changes.
 
 ## Commits
-- Commit frequently with descriptive messages in plain language.
+- Commit frequently with descriptive messages in plain language, while not ending in micro commits.
 - Never commit `.env`, `.env.local`, credentials, API keys, or files matching `*secret*`, `*credentials*`, `*token*`.
 - Never run destructive operations (`git reset --hard`, `git checkout .`, `git clean -fd`, `git stash drop`, `git push --force`) without explaining and confirming with the user first.
