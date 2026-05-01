@@ -195,7 +195,7 @@ RUN if [ "${TARGETARCH}" = "amd64" ]; then \
 RUN curl -fsSL https://claude.ai/install.sh | bash
 
 # Register MCP servers globally for all projects
-RUN claude mcp add --transport stdio --scope user playwright -- npx -y @playwright/mcp@latest \
+RUN claude mcp add --transport stdio --scope user playwright -- npx -y @playwright/mcp@latest --output-dir .playwright-mcp \
  && claude mcp add --transport stdio --scope user context7 -- npx -y @upstash/context7-mcp
 
 # Clone LSP marketplace for phpactor plugin
