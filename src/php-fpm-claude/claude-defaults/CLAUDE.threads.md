@@ -19,3 +19,22 @@
 - Commit frequently with descriptive messages in plain language, while not ending in micro commits.
 - Never commit `.env`, `.env.local`, credentials, API keys, or files matching `*secret*`, `*credentials*`, `*token*`.
 - Never run destructive operations (`git reset --hard`, `git checkout .`, `git clean -fd`, `git stash drop`, `git push --force`) without explaining and confirming with the user first.
+
+## Sharing browser screenshots
+Chat attachments are unavailable, so expose screenshots through the app’s public/static directory and reply with only the URL.
+
+Store screenshots at:
+```text
+<public-root>/playwright-mcp/<aa>/<bb>/<cc>/<rest>/<name>.png
+```
+
+Per chat session, generate one random 24-char hex hash. Use the first three 2-char chunks as shard folders and the remaining 18 chars as the session folder. Reuse that folder for all screenshots in the session.
+Exclude the folder from version control:
+```gitignore
+<public-root>/playwright-mcp/
+```
+
+Build the URL from the app’s base URL:
+```text
+<base-url>/playwright-mcp/<aa>/<bb>/<cc>/<rest>/<name>.png
+```
