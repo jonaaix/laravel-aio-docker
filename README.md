@@ -80,7 +80,7 @@ docker compose exec -it php_ai bash
 
 **One-time setup** per project:
 
-1. Bring up the stack with `ENABLE_CLAUDE_THREADS=true`. On first boot the bot will crash-loop until configured — that's expected.
+1. Bring up the stack with `DEV_ENABLE_CLAUDE_THREADS=true`. On first boot the bot will crash-loop until configured — that's expected.
 2. Log in to Claude: `docker compose exec -it php_ai claude` → run `/login` → follow the device-code flow.
 3. Run the config wizard: `docker compose exec -it php_ai claude-threads` → enter Mattermost/Slack credentials.
 4. Restart the container. Supervisor picks up the new config and the bot joins the channel.
