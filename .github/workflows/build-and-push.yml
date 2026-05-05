@@ -142,7 +142,7 @@ jobs:
                         type=raw,value=${{ inputs.version_tag }}-php${{ matrix.php_version }}-${{ matrix.variant }}
 
             -   name: Build and push multi-arch image
-                uses: docker/build-push-action@v5
+                uses: docker/build-push-action@v6
                 with:
                     context: .
                     file: ./src/php-${{ matrix.variant }}/Dockerfile
