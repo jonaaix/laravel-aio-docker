@@ -175,12 +175,11 @@ ENV PATH=/home/laravel/.local/bin:/home/laravel/.npm-global/bin:${PATH}
 RUN mkdir -p /home/laravel/.npm-global /home/laravel/.claude /home/laravel/.local/bin \
  && chown -R laravel:laravel /home/laravel
 
-# Install MCP server dependencies globally
-RUN npm install -g @playwright/mcp @upstash/context7-mcp claude-threads \
- && mkdir -p /home/laravel/.npm && chown -R laravel:laravel /home/laravel/.npm
-
 # Install Claude for laravel user which runs the container
 USER laravel
+
+# Install MCP server dependencies globally (as laravel, into laravel-owned NPM_CONFIG_PREFIX)
+RUN npm install -g @playwright/mcp @upstash/context7-mcp claude-threads
 
 # Install php-lsp (Rust-based PHP language server)
 RUN if [ "${TARGETARCH}" = "amd64" ]; then \
