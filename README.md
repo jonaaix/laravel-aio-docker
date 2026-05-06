@@ -73,7 +73,6 @@ services:
     environment:
       ENV_DEV: true
       SKIP_LARAVEL_BOOT: true
-    restart: 'no'
 ```
 
 Run `docker compose exec -it php_ai claude` to start an AI session against your codebase. Permission-bypass mode is contained to the project mount — the host filesystem is unreachable. The `php` container can be restarted as often as you want without dropping the AI session. See [FPM + Claude Code](https://jonaaix.github.io/laravel-aio-docker/variants/fpm-claude) for details.

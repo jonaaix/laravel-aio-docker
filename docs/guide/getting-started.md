@@ -62,7 +62,6 @@ services:
     environment:
       ENV_DEV: true
       SKIP_LARAVEL_BOOT: true
-    restart: 'no'
 ```
 
 ::: info Why two services
