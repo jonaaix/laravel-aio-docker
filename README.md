@@ -38,7 +38,7 @@ services:
 | `1.3-php8.5-fpm-claude` | PHP-FPM + Claude Code (dev only) |
 | `1.3-php8.5-frankenphp` | Octane / FrankenPHP |
 | `1.3-php8.5-roadrunner` | Octane / RoadRunner |
-| `1.3-php8.4-openswoole` | Octane / OpenSwoole (PHP 8.4 only) |
+| `1.3-php8.5-openswoole` | Octane / OpenSwoole |
 
 PHP 8.4 builds also exist for all variants — replace `php8.5` with `php8.4`.
 

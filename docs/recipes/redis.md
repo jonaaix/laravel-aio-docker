@@ -1,6 +1,6 @@
 # Adding Redis
 
-To add Redis to your stack, add the following service to your `docker-compose.yml`:
+To add Redis to your stack, add the following service to your `compose.yaml`:
 
 ```yaml
 volumes:
@@ -9,7 +9,6 @@ volumes:
 
 services:
   redis:
-    container_name: ${APP_NAME}_redis
     image: redis:8-alpine
     volumes:
       - redis_volume:/data

@@ -1,0 +1,5 @@
+/* Widen the prose content column on pages with an outline.
+ * VitePress default constrains it to 688px; we use 750px for slightly more breathing room. */
+.VPDoc.has-aside .content-container {
+   max-width: 750px !important;
+}

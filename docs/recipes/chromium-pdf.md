@@ -2,10 +2,10 @@
 
 Chromium is included in the `1.3` images, so you can use it to generate PDFs in your Laravel application.
 
-Install the package `spatie/laravel-pdf` and configure it to use the `chrome` driver.
+Install the packages `spatie/laravel-pdf` and `spatie/browsershot` and configure them to use the `chrome` driver.
 
 ```shell
-composer require spatie/laravel-pdf
+composer require spatie/laravel-pdf spatie/browsershot
 npm install -S puppeteer
 ```
 

@@ -25,7 +25,7 @@ features:
     details: No abstraction layers, no custom CLI. The same image for dev and prod, full control over build and runtime.
 ---
 
-## Why this image
+## Why this image instead of Laravel Sail
 
 This image relies exclusively on **native Docker tooling** and intentionally avoids additional abstraction layers or custom APIs. It gives developers **full control over build, runtime, and configuration**, without being constrained by predefined conventions. Development and production setups are based on the same image and are fully reproducible.
 
@@ -39,8 +39,7 @@ This image relies exclusively on **native Docker tooling** and intentionally avo
 | `ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm-claude` | PHP-FPM + Claude Code |
 | `ghcr.io/jonaaix/laravel-aio:1.3-php8.5-roadrunner` | Octane / RoadRunner |
 | `ghcr.io/jonaaix/laravel-aio:1.3-php8.5-frankenphp` | Octane / FrankenPHP |
-
-> _OpenSwoole is not compatible with PHP 8.5 yet._
+| `ghcr.io/jonaaix/laravel-aio:1.3-php8.5-openswoole` | Octane / OpenSwoole |
 
 ### Laravel 10 & 11 — PHP 8.4
 

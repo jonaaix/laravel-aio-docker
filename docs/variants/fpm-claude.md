@@ -16,7 +16,9 @@ This variant is designed for **local AI-assisted development only**.
 ## What's included on top of the standard FPM image
 
 - **Claude Code CLI** — pre-installed and pre-configured for the `laravel` user
-- **[claude-threads](https://github.com/anneschuth/claude-threads)** — optional Mattermost/Slack bridge, enabled via `DEV_ENABLE_CLAUDE_THREADS=true`
+- **[php-lsp](https://github.com/jorgsowa/php-lsp)** — Rust-based PHP language server in `/home/laravel/.local/bin/`, plus the [claude-code-lsps](https://github.com/Piebald-AI/claude-code-lsps) plugin marketplace cloned under `~/.claude-defaults/plugins/marketplaces/`, so Claude can offer code-aware lookups (definitions, references, types) on PHP files
+- **MCP servers pre-registered for the `laravel` user**: [Playwright MCP](https://github.com/microsoft/playwright-mcp) (browser automation) and [Context7 MCP](https://github.com/upstash/context7) (up-to-date library docs)
+- **[claude-threads](https://github.com/anneschuth/claude-threads)** — optional Mattermost/Slack bridge, enabled via `DEV_ENABLE_CLAUDE_THREADS: true`
 - **Starship** prompt with git status display
 - **Sudo** access without password for the `laravel` user
 
@@ -40,13 +42,13 @@ docker compose exec -it php_ai bash
 
 [claude-threads](https://github.com/anneschuth/claude-threads) wraps the Claude Code CLI and exposes it as a bot in a Mattermost or Slack channel. Each chat thread gets its own Claude session — useful to let non-technical teammates work on a Laravel project via chat.
 
-**Enable it** by setting `DEV_ENABLE_CLAUDE_THREADS=true` (requires `ENV_DEV=true`). Supervisor then keeps the bot running in the background and auto-restarts it on crashes.
+**Enable it** by setting `DEV_ENABLE_CLAUDE_THREADS: true` (requires `ENV_DEV: true`). Supervisor then keeps the bot running in the background and auto-restarts it on crashes.
 
 **Persistence.** Two host-mounted directories are recommended so state survives container rebuilds — both scoped per compose project.
 
 ### One-time setup per project
 
-1. Bring up the stack with `DEV_ENABLE_CLAUDE_THREADS=true`. On first boot the bot will crash-loop until configured — that's expected.
+1. Bring up the stack with `DEV_ENABLE_CLAUDE_THREADS: true`. On first boot the bot will crash-loop until configured — that's expected.
 2. Log in to Claude: `docker compose exec -it php_ai claude` → run `/login` → follow the device-code flow.
 3. Run the config wizard: `docker compose exec -it php_ai claude-threads` → enter Mattermost/Slack credentials.
 4. Restart the container. Supervisor picks up the new config and the bot joins the channel.

@@ -7,7 +7,7 @@ You can hook into the entrypoint boot process by mounting custom script director
 | `/custom-scripts/before-boot` | Very early — after the banner, before xdebug/nginx/laravel boot |
 | `/custom-scripts/after-boot` | Very late — after `PHP READY`, before container `wait_forever` |
 
-## docker-compose example
+## Compose example
 
 ```yaml
 services:

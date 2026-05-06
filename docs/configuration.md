@@ -15,7 +15,7 @@ The system runs in **Production Mode** by default.
 ## Development Features
 
 ::: info Requirement
-Active only when `ENV_DEV=true`.
+Active only when `ENV_DEV: true`.
 :::
 
 | Variable | Description |

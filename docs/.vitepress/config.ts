@@ -31,7 +31,6 @@ export default defineConfig({
         items: [
           { text: 'Quick start', link: '/guide/getting-started' },
           { text: 'Project ownership', link: '/guide/project-ownership' },
-          { text: 'Dev docker-compose', link: '/guide/dev-docker-compose' },
         ],
       },
       {
@@ -44,26 +43,28 @@ export default defineConfig({
           { text: 'OpenSwoole (Octane)', link: '/variants/openswoole' },
         ],
       },
-      {
-        text: 'Configuration',
-        items: [{ text: 'Environment variables', link: '/configuration' }],
-      },
+      { text: 'Configuration', link: '/configuration' },
       {
         text: 'Development',
         items: [{ text: 'Xdebug', link: '/development/xdebug' }],
       },
       {
         text: 'Deployment',
-        items: [{ text: 'Dockerfile strategy', link: '/deployment/dockerfile-strategy' }],
+        items: [
+          { text: 'Mounted host directory', link: '/deployment/mounted-host-dir' },
+          { text: 'Dockerfile strategy', link: '/deployment/dockerfile-strategy' },
+          { text: 'Automated deployment / CI', link: '/deployment/automated-deployment' },
+        ],
       },
       {
         text: 'Recipes',
         items: [
+          { text: 'Adding databases', link: '/recipes/databases' },
+          { text: 'Adding Redis', link: '/recipes/redis' },
+          { text: 'Adding phpMyAdmin', link: '/recipes/phpmyadmin' },
+          { text: 'Adding Chromium PDF', link: '/recipes/chromium-pdf' },
           { text: 'SPA with integrated nginx', link: '/recipes/spa-with-nginx' },
           { text: 'Custom boot scripts', link: '/recipes/custom-scripts' },
-          { text: 'Adding Redis', link: '/recipes/redis' },
-          { text: 'Adding Chromium PDF', link: '/recipes/chromium-pdf' },
-          { text: 'Adding phpMyAdmin', link: '/recipes/phpmyadmin' },
           { text: 'Debugging nginx', link: '/recipes/nginx-debugging' },
         ],
       },

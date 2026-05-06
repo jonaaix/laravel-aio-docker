@@ -5,7 +5,6 @@ Add a phpMyAdmin service alongside your Laravel container:
 ```yaml
 services:
   pma:
-    container_name: ${APP_NAME}_pma
     image: phpmyadmin:latest
     environment:
       PMA_HOST: mysql

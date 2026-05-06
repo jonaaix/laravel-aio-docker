@@ -1,6 +1,6 @@
 # Xdebug
 
-To enable Xdebug, set `DEV_ENABLE_XDEBUG=true` in your `docker-compose.yml`. You can connect to the Xdebug server on port `9003`.
+To enable Xdebug, set `DEV_ENABLE_XDEBUG: true` in your `compose.yaml`. You can connect to the Xdebug server on port `9003`.
 
 ```yaml
 services:
@@ -12,7 +12,7 @@ services:
 ```
 
 ::: warning
-Xdebug only activates when `ENV_DEV=true`. In production mode, Xdebug is forcibly disabled even if `DEV_ENABLE_XDEBUG=true` is set.
+Xdebug only activates when `ENV_DEV: true`. In production mode, Xdebug is forcibly disabled even if `DEV_ENABLE_XDEBUG: true` is set.
 :::
 
 ## PHPStorm Configuration
@@ -22,7 +22,7 @@ Xdebug only activates when `ENV_DEV=true`. In production mode, Xdebug is forcibl
 3. **Xdebug:** **DISABLE** `Force break at first line when no path mapping specified`
 4. **Xdebug:** **DISABLE** `Force break at first line when a script is outside the project`
 5. Go to `Settings` → `PHP` → `Servers`
-6. Add a new server with name `laravel` according to the docker-compose configuration:
+6. Add a new server with name `laravel` according to the compose configuration:
    - Name: `laravel`
    - Host: `localhost`
    - Port: `8000`

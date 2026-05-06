@@ -9,15 +9,9 @@ The standard FPM variant — the default for most Laravel deployments. Combines 
 | `ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm` | 8.5 |
 | `ghcr.io/jonaaix/laravel-aio:1.3-php8.4-fpm` | 8.4 |
 
-## When to use
-
-- Default Laravel deployments
-- Apps that don't need long-running workers / Octane
-- When you want simple, well-understood request lifecycle (process per request)
-
 ## Quick start
 
-See [Get Started](/guide/getting-started) for a minimal `docker-compose.yml` snippet, or jump to [Configuration](/configuration) for the full env-var reference.
+See [Quick start](/guide/getting-started) for a minimal `compose.yaml` snippet, or jump to [Configuration](/configuration) for the full env-var reference.
 
 ## FPM-specific tuning
 

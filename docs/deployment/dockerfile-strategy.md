@@ -1,10 +1,10 @@
-# Dockerfile Deployments
+# Dockerfile strategy
 
 When building a custom Docker image that already contains your application code, `vendor/`, and compiled assets (e.g. `public/build`), you can instruct the entrypoint to skip the build steps that were already performed during the image build.
 
-Set `ENABLE_DOCKERFILE_STRATEGY=true` to skip `composer install`, `npm install`, and `npm run build`. When enabled, the entrypoint will automatically run `composer run-script post-autoload-dump` at container startup to execute any scripts (e.g. `package:discover`, `filament:upgrade`) that were skipped during the build due to `--no-scripts`.
+Set `ENABLE_DOCKERFILE_STRATEGY: true` to skip `composer install`, `npm install`, and `npm run build`. When enabled, the entrypoint will automatically run `composer run-script post-autoload-dump` at container startup to execute any scripts (e.g. `package:discover`, `filament:upgrade`) that were skipped during the build due to `--no-scripts`.
 
-## docker-compose example
+## Compose example
 
 ```yaml
 services:

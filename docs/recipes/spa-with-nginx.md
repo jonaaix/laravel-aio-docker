@@ -2,7 +2,7 @@
 
 Serve a JavaScript SPA (Vue, React, etc.) from the same container as your Laravel API by mounting a custom `nginx.conf` and the SPA build output.
 
-## docker-compose mounts
+## Compose mounts
 
 Create a custom `nginx.conf` in your repository, and mount it in place of the default one. Also mount your built SPA into `/js-app`.
 
