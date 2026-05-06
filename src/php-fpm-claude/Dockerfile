@@ -140,9 +140,7 @@ WORKDIR /app
 # Copy entire scripts folder into container
 COPY ./src/shared/scripts /scripts
 
-# Shared entrypoint calls BusyBox `crond` which Debian lacks; supercronic runs via supervisor anyway.
-RUN sed -i 's|^crond start -f -l 1 &|command -v crond >/dev/null 2>\&1 \&\& crond start -f -l 1 \&|' /scripts/entrypoint.sh \
- && find /scripts -type f -name "*.sh" -exec chmod +x {} \;
+RUN find /scripts -type f -name "*.sh" -exec chmod +x {} \;
 
 # Set secure ownership and permissions for Supervisor config directory
 RUN chown -R laravel:laravel /etc/supervisor/conf.d \
