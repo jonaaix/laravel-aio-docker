@@ -54,7 +54,7 @@ RUN mkdir -p /home/laravel/.config \
     'export PATH=/home/laravel/.local/bin:/home/laravel/.npm-global/bin:/usr/local/share/container-bin:$PATH' \
     > /home/laravel/.bashrc
 
-COPY src/php-fpm-claude/starship.toml /home/laravel/.config/starship.toml
+COPY src/shared/starship.toml /home/laravel/.config/starship.toml
 
 RUN chown -R laravel:laravel /home/laravel
 

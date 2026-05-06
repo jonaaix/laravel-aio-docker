@@ -1,0 +1,7 @@
+add_newline = true
+
+format = "$directory$git_branch$git_status$cmd_duration$character"
+
+[cmd_duration]
+min_time = 500
+

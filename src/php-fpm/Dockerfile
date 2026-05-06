@@ -45,6 +45,19 @@ RUN apk update && apk add --no-cache \
 
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
+# Starship prompt for interactive shells (laravel user)
+RUN curl -sS https://starship.rs/install.sh | sh -s -- -y -b /usr/local/bin
+
+RUN mkdir -p /home/laravel/.config \
+ && printf '%s\n' \
+    'eval "$(starship init bash)"' \
+    'export PATH=/home/laravel/.local/bin:/home/laravel/.npm-global/bin:/usr/local/share/container-bin:$PATH' \
+    > /home/laravel/.bashrc
+
+COPY src/shared/starship.toml /home/laravel/.config/starship.toml
+
+RUN chown -R laravel:laravel /home/laravel/.bashrc /home/laravel/.config
+
 # PHP Extension installer
 ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
 
