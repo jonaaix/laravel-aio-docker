@@ -146,6 +146,7 @@ jobs:
                     platforms: linux/amd64,linux/arm64
                     build-args: |
                         INPUT_PHP=${{ matrix.php_version }}
+                        CACHEBUST_NPM_GLOBAL=${{ github.run_id }}-${{ github.run_attempt }}
                     tags: ${{ steps.meta.outputs.tags }}
                     labels: ${{ steps.meta.outputs.labels }}
                     push: true

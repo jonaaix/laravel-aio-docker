@@ -177,7 +177,9 @@ RUN mkdir -p /home/laravel/.npm-global /home/laravel/.claude /home/laravel/.loca
 USER laravel
 
 # Install MCP server dependencies globally (as laravel, into laravel-owned NPM_CONFIG_PREFIX)
-RUN npm install -g @playwright/mcp @upstash/context7-mcp claude-threads
+ARG CACHEBUST_NPM_GLOBAL=initial
+RUN echo "npm-global cache key: ${CACHEBUST_NPM_GLOBAL}" \
+ && npm install -g @playwright/mcp@latest @upstash/context7-mcp@latest claude-threads@latest
 
 # Install php-lsp (Rust-based PHP language server)
 RUN if [ "${TARGETARCH}" = "amd64" ]; then \

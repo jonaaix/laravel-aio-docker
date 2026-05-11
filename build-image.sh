@@ -81,6 +81,7 @@ echo "🏗️  Building for platform: ${platform}"
 docker buildx build \
   --platform "${platform}" \
   --build-arg INPUT_PHP="${phpVersion}" \
+  --build-arg CACHEBUST_NPM_GLOBAL="$(date +%s)" \
   --tag "${imageTag}" \
   --file "${dockerfilePath}" \
   ${outputFlag} .
