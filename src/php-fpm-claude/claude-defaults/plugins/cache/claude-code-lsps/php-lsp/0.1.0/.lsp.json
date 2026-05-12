@@ -13,11 +13,16 @@
         },
         "initializationOptions": {
             "phpVersion": "8.5",
-            "excludePaths": [],
+            "excludePaths": [
+                "node_modules/*",
+                "storage/*",
+                "bootstrap/cache/*",
+                "public/build/*"
+            ],
             "diagnostics": {
                 "enabled": true,
                 "undefinedVariables": true,
-                "undefinedFunctions": true,
+                "undefinedFunctions": false,
                 "undefinedClasses": true,
                 "arityErrors": true,
                 "typeErrors": true,

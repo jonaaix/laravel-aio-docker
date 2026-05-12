@@ -207,6 +207,34 @@ RUN cp /home/laravel/.claude-defaults/settings.json /home/laravel/.claude/settin
  && cp /home/laravel/.claude-defaults/CLAUDE.md /home/laravel/.claude/CLAUDE.md \
  && cp /home/laravel/.claude.json /home/laravel/.claude-defaults/.claude.json
 
+# Patch php-lsp config in both the installed-plugin cache (active at runtime)
+# and the marketplace clone (used if the plugin is ever reinstalled/refreshed).
+# Sets phpVersion to this image's actual PHP runtime, adds common noise excludes,
+# and disables undefinedFunctions (https://github.com/jorgsowa/php-lsp/issues/92 —
+# incomplete built-in stubs flag count(), array_*, str_*, trim() etc. as undefined).
+#
+# Pinned to a known plugin manifest version: a new upstream version may restructure
+# .lsp.json so blindly patching it could corrupt the config. On a mismatch the build
+# fails — review the upstream changes, adapt the jq filter and the cached snapshot
+# under claude-defaults/plugins/cache/<version>/, then bump EXPECTED_PLUGIN_VERSION.
+RUN EXPECTED_PLUGIN_VERSION=0.1.0 \
+ && PLUGIN_JSON=/home/laravel/.claude-defaults/plugins/marketplaces/claude-code-lsps/php-lsp/plugin.json \
+ && ACTUAL=$(jq -r '.version' "$PLUGIN_JSON") \
+ && if [ "$ACTUAL" != "$EXPECTED_PLUGIN_VERSION" ]; then \
+      echo "ERROR: claude-code-lsps/php-lsp upstream version is $ACTUAL, pinned at $EXPECTED_PLUGIN_VERSION."; \
+      echo "Inspect the new .lsp.json structure, adapt patches and the cached snapshot, then bump the pin."; \
+      exit 1; \
+    fi \
+ && PHP_VER=$(php -r 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION;') \
+ && JQ_PATCH='.php.initializationOptions.phpVersion = $ver | .php.initializationOptions.excludePaths = ["node_modules/*", "storage/*", "bootstrap/cache/*", "public/build/*"] | .php.initializationOptions.diagnostics.undefinedFunctions = false' \
+ && for f in \
+      /home/laravel/.claude-defaults/plugins/cache/claude-code-lsps/php-lsp/$EXPECTED_PLUGIN_VERSION/.lsp.json \
+      /home/laravel/.claude-defaults/plugins/marketplaces/claude-code-lsps/php-lsp/.lsp.json; \
+    do \
+      [ -f "$f" ] || continue; \
+      jq --arg ver "$PHP_VER" "$JQ_PATCH" "$f" > "$f.tmp" && mv "$f.tmp" "$f"; \
+    done
+
 # Copy MCP and plugin merge scripts
 COPY ./src/php-fpm-claude/merge-mcp-servers.js /scripts/merge-mcp-servers.js
 COPY ./src/php-fpm-claude/merge-plugins.js /scripts/merge-plugins.js
