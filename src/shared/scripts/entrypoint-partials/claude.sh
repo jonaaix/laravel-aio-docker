@@ -18,6 +18,11 @@ claude_init() {
       cat /home/laravel/.claude-defaults/CLAUDE.nontech.md >> /home/laravel/.claude/CLAUDE.md
    fi
 
+   if [ "$DEV_ENABLE_CLAUDE_SOFTDEV_MODE" = "true" ] && [ "$ENV_DEV" = "true" ]; then
+      echo "" >> /home/laravel/.claude/CLAUDE.md
+      cat /home/laravel/.claude-defaults/CLAUDE.softdev.md >> /home/laravel/.claude/CLAUDE.md
+   fi
+
    node /scripts/merge-mcp-servers.js
    node /scripts/merge-plugins.js
 }

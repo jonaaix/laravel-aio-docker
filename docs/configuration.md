@@ -24,7 +24,8 @@ Active only when `ENV_DEV: true`.
 | `DEV_NPM_RUN_DEV` | Runs `npm run dev` (Vite) on container start. |
 | `DEV_ENABLE_XDEBUG` | Enables Xdebug extension. See [Xdebug](/development/xdebug). |
 | `DEV_ENABLE_CLAUDE_THREADS` | **`fpm-claude` only.** Starts the claude-threads Mattermost/Slack bridge. |
-| `DEV_ENABLE_CLAUDE_NONTECH_MODE` | **`fpm-claude` only.** Appends a chat-friendly system prompt (plain language, short answers, proactive) — use for non-technical end users. |
+| `DEV_ENABLE_CLAUDE_NONTECH_MODE` | **`fpm-claude` only.** Appends a system prompt for non-developer app builders — speaks in features instead of code, hides paths/errors/commands, verifies via the app UI. |
+| `DEV_ENABLE_CLAUDE_SOFTDEV_MODE` | **`fpm-claude` only.** Appends a chat-friendly system prompt for developers using chat UIs — short answers, summarized tool output, proactive on routine commands. |
 
 ## Production Automation
 
