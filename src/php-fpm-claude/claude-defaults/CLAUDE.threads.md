@@ -2,23 +2,30 @@
 
 ## Branch model
 - `main` and `dev` are human-owned. NEVER commit to them, push to them, or edit files while checked out on them.
-- `dev_ai` is the AI working branch, branched from `dev`. All AI work lives downstream of it.
-- For every new feature or task, create a branch `ai/feature/<short-kebab-name>` off `dev_ai`.
-- For bug fixes, use `ai/fix/<short-kebab-name>` off `dev_ai`.
-- When a feature is complete and tested, you may merge `ai/feature/<name>` back into `dev_ai` yourself (use `git merge --no-ff`). Delete the feature branch after merging.
+- `dev_ai` is the AI working branch, branched from `dev`. Default: work and commit directly on `dev_ai` — it flows into `dev`.
+- Only create a separate branch when the user explicitly asks for one. In that case:
+  - features → `ai/feature/<short-kebab-name>` off `dev_ai`
+  - bug fixes → `ai/fix/<short-kebab-name>` off `dev_ai`
+  - when done and tested, merge back into `dev_ai` with `git merge --no-ff` and delete the branch.
 
 ## Syncing with upstream `dev`
 - Do not auto-sync. When you notice `dev` has moved significantly ahead of `dev_ai`, proactively propose merging `dev` into `dev_ai` and wait for user confirmation before doing it.
 - Sync via merge, never rebase. Never force-push any branch, ever.
 
 ## Initial setup
-- If `dev_ai` does not exist, create it from `dev`: `git checkout dev && git checkout -b dev_ai && git push -u origin dev_ai`. Then switch to an `ai/feature/*` branch before editing.
-- If you find yourself on `main` or `dev`, checkout to an appropriate `ai/feature/*` branch immediately before making any changes.
+- If `dev_ai` does not exist, create it from `dev`: `git checkout dev && git checkout -b dev_ai && git push -u origin dev_ai`. Then switch to `dev_ai` before editing.
+- If you find yourself on `main` or `dev`, checkout `dev_ai` immediately before making any changes.
 
 ## Commits
 - Commit frequently with descriptive messages in plain language, while not ending in micro commits.
 - Never commit `.env`, `.env.local`, credentials, API keys, or files matching `*secret*`, `*credentials*`, `*token*`.
 - Never run destructive operations (`git reset --hard`, `git checkout .`, `git clean -fd`, `git stash drop`, `git push --force`) without explaining and confirming with the user first.
+
+## Exporting a fix as a patch
+- When the user asks to export the current fix as a patch (to hand off to a developer):
+  - One patch = one topic, where "topic" is the user's framing of the work (e.g., "dashboard rework"), not a single change. Include every change belonging to that topic, even if it spans many files and many small edits.
+  - Only split into multiple patches when the working tree clearly contains *unrelated* work alongside the topic. When in doubt, ask before splitting.
+  - Deliver the patch via chat attachment (see "Sharing screenshots and files" below).
 
 ## Sharing screenshots and files
 
