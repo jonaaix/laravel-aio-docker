@@ -109,8 +109,16 @@ RUN rm -f /etc/nginx/sites-enabled/default /etc/nginx/sites-available/default \
 COPY ./src/shared/nginx/nginx.base.conf /etc/nginx/nginx.conf
 COPY ./src/shared/nginx/nginx.fpm.conf /etc/nginx/conf.d/default.conf
 COPY ./src/shared/nginx/maintenance /etc/nginx/maintenance
+# Pre-create nginx's compiled default temp dirs (Debian: /var/lib/nginx/body etc.) so they
+# are owned by the laravel worker. Otherwise nginx creates them at runtime with a foreign
+# owner and spooling a large request body fails with EACCES -> HTTP 500. Mode 0700 keeps the
+# spooled bodies readable only by the worker.
 RUN mkdir -p /var/run/nginx /var/lib/nginx/tmp \
- && chown -R laravel:laravel /var/lib/nginx /var/run/nginx /var/log/nginx
+      /var/lib/nginx/body /var/lib/nginx/proxy /var/lib/nginx/fastcgi \
+      /var/lib/nginx/scgi /var/lib/nginx/uwsgi \
+ && chown -R laravel:laravel /var/lib/nginx /var/run/nginx /var/log/nginx \
+ && chmod 700 /var/lib/nginx/body /var/lib/nginx/proxy /var/lib/nginx/fastcgi \
+      /var/lib/nginx/scgi /var/lib/nginx/uwsgi
 
 # Configure Supervisor. Add your Supervisor configuration files here.
 COPY ./src/shared/supervisor/ /tmp/supervisor/
