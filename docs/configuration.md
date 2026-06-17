@@ -12,6 +12,18 @@ The system runs in **Production Mode** by default.
 | :--- | :--- | :--- |
 | `ENV_DEV` | `false` | Set to `true` to enable **Development Mode**. |
 
+## Networking
+
+Applies to all variants.
+
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `HTTP_PORT` | `8000` | Port Nginx listens on inside the container. Set it to keep host and container ports symmetric (e.g. map `8765:8765` with `HTTP_PORT=8765`) and avoid mismatched port mappings. |
+
+::: tip
+The `EXPOSE 8000` in the Dockerfile is informational only and does not need to match `HTTP_PORT` — Docker's published ports (`-p`/`ports:`) are independent of `EXPOSE`.
+:::
+
 ## Development Features
 
 ::: info Requirement

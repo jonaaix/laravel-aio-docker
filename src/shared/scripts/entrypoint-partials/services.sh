@@ -1,5 +1,24 @@
 # Service starters: Nginx, PHP-FPM, cron.
 
+# Render the Nginx vhost from its template, substituting the configurable listen port.
+# HTTP_PORT defaults to 8000; set it to keep host/container port mapping symmetric.
+# Rendered fresh on every boot from the .template, so it stays idempotent across restarts.
+render_nginx_conf() {
+   local template="/etc/nginx/http.d/default.conf.template"
+   [ -f "$template" ] || return 0
+
+   local port="${HTTP_PORT:-8000}"
+   case "$port" in
+      ''|*[!0-9]*)
+         log_error "HTTP_PORT must be a positive integer (got '${HTTP_PORT}'); falling back to 8000"
+         port=8000
+         ;;
+   esac
+
+   sed "s/__HTTP_PORT__/${port}/g" "$template" > /etc/nginx/http.d/default.conf
+   log_ok "Nginx listening on port ${port}"
+}
+
 # Start Nginx if not running
 start_nginx() {
    if ! pgrep "nginx" > /dev/null; then

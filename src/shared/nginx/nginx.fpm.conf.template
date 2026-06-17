@@ -1,6 +1,6 @@
 server {
-    listen 8000 default_server;
-    listen [::]:8000 default_server;
+    listen __HTTP_PORT__ default_server;
+    listen [::]:__HTTP_PORT__ default_server;
     server_name localhost;
     server_tokens off;
 

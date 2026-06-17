@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 1.3.4 (PHP 8.4 and PHP 8.5)
+- Add `HTTP_PORT` env var to configure the Nginx listen port at runtime (default `8000`). Works across all variants and lets you keep host/container ports symmetric.
+
 ## Version 1.3.3 (PHP 8.4 and PHP 8.5)
 - Fix permission fixer overwriting Laravel Passport OAuth keys (`storage/oauth-*.key`) with `664`. Passport requires `600` and will refuse to load the private key otherwise.
 

@@ -107,7 +107,7 @@ RUN rm -f /etc/nginx/sites-enabled/default /etc/nginx/sites-available/default \
  && mkdir -p /etc/nginx/conf.d \
  && ln -sfn /etc/nginx/conf.d /etc/nginx/http.d
 COPY ./src/shared/nginx/nginx.base.conf /etc/nginx/nginx.conf
-COPY ./src/shared/nginx/nginx.fpm.conf /etc/nginx/conf.d/default.conf
+COPY ./src/shared/nginx/nginx.fpm.conf.template /etc/nginx/conf.d/default.conf.template
 COPY ./src/shared/nginx/maintenance /etc/nginx/maintenance
 # Pre-create nginx's compiled default temp dirs (Debian: /var/lib/nginx/body etc.) so they
 # are owned by the laravel worker. Otherwise nginx creates them at runtime with a foreign
@@ -116,7 +116,8 @@ COPY ./src/shared/nginx/maintenance /etc/nginx/maintenance
 RUN mkdir -p /var/run/nginx /var/lib/nginx/tmp \
       /var/lib/nginx/body /var/lib/nginx/proxy /var/lib/nginx/fastcgi \
       /var/lib/nginx/scgi /var/lib/nginx/uwsgi \
- && chown -R laravel:laravel /var/lib/nginx /var/run/nginx /var/log/nginx \
+ && touch /etc/nginx/conf.d/default.conf \
+ && chown -R laravel:laravel /var/lib/nginx /var/run/nginx /var/log/nginx /etc/nginx/conf.d/default.conf \
  && chmod 700 /var/lib/nginx/body /var/lib/nginx/proxy /var/lib/nginx/fastcgi \
       /var/lib/nginx/scgi /var/lib/nginx/uwsgi
 
@@ -247,7 +248,8 @@ RUN EXPECTED_PLUGIN_VERSION=0.1.0 \
 COPY ./src/php-fpm-claude/merge-mcp-servers.js /scripts/merge-mcp-servers.js
 COPY ./src/php-fpm-claude/merge-plugins.js /scripts/merge-plugins.js
 
-# Expose the port Nginx is reachable on
+# Expose the default port Nginx is reachable on. Informational only — the actual
+# listen port is configurable at runtime via the HTTP_PORT env var (default 8000).
 EXPOSE 8000
 
 ENV IMAGE_VARIANT=fpm-claude

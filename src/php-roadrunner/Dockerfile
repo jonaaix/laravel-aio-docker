@@ -73,10 +73,12 @@ RUN chmod +x /usr/local/bin/install-php-extensions && \
 
 # Configure Nginx
 COPY ./src/shared/nginx/nginx.base.conf /etc/nginx/nginx.conf
-COPY ./src/shared/nginx/nginx.octane.conf /etc/nginx/http.d/default.conf
+COPY ./src/shared/nginx/nginx.octane.conf.template /etc/nginx/http.d/default.conf.template
 COPY ./src/shared/nginx/maintenance /etc/nginx/maintenance
-RUN mkdir -p /var/run/nginx /var/lib/nginx/tmp && \
-    chown -R laravel:laravel /var/lib/nginx /var/run/nginx /var/log/nginx
+# default.conf is rendered from the template at boot (HTTP_PORT); pre-create it writable by the runtime user.
+RUN mkdir -p /var/run/nginx /var/lib/nginx/tmp \
+ && touch /etc/nginx/http.d/default.conf \
+ && chown -R laravel:laravel /var/lib/nginx /var/run/nginx /var/log/nginx /etc/nginx/http.d/default.conf
 
 # Configure Supervisor. Add your Supervisor configuration files here.
 COPY ./src/shared/supervisor/ /tmp/supervisor/
@@ -128,7 +130,8 @@ RUN mkdir -p /usr/local/share/container-bin \
 # Set the user to run the container
 USER laravel
 
-# Expose the port Nginx is reachable on
+# Expose the default port Nginx is reachable on. Informational only — the actual
+# listen port is configurable at runtime via the HTTP_PORT env var (default 8000).
 EXPOSE 8000
 
 # Set Bash as the default shell

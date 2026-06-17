@@ -17,6 +17,7 @@ configure_xdebug
 tune_php_fpm_pool
 
 log_phase "🌐  Web server"
+render_nginx_conf
 start_nginx
 
 handle_skip_laravel_boot
