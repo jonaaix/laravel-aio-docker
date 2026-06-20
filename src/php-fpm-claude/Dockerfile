@@ -21,7 +21,6 @@ RUN apt-get update \
       unzip \
       imagemagick \
       default-mysql-client \
-      postgresql-client \
       nano \
       nginx \
       supervisor \
@@ -34,6 +33,17 @@ RUN apt-get update \
       psmisc \
       pandoc \
       gettext-base \
+ && rm -rf /var/lib/apt/lists/*
+
+# PostgreSQL 18 client from PGDG (Debian's own postgresql-client is 17, which
+# mismatches PG18 servers: "pg_dump: server version mismatch")
+RUN install -d /usr/share/postgresql-common/pgdg \
+ && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+      -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+ && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo $VERSION_CODENAME)-pgdg main" \
+      > /etc/apt/sources.list.d/pgdg.list \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends postgresql-client-18 \
  && rm -rf /var/lib/apt/lists/*
 
 # Node.js via NodeSource (Debian's apt nodejs is outdated)
