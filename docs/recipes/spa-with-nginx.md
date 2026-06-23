@@ -14,12 +14,6 @@ services:
       - ../my-app:/js-app
 ```
 
-> [!WARNING]
-> When you mount your own vhost over `default.conf`, the container detects it and skips
-> its own config rendering — so the `HTTP_PORT` env var has **no effect** here. Set the
-> `listen` port directly in your config; keeping it in sync with your port mapping is then
-> your responsibility.
-
 ## nginx config
 
 In the config file, add the following location block (after `/basic_status`) to serve your SPA at `/app/*`:

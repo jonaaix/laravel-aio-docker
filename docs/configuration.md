@@ -20,6 +20,13 @@ Applies to all variants.
 | :--- | :--- | :--- |
 | `HTTP_PORT` | `8000` | Port Nginx listens on inside the container. Set it to keep host and container ports symmetric (e.g. map `8765:8765` with `HTTP_PORT=8765`) and avoid mismatched port mappings. This also fixes issues with Claude's testing tools (e.g. Playwright), which assume the in-container port matches the host port and otherwise hit the wrong URL. |
 
+::: warning Custom vhost mounts
+`HTTP_PORT` only applies to the bundled Nginx config. If you bind-mount your own vhost over
+`/etc/nginx/http.d/default.conf` (e.g. the [SPA recipe](/recipes/spa-with-nginx)), the container
+detects it and skips config rendering — `HTTP_PORT` has **no effect**. Set the `listen` port
+directly in your config and keep it in sync with your port mapping yourself.
+:::
+
 ## Development Features
 
 ::: info Requirement
