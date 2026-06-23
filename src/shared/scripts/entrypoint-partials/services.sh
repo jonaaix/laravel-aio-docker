@@ -4,8 +4,20 @@
 # HTTP_PORT defaults to 8000; set it to keep host/container port mapping symmetric.
 # Rendered fresh on every boot from the .template, so it stays idempotent across restarts.
 render_nginx_conf() {
-   local template="/etc/nginx/http.d/default.conf.template"
+   local target="/etc/nginx/http.d/default.conf"
+   local template="${target}.template"
    [ -f "$template" ] || return 0
+
+   # If a project bind-mounted its own vhost onto default.conf, never render over it —
+   # the redirect below would truncate and write *through* the mount, destroying the
+   # project's source file on the host. /proc/mounts lists every bind mount as its own
+   # entry; the path is canonicalized, so resolve the conf.d symlink (claude image) too.
+   local canonical
+   canonical="$(readlink -f "$target" 2>/dev/null || echo "$target")"
+   if grep -qE "[[:space:]](${target}|${canonical})[[:space:]]" /proc/mounts 2>/dev/null; then
+      log_skip "Custom Nginx vhost mounted — skipping render (HTTP_PORT not applied)"
+      return 0
+   fi
 
    local port="${HTTP_PORT:-8000}"
    case "$port" in
@@ -15,7 +27,7 @@ render_nginx_conf() {
          ;;
    esac
 
-   sed "s/__HTTP_PORT__/${port}/g" "$template" > /etc/nginx/http.d/default.conf
+   sed "s/__HTTP_PORT__/${port}/g" "$template" > "$target"
    log_ok "Nginx listening on port ${port}"
 }
 
