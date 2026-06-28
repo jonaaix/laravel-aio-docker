@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 1.3.5 (PHP 8.4 and PHP 8.5)
+- Install the `sqlite3` CLI in all images so SQLite database dumps/backups work (PHP's PDO driver does not provide the `sqlite3` binary).
+
 ## Version 1.3.4 (PHP 8.4 and PHP 8.5)
 - Add `HTTP_PORT` env var to configure the Nginx listen port at runtime (default `8000`). Works across all variants and lets you keep host/container ports symmetric.
 

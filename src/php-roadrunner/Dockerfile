@@ -26,6 +26,7 @@ RUN apk update && apk add --no-cache \
     imagemagick \
     mysql-client \
     postgresql18-client \
+    sqlite \
     nano \
     nodejs \
     npm \

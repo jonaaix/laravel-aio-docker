@@ -21,6 +21,7 @@ RUN apt-get update \
       unzip \
       imagemagick \
       default-mysql-client \
+      sqlite3 \
       nano \
       nginx \
       supervisor \
