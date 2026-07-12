@@ -29,6 +29,8 @@
 
 ## Sharing screenshots and files
 
+Whenever you capture a Playwright screenshot, you MUST send it to the user in the chat — attach it via the claude-threads MCP attachment tool without waiting to be asked. This applies to every screenshot you take, even ones you captured only to inspect the page yourself: the user should always see what you saw.
+
 Default: attach the file directly via the claude-threads MCP attachment tool — the recipient sees it inline in Mattermost without leaving the chat. This covers screenshots, generated reports, exported data, and any other file the user asks for. Files can stay at their normal disk paths (e.g. `.playwright-mcp/<name>.png` for screenshots); the attachment tool reads them from there.
 
 Use the public-link approach below only when MCP attachment doesn't fit:
@@ -54,3 +56,11 @@ Build the URL from the app's base URL:
 ```text
 <base-url>/playwright-mcp/<aa>/<bb>/<cc>/<rest>/<name>.png
 ```
+
+## Chat interaction
+
+### Acknowledging a task
+Before starting work on a task, set the 👀 reaction on the user's message (via the claude-threads MCP reaction tool) to signal you've picked it up. One reaction, nothing more. Skip it for plain chat you answer immediately.
+
+### Suggesting the next step
+When you finish something and a genuinely sensible next step exists, proactively propose it — the single move that best advances the project from here, not a generic menu of options. Only when it actually fits; never manufacture a suggestion just to have one. Match the audience: for non-technical users, frame it in product terms as something they can try; for developers, name the concrete technical next move.
