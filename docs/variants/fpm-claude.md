@@ -16,7 +16,7 @@ This variant is designed for **local AI-assisted development only**.
 ## What's included on top of the standard FPM image
 
 - **Claude Code CLI** — pre-installed and pre-configured for the `laravel` user
-- **[php-lsp](https://github.com/jorgsowa/php-lsp)** — Rust-based PHP language server in `/home/laravel/.local/bin/`, plus the [claude-code-lsps](https://github.com/Piebald-AI/claude-code-lsps) plugin marketplace cloned under `~/.claude-defaults/plugins/marketplaces/`, so Claude can offer code-aware lookups (definitions, references, types) on PHP files
+- **[php-lsp](https://github.com/jorgsowa/php-lsp)** — Rust-based PHP language server in `/home/laravel/.local/bin/`, plus the [claude-code-lsps](https://github.com/Piebald-AI/claude-code-lsps) plugin marketplace cloned under `/opt/claude-defaults/plugins/marketplaces/`, so Claude can offer code-aware lookups (definitions, references, types) on PHP files
 - **MCP servers pre-registered for the `laravel` user**: [Playwright MCP](https://github.com/microsoft/playwright-mcp) (browser automation) and [Context7 MCP](https://github.com/upstash/context7) (up-to-date library docs)
 - **[claude-threads](https://github.com/anneschuth/claude-threads)** — optional Mattermost/Slack bridge, enabled via `DEV_ENABLE_CLAUDE_THREADS: true`
 - **Starship** prompt with git status display

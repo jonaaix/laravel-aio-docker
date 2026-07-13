@@ -62,7 +62,7 @@ RUN groupadd -g 1000 laravel \
 RUN mkdir -p /home/laravel/.config \
  && printf '%s\n' \
     'eval "$(starship init bash)"' \
-    'export PATH=/home/laravel/.local/bin:/home/laravel/.npm-global/bin:/usr/local/share/container-bin:$PATH' \
+    'export PATH=/home/laravel/.local/bin:/opt/npm-global/bin:/usr/local/share/container-bin:$PATH' \
     > /home/laravel/.bashrc
 
 COPY src/shared/starship.toml /home/laravel/.config/starship.toml
@@ -187,11 +187,16 @@ RUN printf '%s\n' \
 ENV HOME=/home/laravel
 ENV SHELL=/bin/bash
 ENV TERM=xterm-256color
-ENV NPM_CONFIG_PREFIX=/home/laravel/.npm-global
-ENV PATH=/home/laravel/.local/bin:/home/laravel/.npm-global/bin:${PATH}
+# npm-global and claude-defaults live under /opt, OUTSIDE the persisted /home/laravel
+# volume. A named volume on /home/laravel is seeded from the image only once (on first
+# creation) and then frozen, so anything the image ships under /home/laravel/ is shadowed
+# by the stale volume forever. Keeping the image-owned MCP binaries and config defaults in
+# /opt means they always reflect the current image on every container recreate.
+ENV NPM_CONFIG_PREFIX=/opt/npm-global
+ENV PATH=/home/laravel/.local/bin:/opt/npm-global/bin:${PATH}
 
-RUN mkdir -p /home/laravel/.npm-global /home/laravel/.claude /home/laravel/.local/bin \
- && chown -R laravel:laravel /home/laravel
+RUN mkdir -p /home/laravel/.claude /home/laravel/.local/bin /opt/npm-global /opt/claude-defaults \
+ && chown -R laravel:laravel /home/laravel /opt/npm-global /opt/claude-defaults
 
 # Install Claude for laravel user which runs the container
 USER laravel
@@ -219,13 +224,13 @@ RUN claude mcp add --transport stdio --scope user playwright -- npx -y @playwrig
 
 # Clone LSP marketplace for phpactor plugin
 RUN git clone --depth 1 https://github.com/Piebald-AI/claude-code-lsps.git \
-    /home/laravel/.claude-defaults/plugins/marketplaces/claude-code-lsps
+    /opt/claude-defaults/plugins/marketplaces/claude-code-lsps
 
-# Store Claude default config (will be copied on first boot if volume is empty)
-COPY --chown=laravel:laravel ./src/php-fpm-claude/claude-defaults/ /home/laravel/.claude-defaults/
-RUN cp /home/laravel/.claude-defaults/settings.json /home/laravel/.claude/settings.json \
- && cp /home/laravel/.claude-defaults/CLAUDE.md /home/laravel/.claude/CLAUDE.md \
- && cp /home/laravel/.claude.json /home/laravel/.claude-defaults/.claude.json
+# Store Claude default config in /opt (source of truth, refreshed into ~/.claude every boot)
+COPY --chown=laravel:laravel ./src/php-fpm-claude/claude-defaults/ /opt/claude-defaults/
+RUN cp /opt/claude-defaults/settings.json /home/laravel/.claude/settings.json \
+ && cp /opt/claude-defaults/CLAUDE.md /home/laravel/.claude/CLAUDE.md \
+ && cp /home/laravel/.claude.json /opt/claude-defaults/.claude.json
 
 # Patch php-lsp config in both the installed-plugin cache (active at runtime)
 # and the marketplace clone (used if the plugin is ever reinstalled/refreshed).
@@ -238,7 +243,7 @@ RUN cp /home/laravel/.claude-defaults/settings.json /home/laravel/.claude/settin
 # fails — review the upstream changes, adapt the jq filter and the cached snapshot
 # under claude-defaults/plugins/cache/<version>/, then bump EXPECTED_PLUGIN_VERSION.
 RUN EXPECTED_PLUGIN_VERSION=0.1.0 \
- && PLUGIN_JSON=/home/laravel/.claude-defaults/plugins/marketplaces/claude-code-lsps/php-lsp/plugin.json \
+ && PLUGIN_JSON=/opt/claude-defaults/plugins/marketplaces/claude-code-lsps/php-lsp/plugin.json \
  && ACTUAL=$(jq -r '.version' "$PLUGIN_JSON") \
  && if [ "$ACTUAL" != "$EXPECTED_PLUGIN_VERSION" ]; then \
       echo "ERROR: claude-code-lsps/php-lsp upstream version is $ACTUAL, pinned at $EXPECTED_PLUGIN_VERSION."; \
@@ -248,8 +253,8 @@ RUN EXPECTED_PLUGIN_VERSION=0.1.0 \
  && PHP_VER=$(php -r 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION;') \
  && JQ_PATCH='.php.initializationOptions.phpVersion = $ver | .php.initializationOptions.excludePaths = ["node_modules/*", "storage/*", "bootstrap/cache/*", "public/build/*"] | .php.initializationOptions.diagnostics.undefinedFunctions = false' \
  && for f in \
-      /home/laravel/.claude-defaults/plugins/cache/claude-code-lsps/php-lsp/$EXPECTED_PLUGIN_VERSION/.lsp.json \
-      /home/laravel/.claude-defaults/plugins/marketplaces/claude-code-lsps/php-lsp/.lsp.json; \
+      /opt/claude-defaults/plugins/cache/claude-code-lsps/php-lsp/$EXPECTED_PLUGIN_VERSION/.lsp.json \
+      /opt/claude-defaults/plugins/marketplaces/claude-code-lsps/php-lsp/.lsp.json; \
     do \
       [ -f "$f" ] || continue; \
       jq --arg ver "$PHP_VER" "$JQ_PATCH" "$f" > "$f.tmp" && mv "$f.tmp" "$f"; \

@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const defaultsDir = '/home/laravel/.claude-defaults/plugins';
+const defaultsDir = '/opt/claude-defaults/plugins';
 const targetDir = '/home/laravel/.claude/plugins';
 
 function readJson(filePath) {

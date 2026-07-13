@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-const defaultsPath = '/home/laravel/.claude-defaults/.claude.json';
+const defaultsPath = '/opt/claude-defaults/.claude.json';
 const currentPath = '/home/laravel/.claude.json';
 
 const defaults = JSON.parse(fs.readFileSync(defaultsPath, 'utf8'));

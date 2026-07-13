@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 1.3.6 (PHP 8.4 and PHP 8.5)
+- Fix Claude config and MCP servers never updating on existing deployments (fpm-claude). The `claude-defaults` and globally-installed MCP servers (`claude-threads`, `playwright-mcp`, …) lived under `/home/laravel`, which is a persisted named volume — Docker seeds it from the image only once, so image updates were shadowed forever. Both now live under `/opt`, outside the volume, and reflect the current image on every container recreate. No compose change needed; rebuild the image and recreate the container.
+
 ## Version 1.3.5 (PHP 8.4 and PHP 8.5)
 - Install the `sqlite3` CLI in all images so SQLite database dumps/backups work (PHP's PDO driver does not provide the `sqlite3` binary).
 
