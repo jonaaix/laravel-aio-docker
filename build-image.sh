@@ -42,8 +42,22 @@ for arg in "$@"; do
   esac
 done
 
-imageTag="ghcr.io/jonaaix/laravel-aio:${imageVersion}-php${phpVersion}-${imageType}"
-dockerfilePath="./src/php-${imageType}/Dockerfile"
+# Variants without a PHP runtime get a PHP-agnostic tag and ignore the phpVersion
+# argument (still accepted positionally so the build CLI stays uniform).
+noPhpVariants=" ai-agent "
+if [[ "$noPhpVariants" == *" $imageType "* ]]; then
+  imageTag="ghcr.io/jonaaix/laravel-aio:${imageVersion}-${imageType}"
+else
+  imageTag="ghcr.io/jonaaix/laravel-aio:${imageVersion}-php${phpVersion}-${imageType}"
+fi
+
+# Prefer a non-prefixed dir (e.g. src/ai-agent for PHP-free variants); fall back to the
+# php-<type> convention used by the PHP runtimes.
+if [ -f "./src/${imageType}/Dockerfile" ]; then
+  dockerfilePath="./src/${imageType}/Dockerfile"
+else
+  dockerfilePath="./src/php-${imageType}/Dockerfile"
+fi
 
 echo "⚪️ Building image: ${imageTag}"
 echo "Using Dockerfile: ${dockerfilePath}"

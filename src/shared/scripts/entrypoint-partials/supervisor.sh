@@ -4,7 +4,11 @@
 SUPERVISOR_COMPILED=/etc/supervisor/conf.d/laravel-worker-compiled.conf
 
 init_supervisor_config() {
-   cat /etc/supervisor/conf.d/supervisor-header.conf > "$SUPERVISOR_COMPILED"
+   # The default header logs under /app/storage (Laravel). The agent variant has no
+   # such tree, so it uses a header that writes to a path laravel can always write.
+   local header=/etc/supervisor/conf.d/supervisor-header.conf
+   [ "$IMAGE_VARIANT" = "ai-agent" ] && header=/etc/supervisor/conf.d/supervisor-header.ai-agent.conf
+   cat "$header" > "$SUPERVISOR_COMPILED"
 }
 
 # Internal: append a worker config file to the compiled config.
@@ -56,6 +60,19 @@ supervisor_add_claude_threads_if_enabled() {
    if [ "$IMAGE_VARIANT" != "fpm-claude" ] || \
       [ "$DEV_ENABLE_CLAUDE_THREADS" != "true" ] || \
       [ "$ENV_DEV" != "true" ]; then
+      return 0
+   fi
+   log_step "Adding claude-threads worker..."
+   _supervisor_append "claude-threads.conf"
+}
+
+# Agent variant: claude-threads is the primary process and runs by default.
+# Disable with DISABLE_CLAUDE_THREADS=true (e.g. to use the container purely for
+# interactive `claude` / `opencode` sessions via `docker compose exec`).
+supervisor_add_claude_threads_for_ai_agent() {
+   [ "$IMAGE_VARIANT" = "ai-agent" ] || return 0
+   if [ "$DISABLE_CLAUDE_THREADS" = "true" ]; then
+      log_skip "claude-threads disabled (DISABLE_CLAUDE_THREADS=true)"
       return 0
    fi
    log_step "Adding claude-threads worker..."

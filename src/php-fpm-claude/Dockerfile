@@ -226,7 +226,9 @@ RUN claude mcp add --transport stdio --scope user playwright -- npx -y @playwrig
 RUN git clone --depth 1 https://github.com/Piebald-AI/claude-code-lsps.git \
     /opt/claude-defaults/plugins/marketplaces/claude-code-lsps
 
-# Store Claude default config in /opt (source of truth, refreshed into ~/.claude every boot)
+# Store Claude default config in /opt (source of truth, refreshed into ~/.claude every boot).
+# Shared prompt fragments (chat bridge, non-tech mode) are composed in by the entrypoint.
+COPY --chown=laravel:laravel ./src/shared/claude-defaults/ /opt/claude-defaults/
 COPY --chown=laravel:laravel ./src/php-fpm-claude/claude-defaults/ /opt/claude-defaults/
 RUN cp /opt/claude-defaults/settings.json /home/laravel/.claude/settings.json \
  && cp /opt/claude-defaults/CLAUDE.md /home/laravel/.claude/CLAUDE.md \

@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 1.3.7
+- Add the `ai-agent` variant — a PHP-free AI-agent runtime (`ghcr.io/jonaaix/laravel-aio:1.3-ai-agent`) built on `node:22`. Ships the Claude Code CLI, opencode and claude-threads (running by default under Supervisor), the Playwright MCP + Chromium for browsing/screenshots, a Python 3 virtualenv (csvkit, pandas, openpyxl, matplotlib, …) so agents can write and run their own scripts, plus a data/reporting toolkit (`ripgrep`, `jq`, `pandoc`, `sqlite3`, `miller`, `imagemagick`). Drops everything PHP-specific (PHP, Composer, nginx, php-fpm, php-lsp, Xdebug). Built for non-coding agents; the coding agent stays in `fpm-claude`.
+- Add persona support: mount an `AI_PERSONA.md` (default path `/app/AI_PERSONA.md`, override via `AI_PERSONA_FILE`) and its contents are appended last to the agent's `CLAUDE.md` on boot, so an operator can program a single image into a purpose-built agent. Works in both the `ai-agent` and `fpm-claude` variants.
+- Refactor the Claude prompt fragments into `src/shared/claude-defaults/` so both variants compose from the same source. The `ai-agent` variant now ships the shared claude-threads chat rules by default and supports non-technical mode via `ENABLE_NONTECH_MODE`. The combined `CLAUDE.threads.md` was split into a shared chat-bridge fragment and an `fpm-claude`-only `CLAUDE.threads.coding.md` (git workflow / patch handling), which don't apply to non-coding agents.
+
 ## Version 1.3.6 (PHP 8.4 and PHP 8.5)
 - Fix Claude config and MCP servers never updating on existing deployments (fpm-claude). The `claude-defaults` and globally-installed MCP servers (`claude-threads`, `playwright-mcp`, …) lived under `/home/laravel`, which is a persisted named volume — Docker seeds it from the image only once, so image updates were shadowed forever. Both now live under `/opt`, outside the volume, and reflect the current image on every container recreate. No compose change needed; rebuild the image and recreate the container.
 
