@@ -12,14 +12,14 @@ services:
             # container, and the new persona is layered into the agent's CLAUDE.md.
             - ./AI_PERSONA.md:/app/AI_PERSONA.md:ro
         environment:
-            # claude-threads runs by default in this variant. Set to true to turn it
-            # off and use the container purely for interactive sessions:
+            # Start the claude-threads chat bridge (opt-in). Leave it off to use the
+            # container only for interactive sessions:
             #   docker compose exec -it ai-agent claude
             #   docker compose exec -it ai-agent opencode
-            DISABLE_CLAUDE_THREADS: false
+            ENABLE_CLAUDE_THREADS: true
             # Talk in outcomes, not internals — recommended when the agent serves
-            # non-technical users. Uses the same non-tech instructions as fpm-claude.
-            ENABLE_NONTECH_MODE: true
+            # non-technical users.
+            ENABLE_AI_NONTECH_MODE: true
             # Override the persona mount path if you mount it elsewhere.
             # AI_PERSONA_FILE: /app/AI_PERSONA.md
         restart: unless-stopped

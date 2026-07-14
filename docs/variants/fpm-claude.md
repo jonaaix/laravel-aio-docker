@@ -17,18 +17,13 @@ Local AI-assisted development only.
 
 ## Configuration
 
-Prompt modes — require `ENV_DEV: true`; each appends a fragment to Claude's `CLAUDE.md` on boot:
+All opt-in; none depend on `ENV_DEV`. Each appends a fragment to Claude's `CLAUDE.md` on boot (threads also starts the bridge under Supervisor):
 
 | Variable | Default | Description |
 | :--- | :--- | :--- |
-| `DEV_ENABLE_CLAUDE_THREADS` | `false` | Start the claude-threads Mattermost/Slack bridge (under Supervisor); adds its chat rules + the AI git workflow (`dev_ai` branch model, patch handoff). |
-| `DEV_ENABLE_CLAUDE_NONTECH_MODE` | `false` | Non-developer prompt — talks in features, hides paths/errors/commands, verifies via the app UI. |
-| `DEV_ENABLE_CLAUDE_SOFTDEV_MODE` | `false` | Chat-friendly developer prompt — short answers, summarized tool output, proactive on routine commands. |
-
-Independent of `ENV_DEV`:
-
-| Variable | Default | Description |
-| :--- | :--- | :--- |
+| `ENABLE_CLAUDE_THREADS` | `false` | Start the claude-threads Mattermost/Slack bridge; adds its chat rules + the AI git workflow (`dev_ai` branch model, patch handoff). |
+| `ENABLE_AI_NONTECH_MODE` | `false` | Non-developer prompt — talks in features, hides paths/errors/commands, verifies via the app UI. |
+| `ENABLE_AI_SOFTDEV_MODE` | `false` | Chat-friendly developer prompt — short answers, summarized tool output, proactive on routine commands. |
 | `AI_PERSONA_FILE` | `/app/AI_PERSONA.md` | Persona Markdown file, appended **last** to `CLAUDE.md` (overrides the defaults). Applied only if present. |
 
 ## Usage
@@ -42,7 +37,7 @@ Full example: [`examples/php-fpm-claude/docker-compose.local.yaml`](https://gith
 
 ## claude-threads
 
-Wraps the Claude Code CLI as a Mattermost/Slack bot — one Claude session per thread, so non-technical teammates can drive the project via chat. Enable with `DEV_ENABLE_CLAUDE_THREADS: true` (needs `ENV_DEV: true`); Supervisor keeps it running and auto-restarts on crashes.
+Wraps the Claude Code CLI as a Mattermost/Slack bot — one Claude session per thread, so non-technical teammates can drive the project via chat. Enable with `ENABLE_CLAUDE_THREADS: true`; Supervisor keeps it running and auto-restarts on crashes.
 
 Setup: bring the stack up (bot crash-loops until configured — expected) → `docker compose exec -it php_ai claude` → `/login` → `docker compose exec -it php_ai claude-threads` → enter credentials → restart.
 

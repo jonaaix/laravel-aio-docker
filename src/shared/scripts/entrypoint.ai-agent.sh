@@ -15,7 +15,7 @@ run_before_boot_hooks
 
 log_phase "🎛️   Supervisor"
 init_supervisor_config
-supervisor_add_claude_threads_for_ai_agent
+supervisor_add_claude_threads_if_enabled
 start_supervisor
 
 log_phase "🚀  Ready"

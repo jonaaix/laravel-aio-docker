@@ -38,21 +38,17 @@ Active only when `ENV_DEV: true`.
 | `DEV_FORCE_NPM_INSTALL` | Forces `npm install` on every container start. |
 | `DEV_NPM_RUN_DEV` | Runs `npm run dev` (Vite) on container start. |
 | `DEV_ENABLE_XDEBUG` | Enables Xdebug extension. See [Xdebug](/development/xdebug). |
-| `DEV_ENABLE_CLAUDE_THREADS` | **`fpm-claude` only.** Starts the claude-threads Mattermost/Slack bridge. |
-| `DEV_ENABLE_CLAUDE_NONTECH_MODE` | **`fpm-claude` only.** Appends a system prompt for non-developer app builders — speaks in features instead of code, hides paths/errors/commands, verifies via the app UI. |
-| `DEV_ENABLE_CLAUDE_SOFTDEV_MODE` | **`fpm-claude` only.** Appends a chat-friendly system prompt for developers using chat UIs — short answers, summarized tool output, proactive on routine commands. |
 
-The three `DEV_ENABLE_CLAUDE_*` modes above apply to [`fpm-claude`](/variants/fpm-claude); the [`ai-agent`](/variants/ai-agent) variant has its own switches below.
+## AI features
 
-## AI agent prompt & chat bridge
-
-Configuration for the Claude-capable variants ([`fpm-claude`](/variants/fpm-claude) and [`ai-agent`](/variants/ai-agent)). Unlike the modes above, these are **not** gated on `ENV_DEV`.
+Configuration for the Claude-capable variants ([`fpm-claude`](/variants/fpm-claude) and [`ai-agent`](/variants/ai-agent)). All opt-in and **not** gated on `ENV_DEV`.
 
 | Variable | Applies to | Description |
 | :--- | :--- | :--- |
 | `AI_PERSONA_FILE` | both | Path to a persona Markdown file, appended **last** to the agent's `CLAUDE.md` so it takes precedence over the shipped defaults. Default `/app/AI_PERSONA.md`; applied only if the file is present. |
-| `DISABLE_CLAUDE_THREADS` | `ai-agent` | Turns off the claude-threads bridge (on by default in `ai-agent`) and its chat-rule prompt. Use it to run the container purely for interactive `claude` / `opencode` sessions. |
-| `ENABLE_NONTECH_MODE` | `ai-agent` | Appends the non-technical system prompt (the same instructions `fpm-claude` gets from `DEV_ENABLE_CLAUDE_NONTECH_MODE`). |
+| `ENABLE_CLAUDE_THREADS` | both | Start the claude-threads Mattermost/Slack bridge (under Supervisor) and add its chat prompt. On `fpm-claude` it also adds the AI git workflow. |
+| `ENABLE_AI_NONTECH_MODE` | both | Append the non-technical prompt — speaks in features instead of code, hides paths/errors/commands, verifies via the app UI. |
+| `ENABLE_AI_SOFTDEV_MODE` | both | Append the chat-friendly developer prompt — short answers, summarized tool output, proactive on routine commands. |
 
 ## Production Automation
 

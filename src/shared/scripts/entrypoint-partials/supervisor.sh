@@ -56,25 +56,12 @@ supervisor_add_reverb_if_enabled() {
    _supervisor_append "reverb-server.conf"
 }
 
+# claude-threads worker — opt-in in both claude-capable variants (fpm-claude, ai-agent)
+# via ENABLE_CLAUDE_THREADS (legacy alias: DEV_ENABLE_CLAUDE_THREADS). Not tied to ENV_DEV.
+# _ai_threads_enabled is defined in claude.sh (sourced before this runs).
 supervisor_add_claude_threads_if_enabled() {
-   if [ "$IMAGE_VARIANT" != "fpm-claude" ] || \
-      [ "$DEV_ENABLE_CLAUDE_THREADS" != "true" ] || \
-      [ "$ENV_DEV" != "true" ]; then
-      return 0
-   fi
-   log_step "Adding claude-threads worker..."
-   _supervisor_append "claude-threads.conf"
-}
-
-# Agent variant: claude-threads is the primary process and runs by default.
-# Disable with DISABLE_CLAUDE_THREADS=true (e.g. to use the container purely for
-# interactive `claude` / `opencode` sessions via `docker compose exec`).
-supervisor_add_claude_threads_for_ai_agent() {
-   [ "$IMAGE_VARIANT" = "ai-agent" ] || return 0
-   if [ "$DISABLE_CLAUDE_THREADS" = "true" ]; then
-      log_skip "claude-threads disabled (DISABLE_CLAUDE_THREADS=true)"
-      return 0
-   fi
+   case "$IMAGE_VARIANT" in fpm-claude|ai-agent) ;; *) return 0 ;; esac
+   _ai_threads_enabled || return 0
    log_step "Adding claude-threads worker..."
    _supervisor_append "claude-threads.conf"
 }

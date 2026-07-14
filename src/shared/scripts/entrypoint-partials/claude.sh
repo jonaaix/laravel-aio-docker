@@ -4,6 +4,13 @@
 # composes the prompt from shared + variant-specific fragments, and layers a
 # user-supplied persona on top.
 
+# AI feature toggles. All opt-in and NOT tied to ENV_DEV. Canonical names:
+# ENABLE_CLAUDE_THREADS (the claude-threads bridge), ENABLE_AI_NONTECH_MODE,
+# ENABLE_AI_SOFTDEV_MODE. The legacy DEV_ENABLE_CLAUDE_* names stay as hidden aliases.
+_ai_threads_enabled() { [ "$ENABLE_CLAUDE_THREADS" = "true" ]     || [ "$DEV_ENABLE_CLAUDE_THREADS" = "true" ]; }
+_ai_nontech_enabled() { [ "$ENABLE_AI_NONTECH_MODE" = "true" ] || [ "$DEV_ENABLE_CLAUDE_NONTECH_MODE" = "true" ]; }
+_ai_softdev_enabled() { [ "$ENABLE_AI_SOFTDEV_MODE" = "true" ] || [ "$DEV_ENABLE_CLAUDE_SOFTDEV_MODE" = "true" ]; }
+
 # Append a claude-defaults fragment to the working CLAUDE.md, if it exists.
 _claude_append() {
    local f="/opt/claude-defaults/$1"
@@ -22,32 +29,15 @@ claude_init() {
    cp /opt/claude-defaults/settings.json /home/laravel/.claude/settings.json
    cp /opt/claude-defaults/CLAUDE.md /home/laravel/.claude/CLAUDE.md
 
-   if [ "$IMAGE_VARIANT" = "fpm-claude" ]; then
-      # claude-threads is an opt-in dev tool here; the chat rules + the coding-specific
-      # git workflow only apply when it's enabled.
-      if [ "$DEV_ENABLE_CLAUDE_THREADS" = "true" ] && [ "$ENV_DEV" = "true" ]; then
-         _claude_append CLAUDE.threads.md
-         _claude_append CLAUDE.threads.coding.md
-      fi
-      if [ "$DEV_ENABLE_CLAUDE_NONTECH_MODE" = "true" ] && [ "$ENV_DEV" = "true" ]; then
-         _claude_append CLAUDE.nontech.md
-      fi
-      if [ "$DEV_ENABLE_CLAUDE_SOFTDEV_MODE" = "true" ] && [ "$ENV_DEV" = "true" ]; then
-         _claude_append CLAUDE.softdev.md
-      fi
+   if _ai_threads_enabled; then
+      _claude_append CLAUDE.threads.md
+      # The AI git workflow (dev_ai branch model, patch handoff) only applies to the
+      # coding variant — ai-agents don't code.
+      [ "$IMAGE_VARIANT" = "fpm-claude" ] && _claude_append CLAUDE.threads.coding.md
    fi
 
-   if [ "$IMAGE_VARIANT" = "ai-agent" ]; then
-      # claude-threads is the primary interface; ship its chat rules by default. There's
-      # no coding git workflow here — these agents don't code.
-      if [ "$DISABLE_CLAUDE_THREADS" != "true" ]; then
-         _claude_append CLAUDE.threads.md
-      fi
-      # Non-technical user mode is opt-in (many of these agents serve non-devs).
-      if [ "$ENABLE_NONTECH_MODE" = "true" ]; then
-         _claude_append CLAUDE.nontech.md
-      fi
-   fi
+   _ai_nontech_enabled && _claude_append CLAUDE.nontech.md
+   _ai_softdev_enabled && _claude_append CLAUDE.softdev.md
 
    # Layer a user-supplied persona on top, if one is mounted. Appended LAST so it takes
    # precedence over the shipped defaults — this is how an operator tailors a single

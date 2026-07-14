@@ -14,8 +14,8 @@ services:
         environment:
             ENV_DEV: true
             SKIP_LARAVEL_BOOT: true
-            DEV_ENABLE_CLAUDE_THREADS: true
-            DEV_ENABLE_CLAUDE_NONTECH_MODE: true
+            ENABLE_CLAUDE_THREADS: true
+            ENABLE_AI_NONTECH_MODE: true
         restart: no
         depends_on:
             - mariadb
