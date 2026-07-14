@@ -1,6 +1,6 @@
-# AI Agent (`ai-agent`)
+# `ai-agent`
 
-A PHP-free runtime for **non-coding** AI agents that work over chat and MCP servers. You "program" an instance with a mounted persona and point it at your data sources. For AI-assisted coding against a Laravel app, use [FPM + Claude Code](/variants/fpm-claude) instead.
+A PHP-free runtime for **non-coding** AI agents that work over chat and MCP servers. You "program" an instance with a mounted persona and point it at your data sources. For AI-assisted coding against a Laravel app, use [`fpm-claude`](/variants/fpm-claude) instead.
 
 **Includes:** Claude Code CLI · opencode · claude-threads (on by default) · Playwright MCP with Chromium baked in (offline HTML render + screenshots) · Python venv (csvkit, pandas, openpyxl, matplotlib, requests, tabulate) · ripgrep, jq, pandoc, sqlite3, miller, poppler-utils, imagemagick. No PHP / Composer / nginx.
 

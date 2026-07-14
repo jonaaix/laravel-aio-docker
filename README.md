@@ -8,18 +8,18 @@
 
 <p align="center">
 A production-ready, all-in-one Docker runtime for Laravel apps.<br>
-PHP-FPM, FrankenPHP, RoadRunner, OpenSwoole — plus an FPM + Claude Code variant for AI-assisted development.
+PHP-FPM, FrankenPHP, RoadRunner, OpenSwoole — plus the fpm-claude and ai-agent variants for AI-assisted work.
 </p>
 
 <p align="center">
-   <a href="https://github.com/jonaaix/laravel-aio-docker/pkgs/container/laravel-aio"><img src="https://img.shields.io/badge/variants-fpm | fpm--claude | roadrunner | frankenphp | openswoole-blue?style=flat-square" alt="Variants"></a>
+   <a href="https://github.com/jonaaix/laravel-aio-docker/pkgs/container/laravel-aio"><img src="https://img.shields.io/badge/variants-fpm | fpm--claude | ai--agent | roadrunner | frankenphp | openswoole-blue?style=flat-square" alt="Variants"></a>
    <a href="https://github.com/jonaaix/laravel-aio-docker/actions/workflows/build-and-push.yml"><img src="https://img.shields.io/github/actions/workflow/status/jonaaix/laravel-aio-docker/build-and-push.yml?style=flat-square&label=build" alt="Build Status"></a>
    <a href="./LICENSE"><img src="https://img.shields.io/packagist/l/aaix/laravel-easy-backups.svg?style=flat-square" alt="License"></a>
 </p>
 
 ## Highlights
 
-- **5 runtime variants** — PHP-FPM (default), FrankenPHP, RoadRunner, OpenSwoole, plus an **FPM + Claude Code** variant for AI-assisted development
+- **6 image variants** — PHP-FPM (default), FrankenPHP, RoadRunner, OpenSwoole, plus `fpm-claude` and `ai-agent` for AI-assisted work
 - **Zero-config boot** — composer install, npm build, Laravel optimize, migrations, queue / horizon / reverb / octane workers all wired up through environment variables
 - **Same image, dev to production** — mount your code for hot-reload dev, or bake it into a custom image for immutable deploys; `compose.yaml` is the only thing that changes
 - **Native Docker tooling, no abstractions** — no custom CLI to learn, no Sail-style wrapper layer, full control of build and runtime
@@ -75,7 +75,7 @@ services:
       SKIP_LARAVEL_BOOT: true
 ```
 
-Run `docker compose exec -it php_ai claude` to start an AI session against your codebase. Permission-bypass mode is contained to the project mount — the host filesystem is unreachable. The `php` container can be restarted as often as you want without dropping the AI session. See [FPM + Claude Code](https://jonaaix.github.io/laravel-aio-docker/variants/fpm-claude) for details.
+Run `docker compose exec -it php_ai claude` to start an AI session against your codebase. Permission-bypass mode is contained to the project mount — the host filesystem is unreachable. The `php` container can be restarted as often as you want without dropping the AI session. See [`fpm-claude`](https://jonaaix.github.io/laravel-aio-docker/variants/fpm-claude) for details.
 
 ## Add what you need
 
@@ -118,9 +118,9 @@ ghcr.io/jonaaix/laravel-aio:1.3-php8.4-openswoole
 ghcr.io/jonaaix/laravel-aio:1.3-ai-agent
 ```
 
-A PHP-free **AI-agent runtime** — Claude Code CLI, opencode, claude-threads, Playwright
-MCP and a Python stack for non-coding agents you program with a mounted `AI_PERSONA.md`
-and point at your own data sources (MCP). See [Agent variant](https://jonaaix.github.io/laravel-aio-docker/variants/ai-agent).
+The `ai-agent` variant — a PHP-free runtime with the Claude Code CLI, opencode,
+claude-threads, Playwright MCP and a Python stack for non-coding agents you program with
+a mounted `AI_PERSONA.md` and point at your own data sources (MCP). See [`ai-agent`](https://jonaaix.github.io/laravel-aio-docker/variants/ai-agent).
 
 ## Documentation
 

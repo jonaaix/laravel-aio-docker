@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Laravel AIO Docker
   text: Production-ready in one image
-  tagline: All-in-one Docker runtime for Laravel apps. PHP-FPM, FrankenPHP, RoadRunner, OpenSwoole, plus an FPM + Claude Code variant for AI-assisted development.
+  tagline: All-in-one Docker runtime for Laravel apps. PHP-FPM, FrankenPHP, RoadRunner, OpenSwoole, plus the fpm-claude and ai-agent variants for AI-assisted work.
   image:
     src: /logo.svg
     alt: Laravel AIO Docker
@@ -17,8 +17,8 @@ hero:
       link: https://github.com/jonaaix/laravel-aio-docker
 
 features:
-  - title: 5 image variants
-    details: PHP-FPM, FrankenPHP, RoadRunner, OpenSwoole — plus an FPM + Claude Code variant for AI-assisted development.
+  - title: 6 image variants
+    details: PHP-FPM, FrankenPHP, RoadRunner, OpenSwoole — plus the fpm-claude and ai-agent variants for AI-assisted work.
   - title: Auto-configured boot
     details: Composer install, npm build, optimization, migrations, queue/horizon/reverb/octane workers — all wired up via env vars.
   - title: Native Docker tooling only
@@ -36,7 +36,7 @@ This image relies exclusively on **native Docker tooling** and intentionally avo
 | Tag | Runtime |
 | :--- | :--- |
 | `ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm` | PHP-FPM |
-| `ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm-claude` | PHP-FPM + Claude Code |
+| `ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm-claude` | PHP-FPM · [Claude Code CLI](/variants/fpm-claude) |
 | `ghcr.io/jonaaix/laravel-aio:1.3-php8.5-roadrunner` | Octane / RoadRunner |
 | `ghcr.io/jonaaix/laravel-aio:1.3-php8.5-frankenphp` | Octane / FrankenPHP |
 | `ghcr.io/jonaaix/laravel-aio:1.3-php8.5-openswoole` | Octane / OpenSwoole |
@@ -46,7 +46,7 @@ This image relies exclusively on **native Docker tooling** and intentionally avo
 | Tag | Runtime |
 | :--- | :--- |
 | `ghcr.io/jonaaix/laravel-aio:1.3-php8.4-fpm` | PHP-FPM |
-| `ghcr.io/jonaaix/laravel-aio:1.3-php8.4-fpm-claude` | PHP-FPM + Claude Code |
+| `ghcr.io/jonaaix/laravel-aio:1.3-php8.4-fpm-claude` | PHP-FPM · [Claude Code CLI](/variants/fpm-claude) |
 | `ghcr.io/jonaaix/laravel-aio:1.3-php8.4-roadrunner` | Octane / RoadRunner |
 | `ghcr.io/jonaaix/laravel-aio:1.3-php8.4-frankenphp` | Octane / FrankenPHP |
 | `ghcr.io/jonaaix/laravel-aio:1.3-php8.4-openswoole` | Octane / OpenSwoole |
@@ -55,7 +55,7 @@ This image relies exclusively on **native Docker tooling** and intentionally avo
 
 | Tag | Runtime |
 | :--- | :--- |
-| `ghcr.io/jonaaix/laravel-aio:1.3-ai-agent` | [Lightweight AI-agent runtime](/variants/ai-agent) (claude · opencode · claude-threads) |
+| `ghcr.io/jonaaix/laravel-aio:1.3-ai-agent` | PHP-free [agent runtime](/variants/ai-agent) — claude · opencode · claude-threads |
 
 ::: tip Switching to an Octane variant
 When switching to a Laravel Octane based image (roadrunner / frankenphp / openswoole) for the first time, the entrypoint will automatically set up all requirements if not already available. You can commit the changes to your repository.

@@ -69,7 +69,7 @@ services:
 2. **Stable AI session.** You can rebuild or restart the `php` container as often as you want (code changes, env tweaks, package installs) without losing the interactive Claude session running in `php_ai`. The `claude_home` named volume additionally persists Claude's login + config across container rebuilds.
 :::
 
-See [FPM + Claude Code](/variants/fpm-claude) for usage details, including the optional Mattermost/Slack bridge via `DEV_ENABLE_CLAUDE_THREADS`.
+See [`fpm-claude`](/variants/fpm-claude) for usage details, including the optional Mattermost/Slack bridge via `DEV_ENABLE_CLAUDE_THREADS`.
 
 ## Next steps
 

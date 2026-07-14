@@ -1,10 +1,12 @@
-# FPM + Claude Code (`fpm-claude`)
+# `fpm-claude`
 
-The `fpm-claude` variant extends the standard FPM image with a pre-installed [Claude Code](https://docs.anthropic.com/en/docs/claude-code) environment. It enables Claude to work directly inside the running container with full access to the Laravel project.
+`fpm-claude` extends [`fpm`](/variants/fpm) with a pre-installed Claude Code environment, so Claude works directly inside the running container with full access to the Laravel project.
 
 ::: danger Not for production
-This variant is designed for **local AI-assisted development only**.
+Local AI-assisted development only.
 :::
+
+**Adds on top of `fpm`:** Claude Code CLI · [php-lsp](https://github.com/jorgsowa/php-lsp) + [claude-code-lsps](https://github.com/Piebald-AI/claude-code-lsps) plugin (code-aware lookups on PHP) · [Playwright](https://github.com/microsoft/playwright-mcp) + [Context7](https://github.com/upstash/context7) MCP servers · claude-threads (opt-in) · Starship · passwordless sudo.
 
 ## Image tags
 
@@ -13,83 +15,41 @@ This variant is designed for **local AI-assisted development only**.
 | `ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm-claude` | 8.5 |
 | `ghcr.io/jonaaix/laravel-aio:1.3-php8.4-fpm-claude` | 8.4 |
 
-## What's included on top of the standard FPM image
-
-- **Claude Code CLI** — pre-installed and pre-configured for the `laravel` user
-- **[php-lsp](https://github.com/jorgsowa/php-lsp)** — Rust-based PHP language server in `/home/laravel/.local/bin/`, plus the [claude-code-lsps](https://github.com/Piebald-AI/claude-code-lsps) plugin marketplace cloned under `/opt/claude-defaults/plugins/marketplaces/`, so Claude can offer code-aware lookups (definitions, references, types) on PHP files
-- **MCP servers pre-registered for the `laravel` user**: [Playwright MCP](https://github.com/microsoft/playwright-mcp) (browser automation) and [Context7 MCP](https://github.com/upstash/context7) (up-to-date library docs)
-- **[claude-threads](https://github.com/anneschuth/claude-threads)** — optional Mattermost/Slack bridge, enabled via `DEV_ENABLE_CLAUDE_THREADS: true`
-- **Starship** prompt with git status display
-- **Sudo** access without password for the `laravel` user
-
-A full example docker-compose setup is available at [`examples/php-fpm-claude/docker-compose.local.yaml`](https://github.com/jonaaix/laravel-aio-docker/blob/main/examples/php-fpm-claude/docker-compose.local.yaml).
-
 ## Configuration
 
-These prompt modes require `ENV_DEV: true` and are enabled individually. Each appends a system-prompt fragment to Claude's `CLAUDE.md` on boot (and, for threads, starts the bridge under Supervisor):
+Prompt modes — require `ENV_DEV: true`; each appends a fragment to Claude's `CLAUDE.md` on boot:
 
-| Variable | Description |
-| :--- | :--- |
-| `DEV_ENABLE_CLAUDE_THREADS` | Starts the claude-threads Mattermost/Slack bridge (see the section below), and layers in its chat rules (attachments, task acknowledgement) plus the AI git workflow (`dev_ai` branch model, patch handoff). |
-| `DEV_ENABLE_CLAUDE_NONTECH_MODE` | Non-developer prompt — Claude speaks in features instead of code, hides paths/errors/commands, and verifies via the app UI. |
-| `DEV_ENABLE_CLAUDE_SOFTDEV_MODE` | Chat-friendly developer prompt — short answers, summarized tool output, proactive on routine commands. |
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `DEV_ENABLE_CLAUDE_THREADS` | `false` | Start the claude-threads Mattermost/Slack bridge (under Supervisor); adds its chat rules + the AI git workflow (`dev_ai` branch model, patch handoff). |
+| `DEV_ENABLE_CLAUDE_NONTECH_MODE` | `false` | Non-developer prompt — talks in features, hides paths/errors/commands, verifies via the app UI. |
+| `DEV_ENABLE_CLAUDE_SOFTDEV_MODE` | `false` | Chat-friendly developer prompt — short answers, summarized tool output, proactive on routine commands. |
 
 Independent of `ENV_DEV`:
 
-| Variable | Description |
-| :--- | :--- |
-| `AI_PERSONA_FILE` | Path to a persona Markdown file, appended **last** to `CLAUDE.md` so it takes precedence over the defaults. Default `/app/AI_PERSONA.md`; applied only if the file is present. See [the persona mechanism](/variants/ai-agent#the-persona-programming-the-agent). |
-
-See the [full configuration reference](/configuration) for all container env vars.
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `AI_PERSONA_FILE` | `/app/AI_PERSONA.md` | Persona Markdown file, appended **last** to `CLAUDE.md` (overrides the defaults). Applied only if present. |
 
 ## Usage
 
-To start a Claude Code session inside the container:
-
 ```bash
-docker compose exec -it php_ai claude
+docker compose exec -it php_ai claude   # start a Claude session
+docker compose exec -it php_ai bash     # shell
 ```
 
-To launch a bash shell session:
+Full example: [`examples/php-fpm-claude/docker-compose.local.yaml`](https://github.com/jonaaix/laravel-aio-docker/blob/main/examples/php-fpm-claude/docker-compose.local.yaml).
 
-```bash
-docker compose exec -it php_ai bash
-```
+## claude-threads
 
-## claude-threads: Mattermost/Slack bridge
+Wraps the Claude Code CLI as a Mattermost/Slack bot — one Claude session per thread, so non-technical teammates can drive the project via chat. Enable with `DEV_ENABLE_CLAUDE_THREADS: true` (needs `ENV_DEV: true`); Supervisor keeps it running and auto-restarts on crashes.
 
-[claude-threads](https://github.com/anneschuth/claude-threads) wraps the Claude Code CLI and exposes it as a bot in a Mattermost or Slack channel. Each chat thread gets its own Claude session — useful to let non-technical teammates work on a Laravel project via chat.
+Setup: bring the stack up (bot crash-loops until configured — expected) → `docker compose exec -it php_ai claude` → `/login` → `docker compose exec -it php_ai claude-threads` → enter credentials → restart.
 
-**Enable it** by setting `DEV_ENABLE_CLAUDE_THREADS: true` (requires `ENV_DEV: true`). Supervisor then keeps the bot running in the background and auto-restarts it on crashes.
-
-**Persistence.** Two host-mounted directories are recommended so state survives container rebuilds — both scoped per compose project.
-
-### One-time setup per project
-
-1. Bring up the stack with `DEV_ENABLE_CLAUDE_THREADS: true`. On first boot the bot will crash-loop until configured — that's expected.
-2. Log in to Claude: `docker compose exec -it php_ai claude` → run `/login` → follow the device-code flow.
-3. Run the config wizard: `docker compose exec -it php_ai claude-threads` → enter Mattermost/Slack credentials.
-4. Restart the container. Supervisor picks up the new config and the bot joins the channel.
-
-::: info Notes
-One claude-threads instance = one configured working directory + one Claude account. For multiple isolated projects, run multiple compose stacks (one per user/project) — `COMPOSE_PROJECT_NAME` keeps the host-mount paths separate. See the [claude-threads setup guide](https://github.com/anneschuth/claude-threads/blob/main/SETUP_GUIDE.md) for platform-specific steps.
+::: info
+One claude-threads instance = one working directory + one Claude account. Run one compose stack per project; `COMPOSE_PROJECT_NAME` keeps the host-mount paths separate. See the [claude-threads setup guide](https://github.com/anneschuth/claude-threads/blob/main/SETUP_GUIDE.md).
 :::
 
-## Multi-line input in Docker
+## Multi-line input
 
-Shift+Enter does not work for multi-line input when running Claude Code inside a Docker container. Use one of these alternatives instead:
-
-- **Ctrl+J** — sends a line feed character, works universally
-- **`\` + Enter** — backslash at the end of the line
-
-To make Shift+Enter work in **iTerm2**, you can map it to Ctrl+J:
-
-1. Go to **Settings → Profiles → Keys → Key Mappings**
-2. Click **+** to add a new mapping
-3. Set **Keyboard Shortcut** to Shift+Enter
-4. Set **Action** to "Send Hex Code"
-5. Enter `0x0A` as the hex code
-
-::: tip
-This remaps Shift+Enter globally in iTerm2, not just for Docker sessions. Consider using a separate iTerm2 profile if you want to limit this to container use.
-:::
+Shift+Enter does not work inside Docker. Use **Ctrl+J** or **`\`+Enter**. To keep Shift+Enter: in iTerm2 map it to send hex code `0x0A` (Settings → Profiles → Keys → Key Mappings).

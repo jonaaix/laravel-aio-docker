@@ -36,12 +36,17 @@ export default defineConfig({
       {
         text: 'Variants',
         items: [
-          { text: 'FPM (default)', link: '/variants/fpm' },
-          { text: 'FPM + Claude Code', link: '/variants/fpm-claude' },
-          { text: 'AI Agent (runtime)', link: '/variants/ai-agent' },
-          { text: 'FrankenPHP (Octane)', link: '/variants/frankenphp' },
-          { text: 'RoadRunner (Octane)', link: '/variants/roadrunner' },
-          { text: 'OpenSwoole (Octane)', link: '/variants/openswoole' },
+          { text: 'fpm (default)', link: '/variants/fpm' },
+          { text: 'frankenphp (Octane)', link: '/variants/frankenphp' },
+          { text: 'roadrunner (Octane)', link: '/variants/roadrunner' },
+          { text: 'openswoole (Octane)', link: '/variants/openswoole' },
+        ],
+      },
+      {
+        text: 'AI Variants',
+        items: [
+          { text: 'fpm-claude', link: '/variants/fpm-claude' },
+          { text: 'ai-agent', link: '/variants/ai-agent' },
         ],
       },
       { text: 'Configuration', link: '/configuration' },
