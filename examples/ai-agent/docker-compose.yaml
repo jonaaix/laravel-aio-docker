@@ -1,0 +1,36 @@
+volumes:
+    # Persists the Claude login + claude-threads config across container recreates.
+    ai_agent_home:
+
+services:
+    ai-agent:
+        image: ghcr.io/jonaaix/laravel-aio:1.3-ai-agent
+        stop_grace_period: 60s
+        volumes:
+            - ai_agent_home:/home/laravel
+            # The persona file the agent is programmed with. Edit it, restart the
+            # container, and the new persona is layered into the agent's CLAUDE.md.
+            - ./AI_PERSONA.md:/app/AI_PERSONA.md:ro
+        environment:
+            # claude-threads runs by default in this variant. Set to true to turn it
+            # off and use the container purely for interactive sessions:
+            #   docker compose exec -it ai-agent claude
+            #   docker compose exec -it ai-agent opencode
+            DISABLE_CLAUDE_THREADS: false
+            # Talk in outcomes, not internals — recommended when the agent serves
+            # non-technical users. Uses the same non-tech instructions as fpm-claude.
+            ENABLE_NONTECH_MODE: true
+            # Override the persona mount path if you mount it elsewhere.
+            # AI_PERSONA_FILE: /app/AI_PERSONA.md
+        restart: unless-stopped
+
+# One-time setup (per agent instance):
+#   1. Bring the stack up. claude-threads will crash-loop until configured — expected.
+#   2. Log in to Claude:   docker compose exec -it ai-agent claude   → run /login
+#   3. Configure the bridge: docker compose exec -it ai-agent claude-threads → enter
+#      Mattermost/Slack credentials.
+#   4. Restart the container. Supervisor picks up the config and the bot joins the channel.
+#
+# Register your MCP servers (data sources, tools) for the agent, e.g.:
+#   docker compose exec -it ai-agent claude mcp add --transport http --scope user \
+#       my-data https://mcp.example.internal/sse

@@ -20,3 +20,11 @@ for phpVersion in "${phpVersions[@]}"; do
   # After building all image types for one PHP version, push all tags
   docker image push "ghcr.io/jonaaix/laravel-aio" -a
 done
+
+# PHP-agnostic variants — built once, independent of the PHP version.
+echo
+echo "--------------------------------------------------"
+echo "️⚽️ Building and pushing ghcr.io/jonaaix/laravel-aio:1.3-ai-agent..."
+echo "--------------------------------------------------"
+./build-image.sh "any" ai-agent
+docker image push "ghcr.io/jonaaix/laravel-aio" -a

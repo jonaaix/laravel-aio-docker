@@ -51,6 +51,12 @@ This image relies exclusively on **native Docker tooling** and intentionally avo
 | `ghcr.io/jonaaix/laravel-aio:1.3-php8.4-frankenphp` | Octane / FrankenPHP |
 | `ghcr.io/jonaaix/laravel-aio:1.3-php8.4-openswoole` | Octane / OpenSwoole |
 
+### PHP-agnostic
+
+| Tag | Runtime |
+| :--- | :--- |
+| `ghcr.io/jonaaix/laravel-aio:1.3-ai-agent` | [Lightweight AI-agent runtime](/variants/ai-agent) (claude · opencode · claude-threads) |
+
 ::: tip Switching to an Octane variant
 When switching to a Laravel Octane based image (roadrunner / frankenphp / openswoole) for the first time, the entrypoint will automatically set up all requirements if not already available. You can commit the changes to your repository.
 :::

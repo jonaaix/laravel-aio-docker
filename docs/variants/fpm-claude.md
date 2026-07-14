@@ -24,6 +24,24 @@ This variant is designed for **local AI-assisted development only**.
 
 A full example docker-compose setup is available at [`examples/php-fpm-claude/docker-compose.local.yaml`](https://github.com/jonaaix/laravel-aio-docker/blob/main/examples/php-fpm-claude/docker-compose.local.yaml).
 
+## Configuration
+
+These prompt modes require `ENV_DEV: true` and are enabled individually. Each appends a system-prompt fragment to Claude's `CLAUDE.md` on boot (and, for threads, starts the bridge under Supervisor):
+
+| Variable | Description |
+| :--- | :--- |
+| `DEV_ENABLE_CLAUDE_THREADS` | Starts the claude-threads Mattermost/Slack bridge (see the section below), and layers in its chat rules (attachments, task acknowledgement) plus the AI git workflow (`dev_ai` branch model, patch handoff). |
+| `DEV_ENABLE_CLAUDE_NONTECH_MODE` | Non-developer prompt — Claude speaks in features instead of code, hides paths/errors/commands, and verifies via the app UI. |
+| `DEV_ENABLE_CLAUDE_SOFTDEV_MODE` | Chat-friendly developer prompt — short answers, summarized tool output, proactive on routine commands. |
+
+Independent of `ENV_DEV`:
+
+| Variable | Description |
+| :--- | :--- |
+| `AI_PERSONA_FILE` | Path to a persona Markdown file, appended **last** to `CLAUDE.md` so it takes precedence over the defaults. Default `/app/AI_PERSONA.md`; applied only if the file is present. See [the persona mechanism](/variants/ai-agent#the-persona-programming-the-agent). |
+
+See the [full configuration reference](/configuration) for all container env vars.
+
 ## Usage
 
 To start a Claude Code session inside the container:

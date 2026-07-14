@@ -38,6 +38,7 @@ export default defineConfig({
         items: [
           { text: 'FPM (default)', link: '/variants/fpm' },
           { text: 'FPM + Claude Code', link: '/variants/fpm-claude' },
+          { text: 'AI Agent (runtime)', link: '/variants/ai-agent' },
           { text: 'FrankenPHP (Octane)', link: '/variants/frankenphp' },
           { text: 'RoadRunner (Octane)', link: '/variants/roadrunner' },
           { text: 'OpenSwoole (Octane)', link: '/variants/openswoole' },
