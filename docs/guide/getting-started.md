@@ -29,18 +29,19 @@ Add a database, Redis, phpMyAdmin etc. from the [Recipes](/recipes/databases). O
 
 ## Minimal dev with Claude Code
 
-If you want AI-assisted development with [Claude Code](/variants/fpm-claude) running inside the container, add a sidecar `php_ai` service that mounts the same project but skips the Laravel boot. It's purely there to host a Claude session against your code.
+For AI-assisted development, run your single app container on the [`fpm-claude`](/variants/fpm-claude) image instead of `fpm` — it serves Laravel **and** ships Claude Code. Swap the image and add a named volume for the Claude login:
 
 ```yaml
 volumes:
   claude_home:
-    driver: local
 
 services:
   php:
-    image: ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm
+    image: ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm-claude
+    stop_grace_period: 60s
     volumes:
       - ./:/app:rw
+      - claude_home:/home/laravel # persists Claude login + config across container rebuilds
     environment:
       ENV_DEV: true
       DEV_NPM_RUN_DEV: true
@@ -50,23 +51,12 @@ services:
       - "8000:8000" # php
       - "5173:5173" # vite
       - "8080:8080" # reverb
-
-  php_ai:
-    image: ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm-claude
-    # docker compose exec -it php_ai claude
-    # docker compose exec -it php_ai bash
-    stop_grace_period: 60s
-    volumes:
-      - ./:/app:rw
-      - claude_home:/home/laravel  # persists Claude login + config across container rebuilds
-    environment:
-      ENV_DEV: true
-      SKIP_LARAVEL_BOOT: true
 ```
 
-::: info Why two services
-1. **Host isolation.** Claude Code runs with permission bypass enabled — convenient for fast iteration, dangerous if pointed at your host filesystem. Inside `php_ai` the blast radius is the project mount; the rest of your machine is unreachable.
-2. **Stable AI session.** You can rebuild or restart the `php` container as often as you want (code changes, env tweaks, package installs) without losing the interactive Claude session running in `php_ai`. The `claude_home` named volume additionally persists Claude's login + config across container rebuilds.
+Then work inside it: `docker compose exec -it php claude` (AI session) or `docker compose exec -it php bash`.
+
+::: warning Local development only
+`fpm-claude` runs Claude Code with permission bypass enabled — the blast radius is the project mount, but never use this variant in production. Serve production from the plain `fpm` image.
 :::
 
 See [`fpm-claude`](/variants/fpm-claude) for usage details, including the optional Mattermost/Slack bridge via `ENABLE_CLAUDE_THREADS`.

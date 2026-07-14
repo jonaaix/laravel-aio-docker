@@ -29,8 +29,8 @@ All opt-in; none depend on `ENV_DEV`. Each appends a fragment to Claude's `CLAUD
 ## Usage
 
 ```bash
-docker compose exec -it php_ai claude   # start a Claude session
-docker compose exec -it php_ai bash     # shell
+docker compose exec -it php claude   # start a Claude session
+docker compose exec -it php bash     # shell
 ```
 
 Full example: [`examples/php-fpm-claude/docker-compose.local.yaml`](https://github.com/jonaaix/laravel-aio-docker/blob/main/examples/php-fpm-claude/docker-compose.local.yaml).
@@ -39,7 +39,7 @@ Full example: [`examples/php-fpm-claude/docker-compose.local.yaml`](https://gith
 
 Wraps the Claude Code CLI as a Mattermost/Slack bot — one Claude session per thread, so non-technical teammates can drive the project via chat. Enable with `ENABLE_CLAUDE_THREADS: true`; Supervisor keeps it running and auto-restarts on crashes.
 
-Setup: bring the stack up (bot crash-loops until configured — expected) → `docker compose exec -it php_ai claude` → `/login` → `docker compose exec -it php_ai claude-threads` → enter credentials → restart.
+Setup: bring the stack up (bot crash-loops until configured — expected) → `docker compose exec -it php claude` → `/login` → `docker compose exec -it php claude-threads` → enter credentials → restart.
 
 ::: info
 One claude-threads instance = one working directory + one Claude account. Run one compose stack per project; `COMPOSE_PROJECT_NAME` keeps the host-mount paths separate. See the [claude-threads setup guide](https://github.com/anneschuth/claude-threads/blob/main/SETUP_GUIDE.md).

@@ -50,32 +50,38 @@ That gives you Laravel + nginx + Vite dev server + queue worker + Reverb. Add a 
 
 ### With Claude Code (AI-assisted development)
 
-Add a sidecar `php_ai` container running [Claude Code](https://docs.anthropic.com/en/docs/claude-code) for in-container AI work:
+For local AI-assisted development, run your single app container on the [`fpm-claude`](https://jonaaix.github.io/laravel-aio-docker/variants/fpm-claude) image instead of `fpm` — it serves Laravel **and** ships [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Just swap the image and add a named volume for the Claude login:
 
 ```yaml
 volumes:
   claude_home:
-    driver: local
 
 services:
   php:
-    image: ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm
-    # ... same as above
-
-  php_ai:
     image: ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm-claude
-    # docker compose exec -it php_ai claude
-    # docker compose exec -it php_ai bash
     stop_grace_period: 60s
     volumes:
       - ./:/app:rw
-      - claude_home:/home/laravel
+      - claude_home:/home/laravel # persists Claude's login + config across rebuilds
     environment:
       ENV_DEV: true
-      SKIP_LARAVEL_BOOT: true
+      DEV_NPM_RUN_DEV: true
+      ENABLE_QUEUE_WORKER: true
+      ENABLE_REVERB_SERVER: true
+    ports:
+      - "8000:8000" # php
+      - "5173:5173" # vite
+      - "8080:8080" # reverb
 ```
 
-Run `docker compose exec -it php_ai claude` to start an AI session against your codebase. Permission-bypass mode is contained to the project mount — the host filesystem is unreachable. The `php` container can be restarted as often as you want without dropping the AI session. See [`fpm-claude`](https://jonaaix.github.io/laravel-aio-docker/variants/fpm-claude) for details.
+Then work inside that container:
+
+```bash
+docker compose exec -it php claude   # start an AI session against your codebase
+docker compose exec -it php bash     # shell
+```
+
+Permission-bypass mode is contained to the project mount — the host filesystem is unreachable. This variant is for **local development only**; use the plain `fpm` image in production. See [`fpm-claude`](https://jonaaix.github.io/laravel-aio-docker/variants/fpm-claude) for details.
 
 ## Add what you need
 
