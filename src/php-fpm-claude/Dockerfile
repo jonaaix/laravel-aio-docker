@@ -23,6 +23,7 @@ RUN apt-get update \
       default-mysql-client \
       sqlite3 \
       nano \
+      tree \
       nginx \
       supervisor \
       ca-certificates \

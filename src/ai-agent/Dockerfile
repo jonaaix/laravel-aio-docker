@@ -35,6 +35,7 @@ RUN apt-get update \
       locales \
       less \
       nano \
+      tree \
       jq \
       ripgrep \
       fd-find \

@@ -25,6 +25,7 @@ RUN apk update && apk add --no-cache \
     postgresql18-client \
     sqlite \
     nano \
+    tree \
     nodejs \
     npm \
     nginx \
