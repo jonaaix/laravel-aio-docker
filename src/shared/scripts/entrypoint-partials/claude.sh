@@ -20,17 +20,25 @@ _claude_append() {
 }
 
 # Remove abandoned Chromium singleton locks from the Playwright MCP's persistent profile.
-# A hard container kill leaves SingletonLock/Socket/Cookie behind; the profile lives under
-# ~/.cache (the persisted /home volume), so the stale lock survives restarts and blocks the
-# browser ("profile appears to be in use by another process"). Safe to clear at boot — no
-# browser is running yet. Only meaningful for the browser-capable variants.
+# The MCP profile lives at ~/.cache/ms-playwright-mcp/mcp-<channel>-<hash>/ (the browser
+# BINARIES are the separate ~/.cache/ms-playwright/). A hard container kill leaves a
+# SingletonLock symlink (→ "<host>-<pid>") behind; playwright-core's isProfileLocked reads
+# that pid and calls process.kill(pid, 0). Because PIDs restart low in a fresh container,
+# the old pid is almost always reused by a live process, so the stale lock reads as "in use"
+# and the browser refuses to launch. Deleting Singleton* at boot (no browser running yet)
+# makes isProfileLocked return false. Glob ms-playwright* to cover both cache dir names and
+# any future rename. Only meaningful for the browser-capable variants.
 cleanup_playwright_locks() {
    case "$IMAGE_VARIANT" in fpm-claude|ai-agent) ;; *) return 0 ;; esac
-   local base="${HOME:-/home/laravel}/.cache/ms-playwright"
-   [ -d "$base" ] || return 0
-   [ -n "$(find "$base" -maxdepth 3 -name 'Singleton*' 2>/dev/null)" ] || return 0
-   find "$base" -maxdepth 3 -name 'Singleton*' -delete 2>/dev/null || true
-   log_ok "Cleared abandoned Playwright browser lock(s)"
+   local base removed=0
+   for base in "${HOME:-/home/laravel}"/.cache/ms-playwright*; do
+      [ -d "$base" ] || continue
+      [ -n "$(find "$base" -maxdepth 3 -name 'Singleton*' 2>/dev/null)" ] || continue
+      find "$base" -maxdepth 3 -name 'Singleton*' -delete 2>/dev/null || true
+      removed=1
+   done
+   [ "$removed" = "1" ] && log_ok "Cleared abandoned Playwright browser lock(s)"
+   return 0
 }
 
 claude_init() {
