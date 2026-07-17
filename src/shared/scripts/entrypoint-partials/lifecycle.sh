@@ -29,8 +29,24 @@ BANNER
 ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝  ╚═══╝  ╚══════╝╚══════╝    ╚═╝  ╚═╝  ╚═╝   ╚═════╝
 
 BANNER
+
+   # Beta build (fpm-claude-beta) — mark it clearly under the wordmark.
+   local variant_label="${IMAGE_VARIANT:-unknown}"
+   if [ "$IMAGE_BETA" = "1" ]; then
+      cat <<'BANNER'
+██████╗ ███████╗████████╗ █████╗
+██╔══██╗██╔════╝╚══██╔══╝██╔══██╗
+██████╔╝█████╗     ██║   ███████║
+██╔══██╗██╔══╝     ██║   ██╔══██║
+██████╔╝███████╗   ██║   ██║  ██║
+╚═════╝ ╚══════╝   ╚═╝   ╚═╝  ╚═╝
+
+BANNER
+      variant_label="${IMAGE_VARIANT} BETA"
+   fi
+
    log_info "User: $(whoami), UID: $(id -u)"
-   log_info "Image variant: ${IMAGE_VARIANT:-unknown} (runtime: ${PHP_RUNTIME_CONFIG:-unknown})"
+   log_info "Image variant: ${variant_label} (runtime: ${PHP_RUNTIME_CONFIG:-unknown})"
 }
 
 shutdown_handler() {

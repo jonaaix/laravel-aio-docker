@@ -235,6 +235,10 @@ RUN if [ -n "$CLAUDE_THREADS_BETA" ]; then \
    && cd / && rm -rf /tmp/claude-threads-src; \
     fi
 
+# Marks this as the beta build (empty for the official fpm-claude image). The entrypoint
+# banner reads it to print "LARAVEL AIO BETA".
+ENV IMAGE_BETA=${CLAUDE_THREADS_BETA}
+
 # Install php-lsp (Rust-based PHP language server)
 RUN if [ "${TARGETARCH}" = "amd64" ]; then \
       PHP_LSP_ARCH="x86_64-unknown-linux-gnu"; \
