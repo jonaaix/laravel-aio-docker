@@ -49,6 +49,7 @@ RUN apt-get update \
       sudo \
       procps \
       psmisc \
+      lsof \
  && ln -sf "$(command -v fdfind)" /usr/local/bin/fd \
  && rm -rf /var/lib/apt/lists/*
 

@@ -23,6 +23,10 @@ on:
                 description: 'Build FPM Claude'
                 type: boolean
                 default: true
+            build_fpm_claude_beta:
+                description: 'Build FPM Claude Beta (claude-threads from feature branch)'
+                type: boolean
+                default: true
             build_frankenphp:
                 description: 'Build FrankenPHP'
                 type: boolean
@@ -97,6 +101,10 @@ jobs:
                         variants+=("fpm-claude")
                     fi
 
+                    if [[ "${{ inputs.build_fpm_claude_beta }}" == "true" ]]; then
+                        variants+=("fpm-claude-beta")
+                    fi
+
                     # Convert bash array to JSON using jq for safety
                     if [ ${#variants[@]} -eq 0 ]; then
                         echo "❌ Error: No variants selected."
@@ -146,11 +154,13 @@ jobs:
                 uses: docker/build-push-action@v7
                 with:
                     context: .
-                    file: ./src/php-${{ matrix.variant }}/Dockerfile
+                    # fpm-claude-beta reuses the fpm-claude Dockerfile, toggled by CLAUDE_THREADS_BETA.
+                    file: ${{ matrix.variant == 'fpm-claude-beta' && './src/php-fpm-claude/Dockerfile' || format('./src/php-{0}/Dockerfile', matrix.variant) }}
                     platforms: linux/amd64,linux/arm64
                     build-args: |
                         INPUT_PHP=${{ matrix.php_version }}
                         CACHEBUST_NPM_GLOBAL=${{ github.run_id }}-${{ github.run_attempt }}
+                        ${{ matrix.variant == 'fpm-claude-beta' && 'CLAUDE_THREADS_BETA=1' || '' }}
                     tags: ${{ steps.meta.outputs.tags }}
                     labels: ${{ steps.meta.outputs.labels }}
                     push: true

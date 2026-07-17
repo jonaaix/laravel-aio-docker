@@ -59,6 +59,14 @@ else
   dockerfilePath="./src/php-${imageType}/Dockerfile"
 fi
 
+# fpm-claude-beta is the fpm-claude image built with claude-threads from the feature
+# branch instead of npm. Same Dockerfile, toggled by the CLAUDE_THREADS_BETA build arg.
+extraBuildArgs=()
+if [ "$imageType" = "fpm-claude-beta" ]; then
+  dockerfilePath="./src/php-fpm-claude/Dockerfile"
+  extraBuildArgs+=(--build-arg CLAUDE_THREADS_BETA=1)
+fi
+
 echo "⚪️ Building image: ${imageTag}"
 echo "Using Dockerfile: ${dockerfilePath}"
 
@@ -96,6 +104,7 @@ docker buildx build \
   --platform "${platform}" \
   --build-arg INPUT_PHP="${phpVersion}" \
   --build-arg CACHEBUST_NPM_GLOBAL="$(date +%s)" \
+  "${extraBuildArgs[@]}" \
   --tag "${imageTag}" \
   --file "${dockerfilePath}" \
   ${outputFlag} .
