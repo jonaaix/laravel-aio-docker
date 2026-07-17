@@ -11,6 +11,7 @@ register_shutdown_handler
 
 log_phase "🪝  Pre-boot hooks"
 run_before_boot_hooks
+cleanup_playwright_locks
 
 log_phase "🐘  PHP setup"
 configure_xdebug

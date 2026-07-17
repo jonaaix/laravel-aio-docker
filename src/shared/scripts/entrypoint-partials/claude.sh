@@ -19,6 +19,20 @@ _claude_append() {
    cat "$f" >> /home/laravel/.claude/CLAUDE.md
 }
 
+# Remove abandoned Chromium singleton locks from the Playwright MCP's persistent profile.
+# A hard container kill leaves SingletonLock/Socket/Cookie behind; the profile lives under
+# ~/.cache (the persisted /home volume), so the stale lock survives restarts and blocks the
+# browser ("profile appears to be in use by another process"). Safe to clear at boot — no
+# browser is running yet. Only meaningful for the browser-capable variants.
+cleanup_playwright_locks() {
+   case "$IMAGE_VARIANT" in fpm-claude|ai-agent) ;; *) return 0 ;; esac
+   local base="${HOME:-/home/laravel}/.cache/ms-playwright"
+   [ -d "$base" ] || return 0
+   [ -n "$(find "$base" -maxdepth 3 -name 'Singleton*' 2>/dev/null)" ] || return 0
+   find "$base" -maxdepth 3 -name 'Singleton*' -delete 2>/dev/null || true
+   log_ok "Cleared abandoned Playwright browser lock(s)"
+}
+
 claude_init() {
    case "$IMAGE_VARIANT" in
       fpm-claude|ai-agent) ;;
