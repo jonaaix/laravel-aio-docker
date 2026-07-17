@@ -96,7 +96,8 @@ shutdown_handler() {
       log_ok "Supervisor stopped"
    fi
 
-   log_ok "Shutdown complete 👋"
+   log_ok "Shutdown complete"
+   printf '\n👋 👋 👋 👋 👋 👋 👋 👋 👋 👋\n👋 👋 👋 👋 👋 👋 👋 👋 👋 👋\n\n'
    exit 0
 }
 
