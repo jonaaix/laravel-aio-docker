@@ -82,7 +82,7 @@ shutdown_handler() {
    done
 
    if [ -n "$has_horizon" ]; then
-      log_step "⏳ Horizon — signalling workers to finish their jobs..."
+      log_wait "Horizon — signalling workers to finish their jobs..."
       php artisan horizon:terminate > /dev/null 2>&1 || true
       # Wait for Horizon workers to drain before moving on (compose stop_grace_period is
       # 60s; cap at 50s to leave a buffer for the remaining shutdown steps).
@@ -95,19 +95,19 @@ shutdown_handler() {
    fi
 
    if [ -n "$has_reverb" ]; then
-      log_step "⏳ Reverb — broadcasting restart signal..."
+      log_wait "Reverb — broadcasting restart signal..."
       php artisan reverb:restart > /dev/null 2>&1 || true
       log_ok "Reverb stopped"
    fi
 
    if [ -n "$has_octane" ]; then
-      log_step "⏳ Octane — stopping server..."
+      log_wait "Octane — stopping server..."
       php artisan octane:stop > /dev/null 2>&1 || true
       log_ok "Octane stopped"
    fi
 
    if [ -n "$has_supervisor" ]; then
-      log_step "⏳ Supervisor — terminating workers..."
+      log_wait "Supervisor — terminating workers..."
       killall supervisord > /dev/null 2>&1 || true
       log_ok "Supervisor stopped"
    fi

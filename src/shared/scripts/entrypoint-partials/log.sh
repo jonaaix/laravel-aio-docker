@@ -20,6 +20,7 @@ _log_ts() { date '+%H:%M:%S'; }
 
 log_info()  { printf '%s[%s]%s %sℹ️ %s %s\n' "$LOG_DIM" "$(_log_ts)" "$LOG_RESET" "$LOG_BLUE"   "$LOG_RESET" "$*"; }
 log_ok()    { printf '%s[%s]%s %s✅%s %s\n'  "$LOG_DIM" "$(_log_ts)" "$LOG_RESET" "$LOG_GREEN"  "$LOG_RESET" "$*"; }
+log_wait()  { printf '%s[%s]%s %s⏳%s %s\n'  "$LOG_DIM" "$(_log_ts)" "$LOG_RESET" "$LOG_YELLOW" "$LOG_RESET" "$*"; }
 log_warn()  { printf '%s[%s]%s %s⚠️ %s %s\n' "$LOG_DIM" "$(_log_ts)" "$LOG_RESET" "$LOG_YELLOW" "$LOG_RESET" "$*"; }
 log_error() { printf '%s[%s]%s %s❌%s %s\n'  "$LOG_DIM" "$(_log_ts)" "$LOG_RESET" "$LOG_RED"    "$LOG_RESET" "$*" >&2; }
 log_step()  { printf '   %s└─%s %s\n' "$LOG_DIM" "$LOG_RESET" "$*"; }
