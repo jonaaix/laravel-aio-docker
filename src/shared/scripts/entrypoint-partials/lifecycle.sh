@@ -81,28 +81,32 @@ shutdown_handler() {
       log_step "$svc"
    done
 
+   # Every artisan command is wrapped in `timeout` so shutdown can never hang: Horizon /
+   # Reverb talk to Redis, and if the queue/cache backend was stopped first (e.g. Ctrl+C on
+   # an attached `compose up` signals all containers at once, bypassing depends_on order),
+   # these commands would otherwise block on Redis retries until Docker SIGKILLs us. The
+   # whole sequence stays well under the 60s compose stop_grace_period.
    if [ -n "$has_horizon" ]; then
       log_wait "Horizon — signalling workers to finish their jobs..."
-      php artisan horizon:terminate > /dev/null 2>&1 || true
-      # Wait for Horizon workers to drain before moving on (compose stop_grace_period is
-      # 60s; cap at 50s to leave a buffer for the remaining shutdown steps).
-      local timeout=50
-      while [ $timeout -gt 0 ] && pgrep -f "horizon:(work|supervisor)" > /dev/null; do
+      timeout 10 php artisan horizon:terminate > /dev/null 2>&1 || true
+      # Wait (bounded) for workers to finish their current jobs.
+      local drain=25
+      while [ $drain -gt 0 ] && pgrep -f "horizon:(work|supervisor)" > /dev/null; do
          sleep 1
-         timeout=$((timeout - 1))
+         drain=$((drain - 1))
       done
       log_ok "Horizon stopped"
    fi
 
    if [ -n "$has_reverb" ]; then
       log_wait "Reverb — broadcasting restart signal..."
-      php artisan reverb:restart > /dev/null 2>&1 || true
+      timeout 10 php artisan reverb:restart > /dev/null 2>&1 || true
       log_ok "Reverb stopped"
    fi
 
    if [ -n "$has_octane" ]; then
       log_wait "Octane — stopping server..."
-      php artisan octane:stop > /dev/null 2>&1 || true
+      timeout 10 php artisan octane:stop > /dev/null 2>&1 || true
       log_ok "Octane stopped"
    fi
 
