@@ -53,24 +53,63 @@ shutdown_handler() {
    # NOTE: In the most recent Docker version, logging is disabled once stop signal received :( However it still works.
    log_phase "🛑  Graceful shutdown"
 
-   # Hand the whole shutdown to Supervisor. On SIGTERM it stops every managed program with
-   # that program's stopsignal + stopwaitsecs and does NOT restart them. This MUST happen
-   # first: while supervisord is alive, autorestart=true immediately respawns any worker we
-   # stop ourselves, and the respawn reconnects to a Redis that may already be going away
-   # (the source of the "PHP only stops via kill" hangs). Laravel workers (horizon, queue,
-   # reverb, octane) handle SIGTERM by finishing their current job and exiting, so this is
-   # graceful and loses no in-flight work; Horizon metrics snapshots live in Redis already.
-   # No script-side cap is imposed — stopwaitsecs is 3600s, so Docker's stop_grace_period is
-   # the real ceiling and governs how long the queue may take to drain.
-   if pgrep supervisord > /dev/null; then
-      log_wait "Stopping Supervisor and all managed workers (SIGTERM, graceful)..."
-      killall supervisord 2>/dev/null || true
-      while pgrep supervisord > /dev/null; do
+   # Cache the artisan command list once to avoid booting Laravel multiple times.
+   # php may be absent entirely (e.g. the ai-agent variant) — then only Supervisor is stopped.
+   local artisan_commands
+   artisan_commands=$(php artisan 2>/dev/null || true)
+
+   local has_horizon="" has_reverb="" has_octane="" has_supervisor=""
+   echo "$artisan_commands" | grep -q "horizon" && has_horizon=1
+   echo "$artisan_commands" | grep -q "reverb"  && has_reverb=1
+   echo "$artisan_commands" | grep -q "octane"  && has_octane=1
+   pgrep supervisord > /dev/null && has_supervisor=1
+
+   # Overview of what will be stopped, in the order it happens.
+   local -a todo=()
+   [ -n "$has_horizon" ]    && todo+=("Horizon")
+   [ -n "$has_reverb" ]     && todo+=("Reverb")
+   [ -n "$has_octane" ]     && todo+=("Octane")
+   [ -n "$has_supervisor" ] && todo+=("Supervisor")
+
+   if [ ${#todo[@]} -eq 0 ]; then
+      log_ok "Nothing to stop — exiting"
+      exit 0
+   fi
+   log_info "Stopping ${#todo[@]} service(s):"
+   local svc
+   for svc in "${todo[@]}"; do
+      log_step "$svc"
+   done
+
+   if [ -n "$has_horizon" ]; then
+      log_wait "Horizon — signalling workers to finish their jobs..."
+      php artisan horizon:terminate > /dev/null 2>&1 || true
+      # Wait for Horizon workers to drain before moving on (compose stop_grace_period is
+      # 60s; cap at 50s to leave a buffer for the remaining shutdown steps).
+      local timeout=50
+      while [ $timeout -gt 0 ] && pgrep -f "horizon:(work|supervisor)" > /dev/null; do
          sleep 1
+         timeout=$((timeout - 1))
       done
-      log_ok "All workers stopped"
-   else
-      log_ok "Supervisor not running — nothing to stop"
+      log_ok "Horizon stopped"
+   fi
+
+   if [ -n "$has_reverb" ]; then
+      log_wait "Reverb — broadcasting restart signal..."
+      php artisan reverb:restart > /dev/null 2>&1 || true
+      log_ok "Reverb stopped"
+   fi
+
+   if [ -n "$has_octane" ]; then
+      log_wait "Octane — stopping server..."
+      php artisan octane:stop > /dev/null 2>&1 || true
+      log_ok "Octane stopped"
+   fi
+
+   if [ -n "$has_supervisor" ]; then
+      log_wait "Supervisor — terminating workers..."
+      killall supervisord > /dev/null 2>&1 || true
+      log_ok "Supervisor stopped"
    fi
 
    log_ok "Shutdown complete"
