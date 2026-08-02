@@ -54,6 +54,24 @@ claude_init() {
    node /scripts/merge-settings.js
    cp /opt/claude-defaults/CLAUDE.md /home/laravel/.claude/CLAUDE.md
 
+   # Environment-dependent fragments (coding variant only). Dev and prod need opposite
+   # instructions: dev has a disposable DB and (usually) a Vite HMR server, prod is a
+   # live system that demands guardrails and explicit build/cache-refresh steps.
+   if [ "$IMAGE_VARIANT" = "fpm-claude" ]; then
+      if [ "$ENV_DEV" = "true" ]; then
+         _claude_append CLAUDE.dev.md
+      else
+         _claude_append CLAUDE.production.md
+      fi
+      # Mirrors the supervisor gate for the in-container Vite dev server
+      # (supervisor_add_vite_dev_if_enabled): HMR rules only when it actually runs.
+      if [ "$ENV_DEV" = "true" ] && [ "$DEV_NPM_RUN_DEV" = "true" ]; then
+         _claude_append CLAUDE.frontend-vite.md
+      else
+         _claude_append CLAUDE.frontend-build.md
+      fi
+   fi
+
    if _ai_threads_enabled; then
       _claude_append CLAUDE.threads.md
       # The AI git workflow (dev_ai branch model, patch handoff) only applies to the

@@ -15,6 +15,15 @@ Local AI-assisted development only.
 | `ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm-claude` | 8.5 |
 | `ghcr.io/jonaaix/laravel-aio:1.3-php8.4-fpm-claude` | 8.4 |
 
+## Environment-aware prompt
+
+Claude's `CLAUDE.md` is recomposed on every boot and adapts to the environment:
+
+- **`ENV_DEV=true`** — dev rules: disposable database, the `Claude Bot` test user for authenticated browser testing. With `DEV_NPM_RUN_DEV=true` additionally the Vite/HMR rules (never build); without it, the instruction to run `npm run build` after asset changes.
+- **`ENV_DEV` unset/false (production)** — guardrails: no destructive DB operations, no test data or self-created accounts, `.env` is secret, no service restarts, plus how to apply code changes correctly (`php artisan optimize`, `queue:restart`).
+
+`~/.claude/settings.json` is user-owned: it is seeded once from the image defaults and afterwards only the keys the container needs are enforced (`permissions.defaultMode`, `skipDangerousModePermissionPrompt`). Everything else — including disabling the php-lsp plugin via `enabledPlugins` — persists across boots.
+
 ## Configuration
 
 All opt-in; none depend on `ENV_DEV`. Each appends a fragment to Claude's `CLAUDE.md` on boot (threads also starts the bridge under Supervisor):
