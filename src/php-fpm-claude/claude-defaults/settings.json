@@ -3,6 +3,7 @@
     "defaultMode": "bypassPermissions"
   },
   "skipDangerousModePermissionPrompt": true,
+  "disableRemoteControl": true,
   "enabledPlugins": {
     "php-lsp@claude-code-lsps": true
   }

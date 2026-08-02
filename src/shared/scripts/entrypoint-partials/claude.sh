@@ -48,7 +48,10 @@ claude_init() {
    esac
 
    mkdir -p /home/laravel/.claude
-   cp /opt/claude-defaults/settings.json /home/laravel/.claude/settings.json
+   # settings.json is user-owned: seed it once from the defaults, afterwards only
+   # enforce the keys the container needs (see merge-settings.js). Never a blind
+   # overwrite — that would wipe user-added permissions, hooks, plugin toggles etc.
+   node /scripts/merge-settings.js
    cp /opt/claude-defaults/CLAUDE.md /home/laravel/.claude/CLAUDE.md
 
    if _ai_threads_enabled; then

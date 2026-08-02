@@ -192,7 +192,9 @@ RUN curl -fsSL https://claude.ai/install.sh | bash
 # Register the Playwright MCP server globally for all projects
 RUN claude mcp add --transport stdio --scope user playwright -- npx -y @playwright/mcp@latest
 
-# Store the Claude default config in /opt (source of truth, refreshed into ~/.claude every boot).
+# Store the Claude default config in /opt (source of truth). CLAUDE.md is recomposed into
+# ~/.claude every boot; settings.json is seeded once and afterwards only merged
+# (required keys enforced, user customizations preserved — see merge-settings.js).
 # Shared prompt fragments (chat bridge, non-tech mode) are composed in by the entrypoint.
 COPY --chown=laravel:laravel ./src/shared/claude-defaults/ /opt/claude-defaults/
 COPY --chown=laravel:laravel ./src/ai-agent/claude-defaults/ /opt/claude-defaults/
@@ -204,7 +206,8 @@ RUN cp /opt/claude-defaults/settings.json /home/laravel/.claude/settings.json \
       echo '{}' > /opt/claude-defaults/.claude.json; \
     fi
 
-# Reuse the shared MCP/plugin merge scripts (identical across claude-capable variants)
+# Reuse the shared settings/MCP/plugin merge scripts (identical across claude-capable variants)
+COPY ./src/php-fpm-claude/merge-settings.js /scripts/merge-settings.js
 COPY ./src/php-fpm-claude/merge-mcp-servers.js /scripts/merge-mcp-servers.js
 COPY ./src/php-fpm-claude/merge-plugins.js /scripts/merge-plugins.js
 

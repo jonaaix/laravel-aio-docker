@@ -260,7 +260,9 @@ RUN claude mcp add --transport stdio --scope user playwright -- npx -y @playwrig
 RUN git clone --depth 1 https://github.com/Piebald-AI/claude-code-lsps.git \
     /opt/claude-defaults/plugins/marketplaces/claude-code-lsps
 
-# Store Claude default config in /opt (source of truth, refreshed into ~/.claude every boot).
+# Store Claude default config in /opt (source of truth). CLAUDE.md is recomposed into
+# ~/.claude every boot; settings.json is seeded once and afterwards only merged
+# (required keys enforced, user customizations preserved — see merge-settings.js).
 # Shared prompt fragments (chat bridge, non-tech mode) are composed in by the entrypoint.
 COPY --chown=laravel:laravel ./src/shared/claude-defaults/ /opt/claude-defaults/
 COPY --chown=laravel:laravel ./src/php-fpm-claude/claude-defaults/ /opt/claude-defaults/
@@ -296,7 +298,8 @@ RUN EXPECTED_PLUGIN_VERSION=0.1.0 \
       jq --arg ver "$PHP_VER" "$JQ_PATCH" "$f" > "$f.tmp" && mv "$f.tmp" "$f"; \
     done
 
-# Copy MCP and plugin merge scripts
+# Copy settings, MCP and plugin merge scripts
+COPY ./src/php-fpm-claude/merge-settings.js /scripts/merge-settings.js
 COPY ./src/php-fpm-claude/merge-mcp-servers.js /scripts/merge-mcp-servers.js
 COPY ./src/php-fpm-claude/merge-plugins.js /scripts/merge-plugins.js
 
