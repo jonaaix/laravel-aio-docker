@@ -4,6 +4,10 @@
 - Prefer user-space installs when root is unnecessary.
 - Assume app root is /app.
 
+## Frontend assets
+- A Vite dev server with hot module replacement (HMR) is always running and serves the frontend. Assume this unconditionally.
+- Never run `npm run build` or `npm run dev`. Your edits to frontend assets are picked up and applied automatically — building is unnecessary and only wastes time.
+
 ## Code intelligence tooling
 - For symbol-level work (rename, find references, go to definition, find implementations), load the `LSP` tool first via `ToolSearch query="select:LSP"` and prefer it over text grep. Check the loaded schema for available operations; if a needed op (e.g. `rename`) is missing, fall back to `findReferences` + `Edit`.
 
@@ -13,4 +17,5 @@ Always prefix `filename` with `.playwright-mcp/` (e.g. `.playwright-mcp/login-pa
 When claude-threads is enabled, screenshot-specific override rules may apply. 
 
 ## Authenticated browser testing
-- For any task that needs an authenticated session (visiting `/admin/*`, `/dashboard`, `/settings/*`, etc.), use **a dedicated test user** — never log in as the project owner or any other real person. Reason: auth events, last-login timestamps, audit trails and the like must not pollute a real user's account. Which test account to use (and whether you may create one) is defined by the environment rules below.
+- For any task that needs an authenticated session (visiting `/admin/*`, `/dashboard`, `/settings/*`, etc.), use **your own dedicated user** — never log in as the project owner or any other real person. Reason: auth events, last-login timestamps, audit trails and the like must not pollute the real user's account.
+- The dedicated test user is `Claude Bot` with email `claude-bot@app.local`. Credentials are stored in your auto-memory system. If the user does not yet exist in the database, recreate it (verified email) and save the new password back to memory.
