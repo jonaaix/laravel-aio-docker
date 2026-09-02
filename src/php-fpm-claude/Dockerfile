@@ -240,25 +240,21 @@ RUN if [ -n "$CLAUDE_THREADS_BETA" ]; then \
 # banner reads it to print "LARAVEL AIO BETA".
 ENV IMAGE_BETA=${CLAUDE_THREADS_BETA}
 
-# Install php-lsp (Rust-based PHP language server)
-RUN if [ "${TARGETARCH}" = "amd64" ]; then \
-      PHP_LSP_ARCH="x86_64-unknown-linux-gnu"; \
-    else \
-      PHP_LSP_ARCH="aarch64-unknown-linux-gnu"; \
-    fi \
- && curl -Lo /tmp/php-lsp.tar.gz https://github.com/jorgsowa/php-lsp/releases/latest/download/php-lsp-${PHP_LSP_ARCH}.tar.gz \
- && tar xzf /tmp/php-lsp.tar.gz -C /home/laravel/.local/bin/ \
- && rm /tmp/php-lsp.tar.gz
-
 RUN curl -fsSL https://claude.ai/install.sh | bash
 
-# Register MCP servers globally for all projects
-RUN claude mcp add --transport stdio --scope user playwright -- npx -y @playwright/mcp@latest \
+# Register MCP servers globally for all projects. Playwright talks HTTP to the shared
+# daemon supervisord brings up at boot (see src/shared/supervisor/playwright-mcp.conf):
+# stdio would spawn one browser per Claude session and force every subagent in that
+# session to share a single browser context, so parallel browser_navigate / click /
+# screenshot calls raced. Over HTTP the MCP hands each connected client its own context
+# by default, isolating parallel subagents. context7 stays on stdio — a doc lookup
+# server holds no cross-call state, so per-session stdio is fine.
+#
+# The URL must say `localhost`, not `127.0.0.1`: the MCP's DNS-rebinding guard matches the
+# Host header against the literal name `localhost:<port>` and answers anything else with
+# `403 Access is only allowed at localhost:9223` — even the loopback IP it is bound to.
+RUN claude mcp add --transport http --scope user playwright http://localhost:9223/mcp \
  && claude mcp add --transport stdio --scope user context7 -- npx -y @upstash/context7-mcp
-
-# Clone LSP marketplace for phpactor plugin
-RUN git clone --depth 1 https://github.com/Piebald-AI/claude-code-lsps.git \
-    /opt/claude-defaults/plugins/marketplaces/claude-code-lsps
 
 # Store Claude default config in /opt (source of truth). CLAUDE.md is recomposed into
 # ~/.claude every boot; settings.json is seeded once and afterwards only merged
@@ -270,38 +266,9 @@ RUN cp /opt/claude-defaults/settings.json /home/laravel/.claude/settings.json \
  && cp /opt/claude-defaults/CLAUDE.md /home/laravel/.claude/CLAUDE.md \
  && cp /home/laravel/.claude.json /opt/claude-defaults/.claude.json
 
-# Patch php-lsp config in both the installed-plugin cache (active at runtime)
-# and the marketplace clone (used if the plugin is ever reinstalled/refreshed).
-# Sets phpVersion to this image's actual PHP runtime, adds common noise excludes,
-# and disables undefinedFunctions (https://github.com/jorgsowa/php-lsp/issues/92 —
-# incomplete built-in stubs flag count(), array_*, str_*, trim() etc. as undefined).
-#
-# Pinned to a known plugin manifest version: a new upstream version may restructure
-# .lsp.json so blindly patching it could corrupt the config. On a mismatch the build
-# fails — review the upstream changes, adapt the jq filter and the cached snapshot
-# under claude-defaults/plugins/cache/<version>/, then bump EXPECTED_PLUGIN_VERSION.
-RUN EXPECTED_PLUGIN_VERSION=0.1.0 \
- && PLUGIN_JSON=/opt/claude-defaults/plugins/marketplaces/claude-code-lsps/php-lsp/plugin.json \
- && ACTUAL=$(jq -r '.version' "$PLUGIN_JSON") \
- && if [ "$ACTUAL" != "$EXPECTED_PLUGIN_VERSION" ]; then \
-      echo "ERROR: claude-code-lsps/php-lsp upstream version is $ACTUAL, pinned at $EXPECTED_PLUGIN_VERSION."; \
-      echo "Inspect the new .lsp.json structure, adapt patches and the cached snapshot, then bump the pin."; \
-      exit 1; \
-    fi \
- && PHP_VER=$(php -r 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION;') \
- && JQ_PATCH='.php.initializationOptions.phpVersion = $ver | .php.initializationOptions.excludePaths = ["node_modules/*", "storage/*", "bootstrap/cache/*", "public/build/*"] | .php.initializationOptions.diagnostics.undefinedFunctions = false' \
- && for f in \
-      /opt/claude-defaults/plugins/cache/claude-code-lsps/php-lsp/$EXPECTED_PLUGIN_VERSION/.lsp.json \
-      /opt/claude-defaults/plugins/marketplaces/claude-code-lsps/php-lsp/.lsp.json; \
-    do \
-      [ -f "$f" ] || continue; \
-      jq --arg ver "$PHP_VER" "$JQ_PATCH" "$f" > "$f.tmp" && mv "$f.tmp" "$f"; \
-    done
-
-# Copy settings, MCP and plugin merge scripts
+# Copy settings and MCP merge scripts
 COPY ./src/php-fpm-claude/merge-settings.js /scripts/merge-settings.js
 COPY ./src/php-fpm-claude/merge-mcp-servers.js /scripts/merge-mcp-servers.js
-COPY ./src/php-fpm-claude/merge-plugins.js /scripts/merge-plugins.js
 
 # Expose the default port Nginx is reachable on. Informational only — the actual
 # listen port is configurable at runtime via the HTTP_PORT env var (default 8000).

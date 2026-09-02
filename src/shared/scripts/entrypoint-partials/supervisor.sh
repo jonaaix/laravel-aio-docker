@@ -56,6 +56,16 @@ supervisor_add_reverb_if_enabled() {
    _supervisor_append "reverb-server.conf"
 }
 
+# Playwright MCP HTTP daemon — registered globally in the image as
+# `claude mcp add --transport http playwright http://localhost:9223/mcp`. Runs in both
+# claude-capable variants regardless of ENABLE_CLAUDE_THREADS: an interactive shell can
+# open a Claude session at any time and expects the MCP to already be up.
+supervisor_add_playwright_mcp() {
+   case "$IMAGE_VARIANT" in fpm-claude|ai-agent) ;; *) return 0 ;; esac
+   log_step "Adding Playwright MCP server..."
+   _supervisor_append "playwright-mcp.conf"
+}
+
 # claude-threads worker — opt-in in both claude-capable variants (fpm-claude, ai-agent)
 # via ENABLE_CLAUDE_THREADS (legacy alias: DEV_ENABLE_CLAUDE_THREADS). Not tied to ENV_DEV.
 # _ai_threads_enabled is defined in claude.sh (sourced before this runs).

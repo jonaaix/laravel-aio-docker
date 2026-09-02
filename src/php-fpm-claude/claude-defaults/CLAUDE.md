@@ -8,12 +8,9 @@
 - A Vite dev server with hot module replacement (HMR) is always running and serves the frontend. Assume this unconditionally.
 - Never run `npm run build` or `npm run dev`. Your edits to frontend assets are picked up and applied automatically — building is unnecessary and only wastes time.
 
-## Code intelligence tooling
-- For symbol-level work (rename, find references, go to definition, find implementations), load the `LSP` tool first via `ToolSearch query="select:LSP"` and prefer it over text grep. Check the loaded schema for available operations; if a needed op (e.g. `rename`) is missing, fall back to `findReferences` + `Edit`.
-
 ## Playwright MCP
 ### Screenshots
-Always prefix `filename` with `.playwright-mcp/` (e.g. `.playwright-mcp/login-page.png`) so screenshots land alongside the auto-saved snapshots and console logs instead of cluttering the project root.
+Save every screenshot as `.playwright-mcp/<slug>/<name>.png`. Generate `<slug>` once per session (6–8 hex chars) and reuse it — this keeps parallel subagents from clobbering each other's files.
 When claude-threads is enabled, screenshot-specific override rules may apply. 
 
 ## Authenticated browser testing

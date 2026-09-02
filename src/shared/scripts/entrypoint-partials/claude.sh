@@ -41,6 +41,27 @@ cleanup_playwright_locks() {
    return 0
 }
 
+# Block until the Playwright MCP HTTP listener answers on 127.0.0.1:9223, so anything
+# downstream that opens a Claude session (claude-threads, an interactive `docker exec`
+# claude) always finds a live server. Supervisor starts the MCP by priority but doesn't
+# wait for readiness — this bridges that gap. 45s covers cold Chromium launch.
+wait_for_playwright_mcp() {
+   case "$IMAGE_VARIANT" in fpm-claude|ai-agent) ;; *) return 0 ;; esac
+   local host=127.0.0.1 port=9223 timeout=45
+   log_wait "Waiting for Playwright MCP on ${host}:${port}..."
+   while [ $timeout -gt 0 ]; do
+      if (exec 3<>/dev/tcp/${host}/${port}) 2>/dev/null; then
+         exec 3<&- 3>&-
+         log_ok "Playwright MCP ready"
+         return 0
+      fi
+      sleep 1
+      timeout=$((timeout - 1))
+   done
+   log_warn "Playwright MCP did not open port ${port} within 45s — continuing anyway"
+   return 0
+}
+
 claude_init() {
    case "$IMAGE_VARIANT" in
       fpm-claude|ai-agent) ;;
@@ -78,7 +99,6 @@ claude_init() {
    fi
 
    [ -f /opt/claude-defaults/.claude.json ] && node /scripts/merge-mcp-servers.js
-   [ -f /opt/claude-defaults/plugins/installed_plugins.json ] && node /scripts/merge-plugins.js
 
    return 0
 }

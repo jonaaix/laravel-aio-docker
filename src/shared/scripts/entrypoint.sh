@@ -65,10 +65,12 @@ supervisor_add_schedule
 supervisor_add_queue_if_enabled
 supervisor_add_horizon_if_enabled
 supervisor_add_reverb_if_enabled
+supervisor_add_playwright_mcp
 supervisor_add_claude_threads_if_enabled
 supervisor_add_vite_dev_if_enabled
 supervisor_add_octane_if_enabled
 start_supervisor
+wait_for_playwright_mcp
 
 log_phase "🚀  Ready"
 log_ok "PHP READY"

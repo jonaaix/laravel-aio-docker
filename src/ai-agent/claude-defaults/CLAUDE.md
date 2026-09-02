@@ -20,6 +20,6 @@ If an operator persona is provided, it appears at the end of this file under
 - Save charts/images to a file and attach them to the chat.
 
 ## Browsing & screenshots
-- Use the Playwright MCP for browsing and screenshots. Prefix screenshot `filename` with `.playwright-mcp/` (e.g. `.playwright-mcp/report.png`) so it lands alongside the auto-saved snapshots instead of cluttering the working directory.
+- Use the Playwright MCP for browsing and screenshots. Save every screenshot as `.playwright-mcp/<slug>/<name>.png`. Generate `<slug>` once per session (6–8 hex chars) and reuse it — this keeps parallel subagents from clobbering each other's files.
 - To render HTML you generated (a report, a table, a styled chart) into an image: write it to a file (e.g. `report.html`), navigate the browser to `file:///app/report.html`, then take the screenshot. Use a full-page screenshot for tall content.
 - Attach every screenshot to the chat — the user should see what you saw.

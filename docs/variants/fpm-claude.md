@@ -6,7 +6,7 @@
 Local AI-assisted development only.
 :::
 
-**Adds on top of `fpm`:** Claude Code CLI · [php-lsp](https://github.com/jorgsowa/php-lsp) + [claude-code-lsps](https://github.com/Piebald-AI/claude-code-lsps) plugin (code-aware lookups on PHP) · [Playwright](https://github.com/microsoft/playwright-mcp) + [Context7](https://github.com/upstash/context7) MCP servers · claude-threads (opt-in) · Starship · passwordless sudo.
+**Adds on top of `fpm`:** Claude Code CLI · [Playwright](https://github.com/microsoft/playwright-mcp) + [Context7](https://github.com/upstash/context7) MCP servers · claude-threads (opt-in) · Starship · passwordless sudo.
 
 ## Image tags
 

@@ -16,8 +16,10 @@ cleanup_playwright_locks
 
 log_phase "🎛️   Supervisor"
 init_supervisor_config
+supervisor_add_playwright_mcp
 supervisor_add_claude_threads_if_enabled
 start_supervisor
+wait_for_playwright_mcp
 
 log_phase "🚀  Ready"
 log_ok "AGENT READY"

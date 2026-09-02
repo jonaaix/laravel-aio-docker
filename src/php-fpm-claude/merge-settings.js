@@ -1,9 +1,7 @@
 // Seed/merge ~/.claude/settings.json from the image defaults without clobbering
 // user customizations (permission allowlists, hooks, model, statusline, ...).
 //
-// - No settings.json yet (fresh volume): copy the defaults verbatim. This is the ONLY
-//   time enabledPlugins (php-lsp) is written — a user who later disables the plugin
-//   stays disabled across boots.
+// - No settings.json yet (fresh volume): copy the defaults verbatim.
 // - settings.json exists: enforce only the keys the container needs to operate
 //   (permissions.defaultMode, skipDangerousModePermissionPrompt); leave everything
 //   else untouched.

@@ -189,8 +189,16 @@ RUN MCP=/opt/npm-global/lib/node_modules/@playwright/mcp \
 # Install the Claude Code CLI
 RUN curl -fsSL https://claude.ai/install.sh | bash
 
-# Register the Playwright MCP server globally for all projects
-RUN claude mcp add --transport stdio --scope user playwright -- npx -y @playwright/mcp@latest
+# Register the Playwright MCP server globally for all projects. Points at the shared HTTP
+# daemon supervisord brings up at boot (see src/shared/supervisor/playwright-mcp.conf) —
+# stdio would spawn one browser per Claude session, forcing every subagent in the session
+# to share a single context and race on tabs / clicks / screenshots. Over HTTP the MCP
+# hands each connected client its own context by default.
+#
+# The URL must say `localhost`, not `127.0.0.1`: the MCP's DNS-rebinding guard matches the
+# Host header against the literal name `localhost:<port>` and answers anything else with
+# `403 Access is only allowed at localhost:9223` — even the loopback IP it is bound to.
+RUN claude mcp add --transport http --scope user playwright http://localhost:9223/mcp
 
 # Store the Claude default config in /opt (source of truth). CLAUDE.md is recomposed into
 # ~/.claude every boot; settings.json is seeded once and afterwards only merged
@@ -206,10 +214,9 @@ RUN cp /opt/claude-defaults/settings.json /home/laravel/.claude/settings.json \
       echo '{}' > /opt/claude-defaults/.claude.json; \
     fi
 
-# Reuse the shared settings/MCP/plugin merge scripts (identical across claude-capable variants)
+# Reuse the shared settings/MCP merge scripts (identical across claude-capable variants)
 COPY ./src/php-fpm-claude/merge-settings.js /scripts/merge-settings.js
 COPY ./src/php-fpm-claude/merge-mcp-servers.js /scripts/merge-mcp-servers.js
-COPY ./src/php-fpm-claude/merge-plugins.js /scripts/merge-plugins.js
 
 ENV IMAGE_VARIANT=ai-agent
 
