@@ -6,7 +6,7 @@
 Local AI-assisted development only.
 :::
 
-**Adds on top of `fpm`:** Claude Code CLI · [Playwright](https://github.com/microsoft/playwright-mcp) + [Context7](https://github.com/upstash/context7) MCP servers · claude-threads (opt-in) · Starship · passwordless sudo.
+**Adds on top of `fpm`:** Claude Code CLI · Codex CLI · [Playwright](https://github.com/microsoft/playwright-mcp) + [Context7](https://github.com/upstash/context7) MCP servers · claude-threads (opt-in) · Starship · passwordless sudo.
 
 ## Image tags
 

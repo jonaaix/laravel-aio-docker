@@ -203,13 +203,14 @@ RUN mkdir -p /home/laravel/.claude /home/laravel/.local/bin /opt/npm-global /opt
 # Install Claude for laravel user which runs the container
 USER laravel
 
-# Install MCP servers + claude-threads globally (as laravel, into laravel-owned NPM_CONFIG_PREFIX).
+# Install MCP servers + claude-threads + the Codex CLI globally (as laravel, into the
+# laravel-owned NPM_CONFIG_PREFIX).
 # Default: the official claude-threads npm release. The fpm-claude-beta variant sets
 # CLAUDE_THREADS_BETA=1 to install claude-threads from the feature branch instead (see below).
 ARG CACHEBUST_NPM_GLOBAL=initial
 ARG CLAUDE_THREADS_BETA=
 RUN echo "npm-global cache key: ${CACHEBUST_NPM_GLOBAL}" \
- && npm install -g @playwright/mcp@latest @upstash/context7-mcp@latest \
+ && npm install -g @playwright/mcp@latest @upstash/context7-mcp@latest @openai/codex@latest \
  && if [ -z "$CLAUDE_THREADS_BETA" ]; then npm install -g claude-threads@latest; fi
 
 # BETA variant (CLAUDE_THREADS_BETA=1): build claude-threads from the feature branch

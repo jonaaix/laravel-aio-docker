@@ -124,7 +124,7 @@ ghcr.io/jonaaix/laravel-aio:1.3-php8.4-openswoole
 ghcr.io/jonaaix/laravel-aio:1.3-ai-agent
 ```
 
-The `ai-agent` variant — a PHP-free runtime with the Claude Code CLI, opencode,
+The `ai-agent` variant — a PHP-free runtime with the Claude Code CLI, Codex CLI, opencode,
 claude-threads, Playwright MCP and a Python stack for non-coding agents you program with
 a mounted `AI_PERSONA.md` and point at your own data sources (MCP). See [`ai-agent`](https://jonaaix.github.io/laravel-aio-docker/variants/ai-agent).
 

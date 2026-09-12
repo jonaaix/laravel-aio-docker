@@ -2,7 +2,7 @@
 
 A PHP-free runtime for **non-coding** AI agents that work over chat and MCP servers. You "program" an instance with a mounted persona and point it at your data sources. For AI-assisted coding against a Laravel app, use [`fpm-claude`](/variants/fpm-claude) instead.
 
-**Includes:** Claude Code CLI · opencode · claude-threads (opt-in) · Playwright MCP with Chromium baked in (offline HTML render + screenshots) · Python venv (csvkit, pandas, openpyxl, matplotlib, requests, tabulate) · ripgrep, jq, pandoc, sqlite3, miller, poppler-utils, imagemagick. No PHP / Composer / nginx.
+**Includes:** Claude Code CLI · Codex CLI · opencode · claude-threads (opt-in) · Playwright MCP with Chromium baked in (offline HTML render + screenshots) · Python venv (csvkit, pandas, openpyxl, matplotlib, requests, tabulate) · ripgrep, jq, pandoc, sqlite3, miller, poppler-utils, imagemagick. No PHP / Composer / nginx.
 
 ## Image tag
 
@@ -15,7 +15,7 @@ All opt-in; none depend on `ENV_DEV`.
 | Variable | Default | Description |
 | :--- | :--- | :--- |
 | `AI_PERSONA_FILE` | `/app/AI_PERSONA.md` | Persona Markdown file. Appended **last** to the agent's `CLAUDE.md`, so it overrides the defaults. Applied only if the file exists. |
-| `ENABLE_CLAUDE_THREADS` | `false` | Start the claude-threads Mattermost/Slack bridge (under Supervisor) and add its chat prompt. Leave off to use the container only for interactive `claude` / `opencode` sessions. |
+| `ENABLE_CLAUDE_THREADS` | `false` | Start the claude-threads Mattermost/Slack bridge (under Supervisor) and add its chat prompt. Leave off to use the container only for interactive `claude` / `codex` / `opencode` sessions. |
 | `ENABLE_AI_NONTECH_MODE` | `false` | Append the non-technical prompt — the agent talks in outcomes, not code. |
 | `ENABLE_AI_SOFTDEV_MODE` | `false` | Append the chat-friendly developer prompt (short answers, summarized tool output). |
 

@@ -172,9 +172,10 @@ USER laravel
 #   @playwright/mcp — browser automation MCP server (browsing/screenshots)
 #   claude-threads  — chat bridge (Mattermost/Slack) that fronts the Claude Code CLI
 #   opencode        — alternative provider-agnostic coding/agent CLI
+#   codex           — OpenAI Codex CLI
 ARG CACHEBUST_NPM_GLOBAL=initial
 RUN echo "npm-global cache key: ${CACHEBUST_NPM_GLOBAL}" \
- && npm install -g @playwright/mcp@latest claude-threads@latest opencode-ai@latest
+ && npm install -g @playwright/mcp@latest claude-threads@latest opencode-ai@latest @openai/codex@latest
 
 # Bake the Chromium the Playwright MCP drives into /opt/ms-playwright, so rendering HTML
 # and taking screenshots works offline and immediately (otherwise the MCP would download
