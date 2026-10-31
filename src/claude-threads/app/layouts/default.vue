@@ -33,15 +33,18 @@ onBeforeUnmount(() => unsubscribe?.());
       :ui="{ footer: 'border-t border-default' }"
     >
       <template #header="{ collapsed }">
-        <UButton
-          to="/"
-          icon="i-heroicons-pencil-square"
-          :label="collapsed ? undefined : 'New conversation'"
-          color="neutral"
-          variant="soft"
-          block
-          :square="collapsed"
-        />
+        <UTooltip text="New conversation" :disabled="!collapsed">
+          <UButton
+            to="/"
+            icon="i-heroicons-pencil-square"
+            :label="collapsed ? undefined : 'New conversation'"
+            aria-label="New conversation"
+            color="neutral"
+            variant="soft"
+            block
+            :square="collapsed"
+          />
+        </UTooltip>
       </template>
 
       <template #default="{ collapsed }">

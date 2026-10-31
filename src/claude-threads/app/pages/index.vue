@@ -23,7 +23,7 @@ async function submit(): Promise<void> {
 <template>
   <UDashboardPanel id="new-conversation">
     <template #header>
-      <UDashboardNavbar title="New conversation" />
+      <UDashboardNavbar title="New Conversation" />
     </template>
 
     <template #body>
