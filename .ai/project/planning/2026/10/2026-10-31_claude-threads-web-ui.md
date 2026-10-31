@@ -17,7 +17,7 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - [x] Feature Book chapter `ai-web-chat`
 - [x] First vertical slice: conversations list, start/continue, Claude streaming block-level, tool and
       reasoning blocks, stop, pause/resume, history in SQLite, works under a sub-path
-- [ ] Port upstream CLI-compatibility fixes into the core (running in a separate worktree)
+- [x] Port upstream CLI-compatibility fixes into the core (upstream 1.21–1.37)
 - [ ] Auth/identity for iframe and standalone access — blocks image integration
 - [ ] Image integration: supervisor program, nginx sub-path proxy for the iframe, optional own
       port/domain, env (`NUXT_WORKING_DIR=/app`, data dir in the persisted home)
@@ -50,7 +50,13 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - Scripts: `dev:web`, `build:web`, `typecheck:web`, `db:generate`; core keeps `build`, `test`,
   `typecheck` (now against `tsconfig.core.json`).
 - The beta image still runs the Mattermost bridge; the web app is not wired into the image yet.
-- Core tests: 2 pre-existing failures (listener leak, fixed upstream in a61b109, part of the port).
+- Core carries the upstream CLI fixes: modern task/tool_result/rate-limit events, decision bridge
+  (`src/mcp/decision-bridge.ts`, `MessageManager.handleBridgeRequest` → `resolveBridgePlan` /
+  `resolveBridgeQuestion`; no event fires on arrival yet), compaction/auth_status, three-tier version
+  check, lifecycle fixes, `turn:complete` on `MessageManager.events`. Every Claude session runs with
+  claude.ai connectors disabled (`claudeAiConnectors: true` per platform opts back in).
+  Not ported: operator-declared MCP servers / strict MCP config, platform rendering of turn markers.
+- Core tests: 3023 pass, 0 fail.
 
 ## Decisions
 
