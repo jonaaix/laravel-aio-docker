@@ -27,6 +27,7 @@ import { useAppState } from './hooks/useAppState.js';
 import type { AppConfig, SessionInfo, LogEntry, PlatformStatus, ToggleState, ToggleCallbacks, SessionActionCallbacks, UpdatePanelState } from './types.js';
 import type { UISeedState } from './providers/types.js';
 import { nextPermissionMode } from '../config/permission-mode-cycle.js';
+import { claudeStatusMarker } from '../utils/format.js';
 
 interface AppProps {
   config: AppConfig;
@@ -414,7 +415,7 @@ export function App({ config, onStateReady, onResizeReady, onLeave, onStopServer
   const header = (
     <HubHeader
       version={config.version}
-      claudeVersion={config.claudeVersion}
+      claudeVersion={`${config.claudeVersion}${claudeStatusMarker(config.claudeStatus)}`}
       workingDir={config.workingDir}
       ready={state.ready}
       shuttingDown={state.shuttingDown}

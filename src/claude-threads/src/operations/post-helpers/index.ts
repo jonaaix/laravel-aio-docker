@@ -313,7 +313,11 @@ export function resetSessionActivity(session: Session): void {
   session.timeoutWarningPosted = false;
   session.lifecyclePostId = undefined;
   // Reset lifecycle state to active (clearing paused/interrupted states)
-  transitionTo(session, 'active');
+  // A dying process's last event during a respawn or cancel must not flip the session back to active.
+  const state = session.lifecycle.state;
+  if (state !== 'restarting' && state !== 'cancelling') {
+    transitionTo(session, 'active');
+  }
 
   // Update worktree metadata to prevent aggressive cleanup of active worktrees.
   // This is fire-and-forget - we don't want to block session activity on disk I/O.

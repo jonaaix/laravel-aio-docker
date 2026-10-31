@@ -128,6 +128,15 @@ export interface MessageManagerEventMap {
     /** Whether all tasks are complete */
     allComplete: boolean;
   };
+
+  'turn:complete': TurnComplete;
+}
+
+export interface TurnComplete {
+  sessionId: string;
+  turn: number;
+  ok: boolean;
+  lastPostId: string | null;
 }
 
 /**
@@ -209,7 +218,10 @@ export class TypedEventEmitter extends EventEmitter {
    * @returns this (for chaining)
    */
   removeAllListeners(event?: MessageManagerEvent): this {
-    return super.removeAllListeners(event);
+    // EventEmitter branches on arguments.length, so an explicit undefined would clear nothing.
+    return event === undefined
+      ? super.removeAllListeners()
+      : super.removeAllListeners(event);
   }
 
   /**

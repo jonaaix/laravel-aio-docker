@@ -158,7 +158,13 @@ describe('MattermostClient pure helpers', () => {
       channelId: 'cc',
       allowedUsers: ['u'],
       outboundFiles: undefined,
+      claudeAiConnectors: undefined,
     });
+  });
+
+  it('getMcpConfig surfaces the claude.ai connector opt-in', () => {
+    const c = makeClient({ claudeAiConnectors: true });
+    expect(c.getMcpConfig().claudeAiConnectors).toBe(true);
   });
 
   it('getMcpConfig surfaces outboundFiles when configured', () => {

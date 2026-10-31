@@ -12,6 +12,7 @@ import type {
   ToggleState,
 } from '../types.js';
 import type { UIProvider, StartUIOptions } from './types.js';
+import { claudeStatusMarker } from '../../utils/format.js';
 
 export class HeadlessProvider implements UIProvider {
   private options: StartUIOptions;
@@ -60,7 +61,7 @@ export class HeadlessProvider implements UIProvider {
     const { config } = this.options;
     this.log('HeadlessProvider', `claude-threads v${config.version} starting in headless mode`);
     this.log('HeadlessProvider', `Working directory: ${config.workingDir}`);
-    this.log('HeadlessProvider', `Claude CLI: ${config.claudeVersion}`);
+    this.log('HeadlessProvider', `Claude CLI: ${config.claudeVersion}${claudeStatusMarker(config.claudeStatus)}`);
   }
 
   async stop(): Promise<void> {

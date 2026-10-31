@@ -11,6 +11,7 @@ import {
   buildClaudeChildEnv,
   materializeMcpConfig,
   buildPermissionArgs,
+  buildInlineSettings,
   type ClaudeCliOptions,
   type StatusLineData,
   type McpConfigBlob,
@@ -287,6 +288,87 @@ describe('ClaudeCli', () => {
       expect(parent.MCP_CONNECTION_NONBLOCKING).toBeUndefined();
       expect(parent.ENABLE_PROMPT_CACHING_1H).toBeUndefined();
     });
+
+    test('sets MCP_TOOL_TIMEOUT when a decision bridge is in play', () => {
+      const env = buildClaudeChildEnv({ PATH: '/usr/bin' }, undefined, { decisionBridge: true });
+      expect(env.MCP_TOOL_TIMEOUT).toBe('3600000');
+    });
+
+    test('leaves MCP_TOOL_TIMEOUT unset without a decision bridge', () => {
+      expect(buildClaudeChildEnv({ PATH: '/usr/bin' }).MCP_TOOL_TIMEOUT).toBeUndefined();
+      expect(
+        buildClaudeChildEnv({ PATH: '/usr/bin' }, undefined, { decisionBridge: false }).MCP_TOOL_TIMEOUT
+      ).toBeUndefined();
+    });
+
+    test('respects a parent-env MCP_TOOL_TIMEOUT override', () => {
+      const env = buildClaudeChildEnv({ MCP_TOOL_TIMEOUT: '120000' }, undefined, {
+        decisionBridge: true,
+      });
+      expect(env.MCP_TOOL_TIMEOUT).toBe('120000');
+    });
+
+    test('ClaudeCli wires decisionBridgePath through to MCP_TOOL_TIMEOUT', () => {
+      const withBridge = new ClaudeCli({ workingDir: '/test', decisionBridgePath: '/tmp/b.sock' });
+      const without = new ClaudeCli({ workingDir: '/test' });
+      const call = (cli: ClaudeCli) =>
+        (cli as unknown as { buildChildEnv(): NodeJS.ProcessEnv }).buildChildEnv();
+      const hadParent = process.env.MCP_TOOL_TIMEOUT;
+      delete process.env.MCP_TOOL_TIMEOUT;
+      try {
+        expect(call(withBridge).MCP_TOOL_TIMEOUT).toBe('3600000');
+        expect(call(without).MCP_TOOL_TIMEOUT).toBeUndefined();
+      } finally {
+        if (hadParent !== undefined) process.env.MCP_TOOL_TIMEOUT = hadParent;
+      }
+    });
+
+    test('keeps the claude.ai connectors out unless opted in, overriding the parent env', () => {
+      expect(buildClaudeChildEnv({ PATH: '/usr/bin' }).ENABLE_CLAUDEAI_MCP_SERVERS).toBe('false');
+      expect(
+        buildClaudeChildEnv({ ENABLE_CLAUDEAI_MCP_SERVERS: 'true' }).ENABLE_CLAUDEAI_MCP_SERVERS
+      ).toBe('false');
+      expect(
+        buildClaudeChildEnv({ PATH: '/usr/bin' }, undefined, { claudeAiConnectors: true }).ENABLE_CLAUDEAI_MCP_SERVERS
+      ).toBeUndefined();
+    });
+
+    test('ClaudeCli wires the platform connector opt-in through to the child env', () => {
+      const optedIn = new ClaudeCli({
+        workingDir: '/test',
+        platformConfig: {
+          type: 'mattermost', url: 'u', token: 't', channelId: 'c', allowedUsers: [],
+          claudeAiConnectors: true,
+        },
+      });
+      const call = (cli: ClaudeCli) =>
+        (cli as unknown as { buildChildEnv(): NodeJS.ProcessEnv }).buildChildEnv();
+      const hadParent = process.env.ENABLE_CLAUDEAI_MCP_SERVERS;
+      delete process.env.ENABLE_CLAUDEAI_MCP_SERVERS;
+      try {
+        expect(call(optedIn).ENABLE_CLAUDEAI_MCP_SERVERS).toBeUndefined();
+        expect(call(new ClaudeCli({ workingDir: '/test' })).ENABLE_CLAUDEAI_MCP_SERVERS).toBe('false');
+      } finally {
+        if (hadParent !== undefined) process.env.ENABLE_CLAUDEAI_MCP_SERVERS = hadParent;
+      }
+    });
+  });
+});
+
+describe('buildInlineSettings', () => {
+  test('disables the claude.ai connectors by default', () => {
+    expect(buildInlineSettings(undefined)).toEqual({ disableClaudeAiConnectors: true });
+  });
+
+  test('leaves the connectors alone when the platform opted in', () => {
+    expect(buildInlineSettings(undefined, { claudeAiConnectors: true })).toEqual({});
+  });
+
+  test('carries the status line command', () => {
+    expect(buildInlineSettings('node writer.js s1')).toEqual({
+      disableClaudeAiConnectors: true,
+      statusLine: { type: 'command', command: 'node writer.js s1', padding: 0 },
+    });
   });
 });
 
@@ -539,6 +621,31 @@ describe('buildPermissionArgs', () => {
     expect(env.SESSION_UPLOAD_DIR).toBe('/tmp/uploads/X');
   });
 
+  it('forwards DECISION_BRIDGE_PATH (and the timeout override) to the MCP child', () => {
+    const prev = process.env.DECISION_BRIDGE_TIMEOUT_MS;
+    process.env.DECISION_BRIDGE_TIMEOUT_MS = '120000';
+    try {
+      const { args } = buildPermissionArgs({
+        ...baseOpts,
+        permissionMode: 'default',
+        decisionBridgePath: '/tmp/bridge-X.sock',
+      });
+      const env = getMcpEnv(args);
+      expect(env.DECISION_BRIDGE_PATH).toBe('/tmp/bridge-X.sock');
+      expect(env.DECISION_BRIDGE_TIMEOUT_MS).toBe('120000');
+    } finally {
+      if (prev === undefined) delete process.env.DECISION_BRIDGE_TIMEOUT_MS;
+      else process.env.DECISION_BRIDGE_TIMEOUT_MS = prev;
+    }
+  });
+
+  it('omits DECISION_BRIDGE_PATH when no bridge exists', () => {
+    const { args } = buildPermissionArgs({ ...baseOpts, permissionMode: 'default' });
+    const env = getMcpEnv(args);
+    expect(env.DECISION_BRIDGE_PATH).toBeUndefined();
+    expect(env.DECISION_BRIDGE_TIMEOUT_MS).toBeUndefined();
+  });
+
   it("omits the upload-related env vars entirely when no roots provided", () => {
     const { args } = buildPermissionArgs({ ...baseOpts, permissionMode: 'default' });
     const env = getMcpEnv(args);
@@ -597,5 +704,127 @@ describe('buildPermissionArgs', () => {
     const env = getMcpEnv(args);
     expect(env.SESSION_WORKING_DIR).toBe('/srv/work');
     expect(env.SESSION_UPLOAD_DIR).toBe('/tmp/uploads/X');
+  });
+});
+
+describe('rate-limit emit guard - structured/reset-less interplay', () => {
+  const callGuard = (cli: ClaudeCli, text: string) =>
+    (cli as unknown as { maybeEmitRateLimit: (t: string) => void }).maybeEmitRateLimit(text);
+  const callHit = (cli: ClaudeCli, hit: unknown) =>
+    (cli as unknown as { maybeEmitRateLimitHit: (h: unknown) => void }).maybeEmitRateLimitHit(hit);
+
+  test('a reset-less hit is suppressed while a precise structured deadline is cooling', () => {
+    const cli = new ClaudeCli({ workingDir: '/test' });
+    const hits: unknown[] = [];
+    cli.on('rate-limit', (h) => hits.push(h));
+
+    callHit(cli, {
+      detected: true,
+      resetAtEpochMs: Date.now() + 30 * 60_000,
+      matched: 'rate_limit_event status=rejected',
+    });
+    callGuard(cli, 'Usage limit reached.');
+
+    expect(hits).toHaveLength(1);
+  });
+
+  test('reset-less repeats during a reset-less cooldown still re-emit and extend', () => {
+    const cli = new ClaudeCli({ workingDir: '/test' });
+    const hits: unknown[] = [];
+    cli.on('rate-limit', (h) => hits.push(h));
+
+    callGuard(cli, 'Usage limit reached.');
+    (cli as unknown as { lastEmittedRateLimitDeadline: number }).lastEmittedRateLimitDeadline =
+      Date.now() + 10 * 60_000;
+    callGuard(cli, 'Usage limit reached.');
+
+    expect(hits).toHaveLength(2);
+  });
+
+  test('a reset-less hit after the structured deadline expired emits normally', () => {
+    const cli = new ClaudeCli({ workingDir: '/test' });
+    const hits: unknown[] = [];
+    cli.on('rate-limit', (h) => hits.push(h));
+
+    callHit(cli, {
+      detected: true,
+      resetAtEpochMs: Date.now() + 30 * 60_000,
+      matched: 'rate_limit_event status=rejected',
+    });
+    (cli as unknown as { lastEmittedRateLimitDeadline: number }).lastEmittedRateLimitDeadline =
+      Date.now() - 1000;
+    callGuard(cli, 'Usage limit reached.');
+
+    expect(hits).toHaveLength(2);
+  });
+
+  test('parseOutput wires structured rate_limit_event rejections to the rate-limit emitter', () => {
+    const cli = new ClaudeCli({ workingDir: '/test' });
+    const hits: Array<{ resetAtEpochMs?: number }> = [];
+    cli.on('rate-limit', (h) => hits.push(h as { resetAtEpochMs?: number }));
+    const parse = (line: string) =>
+      (cli as unknown as { parseOutput: (d: string) => void }).parseOutput(line + '\n');
+
+    const resetsAt = Math.floor(Date.now() / 1000) + 1800;
+    parse(JSON.stringify({
+      type: 'rate_limit_event',
+      rate_limit_info: { status: 'allowed', resetsAt, rateLimitType: 'five_hour' },
+    }));
+    expect(hits).toHaveLength(0);
+    parse(JSON.stringify({
+      type: 'rate_limit_event',
+      rate_limit_info: { status: 'allowed_warning', resetsAt, utilization: 0.8 },
+    }));
+    expect(hits).toHaveLength(0);
+    parse(JSON.stringify({
+      type: 'rate_limit_event',
+      rate_limit_info: { status: 'rejected', resetsAt, rateLimitType: 'five_hour' },
+    }));
+    expect(hits).toHaveLength(1);
+    expect(hits[0].resetAtEpochMs).toBe(resetsAt * 1000);
+  });
+
+  test("a throwing 'event' listener neither skips the rate-limit scan nor masquerades as parse noise", () => {
+    const cli = new ClaudeCli({ workingDir: '/test' });
+    const hits: unknown[] = [];
+    cli.on('rate-limit', (h) => hits.push(h));
+    cli.on('event', () => { throw new Error('listener boom (persist failed)'); });
+    const parse = (line: string) =>
+      (cli as unknown as { parseOutput: (d: string) => void }).parseOutput(line + '\n');
+
+    parse(JSON.stringify({
+      type: 'result',
+      subtype: 'error_during_execution',
+      is_error: true,
+      result: 'Claude AI usage limit reached|' + Math.floor(Date.now() / 1000 + 1800),
+    }));
+
+    expect(hits).toHaveLength(1);
+  });
+});
+
+describe('rate-limit emit guard - suppressed explicit hit keeps its explicitness', () => {
+  const callGuard = (cli: ClaudeCli, text: string) =>
+    (cli as unknown as { maybeEmitRateLimit: (t: string) => void }).maybeEmitRateLimit(text);
+  const callHit = (cli: ClaudeCli, hit: unknown) =>
+    (cli as unknown as { maybeEmitRateLimitHit: (h: unknown) => void }).maybeEmitRateLimitHit(hit);
+
+  test('opposite arrival order: text guess first, precise reset second, reset-less repeat third', () => {
+    const cli = new ClaudeCli({ workingDir: '/test' });
+    const hits: unknown[] = [];
+    cli.on('rate-limit', (h) => hits.push(h));
+
+    callGuard(cli, 'Usage limit reached.');
+    callHit(cli, {
+      detected: true,
+      resetAtEpochMs: Date.now() + 30 * 60_000,
+      matched: 'rate_limit_event status=rejected',
+    });
+    expect(hits).toHaveLength(1);
+    (cli as unknown as { lastEmittedRateLimitDeadline: number }).lastEmittedRateLimitDeadline =
+      Date.now() + 10 * 60_000;
+    callGuard(cli, 'Usage limit reached.');
+
+    expect(hits).toHaveLength(1);
   });
 });

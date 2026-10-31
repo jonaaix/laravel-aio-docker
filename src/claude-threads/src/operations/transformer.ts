@@ -8,7 +8,7 @@
  * that don't depend on session state or platform APIs.
  */
 
-import type { ClaudeEvent } from '../claude/cli.js';
+import { isErrorResultEvent, type ClaudeEvent } from '../claude/cli.js';
 import type { PlatformFormatter } from '../platform/formatter.js';
 import type {
   MessageOperation,
@@ -27,6 +27,7 @@ import {
 } from './types.js';
 import { toolFormatterRegistry } from './tool-formatters/index.js';
 import type { WorktreeContext } from './tool-formatters/index.js';
+import type { TaskTracker } from './task-tracker.js';
 
 // ---------------------------------------------------------------------------
 // Transform Context
@@ -45,6 +46,7 @@ export interface TransformContext {
   worktreeInfo?: WorktreeContext;
   /** Active tool start times (for elapsed time calculation) */
   toolStartTimes: Map<string, number>;
+  taskTracker: TaskTracker;
   /** Whether to include detailed previews */
   detailed?: boolean;
 }
@@ -64,9 +66,16 @@ export function transformEvent(
   event: ClaudeEvent,
   ctx: TransformContext
 ): MessageOperation[] {
+  if ((event as { parent_tool_use_id?: unknown }).parent_tool_use_id) {
+    return [];
+  }
+
   switch (event.type) {
     case 'assistant':
       return transformAssistant(event, ctx);
+
+    case 'user':
+      return transformUser(event, ctx);
 
     case 'tool_use':
       return transformToolUse(event, ctx);
@@ -147,6 +156,9 @@ function transformAssistant(
           flushTextBuffer();
           // Create separate operation for tool (working content)
           operations.push(createAppendContentOp(ctx.sessionId, result.display, 'tool'));
+          if (block.id) {
+            ctx.toolStartTimes.set(block.id, Date.now());
+          }
         }
       }
     } else if (block.type === 'thinking' && block.thinking) {
@@ -172,7 +184,96 @@ function transformAssistant(
   // Flush any remaining text content
   flushTextBuffer();
 
-  return operations;
+  return coalesceTaskListOps(operations);
+}
+
+// ---------------------------------------------------------------------------
+// User Event Transformation
+// ---------------------------------------------------------------------------
+
+function transformUser(
+  event: ClaudeEvent,
+  ctx: TransformContext
+): MessageOperation[] {
+  const msg = event.message as {
+    content?: Array<{
+      type: string;
+      tool_use_id?: string;
+      is_error?: boolean;
+      content?: unknown;
+    }> | string;
+  };
+
+  if (!Array.isArray(msg?.content)) {
+    return [];
+  }
+
+  const operations: MessageOperation[] = [];
+  let indicatorCount = 0;
+
+  for (const block of msg.content) {
+    if (block?.type !== 'tool_result' || !block.tool_use_id) continue;
+
+    if (ctx.taskTracker.hasPendingCreate(block.tool_use_id)) {
+      const resolution = ctx.taskTracker.resolveCreatedId(
+        block.tool_use_id,
+        toolResultContentText(block.content),
+        block.is_error === true
+      );
+      if (resolution === 'removed' || resolution === 'merged') {
+        const action = ctx.taskTracker.allCompleted ? 'complete' : 'update';
+        operations.push(createTaskListOp(ctx.sessionId, action, ctx.taskTracker.toTaskItems()));
+      }
+    }
+
+    if (ctx.toolStartTimes.has(block.tool_use_id)) {
+      operations.push(createResultIndicatorOp(block.tool_use_id, block.is_error === true, ctx));
+      indicatorCount++;
+    }
+  }
+
+  const coalesced = coalesceTaskListOps(operations);
+  if (indicatorCount > 0) {
+    coalesced.push(createFlushOp(ctx.sessionId, 'tool_complete'));
+  }
+  return coalesced;
+}
+
+function coalesceTaskListOps(operations: MessageOperation[]): MessageOperation[] {
+  const taskListOps = operations.filter(op => op.type === 'task_list');
+  if (taskListOps.length <= 1) return operations;
+  const last = taskListOps[taskListOps.length - 1];
+  return operations.filter(op => op.type !== 'task_list' || op === last);
+}
+
+function toolResultContentText(content: unknown): string {
+  if (typeof content === 'string') return content;
+  if (!Array.isArray(content)) return '';
+  return content
+    .map(b => (b && typeof b === 'object' && typeof (b as { text?: unknown }).text === 'string'
+      ? (b as { text: string }).text
+      : ''))
+    .join('\n');
+}
+
+function createResultIndicatorOp(
+  toolUseId: string,
+  isError: boolean,
+  ctx: TransformContext
+): MessageOperation {
+  let elapsed = '';
+  const startTime = ctx.toolStartTimes.get(toolUseId);
+  if (startTime) {
+    const secs = Math.round((Date.now() - startTime) / 1000);
+    if (secs >= 3) {
+      elapsed = ` (${secs}s)`;
+    }
+    ctx.toolStartTimes.delete(toolUseId);
+  }
+
+  const icon = isError ? '❌' : '✓';
+  const errorNote = isError ? ' Error' : '';
+  return createAppendContentOp(ctx.sessionId, `  ↳ ${icon}${errorNote}${elapsed}`, 'status');
 }
 
 // ---------------------------------------------------------------------------
@@ -238,32 +339,11 @@ function transformToolResult(
     is_error?: boolean;
   };
 
-  const operations: MessageOperation[] = [];
-
-  // Calculate elapsed time
-  let elapsed = '';
-  if (result.tool_use_id) {
-    const startTime = ctx.toolStartTimes.get(result.tool_use_id);
-    if (startTime) {
-      const secs = Math.round((Date.now() - startTime) / 1000);
-      if (secs >= 3) {
-        elapsed = ` (${secs}s)`;
-      }
-      ctx.toolStartTimes.delete(result.tool_use_id);
-    }
-  }
-
-  // Format result indicator
-  const icon = result.is_error ? '❌' : '✓';
-  const errorNote = result.is_error ? ' Error' : '';
-  operations.push(
-    createAppendContentOp(ctx.sessionId, `  ↳ ${icon}${errorNote}${elapsed}`, 'status')
-  );
-
-  // Tool results are a natural break point - suggest flush
-  operations.push(createFlushOp(ctx.sessionId, 'tool_complete'));
-
-  return operations;
+  return [
+    createResultIndicatorOp(result.tool_use_id || '', result.is_error === true, ctx),
+    // Tool results are a natural break point - suggest flush
+    createFlushOp(ctx.sessionId, 'tool_complete'),
+  ];
 }
 
 // ---------------------------------------------------------------------------
@@ -280,7 +360,7 @@ function transformResult(
   const operations: MessageOperation[] = [];
 
   // Result event triggers a final flush
-  operations.push(createFlushOp(ctx.sessionId, 'result'));
+  operations.push(createFlushOp(ctx.sessionId, 'result', !isErrorResultEvent(event)));
 
   // Extract usage stats if available
   const result = event as ClaudeEvent & {
@@ -328,6 +408,12 @@ function handleSpecialTool(
     case 'TodoWrite':
       return handleTodoWrite(input, ctx);
 
+    case 'TaskCreate':
+      return handleTaskCreate(toolUseId, input, ctx);
+
+    case 'TaskUpdate':
+      return handleTaskUpdate(input, ctx);
+
     case 'Task':
       return handleTaskStart(toolUseId, input, ctx);
 
@@ -361,11 +447,31 @@ function handleTodoWrite(
     activeForm: t.activeForm,
   }));
 
+  ctx.taskTracker.clear();
+
   // Determine if all tasks are completed
   const allCompleted = tasks.every(t => t.status === 'completed');
   const action = allCompleted ? 'complete' : 'update';
 
   return [createTaskListOp(ctx.sessionId, action, tasks)];
+}
+
+function handleTaskCreate(
+  toolUseId: string,
+  input: Record<string, unknown>,
+  ctx: TransformContext
+): MessageOperation[] {
+  ctx.taskTracker.create(toolUseId, input);
+  return [createTaskListOp(ctx.sessionId, 'update', ctx.taskTracker.toTaskItems())];
+}
+
+function handleTaskUpdate(
+  input: Record<string, unknown>,
+  ctx: TransformContext
+): MessageOperation[] {
+  if (!ctx.taskTracker.update(input)) return [];
+  const action = ctx.taskTracker.allCompleted ? 'complete' : 'update';
+  return [createTaskListOp(ctx.sessionId, action, ctx.taskTracker.toTaskItems())];
 }
 
 /**

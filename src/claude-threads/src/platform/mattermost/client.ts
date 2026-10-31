@@ -42,6 +42,7 @@ export class MattermostClient extends BasePlatformClient {
   private token: string;
   private channelId: string;
   private outboundFiles?: { enabled?: boolean; maxBytes?: number };
+  private claudeAiConnectors?: boolean;
   private userCache: Map<string, MattermostUser> = new Map();
   private botUserId: string | null = null;
   private readonly formatter = new MattermostFormatter();
@@ -59,6 +60,7 @@ export class MattermostClient extends BasePlatformClient {
     this.botName = platformConfig.botName;
     this.allowedUsers = platformConfig.allowedUsers;
     this.outboundFiles = platformConfig.outboundFiles;
+    this.claudeAiConnectors = platformConfig.claudeAiConnectors;
   }
 
   // ============================================================================
@@ -791,6 +793,7 @@ export class MattermostClient extends BasePlatformClient {
       channelId: this.channelId,
       allowedUsers: this.allowedUsers,
       outboundFiles: this.outboundFiles,
+      claudeAiConnectors: this.claudeAiConnectors,
     };
   }
 

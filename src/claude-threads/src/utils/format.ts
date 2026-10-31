@@ -11,7 +11,7 @@
  */
 
 import { VERSION } from '../version.js';
-import { getClaudeCliVersion } from '../claude/version-check.js';
+import { getClaudeCliVersion, classifyClaudeVersion, type ClaudeVersionStatus } from '../claude/version-check.js';
 
 // =============================================================================
 // ID Formatting
@@ -107,7 +107,14 @@ export function formatRelativeTimeShort(date: Date): string {
  */
 export function formatVersionString(): string {
   const claudeVersion = getClaudeCliVersion().version;
-  return claudeVersion ? `CT v${VERSION} · CC v${claudeVersion}` : `CT v${VERSION}`;
+  if (!claudeVersion) return `CT v${VERSION}`;
+  return `CT v${VERSION} · CC v${claudeVersion}${claudeStatusMarker(classifyClaudeVersion(claudeVersion))}`;
+}
+
+export function claudeStatusMarker(status: ClaudeVersionStatus): string {
+  if (status === 'untested') return ' ⚠️ untested';
+  if (status === 'incompatible') return ' ⚠️ unsupported';
+  return '';
 }
 
 // =============================================================================

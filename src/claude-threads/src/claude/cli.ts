@@ -9,7 +9,7 @@ import { join } from 'path';
 import { createLogger } from '../utils/logger.js';
 import { getClaudePath } from './version-check.js';
 import { OUTBOUND_ENV } from '../mcp/outbound-env.js';
-import { detectRateLimit, cooldownDeadline } from './rate-limit-detector.js';
+import { detectRateLimit, cooldownDeadline, parseRateLimitEvent, type RateLimitHit } from './rate-limit-detector.js';
 import type { PermissionMode } from '../config/types.js';
 import type { AgentBackend } from '../agent/backend.js';
 
@@ -95,6 +95,7 @@ export interface PlatformMcpConfig {
    * config. When omitted the bot defaults to enabled with 100MB cap.
    */
   outboundFiles?: { enabled?: boolean; maxBytes?: number };
+  claudeAiConnectors?: boolean;
 }
 
 export interface ClaudeCliOptions {
@@ -143,6 +144,7 @@ export interface ClaudeCliOptions {
   uploadDir?: string;
   /** Outbound file (`send_file`) settings — undefined uses defaults. */
   outboundFiles?: { enabled?: boolean; maxBytes?: number };
+  decisionBridgePath?: string;
 }
 
 /** Minimal subset of ClaudeAccount that `ClaudeCli` needs. */
@@ -152,6 +154,27 @@ export interface ClaudeCliAccount {
   apiKey?: string;
 }
 
+// The CLI abandons a pending MCP tool call after ~2 minutes; plan approvals and questions wait on a human for up to an hour.
+const DECISION_TOOL_TIMEOUT_MS = 3_600_000;
+
+export function buildInlineSettings(
+  statusLineCommand: string | undefined,
+  mcp: { claudeAiConnectors?: boolean } = {},
+): Record<string, unknown> {
+  const settings: Record<string, unknown> = {};
+  if (mcp.claudeAiConnectors !== true) {
+    settings.disableClaudeAiConnectors = true;
+  }
+  if (statusLineCommand) {
+    settings.statusLine = {
+      type: 'command',
+      command: statusLineCommand,
+      padding: 0,
+    };
+  }
+  return settings;
+}
+
 /**
  * Assemble the env that Claude CLI will spawn with. Pure function so it can be
  * unit-tested without instantiating the class. See `ClaudeCli.buildChildEnv`
@@ -159,9 +182,15 @@ export interface ClaudeCliAccount {
  */
 export function buildClaudeChildEnv(
   parentEnv: NodeJS.ProcessEnv,
-  account?: ClaudeCliAccount
+  account?: ClaudeCliAccount,
+  opts?: { decisionBridge?: boolean; claudeAiConnectors?: boolean }
 ): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = { ...parentEnv };
+
+  // Overrides the parent env on purpose: keeping the account's connectors out is a privacy measure, not tuning.
+  if (opts?.claudeAiConnectors !== true) {
+    env.ENABLE_CLAUDEAI_MCP_SERVERS = 'false';
+  }
 
   // Always-on tuning flags (opt-out by setting them in the parent env).
   if (env.MCP_CONNECTION_NONBLOCKING === undefined) {
@@ -169,6 +198,9 @@ export function buildClaudeChildEnv(
   }
   if (env.ENABLE_PROMPT_CACHING_1H === undefined) {
     env.ENABLE_PROMPT_CACHING_1H = 'true';
+  }
+  if (opts?.decisionBridge && env.MCP_TOOL_TIMEOUT === undefined) {
+    env.MCP_TOOL_TIMEOUT = String(DECISION_TOOL_TIMEOUT_MS);
   }
 
   if (account?.home) {
@@ -199,7 +231,7 @@ export function buildClaudeChildEnv(
  * `error_max_turns`, and other `error_*` values. Payloads that set
  * `is_error: true` are also treated as errors.
  */
-function isErrorResultEvent(event: ClaudeEvent): boolean {
+export function isErrorResultEvent(event: ClaudeEvent): boolean {
   const ev = event as { subtype?: unknown; is_error?: unknown };
   if (typeof ev.subtype === 'string' && ev.subtype.startsWith('error')) return true;
   if (ev.is_error === true) return true;
@@ -266,6 +298,7 @@ export function buildPermissionArgs(opts: {
   /** Username of the session starter; surfaced to the MCP child as
    *  SESSION_OWNER_USERNAME for `send_dm` attribution. */
   sessionOwnerUsername?: string;
+  decisionBridgePath?: string;
   inline?: boolean; // for tests
 }): { args: string[]; tempFile: string | null } {
   const args: string[] = [];
@@ -307,6 +340,12 @@ export function buildPermissionArgs(opts: {
     PERMISSION_TIMEOUT_MS: String(opts.permissionTimeoutMs),
     SESSION_OWNER_USERNAME: opts.sessionOwnerUsername || '',
   };
+  if (opts.decisionBridgePath) {
+    mcpEnv.DECISION_BRIDGE_PATH = opts.decisionBridgePath;
+    if (process.env.DECISION_BRIDGE_TIMEOUT_MS) {
+      mcpEnv.DECISION_BRIDGE_TIMEOUT_MS = process.env.DECISION_BRIDGE_TIMEOUT_MS;
+    }
+  }
   if (opts.platformConfig.appToken) {
     mcpEnv.PLATFORM_APP_TOKEN = opts.platformConfig.appToken;
   }
@@ -400,6 +439,7 @@ export class ClaudeCli extends EventEmitter implements AgentBackend {
   // emitted one yet. Used to dedupe repeated hits at the same severity while
   // still letting a LATER deadline through — see maybeEmitRateLimit().
   private lastEmittedRateLimitDeadline = 0;
+  private lastEmittedHitHadExplicitReset = false;
   private log: ReturnType<typeof createLogger>;  // Session-scoped logger
 
   constructor(options: ClaudeCliOptions) {
@@ -486,6 +526,7 @@ export class ClaudeCli extends EventEmitter implements AgentBackend {
     totalStderrBytes -= this.stderrBuffer.length;
     this.stderrBuffer = '';
     this.lastEmittedRateLimitDeadline = 0;
+    this.lastEmittedHitHadExplicitReset = false;
 
     // Clean up stale browser bridge sockets (workaround for Claude CLI bug)
     cleanupBrowserBridgeSockets();
@@ -529,6 +570,7 @@ export class ClaudeCli extends EventEmitter implements AgentBackend {
       uploadDir: this.options.uploadDir,
       outboundFiles: this.options.outboundFiles,
       sessionOwnerUsername: this.options.sessionOwnerUsername,
+      decisionBridgePath: this.options.decisionBridgePath,
     });
     args.push(...permResult.args);
     this.mcpConfigTempFile = permResult.tempFile;
@@ -551,18 +593,15 @@ export class ClaudeCli extends EventEmitter implements AgentBackend {
 
     // Configure status line to write context data to a temp file
     // This gives us accurate context window usage information
+    let statusLineCommand: string | undefined;
     if (this.options.sessionId) {
       this.statusFilePath = join(tmpdir(), `claude-threads-status-${this.options.sessionId}.json`);
-      const statusLineWriterPath = this.getStatusLineWriterPath();
-      const statusLineSettings = {
-        statusLine: {
-          type: 'command',
-          command: `node ${statusLineWriterPath} ${this.options.sessionId}`,
-          padding: 0,
-        },
-      };
-      args.push('--settings', JSON.stringify(statusLineSettings));
+      statusLineCommand = `node ${this.getStatusLineWriterPath()} ${this.options.sessionId}`;
     }
+    const settings = buildInlineSettings(statusLineCommand, {
+      claudeAiConnectors: this.options.platformConfig?.claudeAiConnectors,
+    });
+    args.push('--settings', JSON.stringify(settings));
 
     this.log.debug(`Starting: ${claudePath} ${args.slice(0, 5).join(' ')}...`);
 
@@ -714,21 +753,29 @@ export class ClaudeCli extends EventEmitter implements AgentBackend {
       const trimmed = line.trim();
       if (!trimmed) continue;
 
+      let event: ClaudeEvent;
       try {
-        const event = JSON.parse(trimmed) as ClaudeEvent;
-        // Note: Event details are logged in events.ts handleEvent with session context
-        this.emit('event', event);
-        // Scan for rate-limit only on error-flavored result events. `success`
-        // results contain the assistant's final answer text, which could easily
-        // include phrases like "rate_limit_error" if the user asked about them
-        // — scanning those would cool the account down on a normal reply.
-        // Error subtypes (e.g. "error_during_execution", "error_max_turns") and
-        // any event carrying `is_error: true` are the narrow set we trust.
-        if (event.type === 'result' && isErrorResultEvent(event)) {
-          this.maybeEmitRateLimit(trimmed);
-        }
+        event = JSON.parse(trimmed) as ClaudeEvent;
       } catch {
         // Ignore unparseable lines (usually partial JSON from streaming)
+        continue;
+      }
+      try {
+        this.emit('event', event);
+      } catch (err) {
+        this.log.error(`'event' listener threw while handling a ${event.type} event: ${err}`);
+      }
+      // Scan for rate-limit only on error-flavored result events. `success`
+      // results contain the assistant's final answer text, which could easily
+      // include phrases like "rate_limit_error" if the user asked about them
+      // — scanning those would cool the account down on a normal reply.
+      // Error subtypes (e.g. "error_during_execution", "error_max_turns") and
+      // any event carrying `is_error: true` are the narrow set we trust.
+      if (event.type === 'result' && isErrorResultEvent(event)) {
+        this.maybeEmitRateLimit(trimmed);
+      }
+      if (event.type === 'rate_limit_event') {
+        this.maybeEmitRateLimitHit(parseRateLimitEvent(event));
       }
     }
   }
@@ -752,14 +799,32 @@ export class ClaudeCli extends EventEmitter implements AgentBackend {
    *    would have dropped it anyway.
    */
   private maybeEmitRateLimit(text: string): void {
-    const hit = detectRateLimit(text);
+    this.maybeEmitRateLimitHit(detectRateLimit(text));
+  }
+
+  private maybeEmitRateLimitHit(hit: RateLimitHit): void {
     if (!hit.detected) return;
+    if (this.isGuessDuringPreciseCooldown(hit)) return;
     const newDeadline = cooldownDeadline(hit);
     const MIN_ADVANCE_MS = 60_000;  // 1 minute: coarser than clock drift, finer than any real rate-limit reset step
-    if (newDeadline - this.lastEmittedRateLimitDeadline < MIN_ADVANCE_MS) return;
+    if (newDeadline - this.lastEmittedRateLimitDeadline < MIN_ADVANCE_MS) {
+      if (hit.resetAtEpochMs !== undefined) {
+        this.lastEmittedHitHadExplicitReset = true;
+      }
+      return;
+    }
     this.lastEmittedRateLimitDeadline = newDeadline;
+    this.lastEmittedHitHadExplicitReset = hit.resetAtEpochMs !== undefined;
     this.log.warn(`Rate limit detected: ${hit.matched ?? '(no match text)'}`);
     this.emit('rate-limit', hit);
+  }
+
+  private isGuessDuringPreciseCooldown(hit: RateLimitHit): boolean {
+    return (
+      !hit.resetAtEpochMs &&
+      this.lastEmittedHitHadExplicitReset &&
+      this.lastEmittedRateLimitDeadline > Date.now()
+    );
   }
 
   isRunning(): boolean {
@@ -866,13 +931,27 @@ export class ClaudeCli extends EventEmitter implements AgentBackend {
         }
       }, 2000); // 2 second grace period for Claude to save conversation
 
-      // Resolve when process exits
-      proc.once('exit', (code) => {
-        this.log.debug(`Claude process exited (code=${code})`);
+      const settle = (reason: string) => {
+        this.log.debug(`Claude process gone (${reason})`);
         clearTimeout(secondSigint);
         clearTimeout(forceKillTimeout);
+        clearTimeout(lastResort);
         resolve();
-      });
+      };
+
+      const lastResort = setTimeout(() => {
+        try {
+          this.log.warn('Claude process did not exit after SIGTERM — sending SIGKILL');
+          proc.kill('SIGKILL');
+        } catch {
+          // Process may have already exited
+        }
+        settle('kill timeout');
+      }, 5000);
+
+      // 'close' rather than 'exit': stdout still buffered at 'exit' would land after callers cleared session state.
+      proc.once('close', (code) => settle(`closed, code=${code}`));
+      proc.once('error', () => settle('spawn error'));
     });
   }
 
@@ -934,7 +1013,10 @@ export class ClaudeCli extends EventEmitter implements AgentBackend {
    * env-assembly logic straightforward to audit.
    */
   private buildChildEnv(): NodeJS.ProcessEnv {
-    return buildClaudeChildEnv(process.env, this.options.account);
+    return buildClaudeChildEnv(process.env, this.options.account, {
+      claudeAiConnectors: this.options.platformConfig?.claudeAiConnectors,
+      decisionBridge: this.options.decisionBridgePath !== undefined,
+    });
   }
 
   private getMcpServerPath(): string {

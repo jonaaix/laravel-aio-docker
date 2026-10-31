@@ -12,6 +12,7 @@
  */
 
 import { crossSpawn } from '../utils/spawn.js';
+import { buildClaudeChildEnv } from './cli.js';
 import { createLogger } from '../utils/logger.js';
 
 const log = createLogger('query');
@@ -74,9 +75,6 @@ export async function quickQuery(options: QuickQueryOptions): Promise<QuickQuery
     args.push('--system-prompt', systemPrompt);
   }
 
-  // Add the prompt as the final argument
-  args.push(prompt);
-
   log.debug(`Quick query: model=${model}, timeout=${timeout}ms, prompt="${prompt.substring(0, 50)}..."`);
 
   return new Promise<QuickQueryResult>((resolve) => {
@@ -86,7 +84,7 @@ export async function quickQuery(options: QuickQueryOptions): Promise<QuickQuery
 
     const proc = crossSpawn(claudePath, args, {
       cwd: workingDir || process.cwd(),
-      env: process.env,
+      env: buildClaudeChildEnv(process.env),
       stdio: ['pipe', 'pipe', 'pipe'],
     });
 
@@ -149,7 +147,7 @@ export async function quickQuery(options: QuickQueryOptions): Promise<QuickQuery
       }
     });
 
-    // Close stdin immediately since we pass prompt as argument
-    proc.stdin?.end();
+    // Over stdin, not argv: long prompts exceed the Windows command-line limit and silently kill the spawn.
+    proc.stdin?.end(prompt);
   });
 }

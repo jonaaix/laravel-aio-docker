@@ -34,6 +34,7 @@ import { mcpLogger } from '../utils/logger.js';
 import type { McpPlatformApi, MattermostMcpApiConfig, SlackMcpApiConfig, McpPost } from '../platform/mcp-platform-api.js';
 import { createMcpPlatformApi } from '../platform/mcp-platform-api-factory.js';
 import { validateOutboundPath } from './path-validator.js';
+import { requestBridgeDecision, type BridgeRequest } from './decision-bridge.js';
 import { OUTBOUND_ENV } from './outbound-env.js';
 import {
   parseMattermostPermalink,
@@ -64,6 +65,8 @@ const ALLOWED_USERS = (process.env.ALLOWED_USERS || '')
   .filter(u => u.length > 0);
 
 const PERMISSION_TIMEOUT_MS = parseInt(process.env.PERMISSION_TIMEOUT_MS || '120000', 10);
+const DECISION_BRIDGE_PATH = process.env.DECISION_BRIDGE_PATH || '';
+const DECISION_BRIDGE_TIMEOUT_MS = parseInt(process.env.DECISION_BRIDGE_TIMEOUT_MS || '3600000', 10);
 
 // Session owner — surfaced in the send_dm attribution prefix so
 // recipients can trace a bot DM back to "the person who started this
@@ -192,6 +195,46 @@ export interface PermissionHandlerConfig {
   getAllowAll: () => boolean;
   setAllowAll: (value: boolean) => void;
   now?: () => number;
+  decisionBridge?: {
+    path: string;
+    timeoutMs: number;
+    request?: typeof requestBridgeDecision;
+  };
+}
+
+function bridgeKindFor(toolName: string, toolInput: Record<string, unknown>): BridgeRequest['kind'] | null {
+  if (toolName === 'ExitPlanMode') return 'plan_approval';
+  if (toolName !== 'AskUserQuestion') return null;
+  const questions = (toolInput as { questions?: unknown }).questions;
+  // The bot's question UI is single-select; the CLI's answer format for multiSelect is unverified.
+  const hasMultiSelect = Array.isArray(questions) &&
+    (questions as Array<{ multiSelect?: boolean }>).some(q => q?.multiSelect === true);
+  return hasMultiSelect ? null : 'question';
+}
+
+async function decideViaBridge(
+  toolName: string,
+  toolInput: Record<string, unknown>,
+  cfg: PermissionHandlerConfig
+): Promise<PermissionResult | null> {
+  const kind = bridgeKindFor(toolName, toolInput);
+  if (!kind || !cfg.decisionBridge) return null;
+  try {
+    const decision = await (cfg.decisionBridge.request ?? requestBridgeDecision)(
+      cfg.decisionBridge.path,
+      { kind, toolName, input: toolInput },
+      cfg.decisionBridge.timeoutMs
+    );
+    mcpLogger.info(`${toolName} decided via bridge: ${decision.behavior}`);
+    return {
+      behavior: decision.behavior,
+      updatedInput: decision.updatedInput ?? toolInput,
+      message: decision.message,
+    };
+  } catch (err) {
+    mcpLogger.warn(`Decision bridge unavailable for ${toolName} (${err}) — legacy fallback`);
+    return null;
+  }
 }
 
 /**
@@ -228,6 +271,15 @@ export async function handlePermissionWith(
   // revisit then.
   if (SKIP_STANDARD_PERMISSION_PROMPT.has(toolName)) {
     mcpLogger.debug(`Skipping standard prompt for ${toolName} (handler enforces its own gate)`);
+    return { behavior: 'allow', updatedInput: toolInput };
+  }
+
+  const bridged = await decideViaBridge(toolName, toolInput, cfg);
+  if (bridged) return bridged;
+
+  // The bot already renders the question UI from the tool_use block; a generic prompt here would duplicate it.
+  if (toolName === 'AskUserQuestion') {
+    mcpLogger.debug('Auto-allowing AskUserQuestion (question UI is handled by the main bot)');
     return { behavior: 'allow', updatedInput: toolInput };
   }
 
@@ -325,6 +377,9 @@ async function handlePermission(
     platformConfigured: Boolean(PLATFORM_URL && PLATFORM_TOKEN && PLATFORM_CHANNEL_ID),
     getAllowAll: () => allowAllSession,
     setAllowAll: (v) => { allowAllSession = v; },
+    decisionBridge: DECISION_BRIDGE_PATH
+      ? { path: DECISION_BRIDGE_PATH, timeoutMs: DECISION_BRIDGE_TIMEOUT_MS }
+      : undefined,
   });
 }
 

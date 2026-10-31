@@ -173,7 +173,7 @@ async function tryResumeFromReaction(
   const shortId = persistedSession.threadId.substring(0, 8);
   log.info(`🔄 Resuming session ${shortId}... via emoji reaction by @${username}`);
 
-  await lifecycle.resumeSession(persistedSession, deps.getContext());
+  await lifecycle.resumeSession(persistedSession, deps.getContext(), 'user');
   return true;
 }
 

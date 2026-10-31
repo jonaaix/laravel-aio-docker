@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, test } from 'bun:test';
-import type { QuickQueryOptions, QuickQueryResult } from './quick-query.js';
+import { quickQuery, type QuickQueryOptions, type QuickQueryResult } from './quick-query.js';
 
 describe('quickQuery interface', () => {
   test('QuickQueryOptions has required fields', () => {
@@ -72,3 +72,55 @@ describe('quickQuery interface', () => {
 // Note: Integration tests for the actual quickQuery function would require
 // the Claude CLI to be installed. Those tests should be in the integration
 // test suite, not unit tests.
+
+describe('quickQuery spawn', () => {
+  async function withStubClaude(script: string, run: () => Promise<void>): Promise<void> {
+    const { mkdtempSync, writeFileSync, rmSync, chmodSync } = await import('fs');
+    const { tmpdir } = await import('os');
+    const { join } = await import('path');
+
+    const dir = mkdtempSync(join(tmpdir(), 'ct-quickquery-test-'));
+    const stub = join(dir, 'fake-claude');
+    writeFileSync(stub, `#!/usr/bin/env bash\n${script}\n`, { mode: 0o755 });
+    chmodSync(stub, 0o755);
+
+    const prevPath = process.env.CLAUDE_PATH;
+    process.env.CLAUDE_PATH = stub;
+    try {
+      await run();
+    } finally {
+      if (prevPath === undefined) delete process.env.CLAUDE_PATH;
+      else process.env.CLAUDE_PATH = prevPath;
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
+
+  test('prompt is written to stdin and not passed in argv', async () => {
+    await withStubClaude(`stdin=$(cat)\nprintf '%s|%s' "$*" "$stdin"`, async () => {
+      const result = await quickQuery({
+        prompt: 'the quick query prompt payload',
+        model: 'haiku',
+        timeout: 10000,
+      });
+      expect(result.success).toBe(true);
+      const [argv, stdin] = (result.response ?? '').split('|');
+      expect(stdin).toBe('the quick query prompt payload');
+      expect(argv).not.toContain('the quick query prompt payload');
+    });
+  });
+
+  test('spawns with the claude.ai connectors disabled in the child env', async () => {
+    const prevFlag = process.env.ENABLE_CLAUDEAI_MCP_SERVERS;
+    process.env.ENABLE_CLAUDEAI_MCP_SERVERS = 'true';
+    try {
+      await withStubClaude(`cat >/dev/null\nprintf '%s' "$ENABLE_CLAUDEAI_MCP_SERVERS"`, async () => {
+        const result = await quickQuery({ prompt: 'x', model: 'haiku', timeout: 10000 });
+        expect(result.success).toBe(true);
+        expect(result.response).toBe('false');
+      });
+    } finally {
+      if (prevFlag === undefined) delete process.env.ENABLE_CLAUDEAI_MCP_SERVERS;
+      else process.env.ENABLE_CLAUDEAI_MCP_SERVERS = prevFlag;
+    }
+  });
+});

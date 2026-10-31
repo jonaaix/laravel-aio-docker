@@ -4,6 +4,7 @@ import { join } from 'path';
 import { createLogger } from '../utils/logger.js';
 import type { PlatformFile } from '../platform/types.js';
 import type { ContextPromptFile } from '../operations/executors/types.js';
+import type { PersistedTrackedTask } from '../operations/task-tracker.js';
 import type { OverheadVisibility, AgentBackendKind } from '../config/types.js';
 
 const log = createLogger('persist');
@@ -75,6 +76,7 @@ export interface PersistedSession {
   lastTasksContent: string | null;  // For re-posting tasks when bumping to bottom
   tasksCompleted?: boolean;      // True when all tasks done (stops sticky behavior)
   tasksMinimized?: boolean;      // True when task list is minimized (show only progress)
+  taskTrackerState?: PersistedTrackedTask[];
   lastActivityAt: string;        // For stale cleanup
   planApproved: boolean;
   // Worktree support
@@ -571,23 +573,37 @@ export class SessionStore {
   /**
    * Load raw data from file
    */
+  private lastReadDegraded = false;
+
   private loadRaw(): SessionStoreData {
+    const result = this.readSessionsFile();
+    this.lastReadDegraded = result.degraded;
+    return result.data;
+  }
+
+  private readSessionsFile(): { data: SessionStoreData; degraded: boolean } {
+    const empty = (): SessionStoreData => ({ version: STORE_VERSION, sessions: {} });
     if (!existsSync(this.sessionsFile)) {
-      return { version: STORE_VERSION, sessions: {} };
+      return { data: empty(), degraded: false };
     }
 
     try {
-      const data = JSON.parse(readFileSync(this.sessionsFile, 'utf-8')) as SessionStoreData;
-      // Ensure required fields exist (handles malformed/empty files)
-      if (!data.sessions || typeof data.sessions !== 'object') {
+      const raw = readFileSync(this.sessionsFile, 'utf-8');
+      if (raw.trim() === '') return { data: empty(), degraded: false };
+      const data = JSON.parse(raw) as SessionStoreData;
+      if (!data || typeof data !== 'object') return { data: empty(), degraded: true };
+      const sessionsMissing = data.sessions === undefined || data.sessions === null;
+      const sessionsUnreadable = !sessionsMissing && typeof data.sessions !== 'object';
+      if (sessionsMissing || sessionsUnreadable) {
         data.sessions = {};
       }
       if (!data.version) {
         data.version = STORE_VERSION;
       }
-      return data;
-    } catch {
-      return { version: STORE_VERSION, sessions: {} };
+      return { data, degraded: sessionsUnreadable };
+    } catch (err) {
+      log.warn(`Failed to read ${this.sessionsFile}: ${(err as Error).message} — reads degrade to empty`);
+      return { data: empty(), degraded: true };
     }
   }
 
@@ -596,6 +612,10 @@ export class SessionStore {
    * Sets restrictive permissions (0600) to protect sensitive session data
    */
   private writeAtomic(data: SessionStoreData): void {
+    if (this.lastReadDegraded) {
+      log.error(`Refusing to write ${this.sessionsFile}: the last read of the existing file was degraded — writing would destroy persisted sessions`);
+      return;
+    }
     const tempFile = `${this.sessionsFile}.tmp`;
     writeFileSync(tempFile, JSON.stringify(data, null, 2), { encoding: 'utf-8', mode: 0o600 });
     renameSync(tempFile, this.sessionsFile);

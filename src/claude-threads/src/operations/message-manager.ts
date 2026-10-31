@@ -15,6 +15,8 @@ import type { WorkingBlockMode } from '../config/types.js';
 import type { PendingQuestionSet, Session } from '../session/types.js';
 import type { ClaudeEvent } from '../claude/cli.js';
 import { transformEvent, type TransformContext } from './transformer.js';
+import { TaskTracker, type PersistedTrackedTask } from './task-tracker.js';
+import type { BridgeRequest, BridgeResponse } from '../mcp/decision-bridge.js';
 import {
   ContentExecutor,
   WorkingExecutor,
@@ -87,6 +89,11 @@ export type StartTypingCallback = () => void;
  * Callback to emit session update events
  */
 export type EmitSessionUpdateCallback = (updates: Record<string, unknown>) => void;
+
+interface PendingBridgeDecision {
+  resolve: (response: BridgeResponse) => void;
+  input: Record<string, unknown>;
+}
 
 /**
  * Options for creating a MessageManager
@@ -170,10 +177,18 @@ export class MessageManager {
   // Tool start times for elapsed time calculation
   private toolStartTimes: Map<string, number> = new Map();
 
+  private taskTracker = new TaskTracker();
+
+  private pendingBridgeDecisions = new Map<BridgeRequest['kind'], PendingBridgeDecision>();
+
   // Flush scheduling
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
   private static readonly DEFAULT_FLUSH_DELAY_MS = 500;
   private readonly flushDelayMs: number;
+  private flushInFlight: Promise<void> | null = null;
+
+  // Climbs for the life of the manager: a Claude respawn keeps the chat session, so restarting would repeat turn numbers.
+  private turn = 0;
 
   /**
    * Event emitter for MessageManager events.
@@ -321,6 +336,7 @@ export class MessageManager {
       sessionId: this.sessionId,
       formatter: this.platform.getFormatter(),
       toolStartTimes: this.toolStartTimes,
+      taskTracker: this.taskTracker,
       detailed: true,
       worktreeInfo: this.worktreePath && this.worktreeBranch
         ? { path: this.worktreePath, branch: this.worktreeBranch }
@@ -329,6 +345,14 @@ export class MessageManager {
 
     // Transform event to operations
     const ops = transformEvent(event, transformCtx);
+
+    if (this.taskTracker.consumeUnmatchedCreateResultFlag()) {
+      logger.warn(
+        'TaskCreate result did not match the expected "Task #N created" wording — ' +
+        'task dropped from the displayed list. If this repeats, the Claude CLI ' +
+        'likely changed its result text and the task display will be incomplete.'
+      );
+    }
 
     if (ops.length === 0) {
       // System events are expected to produce no operations (handled separately for compaction/errors)
@@ -457,9 +481,36 @@ export class MessageManager {
   private async handleFlushOp(op: FlushOp, ctx: ExecutorContext): Promise<void> {
     // Cancel any pending scheduled flush
     this.cancelScheduledFlush();
+    await this.awaitFlushInFlight();
 
-    // Execute the flush across both lanes
-    await this.flushExecutors(op.reason, ctx);
+    if (op.reason !== 'result') {
+      await this.runTrackedFlush(op.reason, ctx);
+      return;
+    }
+
+    this.turn++;
+    try {
+      await this.runTrackedFlush(op.reason, ctx);
+    } finally {
+      this.events.emit('turn:complete', {
+        sessionId: this.sessionId,
+        turn: this.turn,
+        ok: op.resultOk !== false,
+        lastPostId: this.getCurrentPostId(),
+      });
+    }
+  }
+
+  private async awaitFlushInFlight(): Promise<void> {
+    if (this.flushInFlight) await this.flushInFlight.catch(() => undefined);
+  }
+
+  private async runTrackedFlush(reason: FlushOp['reason'], ctx: ExecutorContext): Promise<void> {
+    const running = this.flushExecutors(reason, ctx).finally(() => {
+      if (this.flushInFlight === running) this.flushInFlight = null;
+    });
+    this.flushInFlight = running;
+    await running;
   }
 
   /**
@@ -468,9 +519,9 @@ export class MessageManager {
   private scheduleFlush(ctx: ExecutorContext): void {
     if (this.flushTimer) return;
 
-    this.flushTimer = setTimeout(async () => {
+    this.flushTimer = setTimeout(() => {
       this.flushTimer = null;
-      await this.flushExecutors('soft_threshold', ctx);
+      void this.runTrackedFlush('soft_threshold', ctx).catch(() => undefined);
     }, this.flushDelayMs);
   }
 
@@ -489,7 +540,8 @@ export class MessageManager {
    */
   async flush(): Promise<void> {
     this.cancelScheduledFlush();
-    await this.flushExecutors('explicit', this.getExecutorContext());
+    await this.awaitFlushInFlight();
+    await this.runTrackedFlush('explicit', this.getExecutorContext());
   }
 
   /**
@@ -899,12 +951,20 @@ export class MessageManager {
    */
   serialize(): {
     taskList: ReturnType<TaskListExecutor['serialize']>;
+    taskTracker: ReturnType<TaskTracker['serialize']>;
     contextPrompt: PendingContextPrompt | null;
   } {
     return {
       taskList: this.taskListExecutor.serialize(),
+      taskTracker: this.taskTracker.serialize(),
       contextPrompt: this.promptExecutor.serialize(),
     };
+  }
+
+  restoreTaskTracker(state: PersistedTrackedTask[] | undefined): void {
+    if (state && state.length > 0) {
+      this.taskTracker.restore(state);
+    }
   }
 
   /**
@@ -1214,12 +1274,81 @@ export class MessageManager {
     return false;
   }
 
+  // ---------------------------------------------------------------------------
+  // Decision bridge
+  // ---------------------------------------------------------------------------
+
+  handleBridgeRequest(request: BridgeRequest, signal?: AbortSignal): Promise<BridgeResponse> {
+    const { kind } = request;
+    if (kind !== 'plan_approval' && kind !== 'question') {
+      return Promise.resolve({ behavior: 'deny', message: 'Unknown bridge request kind' });
+    }
+    this.pendingBridgeDecisions.get(kind)?.resolve({ behavior: 'deny', message: 'Superseded by a newer request' });
+    return new Promise<BridgeResponse>((resolve) => {
+      const pending = { resolve, input: request.input };
+      this.pendingBridgeDecisions.set(kind, pending);
+      signal?.addEventListener('abort', () => {
+        if (this.pendingBridgeDecisions.get(kind) === pending) this.pendingBridgeDecisions.delete(kind);
+      });
+    });
+  }
+
+  private takeBridgeDecision(kind: BridgeRequest['kind']): PendingBridgeDecision | undefined {
+    const pending = this.pendingBridgeDecisions.get(kind);
+    this.pendingBridgeDecisions.delete(kind);
+    return pending;
+  }
+
+  resolveBridgePlan(approved: boolean): boolean {
+    const pending = this.takeBridgeDecision('plan_approval');
+    if (!pending) return false;
+    pending.resolve(
+      approved
+        ? { behavior: 'allow', updatedInput: pending.input }
+        : { behavior: 'deny', message: 'The user rejected the plan.' }
+    );
+    return true;
+  }
+
+  resolveBridgeQuestion(answers: Array<{ header: string; answer: string }>): boolean {
+    const pending = this.takeBridgeDecision('question');
+    if (!pending) return false;
+
+    const questions = Array.isArray(pending.input.questions)
+      ? (pending.input.questions as Array<{ question?: string; header?: string }>)
+      : [];
+    const answersByQuestion: Record<string, string> = {};
+    for (const a of answers) {
+      const match = questions.find(q => q.header === a.header);
+      answersByQuestion[match?.question ?? a.header] = a.answer;
+    }
+    pending.resolve({
+      behavior: 'allow',
+      updatedInput: { ...pending.input, answers: answersByQuestion },
+    });
+    return true;
+  }
+
+  denyPendingBridgeRequests(reason: string): void {
+    for (const pending of this.pendingBridgeDecisions.values()) {
+      pending.resolve({ behavior: 'deny', message: reason });
+    }
+    this.pendingBridgeDecisions.clear();
+  }
+
+  clearClaudeSessionState(): void {
+    this.toolStartTimes.clear();
+    this.taskTracker.clear();
+    this.denyPendingBridgeRequests('Claude was restarted before a decision was made');
+  }
+
   /**
    * Reset all state (for session restart)
    */
   reset(): void {
     this.cancelScheduledFlush();
     this.toolStartTimes.clear();
+    this.taskTracker.clear();
     this.contentExecutor.reset();
     this.workingExecutor.reset();
     this.taskListExecutor.reset();
@@ -1235,6 +1364,7 @@ export class MessageManager {
    * Clean up resources
    */
   dispose(): void {
+    this.denyPendingBridgeRequests('Session ended before a decision was made');
     this.cancelScheduledFlush();
     this.postTracker.clearSession(this.sessionId);
     // Remove all listeners attached to this session's per-instance emitter.

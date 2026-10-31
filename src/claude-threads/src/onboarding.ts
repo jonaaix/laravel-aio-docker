@@ -386,27 +386,14 @@ export async function runOnboarding(reconfigure = false): Promise<void> {
 
   if (!claudeCheck.compatible) {
     console.log('');
-    if (claudeCheck.version) {
-      console.log(dim(`  ⚠️  Claude Code CLI ${claudeCheck.version} is not compatible`));
-      console.log('');
-      console.log(dim(`  Install a compatible version:`));
-      console.log(dim('    npm install -g @anthropic-ai/claude-code@2.1.1'));
-    } else {
-      // Version unknown - Claude is installed but we couldn't parse the version
-      console.log(dim('  ⚠️  Claude Code CLI found but version could not be determined'));
-      if (claudeCheck.rawOutput) {
-        console.log(dim(`  Output from "claude --version": ${claudeCheck.rawOutput}`));
-      }
-      console.log('');
-      console.log(dim('  This may work fine - Claude was installed in a non-standard way.'));
-    }
+    console.log(dim(`  ⚠️  ${claudeCheck.message}`));
     console.log('');
 
     const { continueAnyway } = await prompts({
       type: 'confirm',
       name: 'continueAnyway',
       message: 'Continue anyway? (may not work correctly)',
-      initial: !claudeCheck.version, // Default to yes if version unknown (likely fine)
+      initial: false,
     }, { onCancel });
 
     if (!continueAnyway) {
@@ -414,9 +401,18 @@ export async function runOnboarding(reconfigure = false): Promise<void> {
       console.log(dim('  Setup cancelled.'));
       process.exit(0);
     }
+  } else if (claudeCheck.status === 'untested') {
+    console.log('');
+    console.log(dim(`  ⚠️  ${claudeCheck.message}`));
+  } else if (!claudeCheck.version) {
+    // Version unknown - Claude is installed but we couldn't parse the version
+    console.log(dim('  ⚠️  Claude Code CLI found but version could not be determined'));
+    if (claudeCheck.rawOutput) {
+      console.log(dim(`  Output from "claude --version": ${claudeCheck.rawOutput}`));
+    }
+    console.log(dim('  This may work fine - Claude was installed in a non-standard way.'));
   } else {
-    const versionInfo = claudeCheck.version ?? 'version unknown';
-    console.log(dim(`  ✓ Claude Code CLI ${versionInfo}`));
+    console.log(dim(`  ✓ Claude Code CLI ${claudeCheck.version}`));
   }
 
   console.log('');

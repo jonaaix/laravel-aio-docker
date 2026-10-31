@@ -16,9 +16,12 @@ import { EventEmitter } from 'events';
 import { ClaudeEvent } from '../claude/cli.js';
 import type { PlatformClient, PlatformUser, PlatformPost, PlatformFile } from '../platform/index.js';
 import { SessionStore, PersistedSession, PersistedContextPrompt } from '../persistence/session-store.js';
+import type { PersistedTrackedTask } from '../operations/task-tracker.js';
+import type { AgentBackend } from '../agent/backend.js';
 import { GitHubEmailsStore } from '../persistence/github-emails-store.js';
 import { WorktreeMode, type LimitsConfig, type ResolvedLimits, type ClaudeAccount, type PermissionMode, type OverheadVisibility, type PlatformOverhead, type AgentBackendKind, type WorkingBlockMode, type WriteScopeMode, DEFAULT_OVERHEAD_VISIBILITY, DEFAULT_AGENT_BACKEND, DEFAULT_MAX_BOT_HANDOFFS, resolveLimits, effectivePermissionMode } from '../config/index.js';
 import { AccountPool } from '../claude/account-pool.js';
+import { probeClaudeAiConnectors } from '../claude/connector-probe.js';
 import type { SessionInfo } from '../ui/types.js';
 import { CleanupScheduler } from '../cleanup/index.js';
 import { SessionMonitor } from '../operations/monitor/index.js';
@@ -713,7 +716,7 @@ export class SessionManager extends EventEmitter {
 
       // Event handling
       handleEvent: (sid, e) => this.handleEvent(sid, e),
-      handleExit: (sid, code) => this.handleExit(sid, code),
+      handleExit: (sid, code, source) => this.handleExit(sid, code, source),
 
       // Session lifecycle
       killSession: (tid) => this.killSession(tid),
@@ -933,18 +936,18 @@ export class SessionManager extends EventEmitter {
     events.handleEventPreProcessing(session, event, this.getContext());
 
     // Main event handling via MessageManager
-    void session.messageManager.handleEvent(event);
+    const mainHandling = session.messageManager.handleEvent(event);
 
     // Post-processing: session-specific side effects
-    events.handleEventPostProcessing(session, event, this.getContext());
+    events.handleEventPostProcessing(session, event, this.getContext(), mainHandling);
   }
 
   // ---------------------------------------------------------------------------
   // Exit Handling (delegates to lifecycle module)
   // ---------------------------------------------------------------------------
 
-  private async handleExit(sessionId: string, code: number): Promise<void> {
-    await lifecycle.handleExit(sessionId, code, this.getContext());
+  private async handleExit(sessionId: string, code: number, source?: AgentBackend): Promise<void> {
+    await lifecycle.handleExit(sessionId, code, this.getContext(), source);
   }
 
   // ---------------------------------------------------------------------------
@@ -1003,7 +1006,23 @@ export class SessionManager extends EventEmitter {
   // Persistence
   // ---------------------------------------------------------------------------
 
+  private static readonly MAX_PERSISTED_TEXT = 100_000;
+
+  private static capPersistedText(value: string | undefined | null): string | undefined {
+    if (value === undefined || value === null) return undefined;
+    if (value.length <= SessionManager.MAX_PERSISTED_TEXT) return value;
+    return value.slice(0, SessionManager.MAX_PERSISTED_TEXT) + '…[truncated]';
+  }
+
   private persistSession(session: Session): void {
+    try {
+      this.persistSessionUnsafe(session);
+    } catch (err) {
+      log.error(`Failed to persist session ${session.sessionId}: ${err}`);
+    }
+  }
+
+  private persistSessionUnsafe(session: Session): void {
     // Aggregate every executor's persistable state in one call. Byte-parity
     // with the pre-PR-3 writer is guarded by the snapshot tests in
     // `manager.test.ts` — adding a field here without updating the snapshot
@@ -1012,10 +1031,12 @@ export class SessionManager extends EventEmitter {
       | { postId: string | null; content: string | null; isMinimized: boolean; isCompleted: boolean }
       | undefined;
     let contextPromptSnapshot: PersistedContextPrompt | undefined;
+    let taskTrackerSnapshot: PersistedTrackedTask[] | undefined;
 
     if (session.messageManager) {
       const serialized = session.messageManager.serialize();
       taskListSnapshot = serialized.taskList;
+      taskTrackerSnapshot = serialized.taskTracker;
       if (serialized.contextPrompt) {
         contextPromptSnapshot = serialized.contextPrompt;
       }
@@ -1038,16 +1059,17 @@ export class SessionManager extends EventEmitter {
       sessionStartPostId: session.sessionStartPostId,
       // Task state from MessageManager serialize() (single source of truth).
       tasksPostId: taskListSnapshot?.postId ?? null,
-      lastTasksContent: taskListSnapshot?.content ?? null,
+      lastTasksContent: SessionManager.capPersistedText(taskListSnapshot?.content) ?? null,
       tasksCompleted: taskListSnapshot?.isCompleted ?? false,
       tasksMinimized: taskListSnapshot?.isMinimized ?? false,
+      taskTrackerState: taskTrackerSnapshot,
       worktreeInfo: session.worktreeInfo,
       isWorktreeOwner: session.isWorktreeOwner,
       pendingWorktreePrompt: session.pendingWorktreePrompt,
       worktreePromptDisabled: session.worktreePromptDisabled,
-      queuedPrompt: session.queuedPrompt,
+      queuedPrompt: SessionManager.capPersistedText(session.queuedPrompt),
       queuedFiles: session.queuedFiles,
-      firstPrompt: session.firstPrompt,
+      firstPrompt: SessionManager.capPersistedText(session.firstPrompt),
       pendingContextPrompt: contextPromptSnapshot,
       needsContextPromptOnNextMessage: session.needsContextPromptOnNextMessage,
       lifecyclePostId: session.lifecyclePostId,
@@ -1121,6 +1143,35 @@ export class SessionManager extends EventEmitter {
    */
   async updateAllStickyMessages(): Promise<void> {
     await this.updateStickyMessage();
+  }
+
+  async noticeClaudeAiConnectors(): Promise<void> {
+    const claudePlatforms = [...this.platforms.entries()]
+      .filter(([id]) => (this.platformAgent.get(id) ?? DEFAULT_AGENT_BACKEND) === 'claude');
+    if (claudePlatforms.length === 0) return;
+    try {
+      const accounts: Array<ClaudeAccount | undefined> = this.accountPool.isEmpty ? [undefined] : [...this.accountPool.all];
+      const found = new Set<string>();
+      await Promise.all(accounts.map(async (account) => {
+        for (const name of await probeClaudeAiConnectors(account) ?? []) found.add(name);
+      }));
+      if (found.size === 0) return;
+      const names = [...found].sort().join(', ');
+      const allowedOn = claudePlatforms
+        .filter(([, client]) => client.getMcpConfig().claudeAiConnectors === true)
+        .map(([id]) => id);
+      if (allowedOn.length > 0) {
+        log.info(`claude.ai connectors (${names}) are available to sessions on: ${allowedOn.join(', ')}`);
+        return;
+      }
+      log.warn(
+        `This Claude account has claude.ai connectors (${names}). Sessions do not get them. ` +
+        `To let a platform's sessions use them, set claudeAiConnectors: true on that platform in config.yaml ` +
+        `(everyone on its allowedUsers gets them).`,
+      );
+    } catch (err) {
+      log.debug(`Connector notice skipped: ${err}`);
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -1264,7 +1315,7 @@ export class SessionManager extends EventEmitter {
 
     for (const state of sessionsToResume) {
       try {
-        await lifecycle.resumeSession(state, this.getContext());
+        await lifecycle.resumeSession(state, this.getContext(), 'platform-enabled');
         log.info(`▶️ Resumed session ${state.threadId.substring(0, 8)}`);
       } catch (err) {
         log.warn(`Failed to resume session ${state.threadId}: ${err}`);
@@ -1366,7 +1417,7 @@ export class SessionManager extends EventEmitter {
       if (activeToResume.length > 0) {
         log.info(`🔄 Attempting to resume ${activeToResume.length} active session(s)...`);
         for (const state of activeToResume) {
-          await lifecycle.resumeSession(state, this.getContext());
+          await lifecycle.resumeSession(state, this.getContext(), 'boot');
         }
       }
     }
@@ -1756,7 +1807,7 @@ export class SessionManager extends EventEmitter {
       worktreeMode: this.worktreeMode,
       permissionTimeoutMs: this.limits.permissionTimeoutSeconds * 1000,
       handleEvent: (tid, e) => this.handleEvent(tid, e),
-      handleExit: (tid, code) => this.handleExit(tid, code),
+      handleExit: (tid, code, source) => this.handleExit(tid, code, source),
       updateSessionHeader: (s) => this.updateSessionHeader(s),
       flush: async (s) => {
         if (s.messageManager) {

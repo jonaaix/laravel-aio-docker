@@ -79,6 +79,7 @@ export class SlackClient extends BasePlatformClient {
   private rateLimitRetryAfter = 0;
 
   private outboundFiles?: { enabled?: boolean; maxBytes?: number };
+  private claudeAiConnectors?: boolean;
 
   private readonly formatter = new SlackFormatter();
 
@@ -94,6 +95,7 @@ export class SlackClient extends BasePlatformClient {
     this.skipPermissions = platformConfig.skipPermissions ?? false;
     this.apiUrl = platformConfig.apiUrl || 'https://slack.com/api';
     this.outboundFiles = platformConfig.outboundFiles;
+    this.claudeAiConnectors = platformConfig.claudeAiConnectors;
   }
 
   // ============================================================================
@@ -772,6 +774,7 @@ export class SlackClient extends BasePlatformClient {
       allowedUsers: this.allowedUsers,
       appToken: this.appToken, // Required for Socket Mode in permission server
       outboundFiles: this.outboundFiles,
+      claudeAiConnectors: this.claudeAiConnectors,
     };
   }
 

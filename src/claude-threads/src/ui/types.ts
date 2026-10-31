@@ -2,6 +2,7 @@
  * Types for the Ink-based CLI UI
  */
 import type { PermissionMode } from '../config/index.js';
+import type { ClaudeVersionStatus } from '../claude/version-check.js';
 
 export interface SessionInfo {
   id: string;
@@ -49,7 +50,7 @@ export interface AppConfig {
   version: string;
   workingDir: string;
   claudeVersion: string;
-  claudeCompatible: boolean;
+  claudeStatus: ClaudeVersionStatus;
   permissionMode: PermissionMode;
   chromeEnabled: boolean;
   keepAliveEnabled: boolean;

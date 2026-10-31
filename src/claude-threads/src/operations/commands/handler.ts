@@ -5,7 +5,7 @@
  */
 
 import type { Session } from '../../session/types.js';
-import { transitionTo } from '../../session/types.js';
+import { transitionTo, isSessionRestarting } from '../../session/types.js';
 import type { SessionContext } from '../session-context/index.js';
 import type { ClaudeCliOptions, ClaudeEvent, RateLimitHit } from '../../claude/cli.js';
 import {
@@ -116,30 +116,44 @@ export async function restartClaudeSession(
   // Stop the current Claude CLI
   ctx.ops.stopTyping(session);
   transitionTo(session, 'restarting');
-  session.claude.kill();
+  await session.claude.kill();
 
   // Flush any pending content
   await ctx.ops.flush(session);
 
+  session.messageManager?.denyPendingBridgeRequests('Claude was restarted before a decision was made');
+  if (!cliOptions.resume) {
+    session.messageManager?.clearClaudeSessionState();
+  }
+
   // Create new Claude CLI
-  session.claude = new ClaudeCli(cliOptions);
+  const newClaude = new ClaudeCli(cliOptions);
+  session.claude = newClaude;
 
   // Rebind event handlers (use sessionId which is the composite key).
   // The rate-limit listener MUST be rebound here too — without it, a !cd or
   // !permissions interactive restart would silently drop rate-limit signals
   // from the new Claude process and the account would never enter cooldown.
-  session.claude.on('event', (e: ClaudeEvent) => ctx.ops.handleEvent(session.sessionId, e));
-  session.claude.on('exit', (code: number) => ctx.ops.handleExit(session.sessionId, code));
-  session.claude.on('rate-limit', (hit: RateLimitHit) => handleRateLimit(session, hit, ctx));
+  newClaude.on('event', (e: ClaudeEvent) => ctx.ops.handleEvent(session.sessionId, e));
+  newClaude.on('exit', (code: number) => ctx.ops.handleExit(session.sessionId, code, newClaude));
+  newClaude.on('rate-limit', (hit: RateLimitHit) => handleRateLimit(session, hit, ctx));
 
   // Start the new Claude CLI
   try {
-    session.claude.start();
+    newClaude.start();
+    leaveRestarting(session);
     return true;
   } catch (err) {
-    transitionTo(session, 'active');
+    leaveRestarting(session);
     await logAndNotify(err, { action: actionName, session });
     return false;
+  }
+}
+
+function leaveRestarting(session: Session): void {
+  // A cancel issued during the respawn has moved the session on; it must not be clobbered back to active.
+  if (isSessionRestarting(session)) {
+    transitionTo(session, 'active');
   }
 }
 
@@ -301,6 +315,9 @@ export async function approvePendingPlan(
   const { postId } = pendingApproval;
   sessionLog(session).info(`✅ Plan approved by @${username} via command`);
 
+  // Resolved before the first await: a 👍 landing meanwhile would otherwise consume the pending bridge decision.
+  const viaBridge = session.messageManager?.resolveBridgePlan(true) ?? false;
+
   // Update the post to show the decision
   const formatter = session.platform.getFormatter();
   const statusMessage = `${formatter.formatBold('Plan approved')} by ${formatter.formatUserMention(username)} - starting implementation...`;
@@ -311,6 +328,12 @@ export async function approvePendingPlan(
   // Also clear any stale questions from plan mode - they're no longer relevant
   session.messageManager?.clearPendingQuestionSet();
   session.planApproved = true;
+
+  if (viaBridge) {
+    sessionLog(session).info('Plan approved via decision bridge (!approve)');
+    ctx.ops.startTyping(session);
+    return;
+  }
 
   // Send user message to Claude - NOT a tool_result
   // Claude Code CLI handles ExitPlanMode internally (generating its own tool_result),

@@ -754,6 +754,9 @@ describe('SessionManager', () => {
       session.messageManager = {
         serialize: () => ({
           taskList: { postId: 'tasks-1', content: '- [ ] a', isMinimized: false, isCompleted: false },
+          taskTracker: [
+            { taskId: '7', subject: 'Migrate schema', status: 'in_progress' },
+          ],
           contextPrompt: {
             postId: 'ctx-1',
             queuedPrompt: 'followup',
@@ -794,8 +797,12 @@ describe('SessionManager', () => {
         'sessionDescription', 'sessionTags', 'pullRequestUrl', 'messageCount',
         'resumeFailCount', 'claudeAccountId', 'sessionHeaderMode',
         'agentBackend', 'opencodeSessionId', 'lastAddressedAt', 'lastSeenPostId',
+        'taskTrackerState',
       ]);
       expect(new Set(Object.keys(written))).toEqual(expectedKeys);
+      expect(written.taskTrackerState).toEqual([
+        { taskId: '7', subject: 'Migrate schema', status: 'in_progress' },
+      ]);
 
       // Spot-check a few critical fields — the ones sourced from
       // `MessageManager.serialize()` rather than `session.*`.

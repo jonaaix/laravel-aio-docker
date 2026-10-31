@@ -13,6 +13,7 @@ import { describe, it, expect, beforeEach } from 'bun:test';
 import type { Event } from '@opencode-ai/sdk';
 import { OpencodeEventTranslator } from './event-translator.js';
 import { transformEvent, type TransformContext } from '../operations/transformer.js';
+import { TaskTracker } from '../operations/task-tracker.js';
 import type { AgentEvent } from '../agent/backend.js';
 import type { PlatformFormatter } from '../platform/formatter.js';
 
@@ -362,7 +363,7 @@ describe('OpencodeEventTranslator', () => {
 
     let ctx: TransformContext;
     beforeEach(() => {
-      ctx = { sessionId: 'sess', formatter: mockFormatter, toolStartTimes: new Map(), detailed: true };
+      ctx = { sessionId: 'sess', formatter: mockFormatter, toolStartTimes: new Map(), taskTracker: new TaskTracker(), detailed: true };
     });
 
     const pipe = (events: AgentEvent[]) => events.flatMap((e) => transformEvent(e, ctx));
