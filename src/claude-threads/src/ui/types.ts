@@ -1,0 +1,130 @@
+/**
+ * Types for the Ink-based CLI UI
+ */
+import type { PermissionMode } from '../config/index.js';
+
+export interface SessionInfo {
+  id: string;
+  threadId: string;
+  startedBy: string;
+  displayName?: string;
+  status: 'starting' | 'active' | 'idle' | 'stopping' | 'paused';
+  workingDir: string;
+  sessionNumber: number;
+  worktreeBranch?: string;
+  // Platform information
+  platformType?: 'mattermost' | 'slack';
+  platformDisplayName?: string;
+  // Rich session metadata
+  title?: string;
+  description?: string;
+  tags?: string[];
+  lastActivity?: Date;
+  // Typing indicator state (for spinner display)
+  isTyping?: boolean;
+}
+
+export interface LogEntry {
+  id: string;
+  timestamp: Date;
+  level: 'debug' | 'info' | 'warn' | 'error';
+  component: string;
+  message: string;
+  sessionId?: string;
+}
+
+export interface PlatformStatus {
+  id: string;
+  displayName: string;
+  botName: string;
+  url: string;
+  platformType?: 'mattermost' | 'slack';
+  connected: boolean;
+  reconnecting: boolean;
+  reconnectAttempts: number;
+  enabled: boolean;  // Whether the platform is enabled (accepting messages)
+}
+
+export interface AppConfig {
+  version: string;
+  workingDir: string;
+  claudeVersion: string;
+  claudeCompatible: boolean;
+  permissionMode: PermissionMode;
+  chromeEnabled: boolean;
+  keepAliveEnabled: boolean;
+}
+
+/**
+ * Update panel state - tracks auto-update status for UI display
+ */
+export interface UpdatePanelState {
+  status: 'idle' | 'available' | 'scheduled' | 'installing' | 'pending_restart' | 'failed' | 'deferred';
+  currentVersion: string;
+  latestVersion?: string;
+  scheduledRestartAt?: Date;
+  errorMessage?: string;
+  deferredUntil?: Date;
+}
+
+/**
+ * Runtime toggle state - can be changed via keyboard shortcuts
+ */
+export interface ToggleState {
+  debugMode: boolean;
+  /** Default permission mode for new sessions (bot-wide). */
+  permissionMode: PermissionMode;
+  chromeEnabled: boolean;    // Default for new sessions
+  keepAliveEnabled: boolean;
+  updateModalVisible: boolean;  // Whether the update modal is shown
+  logsFocused: boolean;  // Whether logs panel is focused for scrolling
+}
+
+/**
+ * Callbacks for when toggles change (to propagate to main logic)
+ */
+export interface ToggleCallbacks {
+  onDebugToggle?: (enabled: boolean) => void;
+  /**
+   * Fires when the user cycles the permission-mode keyboard toggle. The new
+   * mode is one of `'default' | 'auto' | 'bypass'`; callers should update
+   * runtime config + persist for daemon restart.
+   */
+  onPermissionsToggle?: (mode: PermissionMode) => void;
+  onChromeToggle?: (enabled: boolean) => void;
+  onKeepAliveToggle?: (enabled: boolean) => void;
+  onPlatformToggle?: (platformId: string, enabled: boolean) => void;
+  onForceUpdate?: () => void;
+}
+
+/**
+ * Management actions the console (or the server's own TUI) can trigger against
+ * a session or the server. In console mode these send IPC commands; on the
+ * server they call straight into the SessionManager.
+ */
+export interface SessionActionCallbacks {
+  /** Stop (cancel) a session — the `!stop` equivalent. */
+  onSessionCancel?: (sessionId: string) => void;
+  /** Interrupt a running session without killing it — the `!escape` equivalent. */
+  onSessionInterrupt?: (sessionId: string) => void;
+  /** Shut the whole bot down gracefully. */
+  onServerStop?: () => void;
+  /**
+   * Add or update a connection (hot-reload). The value is a
+   * PlatformInstanceConfig, kept as `unknown` here to avoid a UI→config type
+   * dependency; the console/server cast it back.
+   */
+  onConnectionSave?: (config: unknown) => void;
+  /** Remove a connection by id (hot-reload). */
+  onConnectionRemove?: (id: string) => void;
+}
+
+export interface AppState {
+  config: AppConfig;
+  platforms: Map<string, PlatformStatus>;
+  sessions: Map<string, SessionInfo>;
+  logs: LogEntry[];
+  selectedSessionId: string | null;  // Currently selected session tab
+  ready: boolean;
+  shuttingDown: boolean;
+}

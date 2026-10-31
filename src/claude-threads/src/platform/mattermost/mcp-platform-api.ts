@@ -1,0 +1,736 @@
+/**
+ * Mattermost implementation of McpPlatformApi
+ *
+ * Handles MCP-side platform operations via Mattermost API and WebSocket.
+ * Bundles the minimal Mattermost REST surface the MCP child needs; the full
+ * WebSocket-backed client lives in src/platform/mattermost/client.ts and is
+ * only used by the main bot.
+ */
+
+import { WebSocket } from '../../utils/websocket.js';
+import type {
+  McpPlatformApi,
+  MattermostMcpApiConfig,
+  ReactionEvent,
+  PostedMessage,
+  McpPost,
+} from '../mcp-platform-api.js';
+import type { PlatformFormatter } from '../formatter.js';
+import { MattermostFormatter } from './formatter.js';
+import { createLogger, mcpLogger } from '../../utils/logger.js';
+import { formatShortId } from '../../utils/format.js';
+import { formatWebSocketError } from '../utils.js';
+import { uploadFileMattermost } from './upload.js';
+import { sanitizeFilename } from '../../utils/safe-filename.js';
+
+// =============================================================================
+// Mattermost REST API helpers (internal)
+//
+// Standalone fetch-based functions used only by the permission API. The full
+// Mattermost client (src/platform/mattermost/client.ts) uses its own api()
+// method with retry + silent-error options. Keep these minimal — don't extend
+// without a second consumer.
+// =============================================================================
+
+const apiLog = createLogger('mm-api');
+
+interface MattermostApiConfig {
+  url: string;
+  token: string;
+}
+
+interface MattermostApiPost {
+  id: string;
+  channel_id: string;
+  message: string;
+  root_id?: string;
+  user_id?: string;
+  create_at?: number;
+}
+
+interface MattermostApiChannel {
+  id: string;
+  /**
+   * Channel type per Mattermost: 'O' = open/public, 'P' = private,
+   * 'D' = direct message, 'G' = group message.
+   */
+  type: 'O' | 'P' | 'D' | 'G';
+  /** Team owning this channel. Empty for DMs / group DMs. */
+  team_id?: string;
+  /** Human-readable channel name (URL slug). */
+  name?: string;
+  /** Display name shown in the UI. Falls back to `name` when empty. */
+  display_name?: string;
+}
+
+interface MattermostApiUser {
+  id: string;
+  username: string;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+}
+
+async function mattermostApi<T>(
+  config: MattermostApiConfig,
+  method: string,
+  path: string,
+  body?: unknown,
+): Promise<T> {
+  const url = `${config.url}/api/v4${path}`;
+  apiLog.debug(`API ${method} ${path}`);
+  const response = await fetch(url, {
+    method,
+    headers: {
+      Authorization: `Bearer ${config.token}`,
+      'Content-Type': 'application/json',
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    apiLog.warn(`API ${method} ${path} failed: ${response.status} ${text.substring(0, 100)}`);
+    throw new Error(`Mattermost API error ${response.status}: ${text}`);
+  }
+
+  apiLog.debug(`API ${method} ${path} → ${response.status}`);
+  return response.json() as Promise<T>;
+}
+
+async function getMe(config: MattermostApiConfig): Promise<MattermostApiUser> {
+  return mattermostApi<MattermostApiUser>(config, 'GET', '/users/me');
+}
+
+async function getUser(
+  config: MattermostApiConfig,
+  userId: string,
+): Promise<MattermostApiUser | null> {
+  try {
+    return await mattermostApi<MattermostApiUser>(config, 'GET', `/users/${userId}`);
+  } catch (err) {
+    apiLog.debug(`Failed to get user ${userId}: ${err}`);
+    return null;
+  }
+}
+
+async function createPost(
+  config: MattermostApiConfig,
+  channelId: string,
+  message: string,
+  rootId?: string,
+): Promise<MattermostApiPost> {
+  return mattermostApi<MattermostApiPost>(config, 'POST', '/posts', {
+    channel_id: channelId,
+    message,
+    root_id: rootId,
+  });
+}
+
+async function updatePostRaw(
+  config: MattermostApiConfig,
+  postId: string,
+  message: string,
+): Promise<MattermostApiPost> {
+  return mattermostApi<MattermostApiPost>(config, 'PUT', `/posts/${postId}`, {
+    id: postId,
+    message,
+  });
+}
+
+interface MattermostThreadResponse {
+  order: string[];
+  posts: Record<string, MattermostApiPost>;
+}
+
+async function getPostRaw(
+  config: MattermostApiConfig,
+  postId: string,
+): Promise<MattermostApiPost | null> {
+  try {
+    return await mattermostApi<MattermostApiPost>(config, 'GET', `/posts/${postId}`);
+  } catch (err) {
+    apiLog.debug(`Failed to get post ${postId}: ${err}`);
+    return null;
+  }
+}
+
+async function getChannelRaw(
+  config: MattermostApiConfig,
+  channelId: string,
+): Promise<MattermostApiChannel | null> {
+  try {
+    return await mattermostApi<MattermostApiChannel>(config, 'GET', `/channels/${channelId}`);
+  } catch (err) {
+    apiLog.debug(`Failed to get channel ${channelId}: ${err}`);
+    return null;
+  }
+}
+
+async function getThreadRaw(
+  config: MattermostApiConfig,
+  threadRootId: string,
+): Promise<MattermostThreadResponse | null> {
+  try {
+    return await mattermostApi<MattermostThreadResponse>(
+      config,
+      'GET',
+      `/posts/${threadRootId}/thread`,
+    );
+  } catch (err) {
+    apiLog.debug(`Failed to get thread ${threadRootId}: ${err}`);
+    return null;
+  }
+}
+
+interface MattermostPostListResponse {
+  order: string[];
+  posts: Record<string, MattermostApiPost>;
+}
+
+async function getChannelPostsRaw(
+  config: MattermostApiConfig,
+  channelId: string,
+  perPage: number,
+): Promise<MattermostPostListResponse | null> {
+  try {
+    return await mattermostApi<MattermostPostListResponse>(
+      config,
+      'GET',
+      // per_page caps the page size; page=0 is the most recent page.
+      `/channels/${channelId}/posts?per_page=${perPage}`,
+    );
+  } catch (err) {
+    apiLog.debug(`Failed to get channel posts ${channelId}: ${err}`);
+    return null;
+  }
+}
+
+interface MattermostSearchResponse {
+  order: string[];
+  posts: Record<string, MattermostApiPost>;
+}
+
+async function searchPostsForTeam(
+  config: MattermostApiConfig,
+  teamId: string,
+  terms: string,
+  perPage: number,
+): Promise<MattermostSearchResponse | null> {
+  try {
+    return await mattermostApi<MattermostSearchResponse>(
+      config,
+      'POST',
+      `/teams/${teamId}/posts/search`,
+      {
+        terms,
+        is_or_search: false,
+        per_page: perPage,
+      },
+    );
+  } catch (err) {
+    apiLog.debug(`Search failed on team ${teamId}: ${err}`);
+    return null;
+  }
+}
+
+async function addReaction(
+  config: MattermostApiConfig,
+  postId: string,
+  userId: string,
+  emojiName: string,
+): Promise<void> {
+  await mattermostApi(config, 'POST', '/reactions', {
+    user_id: userId,
+    post_id: postId,
+    emoji_name: emojiName,
+  });
+}
+
+async function getUserByUsernameRaw(
+  config: MattermostApiConfig,
+  username: string,
+): Promise<MattermostApiUser | null> {
+  try {
+    return await mattermostApi<MattermostApiUser>(config, 'GET', `/users/username/${encodeURIComponent(username)}`);
+  } catch (err) {
+    apiLog.debug(`Failed to lookup user @${username}: ${err}`);
+    return null;
+  }
+}
+
+interface MattermostApiChannelMember {
+  user_id: string;
+}
+
+interface MattermostApiDirectChannel {
+  id: string;
+}
+
+/**
+ * Open (or fetch existing) direct-message channel between two users.
+ * Mattermost auto-deduplicates: calling repeatedly with the same pair
+ * returns the same channel id.
+ */
+async function createDirectChannelRaw(
+  config: MattermostApiConfig,
+  userIdA: string,
+  userIdB: string,
+): Promise<MattermostApiDirectChannel | null> {
+  try {
+    return await mattermostApi<MattermostApiDirectChannel>(
+      config,
+      'POST',
+      '/channels/direct',
+      [userIdA, userIdB],
+    );
+  } catch (err) {
+    apiLog.debug(`Failed to open direct channel ${userIdA}↔${userIdB}: ${err}`);
+    return null;
+  }
+}
+
+function isUserInAllowList(username: string, allowList: string[]): boolean {
+  if (allowList.length === 0) return true;
+  return allowList.includes(username);
+}
+
+/**
+ * Create a post and add one reaction per option, continuing if individual
+ * reactions fail.
+ */
+async function createInteractivePostInternal(
+  config: MattermostApiConfig,
+  channelId: string,
+  message: string,
+  reactions: string[],
+  rootId: string | undefined,
+  botUserId: string,
+): Promise<MattermostApiPost> {
+  const post = await createPost(config, channelId, message, rootId);
+  for (const emoji of reactions) {
+    try {
+      await addReaction(config, post.id, botUserId, emoji);
+    } catch (err) {
+      apiLog.warn(`Failed to add reaction ${emoji}: ${err}`);
+    }
+  }
+  return post;
+}
+
+/**
+ * Mattermost MCP platform API implementation
+ */
+class MattermostMcpPlatformApi implements McpPlatformApi {
+  private readonly apiConfig: MattermostApiConfig;
+  private readonly config: MattermostMcpApiConfig;
+  private readonly formatter = new MattermostFormatter();
+  private botUserIdCache: string | null = null;
+  // Channel-type lookups are cached for the lifetime of the MCP child:
+  // visibility flips are rare and a stale "public" decision only widens
+  // the read_post guard for a public→private transition (operationally
+  // safe because the bot still needs token-side access to fetch the post
+  // contents in the first place).
+  private channelTypeCache = new Map<string, 'public' | 'private'>();
+
+  constructor(config: MattermostMcpApiConfig) {
+    this.config = config;
+    this.apiConfig = {
+      url: config.url,
+      token: config.token,
+    };
+  }
+
+  getFormatter(): PlatformFormatter {
+    return this.formatter;
+  }
+
+  async getBotUserId(): Promise<string> {
+    if (this.botUserIdCache) {
+      mcpLogger.debug(`Bot user ID from cache: ${this.botUserIdCache}`);
+      return this.botUserIdCache;
+    }
+    mcpLogger.debug('Fetching bot user ID...');
+    const me = await getMe(this.apiConfig);
+    this.botUserIdCache = me.id;
+    mcpLogger.debug(`Bot user ID: ${me.id}`);
+    return me.id;
+  }
+
+  async getUsername(userId: string): Promise<string | null> {
+    try {
+      mcpLogger.debug(`Looking up username for user ${userId}`);
+      const user = await getUser(this.apiConfig, userId);
+      if (user?.username) {
+        mcpLogger.debug(`User ${userId} is @${user.username}`);
+      }
+      return user?.username ?? null;
+    } catch (err) {
+      mcpLogger.warn(`Failed to get username for ${userId}: ${err}`);
+      return null;
+    }
+  }
+
+  isUserAllowed(username: string): boolean {
+    return isUserInAllowList(username, this.config.allowedUsers);
+  }
+
+  async createInteractivePost(
+    message: string,
+    reactions: string[],
+    threadId?: string
+  ): Promise<PostedMessage> {
+    mcpLogger.debug(`Creating interactive post with ${reactions.length} reaction options`);
+    const botUserId = await this.getBotUserId();
+    const post = await createInteractivePostInternal(
+      this.apiConfig,
+      this.config.channelId,
+      message,
+      reactions,
+      threadId,
+      botUserId
+    );
+    mcpLogger.debug(`Created post ${formatShortId(post.id)}`);
+    return { id: post.id };
+  }
+
+  async updatePost(postId: string, message: string): Promise<void> {
+    mcpLogger.debug(`Updating post ${postId.substring(0, 8)}`);
+    await updatePostRaw(this.apiConfig, postId, message);
+  }
+
+  async waitForReaction(
+    postId: string,
+    botUserId: string,
+    timeoutMs: number
+  ): Promise<ReactionEvent | null> {
+    return new Promise((resolve) => {
+      // Parse WebSocket URL from HTTP URL
+      const wsUrl = this.config.url.replace(/^http/, 'ws') + '/api/v4/websocket';
+      mcpLogger.debug(`Connecting to WebSocket: ${wsUrl}`);
+
+      const ws = new WebSocket(wsUrl);
+      let resolved = false;
+
+      const cleanup = () => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.close();
+        }
+      };
+
+      const timeout = setTimeout(() => {
+        if (!resolved) {
+          mcpLogger.debug(`Reaction wait timed out after ${timeoutMs}ms`);
+          resolved = true;
+          cleanup();
+          resolve(null);
+        }
+      }, timeoutMs);
+
+      ws.onopen = () => {
+        mcpLogger.debug('WebSocket connected, sending auth...');
+        ws.send(
+          JSON.stringify({
+            seq: 1,
+            action: 'authentication_challenge',
+            data: { token: this.config.token },
+          })
+        );
+      };
+
+      ws.onmessage = (event) => {
+        if (resolved) return;
+
+        try {
+          const data = typeof event.data === 'string' ? event.data : event.data.toString();
+          const wsEvent = JSON.parse(data);
+          mcpLogger.debug(`WebSocket event: ${wsEvent.event}`);
+
+          if (wsEvent.event === 'reaction_added') {
+            // Mattermost sends reaction as JSON string
+            const reaction = typeof wsEvent.data.reaction === 'string'
+              ? JSON.parse(wsEvent.data.reaction)
+              : wsEvent.data.reaction;
+
+            // Must be on our post
+            if (reaction.post_id !== postId) return;
+
+            // Must not be the bot's own reaction (adding the options)
+            if (reaction.user_id === botUserId) return;
+
+            mcpLogger.debug(`Reaction received: ${reaction.emoji_name} from user: ${reaction.user_id}`);
+
+            // Got a valid reaction
+            resolved = true;
+            clearTimeout(timeout);
+            cleanup();
+
+            resolve({
+              postId: reaction.post_id,
+              userId: reaction.user_id,
+              emojiName: reaction.emoji_name,
+            });
+          }
+        } catch (err) {
+          mcpLogger.debug(`Error parsing WebSocket message: ${err}`);
+        }
+      };
+
+      ws.onerror = (event) => {
+        mcpLogger.error(`WebSocket error: ${formatWebSocketError(event)}`);
+        if (!resolved) {
+          resolved = true;
+          clearTimeout(timeout);
+          resolve(null);
+        }
+      };
+
+      ws.onclose = () => {
+        mcpLogger.debug('WebSocket closed');
+        if (!resolved) {
+          resolved = true;
+          clearTimeout(timeout);
+          resolve(null);
+        }
+      };
+    });
+  }
+
+  async uploadFile(
+    filePath: string,
+    threadId: string,
+    options?: { caption?: string; filename?: string },
+  ): Promise<{ postId: string }> {
+    const filename = sanitizeFilename(options?.filename ?? filePath);
+    mcpLogger.debug(`uploadFile: ${filename} → thread ${formatShortId(threadId)}`);
+    const result = await uploadFileMattermost({
+      url: this.config.url,
+      token: this.config.token,
+      channelId: this.config.channelId,
+      threadId,
+      filePath,
+      filename,
+      caption: options?.caption,
+    });
+    return { postId: result.postId };
+  }
+
+  async readPost(postId: string): Promise<McpPost | null> {
+    mcpLogger.debug(`readPost: ${formatShortId(postId)}`);
+    const post = await getPostRaw(this.apiConfig, postId);
+    if (!post) return null;
+    const username = post.user_id ? await this.getUsername(post.user_id) : null;
+    const channelType = await this.getChannelType(post.channel_id);
+    return toMcpPost(post, username, channelType);
+  }
+
+  private async getChannelType(channelId: string): Promise<'public' | 'private' | undefined> {
+    const cached = this.channelTypeCache.get(channelId);
+    if (cached) return cached;
+    const channel = await getChannelRaw(this.apiConfig, channelId);
+    if (!channel) return undefined;
+    const visibility: 'public' | 'private' = channel.type === 'O' ? 'public' : 'private';
+    this.channelTypeCache.set(channelId, visibility);
+    return visibility;
+  }
+
+  async addReaction(postId: string, emojiName: string): Promise<void> {
+    mcpLogger.debug(`addReaction: :${emojiName}: on post ${formatShortId(postId)}`);
+    const botUserId = await this.getBotUserId();
+    await addReaction(this.apiConfig, postId, botUserId, emojiName);
+  }
+
+  async readThread(
+    threadRootId: string,
+    options?: { limit?: number },
+  ): Promise<McpPost[]> {
+    mcpLogger.debug(`readThread: ${formatShortId(threadRootId)}`);
+    const thread = await getThreadRaw(this.apiConfig, threadRootId);
+    if (!thread) return [];
+
+    // Sort by create_at ascending so the oldest post comes first.
+    const ordered = thread.order
+      .map(id => thread.posts[id])
+      .filter((p): p is MattermostApiPost => Boolean(p))
+      .sort((a, b) => (a.create_at ?? 0) - (b.create_at ?? 0));
+
+    const limited = options?.limit !== undefined ? ordered.slice(-options.limit) : ordered;
+
+    return this.hydratePosts(limited);
+  }
+
+  async readChannelHistory(
+    channelId: string,
+    options?: { limit?: number },
+  ): Promise<McpPost[] | null> {
+    const limit = options?.limit ?? 20;
+    mcpLogger.debug(`readChannelHistory: ${formatShortId(channelId)} (limit=${limit})`);
+    const response = await getChannelPostsRaw(this.apiConfig, channelId, limit);
+    if (!response) return null;
+
+    // Mattermost's channel/posts endpoint returns posts in reverse-chronological
+    // order via `order`. Sort defensively by create_at to normalize to
+    // oldest-first (matching readThread).
+    const ordered = response.order
+      .map(id => response.posts[id])
+      .filter((p): p is MattermostApiPost => Boolean(p))
+      .sort((a, b) => (a.create_at ?? 0) - (b.create_at ?? 0));
+
+    return this.hydratePosts(ordered);
+  }
+
+  async getChannelInfo(channelId: string): Promise<{
+    id: string;
+    channelType: 'public' | 'private';
+    name?: string;
+  } | null> {
+    mcpLogger.debug(`getChannelInfo: ${formatShortId(channelId)}`);
+    const channel = await getChannelRaw(this.apiConfig, channelId);
+    if (!channel) return null;
+    const channelType: 'public' | 'private' = channel.type === 'O' ? 'public' : 'private';
+    // Populate the type cache so downstream readPost / readThread don't
+    // make another round trip.
+    this.channelTypeCache.set(channelId, channelType);
+    // Prefer display_name (what the UI shows) over the URL slug.
+    const name = channel.display_name || channel.name;
+    return { id: channel.id, channelType, name };
+  }
+
+  async getChannelMembers(channelId: string): Promise<string[] | null> {
+    // Mattermost paginates at 200 members per page by default. For typical
+    // bot channels (tens of members) one page is enough. Larger channels
+    // would need cursor handling — out of scope for the MCP API since the
+    // single-member lookup above is the actual code path used by send_dm.
+    try {
+      const members = await mattermostApi<MattermostApiChannelMember[]>(
+        this.apiConfig,
+        'GET',
+        `/channels/${channelId}/members?per_page=200`,
+      );
+      return members.map(m => m.user_id);
+    } catch (err) {
+      mcpLogger.debug(`getChannelMembers ${channelId} failed: ${err}`);
+      return null;
+    }
+  }
+
+  async resolveRecipient(recipient: string): Promise<{ id: string; username: string | null } | null> {
+    // Mattermost takes a username; strip a leading @ if Claude included one.
+    const normalized = recipient.replace(/^@/, '');
+    const user = await getUserByUsernameRaw(this.apiConfig, normalized);
+    if (!user) return null;
+    return { id: user.id, username: user.username };
+  }
+
+  async sendDirectMessage(
+    recipientUserId: string,
+    message: string,
+  ): Promise<{ postId: string }> {
+    const botUserId = await this.getBotUserId();
+    const dmChannel = await createDirectChannelRaw(this.apiConfig, botUserId, recipientUserId);
+    if (!dmChannel) {
+      throw new Error('failed to open direct channel with recipient');
+    }
+    const post = await createPost(this.apiConfig, dmChannel.id, message);
+    return { postId: post.id };
+  }
+
+  async searchMessages(
+    query: string,
+    options?: { limit?: number },
+  ): Promise<McpPost[] | null> {
+    const limit = options?.limit ?? 10;
+    mcpLogger.debug(`searchMessages: '${query}' (limit=${limit})`);
+
+    const teamId = await this.resolveTeamIdForBotChannel();
+    if (!teamId) {
+      // No team for the bot's channel = nothing to scope search against.
+      // Return null to distinguish from "search ran with no hits."
+      mcpLogger.warn('searchMessages: could not resolve a team for the bot channel');
+      return null;
+    }
+
+    const response = await searchPostsForTeam(this.apiConfig, teamId, query, limit);
+    // searchPostsForTeam returns null on platform error; propagate as null so
+    // the handler can surface the failure rather than reporting "no matches."
+    if (!response) return null;
+
+    // Mattermost search returns matches in unspecified order; preserve the
+    // server's `order` since search relevance is encoded there.
+    const ordered = response.order
+      .map(id => response.posts[id])
+      .filter((p): p is MattermostApiPost => Boolean(p));
+
+    return this.hydratePosts(ordered);
+  }
+
+  /** Lazy-resolved team ID for the bot's configured channel. Cached forever
+   *  because it can't change for the lifetime of an MCP child. */
+  private teamIdForBotChannelCache: string | null | undefined;
+  private async resolveTeamIdForBotChannel(): Promise<string | null> {
+    if (this.teamIdForBotChannelCache !== undefined) {
+      return this.teamIdForBotChannelCache;
+    }
+    const channel = await getChannelRaw(this.apiConfig, this.config.channelId);
+    const teamId = channel?.team_id || null;
+    this.teamIdForBotChannelCache = teamId;
+    if (teamId) {
+      mcpLogger.debug(`Resolved team id ${formatShortId(teamId)} for bot channel`);
+    }
+    return teamId;
+  }
+
+  /**
+   * Turn a list of raw Mattermost posts into McpPosts, resolving usernames
+   * once per unique user and channel types once per unique channel. Used by
+   * readThread, readChannelHistory, and searchMessages — the cost amortizes
+   * over chatty threads / cross-channel search results.
+   */
+  private async hydratePosts(posts: MattermostApiPost[]): Promise<McpPost[]> {
+    const usernameByUserId = new Map<string, string | null>();
+    for (const p of posts) {
+      if (p.user_id && !usernameByUserId.has(p.user_id)) {
+        usernameByUserId.set(p.user_id, await this.getUsername(p.user_id));
+      }
+    }
+
+    const channelTypeByChannelId = new Map<string, 'public' | 'private' | undefined>();
+    for (const p of posts) {
+      if (!channelTypeByChannelId.has(p.channel_id)) {
+        channelTypeByChannelId.set(p.channel_id, await this.getChannelType(p.channel_id));
+      }
+    }
+
+    return posts.map(p =>
+      toMcpPost(
+        p,
+        p.user_id ? usernameByUserId.get(p.user_id) ?? null : null,
+        channelTypeByChannelId.get(p.channel_id),
+      ),
+    );
+  }
+}
+
+function toMcpPost(
+  post: MattermostApiPost,
+  username: string | null,
+  channelType?: 'public' | 'private',
+): McpPost {
+  return {
+    id: post.id,
+    channelId: post.channel_id,
+    userId: post.user_id ?? '',
+    username,
+    message: post.message,
+    createAt: post.create_at ?? 0,
+    threadRootId: post.root_id || undefined,
+    channelType,
+  };
+}
+
+/**
+ * Create a Mattermost MCP platform API instance
+ */
+export function createMattermostMcpPlatformApi(config: MattermostMcpApiConfig): McpPlatformApi {
+  return new MattermostMcpPlatformApi(config);
+}

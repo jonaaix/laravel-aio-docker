@@ -1,0 +1,1490 @@
+import { describe, it, expect, mock, beforeEach } from 'bun:test';
+import { buildStickyMessage, StickyMessageConfig, getPendingPrompts, formatPendingPrompts, setShuttingDown, cleanupOldStickyMessages, updateStickyMessage, markNeedsBump, initialize } from './handler.js';
+import type { Session } from '../../session/types.js';
+import { createSessionTimers, createSessionLifecycle } from '../../session/types.js';
+import type { PlatformClient } from '../../platform/index.js';
+import { mockFormatter } from '../../test-utils/mock-formatter.js';
+
+// Default test config
+const testConfig: StickyMessageConfig = {
+  maxSessions: 5,
+  chromeEnabled: false,
+  permissionMode: 'default',
+  worktreeMode: 'prompt',
+  workingDir: '/home/user/projects',
+  debug: false,
+};
+
+// Create a mock platform client
+function createMockPlatform(platformId: string): PlatformClient {
+  return {
+    platformId,
+    platformType: 'mattermost',
+    displayName: 'Test Platform',
+    isUserAllowed: mock(() => true),
+    getBotUser: mock(),
+    getUser: mock(),
+    createPost: mock(),
+    updatePost: mock(),
+    deletePost: mock(),
+    addReaction: mock(),
+    createInteractivePost: mock(),
+    getPost: mock(),
+    getThreadHistory: mock(),
+    downloadFile: mock(),
+    getFileInfo: mock(),
+    getFormatter: mock(),
+    getThreadLink: mock((threadId: string) => `/_redirect/pl/${threadId}`),
+    connect: mock(),
+    disconnect: mock(),
+    on: mock(),
+    off: mock(),
+    emit: mock(),
+  } as unknown as PlatformClient;
+}
+
+// Create a mock message manager for testing
+function createMockMessageManager(overrides: Partial<{
+  getPendingApproval: ReturnType<typeof mock>;
+  getPendingQuestionSet: ReturnType<typeof mock>;
+  getPendingMessageApproval: ReturnType<typeof mock>;
+  getPendingContextPrompt: ReturnType<typeof mock>;
+  hasPendingExistingWorktreePrompt: ReturnType<typeof mock>;
+  getTaskListState: ReturnType<typeof mock>;
+}> = {}) {
+  return {
+    closeCurrentPost: mock(() => Promise.resolve()),
+    handleEvent: mock(() => Promise.resolve()),
+    flush: mock(() => Promise.resolve()),
+    getCurrentPostId: mock(() => null),
+    getCurrentPostContent: mock(() => ''),
+    hasPendingQuestions: mock(() => false),
+    hasPendingApproval: mock(() => false),
+    getPendingApproval: overrides.getPendingApproval ?? mock(() => null),
+    getPendingQuestionSet: overrides.getPendingQuestionSet ?? mock(() => null),
+    getPendingMessageApproval: overrides.getPendingMessageApproval ?? mock(() => null),
+    getPendingContextPrompt: overrides.getPendingContextPrompt ?? mock(() => null),
+    setPendingContextPrompt: mock(() => {}),
+    clearPendingContextPrompt: mock(() => {}),
+    hasPendingContextPrompt: mock(() => false),
+    hasPendingExistingWorktreePrompt: overrides.hasPendingExistingWorktreePrompt ?? mock(() => false),
+    getPendingExistingWorktreePrompt: mock(() => null),
+    setPendingExistingWorktreePrompt: mock(() => {}),
+    clearPendingExistingWorktreePrompt: mock(() => {}),
+    hasPendingUpdatePrompt: mock(() => false),
+    getPendingUpdatePrompt: mock(() => null),
+    setPendingUpdatePrompt: mock(() => {}),
+    clearPendingUpdatePrompt: mock(() => {}),
+    hasPendingBugReport: mock(() => false),
+    getPendingBugReport: mock(() => null),
+    setPendingBugReport: mock(() => {}),
+    clearPendingBugReport: mock(() => {}),
+    handleContextPromptResponse: mock(() => Promise.resolve(false)),
+    clearPendingApproval: mock(() => {}),
+    clearPendingQuestionSet: mock(() => {}),
+    advanceQuestionIndex: mock(() => {}),
+    handleQuestionAnswer: mock(() => Promise.resolve(false)),
+    handleApprovalResponse: mock(() => Promise.resolve(false)),
+    handleSubagentToggle: mock(() => Promise.resolve(false)),
+    handleTaskListToggle: mock(() => Promise.resolve(false)),
+    bumpTaskList: mock(() => Promise.resolve()),
+    getTaskListState: overrides.getTaskListState ?? mock(() => ({ postId: null, content: null, isMinimized: false, isCompleted: false })),
+    hydrateTaskListState: mock(() => {}),
+    setWorktreeInfo: mock(() => {}),
+    clearWorktreeInfo: mock(() => {}),
+    postInfo: mock(() => Promise.resolve(undefined)),
+    postWarning: mock(() => Promise.resolve(undefined)),
+    postError: mock(() => Promise.resolve(undefined)),
+    postSuccess: mock(() => Promise.resolve(undefined)),
+    reset: mock(() => {}),
+    dispose: mock(() => {}),
+  };
+}
+
+// Create a mock session
+function createMockSession(overrides: Partial<Session> = {}, taskContent: string | null = null): Session {
+  const platform = createMockPlatform('test-platform');
+  // Create message manager override if task content is provided
+  const messageManagerOverrides = taskContent
+    ? { getTaskListState: mock(() => ({ postId: null, content: taskContent, isMinimized: false, isCompleted: false })) }
+    : {};
+  return {
+    platformId: 'test-platform',
+    threadId: 'thread123',
+    sessionId: 'test-platform:thread123',
+    claudeSessionId: 'claude-session-id',
+    startedBy: 'testuser',
+    startedAt: new Date('2024-01-15T10:00:00Z'),
+    lastActivityAt: new Date('2024-01-15T10:05:00Z'),
+    sessionNumber: 1,
+    platform,
+    workingDir: '/home/user/projects/myproject',
+    claude: { isRunning: () => true, kill: mock(), sendMessage: mock() } as any,
+    planApproved: false,
+    sessionAllowedUsers: new Set(['testuser']),
+    forceInteractivePermissions: false,
+    respondOnlyWhenMentioned: false,
+    sessionStartPostId: null,
+    sessionHeaderMode: 'full',
+    tasksPostId: null,
+    lastTasksContent: null,
+    tasksCompleted: false,
+    tasksMinimized: false,
+    timeoutWarningPosted: false,
+    inProgressTaskStart: null,
+    activeToolStarts: new Map(),
+    firstPrompt: 'Help me with this task',
+    messageManager: createMockMessageManager(messageManagerOverrides) as any,
+    timers: createSessionTimers(),
+    lifecycle: createSessionLifecycle(),
+    ...overrides,
+  } as Session;
+}
+
+describe('buildStickyMessage', () => {
+  // Reset global state before each test
+  beforeEach(() => {
+    setShuttingDown(false);
+  });
+
+  it('shows no active sessions message when empty', async () => {
+    const sessions = new Map<string, Session>();
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('Active Claude Threads');
+    expect(result).toContain('No active sessions');
+    expect(result).toContain('Mention me to start a session');
+    expect(result).toContain('bun install -g claude-threads');
+  });
+
+  it('shows status bar with version and session count', async () => {
+    const sessions = new Map<string, Session>();
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    // Should contain version (CT = claude-threads, CC = Claude Code)
+    expect(result).toMatch(/`CT v\d+\.\d+\.\d+( · CC v\d+\.\d+\.\d+)?`/);
+    // Should contain session count
+    expect(result).toContain('`0/5 sessions`');
+    // Should contain uptime
+    expect(result).toMatch(/`⏱️ <?\d+[mhd]`/);
+  });
+
+  it('shows Chrome status when enabled', async () => {
+    const sessions = new Map<string, Session>();
+    const chromeConfig = { ...testConfig, chromeEnabled: true };
+    const result = await buildStickyMessage(sessions, 'test-platform', chromeConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('`🌐 Chrome`');
+  });
+
+  it('hides Chrome status when disabled', async () => {
+    const sessions = new Map<string, Session>();
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).not.toContain('Chrome');
+  });
+
+  it('shows Default permission mode for permissionMode=default', async () => {
+    const sessions = new Map<string, Session>();
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('`🔐 Default`');
+  });
+
+  it('shows Auto permission mode for permissionMode=auto', async () => {
+    const sessions = new Map<string, Session>();
+    const autoConfig = { ...testConfig, permissionMode: 'auto' as const, skipPermissions: false };
+    const result = await buildStickyMessage(sessions, 'test-platform', autoConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('`⚡ Auto`');
+  });
+
+  it('shows Bypass permission mode for permissionMode=bypass', async () => {
+    const sessions = new Map<string, Session>();
+    const bypassConfig = { ...testConfig, permissionMode: 'bypass' as const, skipPermissions: true };
+    const result = await buildStickyMessage(sessions, 'test-platform', bypassConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('`⚠️ Bypass`');
+  });
+
+  it('shows worktree mode when not default prompt', async () => {
+    const sessions = new Map<string, Session>();
+    const requireConfig = { ...testConfig, worktreeMode: 'require' as const };
+    const result = await buildStickyMessage(sessions, 'test-platform', requireConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('`🌿 Worktree: require`');
+  });
+
+  it('hides worktree mode when set to prompt (default)', async () => {
+    const sessions = new Map<string, Session>();
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    // Should not show the worktree config indicator (but "Worktree" may appear in What's New)
+    expect(result).not.toContain('`🌿 Worktree:');
+  });
+
+  it('shows debug mode when enabled', async () => {
+    const sessions = new Map<string, Session>();
+    const debugConfig = { ...testConfig, debug: true };
+    const result = await buildStickyMessage(sessions, 'test-platform', debugConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('`🐛 Debug`');
+  });
+
+  it('shows working directory', async () => {
+    const sessions = new Map<string, Session>();
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('`📂 /home/user/projects`');
+  });
+
+  it('shows active sessions in card-style list', async () => {
+    const sessions = new Map<string, Session>();
+    const session = createMockSession({
+      firstPrompt: '@botname Help me debug this function',
+    });
+    sessions.set(session.sessionId, session);
+
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('Active Claude Threads');
+    expect(result).toContain('(1)');
+    expect(result).toContain('▸'); // Active session bullet
+    expect(result).toContain('○'); // Status indicator (idle session)
+    expect(result).toContain('testuser');
+    expect(result).not.toContain('@testuser'); // No @ prefix
+    expect(result).toContain('Help me debug this function');
+    // Status bar should show 1/5 sessions
+    expect(result).toContain('`1/5 sessions`');
+  });
+
+  it('truncates long prompts', async () => {
+    const sessions = new Map<string, Session>();
+    const session = createMockSession({
+      firstPrompt: 'This is a very long prompt that should be truncated because it exceeds the maximum length allowed for display in the sticky message table',
+    });
+    sessions.set(session.sessionId, session);
+
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('…');
+    expect(result.length).toBeLessThan(1000);
+  });
+
+  it('removes @mentions from topic', async () => {
+    const sessions = new Map<string, Session>();
+    const session = createMockSession({
+      firstPrompt: '@claude-bot @other-user Help me with this',
+    });
+    sessions.set(session.sessionId, session);
+
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).not.toContain('@claude-bot');
+    expect(result).toContain('Help me with this');
+  });
+
+  it('shows sessions from all platforms with cross-platform indicator', async () => {
+    const sessions = new Map<string, Session>();
+
+    // Session for test-platform (this platform)
+    const session1 = createMockSession({
+      platformId: 'test-platform',
+      sessionId: 'test-platform:thread1',
+      firstPrompt: 'Session 1',
+    });
+    sessions.set(session1.sessionId, session1);
+
+    // Session for other-platform (different platform)
+    const session2 = createMockSession({
+      platformId: 'other-platform',
+      sessionId: 'other-platform:thread2',
+      firstPrompt: 'Session 2',
+    });
+    sessions.set(session2.sessionId, session2);
+
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    // Now shows all sessions from all platforms (cross-platform visibility)
+    expect(result).toContain('(2)');
+    expect(result).toContain('Session 1');
+    expect(result).toContain('Session 2');
+    // Session 1 (this platform) should have a link
+    expect(result).toContain('[Session 1]');
+    // Session 2 (other platform) should NOT have a link, just plain text
+    expect(result).not.toContain('[Session 2]');
+    // Session 2 should show the platform name
+    expect(result).toContain('Test Platform');
+  });
+
+  it('sorts sessions by start time (newest first)', async () => {
+    const sessions = new Map<string, Session>();
+
+    const session1 = createMockSession({
+      sessionId: 'test-platform:thread1',
+      startedAt: new Date('2024-01-15T10:00:00Z'),
+      firstPrompt: 'Older session',
+    });
+    sessions.set(session1.sessionId, session1);
+
+    const session2 = createMockSession({
+      sessionId: 'test-platform:thread2',
+      startedAt: new Date('2024-01-15T12:00:00Z'),
+      firstPrompt: 'Newer session',
+    });
+    sessions.set(session2.sessionId, session2);
+
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('(2)');
+    // Newer session should appear first in the list
+    const newerIndex = result.indexOf('Newer session');
+    const olderIndex = result.indexOf('Older session');
+    expect(newerIndex).toBeLessThan(olderIndex);
+  });
+
+  it('shows task progress when available', async () => {
+    const sessions = new Map<string, Session>();
+    const taskContent = '📋 **Tasks** (3/7 · 43%)\n✅ Done\n○ Pending';
+    const mockMsgManager = createMockMessageManager({
+      getTaskListState: mock(() => ({ postId: 'task-post-id', content: taskContent, isMinimized: false, isCompleted: false })),
+    });
+    const session = createMockSession({
+      messageManager: mockMsgManager as any,
+    });
+    sessions.set(session.sessionId, session);
+
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('3/7');
+  });
+
+  it('does not show task progress when no tasks', async () => {
+    const sessions = new Map<string, Session>();
+    // MessageManager returns null content (default mock behavior)
+    const session = createMockSession();
+    sessions.set(session.sessionId, session);
+
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    // Should not have double dots from missing progress
+    expect(result).not.toMatch(/· ·/);
+  });
+
+  it('shows active task when in progress', async () => {
+    const sessions = new Map<string, Session>();
+    const taskContent = '📋 **Tasks** (2/5 · 40%)\n\n✅ ~~First task~~\n✅ ~~Second task~~\n🔄 **Building the API** (15s)\n○ Fourth task\n○ Fifth task';
+    const mockMsgManager = createMockMessageManager({
+      getTaskListState: mock(() => ({ postId: 'task-post-id', content: taskContent, isMinimized: false, isCompleted: false })),
+    });
+    const session = createMockSession({
+      messageManager: mockMsgManager as any,
+    });
+    sessions.set(session.sessionId, session);
+
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('2/5');
+    expect(result).toContain('🔄 _Building the API_');
+  });
+
+  it('shows active task without elapsed time', async () => {
+    const sessions = new Map<string, Session>();
+    const taskContent = '📋 **Tasks** (1/3 · 33%)\n\n✅ ~~Done~~\n🔄 **Running tests**\n○ Deploy';
+    const mockMsgManager = createMockMessageManager({
+      getTaskListState: mock(() => ({ postId: 'task-post-id', content: taskContent, isMinimized: false, isCompleted: false })),
+    });
+    const session = createMockSession({
+      messageManager: mockMsgManager as any,
+    });
+    sessions.set(session.sessionId, session);
+
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('1/3');
+    expect(result).toContain('🔄 _Running tests_');
+  });
+
+  it('does not show active task when all completed', async () => {
+    const sessions = new Map<string, Session>();
+    const taskContent = '📋 **Tasks** (3/3 · 100%)\n\n✅ ~~First~~\n✅ ~~Second~~\n✅ ~~Third~~';
+    const mockMsgManager = createMockMessageManager({
+      getTaskListState: mock(() => ({ postId: 'task-post-id', content: taskContent, isMinimized: false, isCompleted: true })),
+    });
+    const session = createMockSession({
+      messageManager: mockMsgManager as any,
+    });
+    sessions.set(session.sessionId, session);
+
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('3/3');
+    expect(result).not.toContain('🔄');
+  });
+
+  it('does not show active task when only pending tasks', async () => {
+    const sessions = new Map<string, Session>();
+    const taskContent = '📋 **Tasks** (0/2 · 0%)\n\n○ First task\n○ Second task';
+    const mockMsgManager = createMockMessageManager({
+      getTaskListState: mock(() => ({ postId: 'task-post-id', content: taskContent, isMinimized: false, isCompleted: false })),
+    });
+    const session = createMockSession({
+      messageManager: mockMsgManager as any,
+    });
+    sessions.set(session.sessionId, session);
+
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('0/2');
+    expect(result).not.toContain('🔄');
+  });
+
+  it('handles session without firstPrompt', async () => {
+    const sessions = new Map<string, Session>();
+    const session = createMockSession({
+      firstPrompt: undefined,
+    });
+    sessions.set(session.sessionId, session);
+
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('No topic');
+  });
+
+  it('shows "No topic" for bot commands like !worktree', async () => {
+    const sessions = new Map<string, Session>();
+    const session = createMockSession({
+      firstPrompt: '!worktree switch sticky-channel-message',
+    });
+    sessions.set(session.sessionId, session);
+
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('No topic');
+    expect(result).not.toContain('!worktree');
+  });
+
+  it('shows "No topic" for !cd commands', async () => {
+    const sessions = new Map<string, Session>();
+    const session = createMockSession({
+      firstPrompt: '@botname !cd /some/path',
+    });
+    sessions.set(session.sessionId, session);
+
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('No topic');
+    expect(result).not.toContain('!cd');
+  });
+
+  it('uses sessionTitle when available instead of firstPrompt', async () => {
+    const sessions = new Map<string, Session>();
+    const session = createMockSession({
+      firstPrompt: '!worktree switch sticky-channel-message',
+      sessionTitle: 'Improve sticky message feature',
+    });
+    sessions.set(session.sessionId, session);
+
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('Improve sticky message feature');
+    expect(result).not.toContain('No topic');
+    expect(result).not.toContain('!worktree');
+  });
+
+  it('shows pending plan approval', async () => {
+    const sessions = new Map<string, Session>();
+    const mockMsgManager = createMockMessageManager({
+      getPendingApproval: mock(() => ({ postId: 'post1', type: 'plan', toolUseId: 'tool1' })),
+    });
+    const session = createMockSession({
+      messageManager: mockMsgManager as any,
+    });
+    sessions.set(session.sessionId, session);
+
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('⏳');
+    expect(result).toContain('📋 Plan approval');
+  });
+
+  it('shows pending question with progress', async () => {
+    const sessions = new Map<string, Session>();
+    const mockMsgManager = createMockMessageManager({
+      getPendingQuestionSet: mock(() => ({
+        toolUseId: 'tool1',
+        currentIndex: 1,
+        currentPostId: 'post1',
+        questions: [
+          { header: 'Q1', question: 'Question 1', options: [], answer: 'yes' },
+          { header: 'Q2', question: 'Question 2', options: [], answer: null },
+          { header: 'Q3', question: 'Question 3', options: [], answer: null },
+        ],
+      })),
+    });
+    const session = createMockSession({
+      messageManager: mockMsgManager as any,
+    });
+    sessions.set(session.sessionId, session);
+
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('⏳');
+    expect(result).toContain('❓ Question 2/3');
+  });
+
+  it('shows pending message approval', async () => {
+    const sessions = new Map<string, Session>();
+    const mockMsgManager = createMockMessageManager({
+      getPendingMessageApproval: mock(() => ({ postId: 'post1', originalMessage: 'Hello', fromUser: 'alice' })),
+    });
+    const session = createMockSession({
+      messageManager: mockMsgManager as any,
+    });
+    sessions.set(session.sessionId, session);
+
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('⏳');
+    expect(result).toContain('💬 Message approval');
+  });
+
+  it('shows pending worktree prompt', async () => {
+    const sessions = new Map<string, Session>();
+    const session = createMockSession({
+      pendingWorktreePrompt: true,
+    });
+    sessions.set(session.sessionId, session);
+
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('⏳');
+    expect(result).toContain('🌿 Branch name');
+  });
+
+  it('shows pending existing worktree prompt', async () => {
+    const sessions = new Map<string, Session>();
+    const mockMsgManager = createMockMessageManager({
+      hasPendingExistingWorktreePrompt: mock(() => true),
+    });
+    const session = createMockSession({
+      messageManager: mockMsgManager as any,
+    });
+    sessions.set(session.sessionId, session);
+
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('⏳');
+    expect(result).toContain('🌿 Join worktree');
+  });
+
+  it('shows pending context prompt', async () => {
+    const sessions = new Map<string, Session>();
+    const mockMsgManager = createMockMessageManager({
+      getPendingContextPrompt: mock(() => ({
+        postId: 'post1',
+        queuedPrompt: 'Help me',
+        threadMessageCount: 10,
+        createdAt: Date.now(),
+        availableOptions: [3, 5, 10],
+      })),
+    });
+    const session = createMockSession({
+      messageManager: mockMsgManager as any,
+    });
+    sessions.set(session.sessionId, session);
+
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('⏳');
+    expect(result).toContain('📝 Context selection');
+  });
+
+  it('shows multiple pending prompts', async () => {
+    const sessions = new Map<string, Session>();
+    const mockMsgManager = createMockMessageManager({
+      getPendingApproval: mock(() => ({ postId: 'post1', type: 'plan', toolUseId: 'tool1' })),
+      getPendingMessageApproval: mock(() => ({ postId: 'post2', originalMessage: 'Hello', fromUser: 'alice' })),
+    });
+    const session = createMockSession({
+      messageManager: mockMsgManager as any,
+    });
+    sessions.set(session.sessionId, session);
+
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('⏳');
+    expect(result).toContain('📋 Plan approval');
+    expect(result).toContain('💬 Message approval');
+    expect(result).toContain('·'); // Multiple prompts separated by ·
+  });
+
+  it('hides active task when pending prompts are shown', async () => {
+    const sessions = new Map<string, Session>();
+    const taskContent = '📋 **Tasks** (2/5 · 40%)\n\n🔄 **Running tests** (15s)';
+    const mockMsgManager = createMockMessageManager({
+      getPendingApproval: mock(() => ({ postId: 'post1', type: 'plan', toolUseId: 'tool1' })),
+      getTaskListState: mock(() => ({ postId: 'task-post-id', content: taskContent, isMinimized: false, isCompleted: false })),
+    });
+    const session = createMockSession({
+      messageManager: mockMsgManager as any,
+    });
+    sessions.set(session.sessionId, session);
+
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    // Should show pending prompt
+    expect(result).toContain('📋 Plan approval');
+    // Should NOT show active task (pending prompts take priority)
+    expect(result).not.toContain('🔄 _Running tests_');
+  });
+
+  it('shows active task when no pending prompts', async () => {
+    const sessions = new Map<string, Session>();
+    const taskContent = '📋 **Tasks** (2/5 · 40%)\n\n🔄 **Running tests** (15s)';
+    const mockMsgManager = createMockMessageManager({
+      getTaskListState: mock(() => ({ postId: 'task-post-id', content: taskContent, isMinimized: false, isCompleted: false })),
+    });
+    const session = createMockSession({
+      messageManager: mockMsgManager as any,
+    });
+    sessions.set(session.sessionId, session);
+
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
+
+    expect(result).toContain('🔄 _Running tests_');
+    expect(result).not.toContain('⏳');
+  });
+
+  it('shows custom description when configured (no sessions)', async () => {
+    const sessions = new Map<string, Session>();
+    const customConfig = { ...testConfig, description: 'Porygon — Mixpanel analytics bot' };
+    const result = await buildStickyMessage(sessions, 'test-platform', customConfig, mockFormatter, (tid) => `/_redirect/pl/${tid}`);
+
+    expect(result).toContain('Porygon — Mixpanel analytics bot');
+    expect(result).toContain('No active sessions');
+  });
+
+  it('shows custom footer when configured (no sessions)', async () => {
+    const sessions = new Map<string, Session>();
+    const customConfig = { ...testConfig, footer: '• !stop — End session\n• !compact — Compress context' };
+    const result = await buildStickyMessage(sessions, 'test-platform', customConfig, mockFormatter, (tid) => `/_redirect/pl/${tid}`);
+
+    expect(result).toContain('• !stop — End session');
+    expect(result).toContain('• !compact — Compress context');
+    expect(result).toContain('Mention me to start a session');
+  });
+
+  it('does not show description/footer when not configured', async () => {
+    const sessions = new Map<string, Session>();
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (tid) => `/_redirect/pl/${tid}`);
+
+    expect(result).toContain('No active sessions');
+    expect(result).toContain('Mention me to start a session');
+  });
+
+  it('shows custom description when configured (with sessions)', async () => {
+    const session = createMockSession();
+    const sessions = new Map<string, Session>([['test-platform:thread1', session]]);
+    const customConfig = { ...testConfig, description: 'Porygon — Mixpanel analytics bot' };
+    const result = await buildStickyMessage(sessions, 'test-platform', customConfig, mockFormatter, (tid) => `/_redirect/pl/${tid}`);
+
+    expect(result).toContain('Porygon — Mixpanel analytics bot');
+    expect(result).toContain('Active Claude Threads (1)');
+  });
+
+  it('shows custom footer when configured (with sessions)', async () => {
+    const session = createMockSession();
+    const sessions = new Map<string, Session>([['test-platform:thread1', session]]);
+    const customConfig = { ...testConfig, footer: '• !stop — End session\n• !compact — Compress context' };
+    const result = await buildStickyMessage(sessions, 'test-platform', customConfig, mockFormatter, (tid) => `/_redirect/pl/${tid}`);
+
+    expect(result).toContain('• !stop — End session');
+    expect(result).toContain('• !compact — Compress context');
+    expect(result).toContain('Mention me to start a session');
+  });
+
+  it('shows both description and footer when both configured', async () => {
+    const session = createMockSession();
+    const sessions = new Map<string, Session>([['test-platform:thread1', session]]);
+    const customConfig = {
+      ...testConfig,
+      description: 'Analytics bot for team metrics',
+      footer: 'Custom footer content here',
+    };
+    const result = await buildStickyMessage(sessions, 'test-platform', customConfig, mockFormatter, (tid) => `/_redirect/pl/${tid}`);
+
+    expect(result).toContain('Analytics bot for team metrics');
+    expect(result).toContain('Custom footer content here');
+    expect(result).toContain('Active Claude Threads (1)');
+    expect(result).toContain('Mention me to start a session');
+  });
+});
+
+describe('getPendingPrompts', () => {
+  it('returns empty array when no pending prompts', () => {
+    const session = createMockSession();
+    const prompts = getPendingPrompts(session);
+    expect(prompts).toEqual([]);
+  });
+
+  it('returns plan approval prompt', () => {
+    const mockMsgManager = createMockMessageManager({
+      getPendingApproval: mock(() => ({ postId: 'post1', type: 'plan', toolUseId: 'tool1' })),
+    });
+    const session = createMockSession({
+      messageManager: mockMsgManager as any,
+    });
+    const prompts = getPendingPrompts(session);
+    expect(prompts).toHaveLength(1);
+    expect(prompts[0]).toEqual({ type: 'plan', label: 'Plan approval', emoji: '📋' });
+  });
+
+  it('ignores action type approval (only plan)', () => {
+    const mockMsgManager = createMockMessageManager({
+      getPendingApproval: mock(() => ({ postId: 'post1', type: 'action', toolUseId: 'tool1' })),
+    });
+    const session = createMockSession({
+      messageManager: mockMsgManager as any,
+    });
+    const prompts = getPendingPrompts(session);
+    expect(prompts).toEqual([]);
+  });
+
+  it('returns question prompt with progress', () => {
+    const mockMsgManager = createMockMessageManager({
+      getPendingQuestionSet: mock(() => ({
+        toolUseId: 'tool1',
+        currentIndex: 2,
+        currentPostId: 'post1',
+        questions: [
+          { header: 'Q1', question: 'Q1', options: [], answer: 'yes' },
+          { header: 'Q2', question: 'Q2', options: [], answer: 'no' },
+          { header: 'Q3', question: 'Q3', options: [], answer: null },
+          { header: 'Q4', question: 'Q4', options: [], answer: null },
+        ],
+      })),
+    });
+    const session = createMockSession({
+      messageManager: mockMsgManager as any,
+    });
+    const prompts = getPendingPrompts(session);
+    expect(prompts).toHaveLength(1);
+    expect(prompts[0]).toEqual({ type: 'question', label: 'Question 3/4', emoji: '❓' });
+  });
+
+  it('returns message approval prompt', () => {
+    const mockMsgManager = createMockMessageManager({
+      getPendingMessageApproval: mock(() => ({ postId: 'post1', originalMessage: 'Hello', fromUser: 'alice' })),
+    });
+    const session = createMockSession({
+      messageManager: mockMsgManager as any,
+    });
+    const prompts = getPendingPrompts(session);
+    expect(prompts).toHaveLength(1);
+    expect(prompts[0]).toEqual({ type: 'message_approval', label: 'Message approval', emoji: '💬' });
+  });
+
+  it('returns worktree prompt', () => {
+    const session = createMockSession({
+      pendingWorktreePrompt: true,
+    });
+    const prompts = getPendingPrompts(session);
+    expect(prompts).toHaveLength(1);
+    expect(prompts[0]).toEqual({ type: 'worktree', label: 'Branch name', emoji: '🌿' });
+  });
+
+  it('returns existing worktree prompt', () => {
+    const mockMsgManager = createMockMessageManager({
+      hasPendingExistingWorktreePrompt: mock(() => true),
+    });
+    const session = createMockSession({
+      messageManager: mockMsgManager as any,
+    });
+    const prompts = getPendingPrompts(session);
+    expect(prompts).toHaveLength(1);
+    expect(prompts[0]).toEqual({ type: 'existing_worktree', label: 'Join worktree', emoji: '🌿' });
+  });
+
+  it('returns context prompt', () => {
+    const mockMsgManager = createMockMessageManager({
+      getPendingContextPrompt: mock(() => ({
+        postId: 'post1',
+        queuedPrompt: 'Help me',
+        threadMessageCount: 10,
+        createdAt: Date.now(),
+        availableOptions: [3, 5, 10],
+      })),
+    });
+    const session = createMockSession({
+      messageManager: mockMsgManager as any,
+    });
+    const prompts = getPendingPrompts(session);
+    expect(prompts).toHaveLength(1);
+    expect(prompts[0]).toEqual({ type: 'context', label: 'Context selection', emoji: '📝' });
+  });
+
+  it('returns multiple prompts in order', () => {
+    const mockMsgManager = createMockMessageManager({
+      getPendingApproval: mock(() => ({ postId: 'post1', type: 'plan', toolUseId: 'tool1' })),
+      getPendingMessageApproval: mock(() => ({ postId: 'post2', originalMessage: 'Hello', fromUser: 'alice' })),
+    });
+    const session = createMockSession({
+      pendingWorktreePrompt: true,
+      messageManager: mockMsgManager as any,
+    });
+    const prompts = getPendingPrompts(session);
+    expect(prompts).toHaveLength(3);
+    expect(prompts[0].type).toBe('plan');
+    expect(prompts[1].type).toBe('message_approval');
+    expect(prompts[2].type).toBe('worktree');
+  });
+});
+
+describe('formatPendingPrompts', () => {
+  it('returns null when no pending prompts', () => {
+    const session = createMockSession();
+    const result = formatPendingPrompts(session);
+    expect(result).toBeNull();
+  });
+
+  it('formats single prompt', () => {
+    const mockMsgManager = createMockMessageManager({
+      getPendingApproval: mock(() => ({ postId: 'post1', type: 'plan', toolUseId: 'tool1' })),
+    });
+    const session = createMockSession({
+      messageManager: mockMsgManager as any,
+    });
+    const result = formatPendingPrompts(session);
+    expect(result).toBe('⏳ 📋 Plan approval');
+  });
+
+  it('formats multiple prompts with separator', () => {
+    const mockMsgManager = createMockMessageManager({
+      getPendingApproval: mock(() => ({ postId: 'post1', type: 'plan', toolUseId: 'tool1' })),
+      getPendingMessageApproval: mock(() => ({ postId: 'post2', originalMessage: 'Hello', fromUser: 'alice' })),
+    });
+    const session = createMockSession({
+      messageManager: mockMsgManager as any,
+    });
+    const result = formatPendingPrompts(session);
+    expect(result).toBe('⏳ 📋 Plan approval · 💬 Message approval');
+  });
+});
+
+describe('cleanupOldStickyMessages', () => {
+  it('deletes pinned posts from bot that are not the current sticky', async () => {
+    const unpinPost = mock(() => Promise.resolve());
+    const deletePost = mock(() => Promise.resolve());
+    const getPost = mock((postId: string) => Promise.resolve({
+      id: postId,
+      userId: 'bot-user-123',
+      message: 'old sticky content',
+      channelId: 'channel1',
+      platformId: 'cleanup-test-1',
+    }));
+    const getPinnedPosts = mock(() => Promise.resolve(['old-post-1', 'old-post-2', 'current-sticky']));
+
+    const platform = {
+      ...createMockPlatform('cleanup-test-1'),
+      unpinPost,
+      deletePost,
+      getPost,
+      getPinnedPosts,
+    } as unknown as PlatformClient;
+
+    // Set up current sticky so it gets skipped via initialize()
+    const mockSessionStore = {
+      getStickyPostIds: mock(() => new Map([['cleanup-test-1', 'current-sticky']])),
+      saveStickyPostId: mock(() => {}),
+      getHistory: mock(() => []),
+    };
+    initialize(mockSessionStore as any);
+
+    // forceRun=true bypasses throttle for testing
+    await cleanupOldStickyMessages(platform, 'bot-user-123', true);
+
+    // Should have unpinned and deleted old-post-1 and old-post-2, but not current-sticky
+    expect(unpinPost).toHaveBeenCalledTimes(2);
+    expect(deletePost).toHaveBeenCalledTimes(2);
+    expect(unpinPost).toHaveBeenCalledWith('old-post-1');
+    expect(unpinPost).toHaveBeenCalledWith('old-post-2');
+    expect(deletePost).toHaveBeenCalledWith('old-post-1');
+    expect(deletePost).toHaveBeenCalledWith('old-post-2');
+  });
+
+  it('skips posts from other users', async () => {
+    const unpinPost = mock(() => Promise.resolve());
+    const deletePost = mock(() => Promise.resolve());
+    const getPost = mock((postId: string) => Promise.resolve({
+      id: postId,
+      userId: postId === 'bot-post' ? 'bot-user-123' : 'other-user-456',
+      message: 'content',
+      channelId: 'channel1',
+      platformId: 'cleanup-test-2',
+    }));
+    const getPinnedPosts = mock(() => Promise.resolve(['bot-post', 'user-post']));
+
+    const platform = {
+      ...createMockPlatform('cleanup-test-2'),
+      unpinPost,
+      deletePost,
+      getPost,
+      getPinnedPosts,
+    } as unknown as PlatformClient;
+
+    // Set up sticky via initialize() - using a different post ID so bot-post gets cleaned up
+    const mockSessionStore = {
+      getStickyPostIds: mock(() => new Map([['cleanup-test-2', 'some-other-post']])),
+      saveStickyPostId: mock(() => {}),
+      getHistory: mock(() => []),
+    };
+    initialize(mockSessionStore as any);
+
+    // forceRun=true bypasses throttle for testing
+    await cleanupOldStickyMessages(platform, 'bot-user-123', true);
+
+    // Should only delete the bot's post, not the user's post
+    expect(unpinPost).toHaveBeenCalledTimes(1);
+    expect(deletePost).toHaveBeenCalledTimes(1);
+    expect(unpinPost).toHaveBeenCalledWith('bot-post');
+    expect(deletePost).toHaveBeenCalledWith('bot-post');
+  });
+
+  it('handles errors gracefully when deleting posts', async () => {
+    const unpinPost = mock(() => Promise.reject(new Error('Unpin failed')));
+    const deletePost = mock(() => Promise.reject(new Error('Delete failed')));
+    const getPost = mock(() => Promise.resolve({
+      id: 'post1',
+      userId: 'bot-user-123',
+      message: 'content',
+      channelId: 'channel1',
+      platformId: 'cleanup-test-3',
+    }));
+    const getPinnedPosts = mock(() => Promise.resolve(['post1']));
+
+    const platform = {
+      ...createMockPlatform('cleanup-test-3'),
+      unpinPost,
+      deletePost,
+      getPost,
+      getPinnedPosts,
+    } as unknown as PlatformClient;
+
+    // Set up sticky via initialize()
+    const mockSessionStore = {
+      getStickyPostIds: mock(() => new Map([['cleanup-test-3', 'different-post']])),
+      saveStickyPostId: mock(() => {}),
+      getHistory: mock(() => []),
+    };
+    initialize(mockSessionStore as any);
+
+    // Should not throw (forceRun=true bypasses throttle for testing)
+    await cleanupOldStickyMessages(platform, 'bot-user-123', true);
+
+    expect(unpinPost).toHaveBeenCalledTimes(1);
+  });
+
+  it('does nothing when no pinned posts exist', async () => {
+    const unpinPost = mock(() => Promise.resolve());
+    const deletePost = mock(() => Promise.resolve());
+    const getPost = mock(() => Promise.resolve(null));
+    const getPinnedPosts = mock(() => Promise.resolve([]));
+
+    const platform = {
+      ...createMockPlatform('cleanup-test-4'),
+      unpinPost,
+      deletePost,
+      getPost,
+      getPinnedPosts,
+    } as unknown as PlatformClient;
+
+    // forceRun=true bypasses throttle for testing
+    await cleanupOldStickyMessages(platform, 'bot-user-123', true);
+
+    expect(unpinPost).not.toHaveBeenCalled();
+    expect(deletePost).not.toHaveBeenCalled();
+  });
+
+  it('excludes session header posts from cleanup when excludePostIds is provided', async () => {
+    const unpinPost = mock(() => Promise.resolve());
+    const deletePost = mock(() => Promise.resolve());
+    const getPost = mock((postId: string) => Promise.resolve({
+      id: postId,
+      userId: 'bot-user-123',
+      message: 'content',
+      channelId: 'channel1',
+      platformId: 'cleanup-test-5',
+    }));
+    // 3 pinned posts from the bot: orphaned sticky, session header, and current sticky
+    const getPinnedPosts = mock(() => Promise.resolve(['orphaned-sticky', 'session-header-post', 'current-sticky']));
+
+    const platform = {
+      ...createMockPlatform('cleanup-test-5'),
+      unpinPost,
+      deletePost,
+      getPost,
+      getPinnedPosts,
+    } as unknown as PlatformClient;
+
+    // Set up current sticky via initialize()
+    const mockSessionStore = {
+      getStickyPostIds: mock(() => new Map([['cleanup-test-5', 'current-sticky']])),
+      saveStickyPostId: mock(() => {}),
+      getHistory: mock(() => []),
+    };
+    initialize(mockSessionStore as any);
+
+    // Pass excludePostIds containing the session header post
+    const excludePostIds = new Set(['session-header-post']);
+    await cleanupOldStickyMessages(platform, 'bot-user-123', true, excludePostIds);
+
+    // Should only delete 'orphaned-sticky', NOT 'session-header-post' or 'current-sticky'
+    expect(unpinPost).toHaveBeenCalledTimes(1);
+    expect(deletePost).toHaveBeenCalledTimes(1);
+    expect(unpinPost).toHaveBeenCalledWith('orphaned-sticky');
+    expect(deletePost).toHaveBeenCalledWith('orphaned-sticky');
+    // Verify session header was NOT deleted
+    expect(unpinPost).not.toHaveBeenCalledWith('session-header-post');
+    expect(deletePost).not.toHaveBeenCalledWith('session-header-post');
+  });
+
+  it('excludes multiple session header posts from cleanup', async () => {
+    const unpinPost = mock(() => Promise.resolve());
+    const deletePost = mock(() => Promise.resolve());
+    const getPost = mock((postId: string) => Promise.resolve({
+      id: postId,
+      userId: 'bot-user-123',
+      message: 'content',
+      channelId: 'channel1',
+      platformId: 'cleanup-test-6',
+    }));
+    // 4 pinned bot posts: 1 orphaned, 2 session headers, 1 current sticky
+    const getPinnedPosts = mock(() => Promise.resolve([
+      'orphaned-sticky',
+      'session1-header',
+      'session2-header',
+      'current-sticky'
+    ]));
+
+    const platform = {
+      ...createMockPlatform('cleanup-test-6'),
+      unpinPost,
+      deletePost,
+      getPost,
+      getPinnedPosts,
+    } as unknown as PlatformClient;
+
+    // Set up current sticky
+    const mockSessionStore = {
+      getStickyPostIds: mock(() => new Map([['cleanup-test-6', 'current-sticky']])),
+      saveStickyPostId: mock(() => {}),
+      getHistory: mock(() => []),
+    };
+    initialize(mockSessionStore as any);
+
+    // Exclude both session header posts
+    const excludePostIds = new Set(['session1-header', 'session2-header']);
+    await cleanupOldStickyMessages(platform, 'bot-user-123', true, excludePostIds);
+
+    // Should only delete the orphaned sticky
+    expect(unpinPost).toHaveBeenCalledTimes(1);
+    expect(deletePost).toHaveBeenCalledTimes(1);
+    expect(unpinPost).toHaveBeenCalledWith('orphaned-sticky');
+    expect(deletePost).toHaveBeenCalledWith('orphaned-sticky');
+  });
+});
+
+describe('updateStickyMessage with bump', () => {
+  it('triggers throttled cleanup after creating new sticky post during bump', async () => {
+    // Cleanup runs on bump but is throttled (max once per 5 min) and only checks recent posts
+    const sessions = new Map<string, Session>();
+    // Use a recent Slack-style timestamp for the created post
+    const now = Math.floor(Date.now() / 1000);
+    const createdPostId = `${now}.123456`;
+    const orphanedPostId = `${now - 100}.789012`; // Recent orphaned post
+
+    const createPost = mock(() => Promise.resolve({
+      id: createdPostId,
+      userId: 'bot-user-123',
+      message: 'content',
+      channelId: 'channel1',
+      platformId: 'test-platform-bump',
+    }));
+    const updatePost = mock(() => Promise.reject(new Error('Post not found'))); // Force bump
+    const pinPost = mock(() => Promise.resolve());
+    const unpinPost = mock(() => Promise.resolve());
+    const deletePost = mock(() => Promise.resolve());
+    const getBotUser = mock(() => Promise.resolve({ id: 'bot-user-123', username: 'bot' }));
+    const getPinnedPosts = mock(() => Promise.resolve([orphanedPostId, createdPostId]));
+    const getPost = mock((postId: string) => Promise.resolve({
+      id: postId,
+      userId: 'bot-user-123',
+      message: 'content',
+      channelId: 'channel1',
+      platformId: 'test-platform-bump',
+    }));
+    const getFormatter = mock(() => mockFormatter);
+
+    const platform = {
+      ...createMockPlatform('test-platform-bump'),
+      createPost,
+      updatePost,
+      pinPost,
+      unpinPost,
+      deletePost,
+      getBotUser,
+      getPinnedPosts,
+      getPost,
+      getFormatter,
+    } as unknown as PlatformClient;
+
+    // Initialize with a mock session store that has the old sticky post ID
+    const mockSessionStore = {
+      getStickyPostIds: mock(() => new Map([['test-platform-bump', 'old-sticky-post']])),
+      saveStickyPostId: mock(() => {}),
+      getHistory: mock(() => []),
+      load: mock(() => new Map()),  // Return empty map (no sessions to exclude)
+    };
+    initialize(mockSessionStore as any);
+
+    // Mark for bump (the sticky post ID is now set via initialize above)
+    markNeedsBump('test-platform-bump');
+
+    await updateStickyMessage(platform, sessions, testConfig);
+
+    // Wait a bit for the background cleanup to be triggered
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    // Verify new sticky was created
+    expect(createPost).toHaveBeenCalled();
+    expect(pinPost).toHaveBeenCalled();
+
+    // Verify cleanup was triggered (getBotUser called for cleanup)
+    expect(getBotUser).toHaveBeenCalled();
+
+    // Verify cleanup attempted to get pinned posts
+    expect(getPinnedPosts).toHaveBeenCalled();
+  });
+});
+
+describe('updateStickyMessage validates lastMessageId', () => {
+  beforeEach(() => {
+    setShuttingDown(false);
+  });
+
+  it('clears lastMessageId when the message has been deleted', async () => {
+    // Create a session with a lastMessageId that points to a deleted message
+    const session = createMockSession({
+      lastMessageId: 'deleted-message-123',
+      lastMessageTs: 'deleted-message-123',
+    });
+    const sessions = new Map<string, Session>([['test-platform:thread123', session]]);
+
+    // Mock getPost to return null (message was deleted)
+    const getPost = mock(() => Promise.resolve(null));
+    const createPost = mock(() => Promise.resolve({
+      id: 'new-sticky-post',
+      userId: 'bot-user-123',
+      message: 'content',
+      channelId: 'channel1',
+      platformId: 'test-platform',
+    }));
+    const updatePost = mock(() => Promise.resolve({
+      id: 'existing-sticky-post',
+      userId: 'bot-user-123',
+      message: 'content',
+      channelId: 'channel1',
+      platformId: 'test-platform',
+    }));
+    const pinPost = mock(() => Promise.resolve());
+    const getBotUser = mock(() => Promise.resolve({ id: 'bot-user-123', username: 'bot' }));
+    const getPinnedPosts = mock(() => Promise.resolve([]));
+    const getFormatter = mock(() => mockFormatter);
+
+    const platform = {
+      ...createMockPlatform('test-platform'),
+      getPost,
+      createPost,
+      updatePost,
+      pinPost,
+      getBotUser,
+      getPinnedPosts,
+      getFormatter,
+    } as unknown as PlatformClient;
+
+    // Initialize with an existing sticky post ID
+    const mockSessionStore = {
+      getStickyPostIds: mock(() => new Map([['test-platform', 'existing-sticky-post']])),
+      saveStickyPostId: mock(() => {}),
+      getHistory: mock(() => []),
+      load: mock(() => new Map()),
+    };
+    initialize(mockSessionStore as any);
+
+    // Verify lastMessageId is set before the call
+    expect(session.lastMessageId).toBe('deleted-message-123');
+
+    await updateStickyMessage(platform, sessions, testConfig);
+
+    // Verify getPost was called to validate the lastMessageId
+    expect(getPost).toHaveBeenCalledWith('deleted-message-123');
+
+    // Verify lastMessageId was cleared because the message was deleted
+    expect(session.lastMessageId).toBeUndefined();
+    expect(session.lastMessageTs).toBeUndefined();
+  });
+
+  it('keeps lastMessageId when the message still exists', async () => {
+    // Create a session with a lastMessageId that points to an existing message
+    const session = createMockSession({
+      lastMessageId: 'existing-message-456',
+      lastMessageTs: 'existing-message-456',
+    });
+    const sessions = new Map<string, Session>([['test-platform:thread123', session]]);
+
+    // Mock getPost to return the message (it still exists)
+    const getPost = mock(() => Promise.resolve({
+      id: 'existing-message-456',
+      userId: 'user-123',
+      message: 'Some message content',
+      channelId: 'channel1',
+      platformId: 'test-platform',
+    }));
+    const createPost = mock(() => Promise.resolve({
+      id: 'new-sticky-post',
+      userId: 'bot-user-123',
+      message: 'content',
+      channelId: 'channel1',
+      platformId: 'test-platform',
+    }));
+    const updatePost = mock(() => Promise.resolve({
+      id: 'existing-sticky-post',
+      userId: 'bot-user-123',
+      message: 'content',
+      channelId: 'channel1',
+      platformId: 'test-platform',
+    }));
+    const pinPost = mock(() => Promise.resolve());
+    const getBotUser = mock(() => Promise.resolve({ id: 'bot-user-123', username: 'bot' }));
+    const getPinnedPosts = mock(() => Promise.resolve([]));
+    const getFormatter = mock(() => mockFormatter);
+
+    const platform = {
+      ...createMockPlatform('test-platform'),
+      getPost,
+      createPost,
+      updatePost,
+      pinPost,
+      getBotUser,
+      getPinnedPosts,
+      getFormatter,
+    } as unknown as PlatformClient;
+
+    // Initialize with an existing sticky post ID
+    const mockSessionStore = {
+      getStickyPostIds: mock(() => new Map([['test-platform', 'existing-sticky-post']])),
+      saveStickyPostId: mock(() => {}),
+      getHistory: mock(() => []),
+      load: mock(() => new Map()),
+    };
+    initialize(mockSessionStore as any);
+
+    await updateStickyMessage(platform, sessions, testConfig);
+
+    // Verify getPost was called to validate the lastMessageId
+    expect(getPost).toHaveBeenCalledWith('existing-message-456');
+
+    // Verify lastMessageId was NOT cleared because the message still exists
+    expect(session.lastMessageId).toBe('existing-message-456');
+    expect(session.lastMessageTs).toBe('existing-message-456');
+  });
+
+  it('clears lastMessageId when getPost throws an error', async () => {
+    // Create a session with a lastMessageId
+    const session = createMockSession({
+      lastMessageId: 'error-message-789',
+      lastMessageTs: 'error-message-789',
+    });
+    const sessions = new Map<string, Session>([['test-platform:thread123', session]]);
+
+    // Mock getPost to throw an error (network issue, etc.)
+    const getPost = mock(() => Promise.reject(new Error('Network error')));
+    const createPost = mock(() => Promise.resolve({
+      id: 'new-sticky-post',
+      userId: 'bot-user-123',
+      message: 'content',
+      channelId: 'channel1',
+      platformId: 'test-platform',
+    }));
+    const updatePost = mock(() => Promise.resolve({
+      id: 'existing-sticky-post',
+      userId: 'bot-user-123',
+      message: 'content',
+      channelId: 'channel1',
+      platformId: 'test-platform',
+    }));
+    const pinPost = mock(() => Promise.resolve());
+    const getBotUser = mock(() => Promise.resolve({ id: 'bot-user-123', username: 'bot' }));
+    const getPinnedPosts = mock(() => Promise.resolve([]));
+    const getFormatter = mock(() => mockFormatter);
+
+    const platform = {
+      ...createMockPlatform('test-platform'),
+      getPost,
+      createPost,
+      updatePost,
+      pinPost,
+      getBotUser,
+      getPinnedPosts,
+      getFormatter,
+    } as unknown as PlatformClient;
+
+    // Initialize with an existing sticky post ID
+    const mockSessionStore = {
+      getStickyPostIds: mock(() => new Map([['test-platform', 'existing-sticky-post']])),
+      saveStickyPostId: mock(() => {}),
+      getHistory: mock(() => []),
+      load: mock(() => new Map()),
+    };
+    initialize(mockSessionStore as any);
+
+    await updateStickyMessage(platform, sessions, testConfig);
+
+    // Verify lastMessageId was cleared on error (defensive behavior)
+    expect(session.lastMessageId).toBeUndefined();
+    expect(session.lastMessageTs).toBeUndefined();
+  });
+
+});
+
+// ===========================================================================
+// overhead modes — issue #383
+// Per-platform `stickyMessage: 'full' | 'minimal' | 'hidden'` visibility.
+// ===========================================================================
+
+describe('buildStickyMessage (overhead modes)', () => {
+  beforeEach(() => {
+    setShuttingDown(false);
+  });
+
+  it('full mode (default) renders the active-sessions list', async () => {
+    const session = createMockSession({ sessionTitle: 'My session' });
+    const sessions = new Map([[session.sessionId, session]]);
+    const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (t) => `/_redirect/pl/${t}`);
+
+    expect(result).toContain('Active Claude Threads');
+    expect(result).toContain('Mention me to start a session');
+  });
+
+  it('minimal mode renders the status bar without sessions list / footer / hint', async () => {
+    const session = createMockSession({ sessionTitle: 'My session' });
+    const sessions = new Map([[session.sessionId, session]]);
+    const minimalConfig: StickyMessageConfig = { ...testConfig, overhead: 'minimal' };
+    const result = await buildStickyMessage(sessions, 'test-platform', minimalConfig, mockFormatter, (t) => `/_redirect/pl/${t}`);
+
+    // Status bar marker still present (session count chip is in there)
+    expect(result).toContain('1/5 sessions');
+
+    // Heavy bits stripped
+    expect(result).not.toContain('Active Claude Threads');
+    expect(result).not.toContain('Mention me to start a session');
+    expect(result).not.toContain('My session');
+  });
+});
+
+describe('updateStickyMessage (overhead: hidden)', () => {
+  beforeEach(() => {
+    setShuttingDown(false);
+  });
+
+  it('hidden mode does not call createPost', async () => {
+    const createPost = mock(() => Promise.resolve({ id: 'should-not-be-created', message: '', userId: 'bot' }));
+    const updatePost = mock(() => Promise.resolve());
+    const getPost = mock(() => Promise.resolve(null));
+    const getBotUser = mock(() => Promise.resolve({ id: 'bot', username: 'bot' }));
+    const getPinnedPosts = mock(() => Promise.resolve([]));
+    const unpinPost = mock(() => Promise.resolve());
+    const deletePost = mock(() => Promise.resolve());
+    const getFormatter = mock(() => mockFormatter);
+
+    const platform = {
+      ...createMockPlatform('test-platform'),
+      createPost,
+      updatePost,
+      getPost,
+      getBotUser,
+      getPinnedPosts,
+      unpinPost,
+      deletePost,
+      getFormatter,
+    } as unknown as PlatformClient;
+
+    // Empty session store so the cleanup branch has nothing to do.
+    // `removeStickyPostId` must be stubbed because earlier tests in this file
+    // populate the module-level `stickyPostIds` map; when the hidden-mode
+    // cleanup runs and finds a leftover entry, it calls
+    // `sessionStore.removeStickyPostId(...)`. Without the stub the test fails
+    // with `removeStickyPostId is not a function` instead of exercising the
+    // hidden short-circuit. Hard-failing on an unexpected call here would
+    // surface a real regression.
+    initialize({
+      getStickyPostIds: mock(() => new Map()),
+      saveStickyPostId: mock(() => {}),
+      removeStickyPostId: mock(() => {}),
+      getHistory: mock(() => []),
+      load: mock(() => new Map()),
+    } as any);
+
+    await updateStickyMessage(platform, new Map(), { ...testConfig, overhead: 'hidden' });
+
+    expect(createPost).not.toHaveBeenCalled();
+    expect(updatePost).not.toHaveBeenCalled();
+  });
+
+  it('hidden mode cleans up leftover sticky via removeStickyPostId, NOT saveStickyPostId("")', async () => {
+    // Regression for the data-corruption bug: hidden cleanup used to call
+    // `saveStickyPostId(platformId, '')`, which writes an empty string into
+    // sessions.json. On the next bot start that empty string surfaces as a
+    // phantom sticky id and triggers unpin/delete calls against ''.
+    // The fix uses `removeStickyPostId`. Assert both: removeStickyPostId IS
+    // called, saveStickyPostId is NOT.
+    const platformId = 'leftover-platform';
+    const leftoverId = 'old-sticky-from-prior-run';
+    const unpinPost = mock(() => Promise.resolve());
+    const deletePost = mock(() => Promise.resolve());
+    const getBotUser = mock(() => Promise.resolve({ id: 'bot', username: 'bot' }));
+    const getPinnedPosts = mock(() => Promise.resolve([]));
+    const getFormatter = mock(() => mockFormatter);
+
+    const platform = {
+      ...createMockPlatform(platformId),
+      unpinPost,
+      deletePost,
+      getBotUser,
+      getPinnedPosts,
+      getFormatter,
+    } as unknown as PlatformClient;
+
+    const removeStickyPostId = mock(() => {});
+    const saveStickyPostId = mock(() => {});
+    initialize({
+      // Returns a leftover sticky for this platform — forces the cleanup
+      // branch to fire on the first hidden-mode call.
+      getStickyPostIds: mock(() => new Map([[platformId, leftoverId]])),
+      saveStickyPostId,
+      removeStickyPostId,
+      getHistory: mock(() => []),
+      load: mock(() => new Map()),
+    } as any);
+
+    await updateStickyMessage(platform, new Map(), { ...testConfig, overhead: 'hidden' });
+
+    // The leftover post is unpinned and deleted on the platform side
+    expect(unpinPost).toHaveBeenCalledWith(leftoverId);
+    expect(deletePost).toHaveBeenCalledWith(leftoverId);
+    // And the persistence side uses removeStickyPostId, NOT saveStickyPostId('')
+    expect(removeStickyPostId).toHaveBeenCalledWith(platformId);
+    expect(saveStickyPostId).not.toHaveBeenCalled();
+  });
+});

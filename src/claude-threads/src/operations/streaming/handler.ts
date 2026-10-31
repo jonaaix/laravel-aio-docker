@@ -1,0 +1,326 @@
+/**
+ * Message streaming utilities
+ *
+ * Handles typing indicators and file attachments. File attachments are written
+ * to a per-session directory under os.tmpdir(); Claude is given the absolute
+ * path so it can Read or move/copy the file as needed.
+ *
+ * Content flushing is handled by MessageManager/ContentExecutor.
+ */
+
+import { lstat, mkdir, mkdtemp, rm, writeFile } from 'fs/promises';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import type { PlatformClient, PlatformFile, ThreadFile } from '../../platform/index.js';
+import type { Session } from '../../session/types.js';
+import { createLogger } from '../../utils/logger.js';
+import { sanitizeFilename, dedupeFilename, formatBytes } from '../../utils/safe-filename.js';
+
+const log = createLogger('streaming');
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const UPLOAD_ROOT_DIR = 'claude-threads-uploads';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+/** A file we successfully wrote to disk. */
+export interface SavedFile {
+  /** The original filename as the user uploaded it. */
+  originalName: string;
+  /** Absolute path on disk where the file was written. */
+  absolutePath: string;
+  /** Reported MIME type from the platform. */
+  mimeType: string;
+  /** Size in bytes. */
+  size: number;
+}
+
+/** A file we couldn't process; surfaced to the user. */
+export interface SkippedFile {
+  name: string;
+  reason: string;
+  suggestion?: string;
+}
+
+/** Result of building message content for Claude. */
+export interface BuiltMessageContent {
+  /** Text payload to send to Claude (may include a header listing saved files). */
+  content: string;
+  /** Files that could not be saved — callers should surface these to the user. */
+  skipped: SkippedFile[];
+}
+
+// ---------------------------------------------------------------------------
+// Per-session upload directory
+// ---------------------------------------------------------------------------
+
+/** Reduce an id to a single path-safe segment so it can't escape uploadDir. */
+function safeIdSegment(id: string): string {
+  return id.replace(/[^A-Za-z0-9._-]/g, '_');
+}
+
+/**
+ * Returns the per-thread upload directory path. The directory is keyed by the
+ * composite (platformId, threadId) so it survives session resume — a resumed
+ * session writes new uploads to the same place its previous incarnation did.
+ */
+export function getSessionUploadDir(platformId: string, threadId: string): string {
+  return join(tmpdir(), UPLOAD_ROOT_DIR, `${safeIdSegment(platformId)}-${safeIdSegment(threadId)}`);
+}
+
+/**
+ * Best-effort removal of the per-thread upload directory and its contents.
+ * Called from session cleanup; never throws. Tolerant of partial Session
+ * objects (test fixtures, early-failure paths) where ids may be missing.
+ */
+export async function cleanupSessionUploads(platformId: string, threadId: string): Promise<void> {
+  if (!platformId || !threadId) return;
+  const dir = getSessionUploadDir(platformId, threadId);
+  try {
+    await rm(dir, { recursive: true, force: true });
+  } catch (err) {
+    log.debug(`Upload cleanup for ${platformId}:${threadId} failed (ignored): ${err}`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// File saving
+// ---------------------------------------------------------------------------
+
+/** Strip control chars from a value we'll interpolate into Claude's prompt. */
+function sanitizeForPrompt(value: string): string {
+  // eslint-disable-next-line no-control-regex
+  return value.replace(/[\x00-\x1F\x7F]/g, '');
+}
+
+/**
+ * Create a symlink-safe per-call subdirectory under uploadDir, or null if the
+ * upload dir is a symlink (refused). A local attacker on a shared host could
+ * otherwise pre-create the predictable per-thread path as a symlink to a
+ * sensitive directory and have the bot write attacker-controlled bytes into
+ * it. mkdtemp + the caller's 'wx' write flag close most of the race window;
+ * the lstat check closes the rest.
+ */
+async function prepareMessageDir(uploadDir: string): Promise<string | null> {
+  await mkdir(uploadDir, { recursive: true, mode: 0o700 });
+  const stat = await lstat(uploadDir);
+  if (stat.isSymbolicLink()) {
+    log.error(`Upload dir is a symlink, refusing all writes: ${uploadDir}`);
+    return null;
+  }
+  // mkdtemp gives us an atomically-created leaf with a random suffix —
+  // collisions between concurrent messages are impossible.
+  return mkdtemp(join(uploadDir, `${Date.now().toString(36)}-`));
+}
+
+/**
+ * Download thread attachments (from history / missed-messages delta) into the
+ * CURRENT session's upload dir and return a map of `fileId → absolute local
+ * path`. Used so a bot referencing an image posted earlier in the thread (or
+ * by a peer) gets a readable local path instead of a platform URL its agent
+ * can't authenticate to (opencode's webfetch has no bot token).
+ *
+ * Downloads FRESH into the active session's own dir, so it never depends on
+ * another (possibly-cleaned-up) session's temp files and is never deleted
+ * underfoot while this session is alive. Best-effort: a file that can't be
+ * downloaded is simply omitted (the caller falls back to the URL).
+ */
+export async function resolveThreadAttachments(
+  platform: PlatformClient,
+  uploadDir: string,
+  files: ThreadFile[],
+): Promise<Map<string, string>> {
+  const resolved = new Map<string, string>();
+  if (files.length === 0 || !platform.downloadFile) return resolved;
+
+  const messageDir = await prepareMessageDir(uploadDir);
+  if (!messageDir) return resolved;
+
+  const usedNames = new Set<string>();
+  for (const file of files) {
+    if (resolved.has(file.id)) continue; // same attachment referenced twice
+    try {
+      const buffer = await platform.downloadFile(file.id);
+      const safeName = dedupeFilename(sanitizeFilename(file.name), usedNames);
+      const absolutePath = join(messageDir, safeName);
+      await writeFile(absolutePath, buffer, { mode: 0o600, flag: 'wx' });
+      resolved.set(file.id, absolutePath);
+    } catch (err) {
+      log.debug(`resolveThreadAttachments: ${file.name} skipped (${err instanceof Error ? err.message : String(err)})`);
+    }
+  }
+  return resolved;
+}
+
+/**
+ * Download each file and write it to a fresh subdirectory under uploadDir.
+ * Each call gets its own subdirectory so two messages uploading the same
+ * filename don't collide.
+ *
+ * Inbound attachments are intentionally not size-capped (per issue #387):
+ * a user pasting a large screenshot or sharing a big asset should never have
+ * it silently dropped. Tradeoff: platform.downloadFile() buffers the whole
+ * file in memory via arrayBuffer(), so a very large attachment is held in RAM
+ * for the duration of the write. Left as-is here; streaming the download is a
+ * separate change.
+ */
+export async function saveFilesToUploadDir(
+  platform: PlatformClient,
+  uploadDir: string,
+  files: PlatformFile[],
+  debug: boolean = false,
+): Promise<{ saved: SavedFile[]; skipped: SkippedFile[] }> {
+  const saved: SavedFile[] = [];
+  const skipped: SkippedFile[] = [];
+
+  if (!platform.downloadFile) {
+    for (const file of files) {
+      skipped.push({ name: file.name, reason: 'Platform does not support file downloads' });
+    }
+    return { saved, skipped };
+  }
+
+  const messageDir = await prepareMessageDir(uploadDir);
+  if (!messageDir) {
+    for (const file of files) {
+      skipped.push({ name: file.name, reason: 'Refusing to write under symlinked upload directory' });
+    }
+    return { saved, skipped };
+  }
+
+  // Filenames used within this single call, so multiple identically-named
+  // attachments (e.g. several clipboard pastes that all arrive as `image.png`)
+  // get distinct on-disk names instead of colliding on the 'wx' write below.
+  const usedNames = new Set<string>();
+
+  for (const file of files) {
+    try {
+      const buffer = await platform.downloadFile(file.id);
+      // Resolve a unique name BEFORE writing so the 'wx' flag stays meaningful
+      // for symlink-race protection rather than tripping on our own dupes.
+      const safeName = dedupeFilename(sanitizeFilename(file.name), usedNames);
+      const absolutePath = join(messageDir, safeName);
+      // 'wx' = O_CREAT | O_EXCL: fail rather than follow a pre-existing
+      // symlink at the target. Together with the per-message mkdtemp this
+      // closes the symlink race even if uploadDir was racy before lstat.
+      await writeFile(absolutePath, buffer, { mode: 0o600, flag: 'wx' });
+      saved.push({
+        originalName: file.name,
+        absolutePath,
+        mimeType: file.mimeType,
+        size: buffer.length,
+      });
+      if (debug) {
+        log.debug(`Saved ${file.name} → ${absolutePath} (${formatBytes(buffer.length)})`);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      log.error(`Failed to save uploaded file ${file.name}: ${message}`);
+      skipped.push({
+        name: file.name,
+        reason: `Download failed: ${message}`,
+      });
+    }
+  }
+
+  return { saved, skipped };
+}
+
+// ---------------------------------------------------------------------------
+// Message content building
+// ---------------------------------------------------------------------------
+
+const FILE_LIST_HEADER = '[Attached files from chat — saved to disk, use Read or move/copy as needed:]';
+
+/**
+ * Build the content string for a user message, writing any attachments to
+ * the per-session upload directory and prepending a list of their absolute
+ * paths so Claude can find them.
+ *
+ * Returns the content plus any files that were skipped, so callers can
+ * surface a warning via postSkippedFilesFeedback().
+ */
+export async function buildMessageContent(
+  text: string,
+  platform: PlatformClient,
+  uploadDir: string,
+  files?: PlatformFile[],
+  debug: boolean = false,
+): Promise<BuiltMessageContent> {
+  if (!files || files.length === 0) {
+    return { content: text, skipped: [] };
+  }
+
+  const { saved, skipped } = await saveFilesToUploadDir(platform, uploadDir, files, debug);
+
+  if (saved.length === 0) {
+    return { content: text, skipped };
+  }
+
+  const fileLines = saved.map(
+    f => `- ${f.absolutePath} (${sanitizeForPrompt(f.mimeType) || 'application/octet-stream'}, ${formatBytes(f.size)})`,
+  );
+  const header = `${FILE_LIST_HEADER}\n${fileLines.join('\n')}`;
+  const content = text.trim().length > 0 ? `${header}\n\n${text}` : header;
+
+  return { content, skipped };
+}
+
+/**
+ * Post a skipped-files warning to the thread, if any.
+ * No-op when skipped is empty, so callers can invoke unconditionally.
+ */
+export async function postSkippedFilesFeedback(
+  platform: PlatformClient,
+  threadId: string,
+  skipped: SkippedFile[],
+): Promise<void> {
+  if (skipped.length === 0) return;
+  await platform.createPost(formatSkippedFilesFeedback(skipped), threadId);
+}
+
+/**
+ * Format a user-facing feedback message for skipped files.
+ */
+export function formatSkippedFilesFeedback(skippedFiles: SkippedFile[]): string {
+  const lines = ['⚠️ **Some files could not be processed:**'];
+  for (const file of skippedFiles) {
+    let line = `- **${file.name}**: ${file.reason}`;
+    if (file.suggestion) {
+      line += ` _(${file.suggestion})_`;
+    }
+    lines.push(line);
+  }
+  return lines.join('\n');
+}
+
+// ---------------------------------------------------------------------------
+// Typing indicators
+// ---------------------------------------------------------------------------
+
+/**
+ * Start sending typing indicators to the platform.
+ * Sends immediately, then every 3 seconds until stopped.
+ */
+export function startTyping(session: Session): void {
+  if (session.timers.typingTimer) return;
+  session.platform.sendTyping(session.threadId);
+  session.timers.typingTimer = setInterval(() => {
+    session.platform.sendTyping(session.threadId);
+  }, 3000);
+}
+
+/**
+ * Stop sending typing indicators.
+ */
+export function stopTyping(session: Session): void {
+  if (session.timers.typingTimer) {
+    clearInterval(session.timers.typingTimer);
+    session.timers.typingTimer = null;
+  }
+}

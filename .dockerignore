@@ -1,0 +1,4 @@
+src/claude-threads/node_modules
+src/claude-threads/dist
+src/claude-threads/realtest/.prompts
+docs/node_modules

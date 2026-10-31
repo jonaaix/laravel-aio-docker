@@ -1,0 +1,330 @@
+/**
+ * Integration test configuration
+ *
+ * Contains all the configuration needed for integration tests.
+ * Credentials are either loaded from environment or from .env.test file.
+ */
+
+import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+/**
+ * Slack test configuration
+ */
+export interface SlackTestConfig {
+  /** Port for the mock Slack server */
+  mockServerPort: number;
+  /** Bot OAuth token (xoxb-...) */
+  botToken: string;
+  /** App-level token for Socket Mode (xapp-...) */
+  appToken: string;
+  /** Channel ID for testing */
+  channelId: string;
+  /** Bot username for @mentions */
+  botUsername: string;
+  /** Test users for multi-user scenarios */
+  testUsers: Array<{
+    username: string;
+    userId: string;
+  }>;
+}
+
+/**
+ * Mattermost test configuration
+ */
+export interface MattermostTestConfig {
+  /** Base URL for Mattermost server */
+  url: string;
+  /** Admin user credentials */
+  admin: {
+    username: string;
+    password: string;
+    email: string;
+    token?: string;
+    userId?: string;
+  };
+  /** Default bot account configuration (mirrors bots[0]) */
+  bot: {
+    username: string;
+    displayName: string;
+    token?: string;
+    userId?: string;
+  };
+  /**
+   * Pool of bot accounts. Each test bot picks one from the pool round-robin
+   * to eliminate cross-test interference (multiple test bots sharing one
+   * Mattermost user token would both receive the same WebSocket events).
+   */
+  bots: Array<{
+    username: string;
+    displayName: string;
+    token?: string;
+    userId?: string;
+  }>;
+  /** Test team */
+  team: {
+    name: string;
+    displayName: string;
+    id?: string;
+  };
+  /** Test channel */
+  channel: {
+    name: string;
+    displayName: string;
+    id?: string;
+  };
+  /** Test users for multi-user scenarios */
+  testUsers: Array<{
+    username: string;
+    password: string;
+    email: string;
+    token?: string;
+    userId?: string;
+  }>;
+}
+
+/**
+ * Full integration test configuration
+ */
+export interface IntegrationTestConfig {
+  mattermost: MattermostTestConfig;
+  /** Optional Slack configuration for Slack platform tests */
+  slack?: SlackTestConfig;
+  /** Working directory for Claude sessions */
+  workingDir: string;
+  /** Path to mock Claude CLI */
+  mockClaudePath: string;
+  /** Debug mode */
+  debug: boolean;
+}
+
+/**
+ * Default Slack configuration for mock server testing
+ * These values match the SlackMockServer defaults
+ */
+export const DEFAULT_SLACK_CONFIG: SlackTestConfig = {
+  mockServerPort: 3457,
+  botToken: 'xoxb-test-bot-token',
+  appToken: 'xapp-test-app-token',
+  channelId: 'C_TEST_CHANNEL',
+  botUsername: 'claude-test-bot',
+  testUsers: [
+    {
+      username: 'testuser1',
+      userId: 'U_TEST_USER1',
+    },
+    {
+      username: 'testuser2',
+      userId: 'U_TEST_USER2',
+    },
+  ],
+};
+
+/**
+ * Default configuration for local testing
+ */
+export const DEFAULT_CONFIG: IntegrationTestConfig = {
+  mattermost: {
+    url: process.env.MATTERMOST_URL || 'http://localhost:8065',
+    admin: {
+      username: 'admin',
+      password: 'Admin123!',
+      email: 'admin@test.local',
+    },
+    bot: {
+      username: 'claude-test-bot',
+      displayName: 'Claude Test Bot',
+    },
+    bots: [
+      { username: 'claude-test-bot', displayName: 'Claude Test Bot' },
+      { username: 'claude-test-bot-2', displayName: 'Claude Test Bot 2' },
+      { username: 'claude-test-bot-3', displayName: 'Claude Test Bot 3' },
+      { username: 'claude-test-bot-4', displayName: 'Claude Test Bot 4' },
+    ],
+    team: {
+      name: 'test-team',
+      displayName: 'Test Team',
+    },
+    channel: {
+      name: 'test-channel',
+      displayName: 'Test Channel',
+    },
+    testUsers: [
+      {
+        username: 'testuser1',
+        password: 'TestUser1!',
+        email: 'testuser1@test.local',
+      },
+      {
+        username: 'testuser2',
+        password: 'TestUser2!',
+        email: 'testuser2@test.local',
+      },
+    ],
+  },
+  // Slack config is optional - only included when running Slack tests
+  slack: undefined,
+  workingDir: process.cwd(),
+  mockClaudePath: join(__dirname, '../fixtures/mock-claude/runner.ts'),
+  debug: process.env.DEBUG === '1',
+};
+
+/**
+ * Path to the .env.test file where credentials are stored after setup
+ */
+export const ENV_TEST_PATH = join(__dirname, '../.env.test');
+
+/**
+ * Load configuration from .env.test file if it exists
+ */
+export function loadConfig(): IntegrationTestConfig {
+  const config = { ...DEFAULT_CONFIG };
+
+  // Auto-enable Slack config when running Slack tests or SLACK_MOCK_URL is set
+  const testPlatforms = process.env.TEST_PLATFORMS || '';
+  if (testPlatforms.includes('slack') || process.env.SLACK_MOCK_URL) {
+    config.slack = { ...DEFAULT_SLACK_CONFIG };
+  }
+
+  if (existsSync(ENV_TEST_PATH)) {
+    const envContent = readFileSync(ENV_TEST_PATH, 'utf-8');
+    const env: Record<string, string> = {};
+
+    for (const line of envContent.split('\n')) {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith('#')) {
+        const [key, ...valueParts] = trimmed.split('=');
+        if (key && valueParts.length > 0) {
+          env[key] = valueParts.join('=');
+        }
+      }
+    }
+
+    // Apply loaded values
+    if (env.MATTERMOST_URL) config.mattermost.url = env.MATTERMOST_URL;
+    if (env.ADMIN_TOKEN) config.mattermost.admin.token = env.ADMIN_TOKEN;
+    if (env.ADMIN_USER_ID) config.mattermost.admin.userId = env.ADMIN_USER_ID;
+    if (env.BOT_TOKEN) config.mattermost.bot.token = env.BOT_TOKEN;
+    if (env.BOT_USER_ID) config.mattermost.bot.userId = env.BOT_USER_ID;
+    // Bot pool credentials (token and userId per bot)
+    for (let i = 0; i < config.mattermost.bots.length; i++) {
+      const tokenKey = `BOT_${i + 1}_TOKEN`;
+      const userIdKey = `BOT_${i + 1}_USER_ID`;
+      if (env[tokenKey]) config.mattermost.bots[i].token = env[tokenKey];
+      if (env[userIdKey]) config.mattermost.bots[i].userId = env[userIdKey];
+    }
+    // Mirror first pool bot to default `bot` for back-compat
+    if (config.mattermost.bots[0]?.token) {
+      config.mattermost.bot.token = config.mattermost.bots[0].token;
+      config.mattermost.bot.userId = config.mattermost.bots[0].userId;
+    }
+    if (env.TEAM_ID) config.mattermost.team.id = env.TEAM_ID;
+    if (env.CHANNEL_ID) config.mattermost.channel.id = env.CHANNEL_ID;
+
+    // Load test users
+    for (let i = 0; i < config.mattermost.testUsers.length; i++) {
+      const tokenKey = `TEST_USER_${i + 1}_TOKEN`;
+      const userIdKey = `TEST_USER_${i + 1}_ID`;
+      if (env[tokenKey]) config.mattermost.testUsers[i].token = env[tokenKey];
+      if (env[userIdKey]) config.mattermost.testUsers[i].userId = env[userIdKey];
+    }
+
+    // Load Slack config if present
+    if (env.SLACK_ENABLED === '1' || env.SLACK_BOT_TOKEN) {
+      config.slack = {
+        mockServerPort: env.SLACK_MOCK_SERVER_PORT
+          ? parseInt(env.SLACK_MOCK_SERVER_PORT, 10)
+          : DEFAULT_SLACK_CONFIG.mockServerPort,
+        botToken: env.SLACK_BOT_TOKEN || DEFAULT_SLACK_CONFIG.botToken,
+        appToken: env.SLACK_APP_TOKEN || DEFAULT_SLACK_CONFIG.appToken,
+        channelId: env.SLACK_CHANNEL_ID || DEFAULT_SLACK_CONFIG.channelId,
+        botUsername: env.SLACK_BOT_USERNAME || DEFAULT_SLACK_CONFIG.botUsername,
+        testUsers: [...DEFAULT_SLACK_CONFIG.testUsers],
+      };
+
+      // Load Slack test users if present
+      for (let i = 0; i < config.slack.testUsers.length; i++) {
+        const usernameKey = `SLACK_TEST_USER_${i + 1}_USERNAME`;
+        const userIdKey = `SLACK_TEST_USER_${i + 1}_ID`;
+        if (env[usernameKey]) config.slack.testUsers[i].username = env[usernameKey];
+        if (env[userIdKey]) config.slack.testUsers[i].userId = env[userIdKey];
+      }
+    }
+  }
+
+  return config;
+}
+
+/**
+ * Save configuration to .env.test file after setup
+ */
+export function saveConfig(config: IntegrationTestConfig): void {
+  const lines = [
+    '# Integration test configuration',
+    '# Generated by setup-mattermost.ts',
+    `# Generated at: ${new Date().toISOString()}`,
+    '',
+    `MATTERMOST_URL=${config.mattermost.url}`,
+    '',
+    '# Admin credentials',
+    `ADMIN_TOKEN=${config.mattermost.admin.token || ''}`,
+    `ADMIN_USER_ID=${config.mattermost.admin.userId || ''}`,
+    '',
+    '# Bot credentials (default = first pool bot)',
+    `BOT_TOKEN=${config.mattermost.bot.token || ''}`,
+    `BOT_USER_ID=${config.mattermost.bot.userId || ''}`,
+    '',
+    '# Bot pool credentials (one per concurrent test bot)',
+    ...config.mattermost.bots.flatMap((b, i) => [
+      `BOT_${i + 1}_TOKEN=${b.token || ''}`,
+      `BOT_${i + 1}_USER_ID=${b.userId || ''}`,
+    ]),
+    '',
+    '# Team and channel',
+    `TEAM_ID=${config.mattermost.team.id || ''}`,
+    `CHANNEL_ID=${config.mattermost.channel.id || ''}`,
+    '',
+  ];
+
+  // Add test users
+  for (let i = 0; i < config.mattermost.testUsers.length; i++) {
+    const user = config.mattermost.testUsers[i];
+    lines.push(`# Test user ${i + 1}`);
+    lines.push(`TEST_USER_${i + 1}_TOKEN=${user.token || ''}`);
+    lines.push(`TEST_USER_${i + 1}_ID=${user.userId || ''}`);
+    lines.push('');
+  }
+
+  // Add Slack configuration if present
+  if (config.slack) {
+    lines.push('# Slack configuration');
+    lines.push('SLACK_ENABLED=1');
+    lines.push(`SLACK_MOCK_SERVER_PORT=${config.slack.mockServerPort}`);
+    lines.push(`SLACK_BOT_TOKEN=${config.slack.botToken}`);
+    lines.push(`SLACK_APP_TOKEN=${config.slack.appToken}`);
+    lines.push(`SLACK_CHANNEL_ID=${config.slack.channelId}`);
+    lines.push(`SLACK_BOT_USERNAME=${config.slack.botUsername}`);
+    lines.push('');
+
+    // Add Slack test users
+    for (let i = 0; i < config.slack.testUsers.length; i++) {
+      const user = config.slack.testUsers[i];
+      lines.push(`# Slack test user ${i + 1}`);
+      lines.push(`SLACK_TEST_USER_${i + 1}_USERNAME=${user.username}`);
+      lines.push(`SLACK_TEST_USER_${i + 1}_ID=${user.userId}`);
+      lines.push('');
+    }
+  }
+
+  writeFileSync(ENV_TEST_PATH, lines.join('\n'));
+}
+
+/**
+ * Get configuration, loading from file if available
+ */
+export function getConfig(): IntegrationTestConfig {
+  return loadConfig();
+}
