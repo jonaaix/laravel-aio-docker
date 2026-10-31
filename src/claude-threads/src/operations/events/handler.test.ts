@@ -280,6 +280,166 @@ describe('handleEventPreProcessing', () => {
     expect(session.availableSlashCommands?.has('/compact')).toBe(false);
   });
 
+  test('a fast failure still resolves the start post (status events in one chunk, slow platform)', async () => {
+    const rawCreate = platform.createPost;
+    (platform as unknown as { createPost: unknown }).createPost = mock(async (message: string, threadId?: string) => {
+      await new Promise((r) => setTimeout(r, 25));
+      return (rawCreate as (m: string, t?: string) => Promise<PlatformPost>)(message, threadId);
+    });
+
+    handleEventPreProcessing(session, { type: 'system', subtype: 'status', status: 'compacting' }, ctx);
+    handleEventPreProcessing(session, {
+      type: 'system', subtype: 'status', status: null,
+      compact_result: 'failed', compact_error: 'Not enough messages to compact.',
+    }, ctx);
+    await new Promise((r) => setTimeout(r, 150));
+
+    const posts = (platform as unknown as { posts: Map<string, string> }).posts;
+    const compactionPosts = [...posts.values()].filter((m) => /Compact/i.test(m));
+    expect(compactionPosts).toHaveLength(1);
+    expect(compactionPosts[0]).toMatch(/failed/i);
+    expect(session.compactionPostId).toBeUndefined();
+  });
+
+  test('compact failure updates the compaction post instead of leaving it stale', async () => {
+    handleEventPreProcessing(session, { type: 'system', subtype: 'status', status: 'compacting' }, ctx);
+    await new Promise((r) => setTimeout(r, 10));
+    expect(session.compactionPostId).toBeDefined();
+    const postId = session.compactionPostId!;
+
+    handleEventPreProcessing(session, {
+      type: 'system', subtype: 'status', status: null,
+      compact_result: 'failed', compact_error: 'Not enough messages to compact.',
+    }, ctx);
+    await new Promise((r) => setTimeout(r, 10));
+
+    const posts = (platform as unknown as { posts: Map<string, string> }).posts;
+    expect(posts.get(postId)).toMatch(/failed/i);
+    expect(posts.get(postId)).toContain('Not enough messages to compact.');
+    expect(session.compactionPostId).toBeUndefined();
+  });
+
+  test('compact completion shows pre → post token counts', async () => {
+    handleEventPreProcessing(session, { type: 'system', subtype: 'status', status: 'compacting' }, ctx);
+    await new Promise((r) => setTimeout(r, 10));
+    const postId = session.compactionPostId!;
+
+    handleEventPreProcessing(session, {
+      type: 'system', subtype: 'compact_boundary',
+      compact_metadata: { trigger: 'manual', pre_tokens: 31103, post_tokens: 2777 },
+    }, ctx);
+    await new Promise((r) => setTimeout(r, 10));
+
+    const posts = (platform as unknown as { posts: Map<string, string> }).posts;
+    expect(posts.get(postId)).toMatch(/31k.*→.*3k/);
+    expect(session.compactionPostId).toBeUndefined();
+  });
+
+  test('auth_status with an error posts a warning to the thread', async () => {
+    handleEventPreProcessing(session, {
+      type: 'auth_status', isAuthenticating: false,
+      output: [], error: 'OAuth token expired',
+    }, ctx);
+    await new Promise((r) => setTimeout(r, 10));
+
+    const posts = (platform as unknown as { posts: Map<string, string> }).posts;
+    const warning = [...posts.values()].find((m) => /OAuth token expired/.test(m));
+    expect(warning).toBeDefined();
+    expect(warning).toMatch(/auth/i);
+  });
+
+  test('auth_status warnings dedupe repeated identical errors', async () => {
+    const ev = {
+      type: 'auth_status', isAuthenticating: false,
+      output: [], error: 'OAuth token expired',
+    };
+    handleEventPreProcessing(session, ev, ctx);
+    handleEventPreProcessing(session, ev, ctx);
+    handleEventPreProcessing(session, ev, ctx);
+    await new Promise((r) => setTimeout(r, 10));
+
+    const posts = (platform as unknown as { posts: Map<string, string> }).posts;
+    expect([...posts.values()].filter((m) => /OAuth token expired/.test(m))).toHaveLength(1);
+
+    handleEventPreProcessing(session, { ...ev, error: 'API key revoked' }, ctx);
+    await new Promise((r) => setTimeout(r, 10));
+    expect([...posts.values()].filter((m) => /API key revoked/.test(m))).toHaveLength(1);
+  });
+
+  test('auth_status without an error is log-only (no thread post)', async () => {
+    handleEventPreProcessing(session, {
+      type: 'auth_status', isAuthenticating: true, output: ['Refreshing credentials...'],
+    }, ctx);
+    await new Promise((r) => setTimeout(r, 10));
+
+    const posts = (platform as unknown as { posts: Map<string, string> }).posts;
+    expect(posts.size).toBe(0);
+  });
+
+  test('records the MCP server set from init and only re-records on change', () => {
+    expect(session.mcpServersSummary).toBeUndefined();
+    const init = {
+      type: 'system',
+      subtype: 'init',
+      mcp_servers: [{ name: 'github', status: 'failed' }, { name: 'claude-threads-mcp', status: 'connected' }],
+    };
+    handleEventPreProcessing(session, init, ctx);
+    expect(session.mcpServersSummary).toBe('claude-threads-mcp (connected), github (failed)');
+
+    handleEventPreProcessing(session, init, ctx);
+    expect(session.mcpServersSummary).toBe('claude-threads-mcp (connected), github (failed)');
+
+    handleEventPreProcessing(session, { type: 'system', subtype: 'init', mcp_servers: [] }, ctx);
+    expect(session.mcpServersSummary).toBe('none');
+  });
+
+  test('warns in the thread when claude.ai connectors are active but the platform has them off', async () => {
+    (session.platform as unknown as { getMcpConfig: () => unknown }).getMcpConfig = () => ({
+      type: 'mattermost', url: 'x', token: 'y', channelId: 'c', allowedUsers: [], claudeAiConnectors: false,
+    });
+    const createPost = session.platform.createPost as ReturnType<typeof mock>;
+    const before = createPost.mock.calls.length;
+
+    handleEventPreProcessing(session, {
+      type: 'system', subtype: 'init',
+      mcp_servers: [{ name: 'claude-threads-mcp', status: 'connected' }, { name: 'claude.ai Gmail', status: 'connected' }],
+    }, ctx);
+    await new Promise((r) => setTimeout(r, 5));
+
+    const posted = createPost.mock.calls.slice(before).map((c) => String(c[0]));
+    expect(posted.some((m) => m.includes('claude.ai connectors are active') && m.includes('claude.ai Gmail'))).toBe(true);
+  });
+
+  test('stays quiet about connectors when the platform opted in', async () => {
+    (session.platform as unknown as { getMcpConfig: () => unknown }).getMcpConfig = () => ({
+      type: 'mattermost', url: 'x', token: 'y', channelId: 'c', allowedUsers: [], claudeAiConnectors: true,
+    });
+    const createPost = session.platform.createPost as ReturnType<typeof mock>;
+    const before = createPost.mock.calls.length;
+
+    handleEventPreProcessing(session, {
+      type: 'system', subtype: 'init', mcp_servers: [{ name: 'claude.ai Gmail', status: 'connected' }],
+    }, ctx);
+    await new Promise((r) => setTimeout(r, 5));
+
+    expect(createPost.mock.calls.length).toBe(before);
+    expect(session.mcpServersSummary).toBe('claude.ai Gmail (connected)');
+  });
+
+  test('tracks tool uses delivered as assistant content blocks, but not sidechain ones', () => {
+    handleEventPreProcessing(session, {
+      type: 'assistant',
+      message: { content: [{ type: 'tool_use', name: 'Bash', id: 't1', input: {} }] },
+    }, ctx);
+    handleEventPreProcessing(session, {
+      type: 'assistant',
+      parent_tool_use_id: 'parent-1',
+      message: { content: [{ type: 'tool_use', name: 'Read', id: 't2', input: {} }] },
+    }, ctx);
+
+    expect(session.recentEvents.map((e) => e.summary)).toEqual(['Bash']);
+  });
+
   test('ignores init event without slash_commands', () => {
     const initEvent = {
       type: 'system',
@@ -410,4 +570,80 @@ describe('handleEventPostProcessing', () => {
 
   // NOTE: postCurrentQuestion tests have been removed - question posting now
   // goes through QuestionApprovalExecutor via MessageManager
+
+  describe('turn-end persistence', () => {
+    const resultEvent = { type: 'result', total_cost_usd: 0.1 };
+
+    beforeEach(() => {
+      (ctx.state.sessions as Map<string, Session>).set(session.sessionId, session);
+    });
+
+    test('result events persist AFTER the main event handling settles', async () => {
+      let resolveMain!: () => void;
+      const mainHandling = new Promise<void>((r) => { resolveMain = r; });
+
+      handleEventPostProcessing(session, resultEvent, ctx, mainHandling);
+      expect(ctx.ops.persistSession).not.toHaveBeenCalled();
+
+      resolveMain();
+      await new Promise((r) => setTimeout(r, 0));
+      expect(ctx.ops.persistSession).toHaveBeenCalledTimes(1);
+    });
+
+    test('result events still persist when the main handling rejects', async () => {
+      handleEventPostProcessing(session, resultEvent, ctx, Promise.reject(new Error('op chain blew up')));
+      await new Promise((r) => setTimeout(r, 0));
+      expect(ctx.ops.persistSession).toHaveBeenCalledTimes(1);
+    });
+
+    test('deferred persist is skipped when the session was torn down meanwhile', async () => {
+      let resolveMain!: () => void;
+      const mainHandling = new Promise<void>((r) => { resolveMain = r; });
+
+      handleEventPostProcessing(session, resultEvent, ctx, mainHandling);
+      (ctx.state.sessions as Map<string, Session>).delete(session.sessionId);
+
+      resolveMain();
+      await new Promise((r) => setTimeout(r, 0));
+      expect(ctx.ops.persistSession).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('sidechain (subagent) events', () => {
+    test('do not execute Claude commands or hand off', () => {
+      ctx.ops.resolveHandoffTarget = mock(() => 'peer-bot');
+      handleEventPostProcessing(session, {
+        type: 'assistant',
+        parent_tool_use_id: 'parent-1',
+        message: { content: [{ type: 'text', text: "!cd /tmp\n@peer it's your turn." }] },
+      }, ctx);
+
+      expect(ctx.ops.resolveHandoffTarget).not.toHaveBeenCalled();
+      expect(session.pendingHandoff).toBeUndefined();
+    });
+
+    test('still contribute PR URLs', () => {
+      handleEventPostProcessing(session, {
+        type: 'assistant',
+        parent_tool_use_id: 'parent-1',
+        message: { content: [{ type: 'text', text: 'Opened https://github.com/user/repo/pull/7' }] },
+      }, ctx);
+
+      expect(session.pullRequestUrl).toBe('https://github.com/user/repo/pull/7');
+    });
+
+    test('tool_result errors inside user events are tracked, sidechain ones are not', () => {
+      handleEventPostProcessing(session, {
+        type: 'user',
+        message: { content: [{ type: 'tool_result', tool_use_id: 't1', is_error: true, content: 'boom' }] },
+      }, ctx);
+      handleEventPostProcessing(session, {
+        type: 'user',
+        parent_tool_use_id: 'parent-1',
+        message: { content: [{ type: 'tool_result', tool_use_id: 't2', is_error: true, content: 'boom' }] },
+      }, ctx);
+
+      expect(session.recentEvents.filter((e) => e.type === 'tool_error')).toHaveLength(1);
+    });
+  });
 });

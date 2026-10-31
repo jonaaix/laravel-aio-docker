@@ -12,7 +12,7 @@ function makeSnapshot(): Snapshot {
       version: '9.9.9',
       workingDir: '/tmp/x',
       claudeVersion: '2.1.0',
-      claudeCompatible: true,
+      claudeStatus: 'ok',
       permissionMode: 'auto',
       chromeEnabled: false,
       keepAliveEnabled: true,

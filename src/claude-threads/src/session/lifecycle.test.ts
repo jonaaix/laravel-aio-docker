@@ -1,4 +1,7 @@
-import { describe, it, expect, mock } from 'bun:test';
+import { describe, it, expect, mock, beforeEach, afterEach } from 'bun:test';
+import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 import * as lifecycle from './lifecycle.js';
 import type { SessionContext } from '../operations/session-context/index.js';
@@ -51,6 +54,7 @@ function createMockPlatform(overrides?: Partial<PlatformClient>): PlatformClient
  */
 function createMockMessageManager() {
   return {
+    clearClaudeSessionState: mock(() => {}),
     closeCurrentPost: mock(() => Promise.resolve()),
     handleEvent: mock(() => Promise.resolve()),
     flush: mock(() => Promise.resolve()),
@@ -372,6 +376,85 @@ describe('Lifecycle Module', () => {
       // Should post warning but not kill yet
       expect(session.timeoutWarningPosted).toBe(true);
       expect(sessions.has('test-platform:thread-123')).toBe(true);
+    });
+
+    describe('a stalled mid-turn session is not reported as idle', () => {
+      const postedText = (session: Session): string =>
+        (session.platform.createPost as ReturnType<typeof mock>).mock.calls
+          .map((c: unknown[]) => String(c[0]))
+          .join('\n');
+
+      it('says the session stopped responding when a turn was still open', async () => {
+        const session = createMockSession({
+          lastActivityAt: new Date(Date.now() - 40 * 60 * 1000),
+          isProcessing: true,
+        });
+        const ctx = createMockSessionContext(new Map([['test-platform:thread-123', session]]));
+
+        await lifecycle.cleanupIdleSessions(30 * 60 * 1000, 5 * 60 * 1000, ctx);
+
+        const text = postedText(session);
+        expect(text).toContain('stopped responding');
+        expect(text).not.toContain('inactivity');
+      });
+
+      it('still reports genuine idleness as a timeout', async () => {
+        const session = createMockSession({
+          lastActivityAt: new Date(Date.now() - 40 * 60 * 1000),
+          isProcessing: false,
+        });
+        const ctx = createMockSessionContext(new Map([['test-platform:thread-123', session]]));
+
+        await lifecycle.cleanupIdleSessions(30 * 60 * 1000, 5 * 60 * 1000, ctx);
+
+        const text = postedText(session);
+        expect(text).toContain('inactivity');
+        expect(text).not.toContain('stopped responding');
+      });
+
+      it('the pre-timeout warning does not call an open turn idle', async () => {
+        const session = createMockSession({
+          lastActivityAt: new Date(Date.now() - 26 * 60 * 1000),
+          timeoutWarningPosted: false,
+          isProcessing: true,
+        });
+        const ctx = createMockSessionContext(new Map([['test-platform:thread-123', session]]));
+
+        await lifecycle.cleanupIdleSessions(30 * 60 * 1000, 5 * 60 * 1000, ctx);
+
+        const text = postedText(session);
+        expect(text).toContain('No output');
+        expect(text).not.toContain('Session idle');
+      });
+
+      it('names a pending decision rather than blaming the CLI', async () => {
+        const session = createMockSession({
+          lastActivityAt: new Date(Date.now() - 40 * 60 * 1000),
+          isProcessing: true,
+        });
+        (session.messageManager as unknown as { hasPendingApproval: () => boolean }).hasPendingApproval =
+          () => true;
+        const ctx = createMockSessionContext(new Map([['test-platform:thread-123', session]]));
+
+        await lifecycle.cleanupIdleSessions(30 * 60 * 1000, 5 * 60 * 1000, ctx);
+
+        const text = postedText(session);
+        expect(text).toContain('still waiting');
+        expect(text).not.toContain('stopped responding');
+      });
+
+      it('the pre-timeout warning still says idle between turns', async () => {
+        const session = createMockSession({
+          lastActivityAt: new Date(Date.now() - 26 * 60 * 1000),
+          timeoutWarningPosted: false,
+          isProcessing: false,
+        });
+        const ctx = createMockSessionContext(new Map([['test-platform:thread-123', session]]));
+
+        await lifecycle.cleanupIdleSessions(30 * 60 * 1000, 5 * 60 * 1000, ctx);
+
+        expect(postedText(session)).toContain('Session idle');
+      });
     });
   });
 });
@@ -1156,6 +1239,30 @@ describe('handleExit', () => {
     expect(ctx.ops.unregisterWorktreeUser).toHaveBeenCalledWith('/tmp/wt/abc', session.sessionId);
   });
 
+  it('ignores a stale exit from a replaced Claude process', async () => {
+    const session = createExitTestSession({ hasClaudeResponded: true });
+    const sessions = new Map([[session.sessionId, session]]);
+    const ctx = createMockSessionContext(sessions);
+
+    const replacedCli = { isPermanentFailure: () => false } as any;
+    await lifecycle.handleExit(session.sessionId, 0, ctx, replacedCli);
+
+    expect(sessions.has(session.sessionId)).toBe(true);
+    expect(ctx.ops.unpersistSession).not.toHaveBeenCalled();
+    expect(ctx.ops.updateStickyMessage).not.toHaveBeenCalled();
+  });
+
+  it('handles the exit normally when source is the current Claude process', async () => {
+    const session = createExitTestSession({ hasClaudeResponded: true });
+    const sessions = new Map([[session.sessionId, session]]);
+    const ctx = createMockSessionContext(sessions);
+
+    await lifecycle.handleExit(session.sessionId, 0, ctx, session.claude);
+
+    expect(sessions.has(session.sessionId)).toBe(false);
+    expect(ctx.ops.unpersistSession).toHaveBeenCalledWith(session.sessionId);
+  });
+
   it('posts [Exited: code] notification on non-zero exit', async () => {
     const session = createExitTestSession({ hasClaudeResponded: true });
     const mockCreatePost = mock(() => Promise.resolve({
@@ -1422,6 +1529,115 @@ describe('authorization gate at sinks (#388)', () => {
     });
   });
 
+  describe('the resume notice tells the truth about what continued', () => {
+    let prevClaudePath: string | undefined;
+    beforeEach(() => {
+      prevClaudePath = process.env.CLAUDE_PATH;
+      process.env.CLAUDE_PATH = '/bin/echo';
+    });
+    afterEach(() => {
+      if (prevClaudePath === undefined) delete process.env.CLAUDE_PATH;
+      else process.env.CLAUDE_PATH = prevClaudePath;
+    });
+
+    function bootState(overrides?: Record<string, unknown>) {
+      return {
+        threadId: 'thread-boot',
+        platformId: 'test-platform',
+        claudeSessionId: 'claude-session-1',
+        workingDir: process.cwd(),
+        startedBy: 'alice',
+        sessionAllowedUsers: ['alice'],
+        ...overrides,
+      };
+    }
+
+    function bootContext() {
+      const platform = createMockPlatform({
+        isUserAllowed: mock(() => true) as any,
+        getPost: mock(() => Promise.resolve({ id: 'thread-boot' })) as any,
+        getMcpConfig: mock(() => ({
+          type: 'mattermost', url: 'https://chat.example.com',
+          token: 't', channelId: 'c', allowedUsers: ['alice'],
+        })) as any,
+      });
+      const ctx = createMockSessionContext(new Map());
+      (ctx.state.platforms as Map<string, PlatformClient>).set('test-platform', platform);
+      return { ctx, platform };
+    }
+
+    async function stopResumed(ctx: SessionContext): Promise<void> {
+      for (const session of ctx.state.sessions.values()) {
+        await session.claude.kill();
+        await session.decisionBridge?.close();
+      }
+    }
+
+    const notices = (platform: PlatformClient) => [
+      ...(platform.createPost as any).mock.calls.map((c: unknown[]) => String(c[0])),
+      ...(platform.updatePost as any).mock.calls.map((c: unknown[]) => String(c[1])),
+    ].filter((t) => t.includes('Session resumed'));
+
+    it('a restart-triggered resume does not promise the interrupted work continued', async () => {
+      const { ctx, platform } = bootContext();
+
+      await lifecycle.resumeSession(bootState() as never, ctx);
+      await stopResumed(ctx);
+
+      const notice = notices(platform).at(-1) as string;
+      expect(notice).toBeDefined();
+      expect(notice).not.toContain('continue where you left off');
+      expect(notice.toLowerCase()).toContain('did not survive');
+    });
+
+    it('a person-triggered resume still says the work continues, because their message follows', async () => {
+      const { ctx, platform } = bootContext();
+
+      await lifecycle.resumeSession(bootState({ threadId: 'thread-asked' }) as never, ctx, 'user');
+      await stopResumed(ctx);
+
+      const notice = notices(platform).at(-1) as string;
+      expect(notice).toContain('continue where you left off');
+    });
+
+    it('a platform re-enable does not blame a restart that never happened', async () => {
+      const { ctx, platform } = bootContext();
+
+      await lifecycle.resumeSession(bootState({ threadId: 'thread-toggle' }) as never, ctx, 'platform-enabled');
+      await stopResumed(ctx);
+
+      const notice = notices(platform).at(-1) as string;
+      expect(notice).not.toContain('restart');
+      expect(notice).toContain('platform');
+      expect(notice).not.toContain('continue where you left off');
+    });
+
+    it('says the same thing whether or not there is a pause post to edit', async () => {
+      const { ctx, platform } = bootContext();
+
+      await lifecycle.resumeSession(
+        bootState({ threadId: 'thread-paused-post', lifecyclePostId: 'post-9' }) as never,
+        ctx,
+      );
+      await stopResumed(ctx);
+
+      const notice = notices(platform).at(-1) as string;
+      expect(notice).not.toContain('continue where you left off');
+      expect(notice).not.toContain('by @');
+    });
+
+    it('gives a resumed Claude session a decision bridge wired to its MCP child', async () => {
+      const { ctx } = bootContext();
+
+      await lifecycle.resumeSession(bootState({ threadId: 'thread-bridge' }) as never, ctx);
+      const session = ctx.state.sessions.get('test-platform:thread-bridge');
+      const bridgePath = session?.decisionBridge?.path;
+      await stopResumed(ctx);
+
+      expect(bridgePath).toBeDefined();
+    });
+  });
+
   describe('resumePausedSession', () => {
     function persistedState(overrides?: Record<string, unknown>) {
       return {
@@ -1533,6 +1749,103 @@ describe('resumeSessionHeaderMode', () => {
 
   it('falls back to full when both are missing (legacy + unconfigured platform)', () => {
     expect(lifecycle.resumeSessionHeaderMode(undefined, undefined)).toBe('full');
+  });
+});
+
+describe('decision-bridge listener wiring', () => {
+  let prevClaudePath: string | undefined;
+  let stubDir: string;
+  beforeEach(() => {
+    prevClaudePath = process.env.CLAUDE_PATH;
+    stubDir = mkdtempSync(join(tmpdir(), 'ct-bridge-wiring-'));
+    const stub = join(stubDir, 'fake-claude');
+    writeFileSync(stub, '#!/bin/sh\nexec cat >/dev/null\n', { mode: 0o755 });
+    process.env.CLAUDE_PATH = stub;
+  });
+  afterEach(() => {
+    if (prevClaudePath === undefined) delete process.env.CLAUDE_PATH;
+    else process.env.CLAUDE_PATH = prevClaudePath;
+    rmSync(stubDir, { recursive: true, force: true });
+  });
+
+  async function startSmokeSession() {
+    const platform = createMockPlatform({
+      isUserAllowed: mock((u: string) => u === 'alice') as any,
+      getMcpConfig: mock(() => ({
+        type: 'mattermost',
+        url: 'https://chat.example.com',
+        token: 't',
+        channelId: 'c',
+        allowedUsers: ['alice'],
+      })) as any,
+    });
+    const sessions = new Map<string, Session>();
+    const ctx = createMockSessionContext(sessions);
+    (ctx.config as { workingDir: string }).workingDir = '/tmp';
+    (ctx.state.platforms as Map<string, PlatformClient>).set('test-platform', platform);
+
+    await lifecycle.startSession({ prompt: 'do something' }, 'alice', 'Alice', 'thread-bridge', 'test-platform', ctx);
+    const session = sessions.get('test-platform:thread-bridge');
+    expect(session?.decisionBridge).toBeDefined();
+    return session!;
+  }
+
+  async function teardown(session: Session) {
+    await session.claude.kill().catch(() => {});
+    session.messageManager?.dispose();
+    await session.decisionBridge?.close().catch(() => {});
+  }
+
+  it('a pending bridge plan request suppresses the stdin send; without one stdin falls back', async () => {
+    const session = await startSmokeSession();
+    try {
+      const sendSpy = mock(() => {});
+      (session.claude as unknown as { sendMessage: unknown }).sendMessage = sendSpy;
+
+      const pending = session.messageManager!.handleBridgeRequest({
+        kind: 'plan_approval',
+        toolName: 'ExitPlanMode',
+        input: { plan: 'p' },
+      });
+      session.messageManager!.events.emit('approval:complete', { toolUseId: 't1', approved: true });
+      expect((await pending).behavior).toBe('allow');
+      expect(sendSpy).not.toHaveBeenCalled();
+
+      session.messageManager!.events.emit('approval:complete', { toolUseId: 't2', approved: true });
+      expect(sendSpy).toHaveBeenCalledWith('approved');
+    } finally {
+      await teardown(session);
+    }
+  });
+
+  it('question answers resolve a pending bridge request instead of stdin, with fallback', async () => {
+    const session = await startSmokeSession();
+    try {
+      const sendSpy = mock(() => {});
+      (session.claude as unknown as { sendMessage: unknown }).sendMessage = sendSpy;
+
+      const pending = session.messageManager!.handleBridgeRequest({
+        kind: 'question',
+        toolName: 'AskUserQuestion',
+        input: { questions: [{ question: 'Red or blue?', header: 'Color', options: [] }] },
+      });
+      session.messageManager!.events.emit('question:complete', {
+        toolUseId: 't1',
+        answers: [{ header: 'Color', answer: 'Blue' }],
+      });
+      const decision = await pending;
+      expect(decision.behavior).toBe('allow');
+      expect((decision.updatedInput as { answers: unknown }).answers).toEqual({ 'Red or blue?': 'Blue' });
+      expect(sendSpy).not.toHaveBeenCalled();
+
+      session.messageManager!.events.emit('question:complete', {
+        toolUseId: 't2',
+        answers: [{ header: 'Color', answer: 'Red' }],
+      });
+      expect(sendSpy).toHaveBeenCalledWith(JSON.stringify([{ header: 'Color', answer: 'Red' }]));
+    } finally {
+      await teardown(session);
+    }
   });
 });
 

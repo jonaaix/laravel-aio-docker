@@ -13,6 +13,7 @@
 
 import type { Session } from '../../session/types.js';
 import type { ClaudeEvent } from '../../claude/cli.js';
+import type { AgentBackend } from '../../agent/backend.js';
 import type { PlatformClient, PlatformFile } from '../../platform/index.js';
 import type { SessionStore } from '../../persistence/session-store.js';
 import type { GitHubEmailsStore } from '../../persistence/github-emails-store.js';
@@ -166,7 +167,7 @@ export interface SessionOperations {
   handleEvent(sessionId: string, event: ClaudeEvent): void;
 
   /** Handle Claude CLI process exit */
-  handleExit(sessionId: string, code: number): Promise<void>;
+  handleExit(sessionId: string, code: number, source?: AgentBackend): Promise<void>;
 
   // ---------------------------------------------------------------------------
   // Session Lifecycle

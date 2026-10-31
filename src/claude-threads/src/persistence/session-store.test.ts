@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
-import { writeFileSync, mkdirSync, existsSync, unlinkSync, statSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, unlinkSync, statSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { SessionStore, PersistedSession } from './session-store.js';
@@ -582,6 +582,36 @@ describe('SessionStore', () => {
       const loaded = tempStore.load();
       expect(loaded.size).toBe(1);
       expect(loaded.get('test-platform:recovered-thread')).toEqual(session);
+    });
+
+    it('a degraded read refuses the next write instead of wiping all sessions', () => {
+      tempStore = new SessionStore(tempFile);
+      const session = createTestSession();
+      tempStore.save(`${session.platformId}:${session.threadId}`, session);
+
+      writeFileSync(tempFile, '{not json');
+      const another = createTestSession({ threadId: 'thread-other' });
+      tempStore.save(`${another.platformId}:${another.threadId}`, another);
+      expect(readFileSync(tempFile, 'utf-8')).toBe('{not json');
+
+      writeFileSync(tempFile, JSON.stringify({ version: 1, sessions: {} }));
+      tempStore.save(`${another.platformId}:${another.threadId}`, another);
+      expect(tempStore.load().size).toBe(1);
+    });
+
+    it('an empty file is a writable empty store, not a degraded read', () => {
+      writeFileSync(tempFile, '');
+      tempStore = new SessionStore(tempFile);
+      expect(tempStore.load().size).toBe(0);
+
+      const session = createTestSession();
+      tempStore.save(`${session.platformId}:${session.threadId}`, session);
+      expect(tempStore.load().size).toBe(1);
+
+      writeFileSync(tempFile, '  \n\t\n');
+      expect(tempStore.load().size).toBe(0);
+      tempStore.save(`${session.platformId}:${session.threadId}`, session);
+      expect(tempStore.load().size).toBe(1);
     });
 
     it('findByThread() returns undefined with malformed file', () => {

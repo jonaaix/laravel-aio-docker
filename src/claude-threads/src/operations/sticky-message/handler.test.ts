@@ -53,6 +53,7 @@ function createMockMessageManager(overrides: Partial<{
   getTaskListState: ReturnType<typeof mock>;
 }> = {}) {
   return {
+    clearClaudeSessionState: mock(() => {}),
     closeCurrentPost: mock(() => Promise.resolve()),
     handleEvent: mock(() => Promise.resolve()),
     flush: mock(() => Promise.resolve()),
@@ -162,7 +163,7 @@ describe('buildStickyMessage', () => {
     const result = await buildStickyMessage(sessions, 'test-platform', testConfig, mockFormatter, (threadId) => `/_redirect/pl/${threadId}`);
 
     // Should contain version (CT = claude-threads, CC = Claude Code)
-    expect(result).toMatch(/`CT v\d+\.\d+\.\d+( · CC v\d+\.\d+\.\d+)?`/);
+    expect(result).toMatch(/`CT v\d+\.\d+\.\d+( · CC v\d+\.\d+\.\d+( ⚠️ (untested|unsupported))?)?`/);
     // Should contain session count
     expect(result).toContain('`0/5 sessions`');
     // Should contain uptime

@@ -81,6 +81,10 @@ export class AccountPool {
     return this.accounts.length;
   }
 
+  get all(): readonly ClaudeAccount[] {
+    return this.accounts;
+  }
+
   /**
    * Acquire an account for a session.
    *

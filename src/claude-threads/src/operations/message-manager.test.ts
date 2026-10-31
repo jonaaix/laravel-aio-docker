@@ -7,6 +7,7 @@ import { MessageManager } from './message-manager.js';
 import type { PlatformClient, PlatformFormatter, PlatformPost } from '../platform/index.js';
 import type { Session } from '../session/types.js';
 import { PostTracker } from './post-tracker.js';
+import type { TurnComplete } from './message-manager-events.js';
 
 // Mock formatter
 const mockFormatter: PlatformFormatter = {
@@ -1036,5 +1037,362 @@ describe('MessageManager', () => {
       expect(taskUpdateReceived!.total).toBe(2);
       expect(taskUpdateReceived!.allComplete).toBe(true);
     });
+  });
+});
+
+describe('clearClaudeSessionState', () => {
+  let manager: MessageManager;
+
+  beforeEach(() => {
+    const platform = createMockPlatform();
+    const session = createMockSession(platform);
+    manager = new MessageManager({
+      session,
+      platform,
+      postTracker: new PostTracker(),
+      sessionId: 'test:session-1',
+      threadId: 'thread-123',
+      registerPost: () => {},
+      updateLastMessage: () => {},
+    });
+  });
+
+  it('drops accumulated task and tool-timing state', async () => {
+    await manager.handleEvent({
+      type: 'assistant',
+      message: {
+        content: [
+          { type: 'tool_use', name: 'TaskCreate', id: 'tu-1', input: { subject: 'a task', description: 'd' } },
+          { type: 'tool_use', name: 'Bash', id: 'tu-2', input: { command: 'ls' } },
+        ],
+      },
+    });
+    const internals = manager as unknown as {
+      taskTracker: { isEmpty: boolean };
+      toolStartTimes: Map<string, number>;
+    };
+    expect(internals.taskTracker.isEmpty).toBe(false);
+    expect(internals.toolStartTimes.size).toBe(1);
+
+    manager.clearClaudeSessionState();
+
+    expect(internals.taskTracker.isEmpty).toBe(true);
+    expect(internals.toolStartTimes.size).toBe(0);
+  });
+});
+
+describe('decision bridge integration', () => {
+  let manager: MessageManager;
+
+  beforeEach(() => {
+    const platform = createMockPlatform();
+    const session = createMockSession(platform);
+    manager = new MessageManager({
+      session,
+      platform,
+      postTracker: new PostTracker(),
+      sessionId: 'test:session-1',
+      threadId: 'thread-123',
+      registerPost: () => {},
+      updateLastMessage: () => {},
+    });
+  });
+
+  it('resolves a pending plan request on approval and reports consumption', async () => {
+    const pending = manager.handleBridgeRequest({
+      kind: 'plan_approval',
+      toolName: 'ExitPlanMode',
+      input: { plan: 'p' },
+    });
+
+    expect(manager.resolveBridgePlan(true)).toBe(true);
+    const decision = await pending;
+    expect(decision.behavior).toBe('allow');
+    expect(decision.updatedInput).toEqual({ plan: 'p' });
+
+    expect(manager.resolveBridgePlan(true)).toBe(false);
+  });
+
+  it('denies a rejected plan', async () => {
+    const pending = manager.handleBridgeRequest({
+      kind: 'plan_approval',
+      toolName: 'ExitPlanMode',
+      input: { plan: 'p' },
+    });
+    expect(manager.resolveBridgePlan(false)).toBe(true);
+    const decision = await pending;
+    expect(decision.behavior).toBe('deny');
+  });
+
+  it('maps question answers from header keys to question-text keys', async () => {
+    const input = {
+      questions: [
+        { question: 'Do you prefer red or blue?', header: 'Color', options: [] },
+        { question: 'Tabs or spaces?', header: 'Style', options: [], multiSelect: false },
+      ],
+    };
+    const pending = manager.handleBridgeRequest({
+      kind: 'question',
+      toolName: 'AskUserQuestion',
+      input,
+    });
+
+    expect(
+      manager.resolveBridgeQuestion([
+        { header: 'Color', answer: 'Blue' },
+        { header: 'Style', answer: 'Spaces' },
+      ])
+    ).toBe(true);
+
+    const decision = await pending;
+    expect(decision.behavior).toBe('allow');
+    expect((decision.updatedInput as { answers: unknown }).answers).toEqual({
+      'Do you prefer red or blue?': 'Blue',
+      'Tabs or spaces?': 'Spaces',
+    });
+  });
+
+  it('returns false with no pending bridge request (stdin path keeps working)', () => {
+    expect(manager.resolveBridgePlan(true)).toBe(false);
+    expect(manager.resolveBridgeQuestion([{ header: 'X', answer: 'y' }])).toBe(false);
+  });
+
+  it('a newer plan request supersedes (denies) an abandoned one', async () => {
+    const first = manager.handleBridgeRequest({
+      kind: 'plan_approval',
+      toolName: 'ExitPlanMode',
+      input: { plan: 'old' },
+    });
+    const second = manager.handleBridgeRequest({
+      kind: 'plan_approval',
+      toolName: 'ExitPlanMode',
+      input: { plan: 'new' },
+    });
+
+    const firstDecision = await first;
+    expect(firstDecision.behavior).toBe('deny');
+    expect(firstDecision.message).toContain('Superseded');
+
+    manager.resolveBridgePlan(true);
+    expect((await second).behavior).toBe('allow');
+  });
+
+  it('dispose() denies pending bridge requests so the MCP child is not stranded', async () => {
+    const pending = manager.handleBridgeRequest({
+      kind: 'question',
+      toolName: 'AskUserQuestion',
+      input: { questions: [] },
+    });
+    manager.dispose();
+    const decision = await pending;
+    expect(decision.behavior).toBe('deny');
+    expect(decision.message).toContain('Session ended');
+  });
+
+  it('clearClaudeSessionState() denies pending bridge requests (fresh CLI, fresh MCP child)', async () => {
+    const pending = manager.handleBridgeRequest({
+      kind: 'plan_approval',
+      toolName: 'ExitPlanMode',
+      input: { plan: 'p' },
+    });
+    manager.clearClaudeSessionState();
+    const decision = await pending;
+    expect(decision.behavior).toBe('deny');
+    expect(decision.message).toContain('restarted');
+  });
+});
+
+describe('decision bridge abort handling', () => {
+  let manager: MessageManager;
+
+  beforeEach(() => {
+    const platform = createMockPlatform();
+    const session = createMockSession(platform);
+    manager = new MessageManager({
+      session,
+      platform,
+      postTracker: new PostTracker(),
+      sessionId: 'test:session-1',
+      threadId: 'thread-123',
+      registerPost: () => {},
+      updateLastMessage: () => {},
+    });
+  });
+
+  it('an aborted request clears the pending so the next decision falls back to stdin', () => {
+    const aborter = new AbortController();
+    void manager.handleBridgeRequest(
+      { kind: 'plan_approval', toolName: 'ExitPlanMode', input: { plan: 'p' } },
+      aborter.signal
+    );
+
+    aborter.abort();
+
+    expect(manager.resolveBridgePlan(true)).toBe(false);
+  });
+
+  it('an abort of a superseded request does not clear the live one', async () => {
+    const firstAborter = new AbortController();
+    const first = manager.handleBridgeRequest(
+      { kind: 'plan_approval', toolName: 'ExitPlanMode', input: { plan: 'old' } },
+      firstAborter.signal
+    );
+    const second = manager.handleBridgeRequest(
+      { kind: 'plan_approval', toolName: 'ExitPlanMode', input: { plan: 'new' } },
+      new AbortController().signal
+    );
+    expect((await first).behavior).toBe('deny');
+
+    firstAborter.abort();
+    expect(manager.resolveBridgePlan(true)).toBe(true);
+    expect((await second).behavior).toBe('allow');
+  });
+
+  it('question aborts behave the same', () => {
+    const aborter = new AbortController();
+    void manager.handleBridgeRequest(
+      { kind: 'question', toolName: 'AskUserQuestion', input: { questions: [] } },
+      aborter.signal
+    );
+    aborter.abort();
+    expect(manager.resolveBridgeQuestion([{ header: 'X', answer: 'y' }])).toBe(false);
+  });
+});
+
+describe('turn:complete', () => {
+  let platform: PlatformClient;
+  let manager: MessageManager;
+  let turns: TurnComplete[];
+
+  const text = { type: 'assistant', message: { content: [{ type: 'text', text: 'Two files.' }] } };
+  const result = { type: 'result', subtype: 'success', result: {} };
+  const failed = { type: 'result', subtype: 'error_during_execution', is_error: true };
+
+  beforeEach(() => {
+    platform = createMockPlatform();
+    manager = new MessageManager({
+      session: createMockSession(platform),
+      platform,
+      postTracker: new PostTracker(),
+      sessionId: 'test:session-1',
+      threadId: 'thread-123',
+      registerPost: () => {},
+      updateLastMessage: () => {},
+    });
+    turns = [];
+    manager.events.on('turn:complete', (t) => turns.push(t));
+  });
+
+  it('fires once per result, after the flush, naming the turn and its last post', async () => {
+    await manager.handleEvent(text);
+    await manager.handleEvent(result);
+
+    expect(turns).toEqual([{ sessionId: 'test:session-1', turn: 1, ok: true, lastPostId: 'post_1' }]);
+  });
+
+  it('reports an error result as ok false', async () => {
+    await manager.handleEvent(text);
+    await manager.handleEvent(failed);
+
+    expect(turns[0].ok).toBe(false);
+  });
+
+  it('a turn without a reply post still counts, with no post id', async () => {
+    await manager.handleEvent(result);
+    await manager.handleEvent(text);
+    await manager.handleEvent(result);
+
+    expect(turns.map((t) => [t.turn, t.lastPostId])).toEqual([[1, null], [2, 'post_1']]);
+  });
+
+  it('a failed flush still completes the turn', async () => {
+    const executor = (manager as unknown as { contentExecutor: { executeFlush: (...a: unknown[]) => Promise<void> } }).contentExecutor;
+    executor.executeFlush = async () => { throw new Error('platform down'); };
+
+    await manager.handleEvent(text);
+    await manager.handleEvent(result);
+
+    expect(turns.map((t) => t.turn)).toEqual([1]);
+  });
+
+  it('a Claude respawn does not restart the count', async () => {
+    for (const ev of [text, result, text, result]) await manager.handleEvent(ev);
+    manager.clearClaudeSessionState();
+    await manager.handleEvent(text);
+    await manager.handleEvent(result);
+
+    expect(turns.map((t) => t.turn)).toEqual([1, 2, 3]);
+  });
+
+  it('a scheduled flush cannot overlap the result flush', async () => {
+    (manager as unknown as { flushDelayMs: number }).flushDelayMs = 1;
+    let active = 0;
+    let overlapped = false;
+    const executor = (manager as unknown as { contentExecutor: { executeFlush: (...a: unknown[]) => Promise<void> } }).contentExecutor;
+    const realFlush = executor.executeFlush.bind(executor);
+    executor.executeFlush = async (...args: unknown[]) => {
+      active++;
+      if (active > 1) overlapped = true;
+      await new Promise((r) => setTimeout(r, 5));
+      try { return await realFlush(...args); } finally { active--; }
+    };
+
+    await manager.handleEvent(text);
+    await new Promise((r) => setTimeout(r, 3));
+    await manager.handleEvent(text);
+    await manager.handleEvent(result);
+    await new Promise((r) => setTimeout(r, 40));
+
+    expect(overlapped).toBe(false);
+  });
+});
+
+describe('task tracker persistence', () => {
+  function createManager(): MessageManager {
+    const platform = createMockPlatform();
+    return new MessageManager({
+      session: createMockSession(platform),
+      platform,
+      postTracker: new PostTracker(),
+      sessionId: 'test:session-1',
+      threadId: 'thread-123',
+      registerPost: () => {},
+      updateLastMessage: () => {},
+    });
+  }
+
+  const taskCreate = {
+    type: 'assistant',
+    message: { content: [{ type: 'tool_use', name: 'TaskCreate', id: 'tu-1', input: { subject: 'Migrate schema', description: 'd' } }] },
+  };
+  const created = {
+    type: 'user',
+    message: { content: [{ type: 'tool_result', tool_use_id: 'tu-1', content: 'Task #7 created successfully: Migrate schema' }] },
+  };
+
+  it('serializes resolved tasks and restores them into a fresh manager', async () => {
+    const before = createManager();
+    await before.handleEvent(taskCreate);
+    await before.handleEvent(created);
+    const snapshot = before.serialize().taskTracker;
+    expect(snapshot).toEqual([{ taskId: '7', subject: 'Migrate schema', status: 'pending' }]);
+
+    const after = createManager();
+    after.restoreTaskTracker(snapshot);
+    const ops: unknown[] = [];
+    after.events.on('task:update', (u) => ops.push(u));
+    await after.handleEvent({
+      type: 'assistant',
+      message: { content: [{ type: 'tool_use', name: 'TaskUpdate', id: 'tu-2', input: { taskId: '7', status: 'completed' } }] },
+    });
+
+    expect(after.serialize().taskTracker).toEqual([{ taskId: '7', subject: 'Migrate schema', status: 'completed' }]);
+    expect(ops).toEqual([{ completed: 1, total: 1, allComplete: true }]);
+  });
+
+  it('ignores an absent snapshot (pre-existing persisted sessions)', () => {
+    const manager = createManager();
+    manager.restoreTaskTracker(undefined);
+    expect(manager.serialize().taskTracker).toBeUndefined();
   });
 });

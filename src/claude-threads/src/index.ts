@@ -34,7 +34,7 @@ import { checkForUpdates } from './update-notifier.js';
 import { VERSION } from './version.js';
 import { keepAlive } from './utils/keep-alive.js';
 import { startReactMeasureCleanup } from './utils/perf-cleanup.js';
-import { dim, red } from './utils/colors.js';
+import { dim, red, yellow } from './utils/colors.js';
 import { validateClaudeCli } from './claude/version-check.js';
 import { validateOpencode } from './opencode/version-check.js';
 import { startUI, type UIProvider, type AppConfig } from './ui/index.js';
@@ -447,6 +447,15 @@ async function startWithoutDaemon() {
     console.error('');
     process.exit(1);
   }
+  if (backendsInUse.has('claude') && claudeValidation.status === 'untested') {
+    console.error(yellow(`  ⚠️  ${claudeValidation.message}`));
+    console.error('');
+  }
+  if (backendsInUse.has('claude') && !claudeValidation.compatible && opts.skipVersionCheck) {
+    const prefix = claudeValidation.installed ? 'running with an unsupported Claude CLI. ' : '';
+    console.error(yellow(`  ⚠️  --skip-version-check: ${prefix}${claudeValidation.message}`));
+    console.error('');
+  }
 
   // Check the opencode binary when any platform uses it. Non-fatal: a mixed
   // deployment's Claude platforms should still start, and opencode sessions
@@ -535,7 +544,7 @@ async function startWithoutDaemon() {
     version: VERSION,
     workingDir,
     claudeVersion: claudeValidation.version || 'unknown',
-    claudeCompatible: claudeValidation.compatible,
+    claudeStatus: claudeValidation.status,
     permissionMode: runtimeConfig.permissionMode,
     chromeEnabled: runtimeConfig.chromeEnabled,
     keepAliveEnabled: runtimeConfig.keepAliveEnabled,
@@ -1159,19 +1168,20 @@ async function startWithoutDaemon() {
   // Mark UI as ready
   ui.setReady();
 
+  void session.noticeClaudeAiConnectors();
+
   const shutdown = async (_signal: string) => {
     // Guard against multiple shutdown calls (SIGINT + SIGTERM)
     if (isShuttingDown) return;
     isShuttingDown = true;
+    // Set shutdown flag FIRST to prevent race conditions with exit events
+    session.setShuttingDown();
 
     // Update status bar to show shutdown in progress
     ui.setShuttingDown();
 
     // Give React a moment to render the shutdown state
     await new Promise((resolve) => setTimeout(resolve, 50));
-
-    // Set shutdown flag FIRST to prevent race conditions with exit events
-    session.setShuttingDown();
 
     // Update sticky messages to show shutdown state
     await session.updateAllStickyMessages();

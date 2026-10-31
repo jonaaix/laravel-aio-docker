@@ -152,6 +152,15 @@ function extractAndUpdatePullRequest(
 // Pre/Post Processing for MessageManager integration
 // ---------------------------------------------------------------------------
 
+function isSidechainEvent(event: ClaudeEvent): boolean {
+  return Boolean((event as { parent_tool_use_id?: unknown }).parent_tool_use_id);
+}
+
+function contentBlocks(event: ClaudeEvent): Array<{ type: string; name?: string; is_error?: boolean }> {
+  const content = (event.message as { content?: unknown } | undefined)?.content;
+  return Array.isArray(content) ? content : [];
+}
+
 /**
  * Pre-processing for events when using MessageManager.
  * Handles session-specific side effects that should run BEFORE the main event handling.
@@ -183,8 +192,15 @@ export function handleEventPreProcessing(
       subtype?: string;
       status?: string;
       compact_metadata?: unknown;
+      compact_result?: string;
+      compact_error?: string;
       slash_commands?: string[];
+      mcp_servers?: Array<{ name?: string; status?: string }>;
     };
+
+    if (e.subtype === 'init' && Array.isArray(e.mcp_servers)) {
+      reportMcpServers(session, e.mcp_servers);
+    }
 
     // Capture available slash commands from init event
     if (e.subtype === 'init' && e.slash_commands && Array.isArray(e.slash_commands)) {
@@ -202,12 +218,26 @@ export function handleEventPreProcessing(
     if (e.subtype === 'status' && e.status === 'compacting') {
       handleCompactionStart(session, ctx);
     }
+    if (e.subtype === 'status' && e.compact_result === 'failed') {
+      void handleCompactionFailed(session, e.compact_error);
+    }
     if (e.subtype === 'compact_boundary') {
       handleCompactionComplete(session, e.compact_metadata, ctx);
     }
   }
 
+  if (event.type === 'auth_status') {
+    handleAuthStatus(session, event as ClaudeEvent & { isAuthenticating?: boolean; output?: string[]; error?: string });
+  }
+
   // Track tool use events for bug reporting context
+  if (event.type === 'assistant' && !isSidechainEvent(event)) {
+    for (const block of contentBlocks(event)) {
+      if (block.type === 'tool_use' && block.name) {
+        trackEvent(session, 'tool_use', block.name);
+      }
+    }
+  }
   if (event.type === 'tool_use') {
     const tool = event.tool_use as { name: string };
     trackEvent(session, 'tool_use', tool.name);
@@ -221,7 +251,8 @@ export function handleEventPreProcessing(
 export function handleEventPostProcessing(
   session: Session,
   event: ClaudeEvent,
-  ctx: SessionContext
+  ctx: SessionContext,
+  mainHandling?: Promise<void>
 ): void {
   // Handle assistant events - extract PR URLs, detect commands
   if (event.type === 'assistant') {
@@ -232,6 +263,8 @@ export function handleEventPostProcessing(
       if (block.type === 'text' && block.text) {
         // Detect and store pull request URLs
         extractAndUpdatePullRequest(block.text, session, ctx);
+        // Subagent text is never displayed, so it must not drive visible side effects.
+        if (isSidechainEvent(event)) continue;
         // Detect and execute Claude commands (e.g., !cd)
         detectAndExecuteClaudeCommands(block.text, session, ctx);
         // Multi-bot: a bot hands off ONLY via the explicit sentence
@@ -257,7 +290,7 @@ export function handleEventPostProcessing(
     session.lastAddressedAt = Date.now();
     ctx.ops.emitSessionUpdate(session.sessionId, { status: getSessionStatus(session) });
     updateUsageStats(session, event, ctx);
-    ctx.ops.persistSession(session);
+    persistAfterTurn(session, ctx, mainHandling);
 
     // Turn is over → NOW fire any bot→bot handoff this bot signalled in its own
     // output. Doing it here (not when a peer receives the message) means the
@@ -273,6 +306,13 @@ export function handleEventPostProcessing(
   }
 
   // Track tool errors for bug reporting context
+  if (event.type === 'user' && !isSidechainEvent(event)) {
+    for (const block of contentBlocks(event)) {
+      if (block.type === 'tool_result' && block.is_error) {
+        trackEvent(session, 'tool_error', 'Tool execution failed');
+      }
+    }
+  }
   if (event.type === 'tool_result') {
     const result = event.tool_result as { is_error?: boolean };
     if (result.is_error) {
@@ -290,6 +330,78 @@ export function handleEventPostProcessing(
 
 }
 
+function persistAfterTurn(session: Session, ctx: SessionContext, mainHandling?: Promise<void>): void {
+  if (!mainHandling) {
+    ctx.ops.persistSession(session);
+    return;
+  }
+  // Waits for the turn's ops (task-list finalize) to settle, then skips if teardown already unregistered the session.
+  void mainHandling
+    .catch(() => undefined)
+    .then(() => {
+      if (ctx.state.sessions.get(session.sessionId) !== session) return;
+      ctx.ops.persistSession(session);
+    });
+}
+
+// ---------------------------------------------------------------------------
+// MCP servers and auth status
+// ---------------------------------------------------------------------------
+
+const CLAUDE_AI_CONNECTOR_PREFIX = 'claude.ai ';
+
+function describeMcpServers(servers: Array<{ name?: string; status?: string }>): string {
+  return servers.map((s) => `${s.name ?? '?'} (${s.status ?? 'unknown'})`).join(', ');
+}
+
+function reportMcpServers(session: Session, servers: Array<{ name?: string; status?: string }>): void {
+  const sorted = [...servers].sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
+  const summary = describeMcpServers(sorted) || 'none';
+  if (session.mcpServersSummary === summary) return;
+  session.mcpServersSummary = summary;
+  sessionLog(session).info(`MCP servers: ${summary}`);
+
+  const down = servers.filter((s) => s.status !== 'connected' && s.status !== 'pending');
+  if (down.length > 0) {
+    sessionLog(session).warn(`MCP servers not connected: ${describeMcpServers(down)}`);
+  }
+
+  const connectors = servers.filter((s) => (s.name ?? '').startsWith(CLAUDE_AI_CONNECTOR_PREFIX));
+  if (connectors.length === 0 || session.platform.getMcpConfig().claudeAiConnectors === true) return;
+  const names = connectors.map((s) => s.name).join(', ');
+  sessionLog(session).warn(
+    `claude.ai connectors are active although claudeAiConnectors is off: ${names}. ` +
+    `This Claude CLI ignores both disableClaudeAiConnectors and ENABLE_CLAUDEAI_MCP_SERVERS; upgrade it.`,
+  );
+  const f = session.platform.getFormatter();
+  void withErrorHandling(
+    () => post(session, 'warning',
+      `${f.formatBold('claude.ai connectors are active in this session')} (${names}) although ` +
+      `${f.formatCode('claudeAiConnectors')} is off for this platform. This Claude CLI version ignores the ` +
+      `switch; upgrade the CLI on the bot's machine.`),
+    { action: 'Post connector warning', session },
+  );
+}
+
+function handleAuthStatus(
+  session: Session,
+  event: { isAuthenticating?: boolean; output?: string[]; error?: string }
+): void {
+  if (!event.error) {
+    const lastLine = event.output?.length ? ` (${event.output[event.output.length - 1]})` : '';
+    sessionLog(session).info(`🔐 Claude CLI auth status: authenticating=${event.isAuthenticating ?? false}${lastLine}`);
+    return;
+  }
+  sessionLog(session).warn(`🔐 Claude CLI auth error: ${event.error}`);
+  if (session.lastAuthErrorPosted === event.error) return;
+  session.lastAuthErrorPosted = event.error;
+  const error = event.error;
+  void withErrorHandling(
+    () => post(session, 'warning', `🔐 Claude CLI authentication problem: ${error}`),
+    { action: 'Post auth status warning', session }
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Compaction handling
 // ---------------------------------------------------------------------------
@@ -297,25 +409,55 @@ export function handleEventPostProcessing(
 /**
  * Handle compaction start - create a dedicated post that we can update later.
  */
-async function handleCompactionStart(
+function handleCompactionStart(
   session: Session,
   _ctx: SessionContext
-): Promise<void> {
-  // Close current post (flushes pending content) to avoid mixing with compaction message
-  await session.messageManager?.closeCurrentPost();
+): void {
+  // Assigned synchronously: a failure or boundary in the same stdout chunk must await this post instead of racing it.
+  session.compactionPostPromise = (async () => {
+    // Close current post (flushes pending content) to avoid mixing with compaction message
+    await session.messageManager?.closeCurrentPost();
 
-  // Create the compaction status post
+    // Create the compaction status post
+    const formatter = session.platform.getFormatter();
+    const message = `🗜️ ${formatter.formatBold('Compacting context...')} ${formatter.formatItalic('(freeing up memory)')}`;
+    const compactionPost = await withErrorHandling(
+      () => post(session, 'info', message),
+      { action: 'Post compaction start', session }
+    );
+
+    if (compactionPost) {
+      session.compactionPostId = compactionPost.id;
+      // Note: post() already calls updateLastMessage internally
+    }
+  })();
+}
+
+async function awaitCompactionStartPost(session: Session): Promise<void> {
+  if (!session.compactionPostPromise) return;
+  await session.compactionPostPromise.catch(() => {});
+  session.compactionPostPromise = undefined;
+}
+
+async function handleCompactionFailed(session: Session, compactError: string | undefined): Promise<void> {
+  await awaitCompactionStartPost(session);
+
   const formatter = session.platform.getFormatter();
-  const message = `🗜️ ${formatter.formatBold('Compacting context...')} ${formatter.formatItalic('(freeing up memory)')}`;
-  const compactionPost = await withErrorHandling(
-    () => post(session, 'info', message),
-    { action: 'Post compaction start', session }
-  );
+  const message = `⚠️ ${formatter.formatBold('Compaction failed')} ${formatter.formatItalic(`(${compactError || 'unknown error'})`)}`;
 
-  if (compactionPost) {
-    session.compactionPostId = compactionPost.id;
-    // Note: post() already calls updateLastMessage internally
+  const startPostId = session.compactionPostId;
+  if (startPostId) {
+    await withErrorHandling(
+      () => updatePost(session, startPostId, message),
+      { action: 'Update compaction post (failed)', session }
+    );
+    session.compactionPostId = undefined;
+    return;
   }
+  await withErrorHandling(
+    () => post(session, 'info', message),
+    { action: 'Post compaction failure', session }
+  );
 }
 
 /**
@@ -326,12 +468,17 @@ async function handleCompactionComplete(
   compactMetadata: unknown,
   _ctx: SessionContext
 ): Promise<void> {
+  await awaitCompactionStartPost(session);
+
   // Build the completion message with metadata
-  const metadata = compactMetadata as { trigger?: string; pre_tokens?: number } | undefined;
+  const metadata = compactMetadata as { trigger?: string; pre_tokens?: number; post_tokens?: number } | undefined;
   const trigger = metadata?.trigger || 'auto';
   const preTokens = metadata?.pre_tokens;
+  const postTokens = metadata?.post_tokens;
   let info = trigger === 'manual' ? 'manual' : 'auto';
-  if (preTokens && preTokens > 0) {
+  if (preTokens && preTokens > 0 && postTokens && postTokens > 0) {
+    info += `, ${Math.round(preTokens / 1000)}k → ${Math.max(1, Math.round(postTokens / 1000))}k tokens`;
+  } else if (preTokens && preTokens > 0) {
     info += `, ${Math.round(preTokens / 1000)}k tokens`;
   }
   const formatter = session.platform.getFormatter();

@@ -43,6 +43,7 @@ export interface BaseMcpConfig {
   token: string;
   channelId: string;
   allowedUsers: string[];
+  claudeAiConnectors?: boolean;
 }
 
 /**

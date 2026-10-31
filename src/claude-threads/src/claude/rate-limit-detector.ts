@@ -125,3 +125,30 @@ function extractResetAt(text: string, now: number): number | undefined {
 
   return undefined;
 }
+
+const MAX_RESET_HORIZON_MS = 8 * 86_400_000;
+const PAST_SKEW_TOLERANCE_MS = 2 * 60_000;
+const SKEWED_RESET_COOLDOWN_MS = 60_000;
+
+export function parseRateLimitEvent(event: unknown, now: number = Date.now()): RateLimitHit {
+  const info = (event as { rate_limit_info?: unknown })?.rate_limit_info;
+  if (!info || typeof info !== 'object') return { detected: false };
+
+  const { status, resetsAt } = info as { status?: unknown; resetsAt?: unknown };
+  // Only 'rejected' blocks a request; 'allowed_warning' fires routinely near a limit and must not bench the account.
+  if (status !== 'rejected') return { detected: false };
+
+  return {
+    detected: true,
+    matched: `rate_limit_event status=${status}`,
+    resetAtEpochMs: plausibleResetAt(resetsAt, now),
+  };
+}
+
+function plausibleResetAt(resetsAt: unknown, now: number): number | undefined {
+  if (typeof resetsAt !== 'number') return undefined;
+  const ms = resetsAt * 1000;
+  if (ms > now && ms - now < MAX_RESET_HORIZON_MS) return ms;
+  if (ms <= now && now - ms < PAST_SKEW_TOLERANCE_MS) return now + SKEWED_RESET_COOLDOWN_MS;
+  return undefined;
+}

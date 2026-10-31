@@ -59,6 +59,9 @@ function createMockMessageManager(initialApproval?: { postId: string; type: stri
     getPendingQuestionSet: () => pendingQuestionSet,
     clearPendingQuestionSet: () => { pendingQuestionSet = null; },
     getTaskListState: () => null,
+    resolveBridgePlan: () => false,
+    denyPendingBridgeRequests: () => {},
+    clearClaudeSessionState: () => {},
     dispose: () => {},
   } as any;
 }
@@ -982,5 +985,105 @@ describe('setRespondOnlyWhenMentioned (#402)', () => {
 
     expect(session.respondOnlyWhenMentioned).toBe(false);
     expect(ctx.ops.persistSession).not.toHaveBeenCalled();
+  });
+});
+
+describe('restartClaudeSession session-state clearing', () => {
+  const withFakeClaudePath = async (fn: () => Promise<void>) => {
+    const prev = process.env.CLAUDE_PATH;
+    process.env.CLAUDE_PATH = '/nonexistent/claude-binary-for-tests';
+    try {
+      await fn();
+    } finally {
+      if (prev === undefined) delete process.env.CLAUDE_PATH;
+      else process.env.CLAUDE_PATH = prev;
+    }
+  };
+
+  it('awaits the old CLI exit, then clears task/tool state for a fresh session (resume: false)', async () => {
+    await withFakeClaudePath(async () => {
+      const order: string[] = [];
+      const session = createMockSession();
+      (session.claude as unknown as { kill: unknown }).kill = mock(
+        () => new Promise<void>(resolve => setTimeout(() => { order.push('kill-done'); resolve(); }, 5))
+      );
+      (session.messageManager as unknown as { clearClaudeSessionState: unknown }).clearClaudeSessionState =
+        mock(() => order.push('clear'));
+      const ctx = createMockSessionContext(new Map([[session.sessionId, session]]));
+
+      await commands.restartClaudeSession(session, { workingDir: '/tmp', resume: false } as never, ctx, 'test restart');
+      session.claude.on('error', () => {});
+
+      expect(order).toEqual(['kill-done', 'clear']);
+    });
+  });
+
+  it('keeps task/tool state on resume restarts but still denies pending bridge decisions', async () => {
+    await withFakeClaudePath(async () => {
+      const session = createMockSession();
+      (session.claude as unknown as { kill: unknown }).kill = mock(() => Promise.resolve());
+      const clearSpy = mock(() => {});
+      const denySpy = mock(() => {});
+      (session.messageManager as unknown as { clearClaudeSessionState: unknown }).clearClaudeSessionState = clearSpy;
+      (session.messageManager as unknown as { denyPendingBridgeRequests: unknown }).denyPendingBridgeRequests = denySpy;
+      const ctx = createMockSessionContext(new Map([[session.sessionId, session]]));
+
+      await commands.restartClaudeSession(session, { workingDir: '/tmp', resume: true } as never, ctx, 'test restart');
+      session.claude.on('error', () => {});
+
+      expect(clearSpy).not.toHaveBeenCalled();
+      expect(denySpy).toHaveBeenCalled();
+    });
+  });
+
+  it('leaves the restarting state once the new CLI started, but never clobbers a cancel', async () => {
+    await withFakeClaudePath(async () => {
+      const session = createMockSession();
+      (session.claude as unknown as { kill: unknown }).kill = mock(() => Promise.resolve());
+      const ctx = createMockSessionContext(new Map([[session.sessionId, session]]));
+
+      await commands.restartClaudeSession(session, { workingDir: '/tmp', resume: true } as never, ctx, 'test restart');
+      session.claude.on('error', () => {});
+      expect(session.lifecycle.state).toBe('active');
+
+      const cancelled = createMockSession();
+      (cancelled.claude as unknown as { kill: unknown }).kill = mock(() => {
+        cancelled.lifecycle.state = 'cancelling';
+        return Promise.resolve();
+      });
+      await commands.restartClaudeSession(cancelled, { workingDir: '/tmp', resume: true } as never, ctx, 'test restart');
+      cancelled.claude.on('error', () => {});
+      expect(cancelled.lifecycle.state).toBe('cancelling');
+    });
+  });
+});
+
+describe('approvePendingPlan with a pending decision-bridge request', () => {
+  it('resolves the bridge and does NOT send the stdin message', async () => {
+    const session = createMockSession({
+      platform: createMockPlatform(),
+      pendingApproval: { postId: 'plan-post-1', type: 'plan', toolUseId: 'tool-1' },
+    });
+    const resolveSpy = mock(() => true);
+    (session.messageManager as unknown as { resolveBridgePlan: unknown }).resolveBridgePlan = resolveSpy;
+    const ctx = createMockSessionContext(new Map([[session.sessionId, session]]));
+
+    await commands.approvePendingPlan(session, 'testuser', ctx);
+
+    expect(resolveSpy).toHaveBeenCalledWith(true);
+    expect(session.claude.sendMessage).not.toHaveBeenCalled();
+    expect(session.planApproved).toBe(true);
+  });
+
+  it('falls back to the stdin message when nothing is pending on the bridge', async () => {
+    const session = createMockSession({
+      platform: createMockPlatform(),
+      pendingApproval: { postId: 'plan-post-1', type: 'plan', toolUseId: 'tool-1' },
+    });
+    const ctx = createMockSessionContext(new Map([[session.sessionId, session]]));
+
+    await commands.approvePendingPlan(session, 'testuser', ctx);
+
+    expect(session.claude.sendMessage).toHaveBeenCalledWith('Plan approved! Please proceed with the implementation.');
   });
 });

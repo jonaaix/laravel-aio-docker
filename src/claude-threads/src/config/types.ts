@@ -355,6 +355,7 @@ export interface PlatformInstanceConfig {
    * boundary (bash commands are checked heuristically for absolute paths / `..`).
    */
   writeScope?: WriteScopeMode;
+  claudeAiConnectors?: boolean;
   // Platform-specific fields (TypeScript allows extra properties)
   [key: string]: unknown;
 }

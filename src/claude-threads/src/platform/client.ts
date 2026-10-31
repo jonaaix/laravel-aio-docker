@@ -122,6 +122,7 @@ export interface PlatformClient extends EventEmitter {
     allowedUsers: string[];
     appToken?: string;
     outboundFiles?: { enabled?: boolean; maxBytes?: number };
+    claudeAiConnectors?: boolean;
   };
 
   /**

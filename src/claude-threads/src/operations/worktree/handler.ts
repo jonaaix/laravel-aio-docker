@@ -5,7 +5,7 @@
  */
 
 import type { Session } from '../../session/types.js';
-import { transitionTo } from '../../session/types.js';
+import { transitionTo, isSessionRestarting } from '../../session/types.js';
 import type { WorktreeMode, PermissionMode } from '../../config/index.js';
 import { effectivePermissionMode } from '../../config/index.js';
 import type { PlatformFile } from '../../platform/index.js';
@@ -25,6 +25,7 @@ import {
 } from '../../git/worktree.js';
 import type { ClaudeCliOptions, ClaudeEvent } from '../../claude/cli.js';
 import { ClaudeCli } from '../../claude/cli.js';
+import type { AgentBackend } from '../../agent/backend.js';
 import { buildRestartCliOptions } from '../../claude/restart-options.js';
 import { buildAppendSystemPrompt } from '../../commands/system-prompt-generator.js';
 import { postSkippedFilesFeedback, type BuiltMessageContent } from '../streaming/handler.js';
@@ -386,6 +387,26 @@ export async function handleWorktreeSkip(
   }
 }
 
+interface ClaudeRespawnBindings {
+  handleEvent: (sessionId: string, event: ClaudeEvent) => void;
+  handleExit: (sessionId: string, code: number, source?: AgentBackend) => Promise<void>;
+}
+
+function startFreshClaude(session: Session, cliOptions: ClaudeCliOptions, bindings: ClaudeRespawnBindings): void {
+  session.messageManager?.clearClaudeSessionState();
+  const newClaude = new ClaudeCli(cliOptions);
+  session.claude = newClaude;
+
+  newClaude.on('event', (e: ClaudeEvent) => bindings.handleEvent(session.sessionId, e));
+  newClaude.on('exit', (code: number) => bindings.handleExit(session.sessionId, code, newClaude));
+
+  newClaude.start();
+  // A cancel issued during the respawn has moved the session on; it must not be clobbered back to active.
+  if (isSessionRestarting(session)) {
+    transitionTo(session, 'active');
+  }
+}
+
 /**
  * Create a new worktree and switch the session to it.
  */
@@ -399,7 +420,7 @@ export async function createAndSwitchToWorktree(
     worktreeMode: WorktreeMode;
     permissionTimeoutMs?: number;
     handleEvent: (sessionId: string, event: ClaudeEvent) => void;
-    handleExit: (sessionId: string, code: number) => Promise<void>;
+    handleExit: (sessionId: string, code: number, source?: AgentBackend) => Promise<void>;
     updateSessionHeader: (session: Session) => Promise<void>;
     flush: (session: Session) => Promise<void>;
     persistSession: (session: Session) => void;
@@ -481,7 +502,7 @@ export async function createAndSwitchToWorktree(
       if (session.claude.isRunning()) {
         options.stopTyping(session);
         transitionTo(session, 'restarting');
-        session.claude.kill();
+        await session.claude.kill();
 
         // Flush any pending content
         await options.flush(session);
@@ -521,14 +542,7 @@ export async function createAndSwitchToWorktree(
             { omitSessionContext: !needsTitlePrompt, writeConfined: options.writeConfined },
           ),
         };
-        session.claude = new ClaudeCli(cliOptions);
-
-        // Rebind event handlers
-        session.claude.on('event', (e: ClaudeEvent) => options.handleEvent(session.sessionId, e));
-        session.claude.on('exit', (code: number) => options.handleExit(session.sessionId, code));
-
-        // Start the new CLI
-        session.claude.start();
+        startFreshClaude(session, cliOptions, options);
       }
 
       // Update session header
@@ -640,7 +654,7 @@ export async function createAndSwitchToWorktree(
     if (session.claude.isRunning()) {
       options.stopTyping(session);
       transitionTo(session, 'restarting');
-      session.claude.kill();
+      await session.claude.kill();
 
       // Flush any pending content
       await options.flush(session);
@@ -681,14 +695,7 @@ export async function createAndSwitchToWorktree(
           { omitSessionContext: !needsTitlePrompt, writeConfined: options.writeConfined },
         ),
       };
-      session.claude = new ClaudeCli(cliOptions);
-
-      // Rebind event handlers (use sessionId which is the composite key)
-      session.claude.on('event', (e: ClaudeEvent) => options.handleEvent(session.sessionId, e));
-      session.claude.on('exit', (code: number) => options.handleExit(session.sessionId, code));
-
-      // Start the new CLI
-      session.claude.start();
+      startFreshClaude(session, cliOptions, options);
     }
 
     // Update session header

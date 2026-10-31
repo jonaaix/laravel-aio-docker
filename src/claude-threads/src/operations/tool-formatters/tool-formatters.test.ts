@@ -326,6 +326,57 @@ describe('Task Tools Formatter', () => {
     expect(result!.hidden).toBe(true);
   });
 
+  it('hides the incremental task tools', () => {
+    for (const name of ['TaskCreate', 'TaskUpdate', 'TaskGet', 'TaskList']) {
+      expect(taskToolsFormatter.format(name, {}, options)!.hidden).toBe(true);
+    }
+  });
+
+  it('gives ExitPlanMode a permissionText carrying the plan', () => {
+    const result = taskToolsFormatter.format(
+      'ExitPlanMode',
+      { plan: 'Step 1: do the thing\nStep 2: verify' },
+      options
+    );
+
+    expect(result!.hidden).toBe(true);
+    expect(result!.permissionText).toContain('Plan approval requested');
+    expect(result!.permissionText).toContain('Step 1: do the thing');
+  });
+
+  it('falls back to a bare header when ExitPlanMode has no plan', () => {
+    const result = taskToolsFormatter.format('ExitPlanMode', {}, options);
+    expect(result!.permissionText).toContain('Plan approval requested');
+    expect(result!.permissionText).not.toContain('undefined');
+  });
+
+  it('truncates long plans and re-balances an unclosed code fence', () => {
+    const plan = 'Intro\n```bash\n' + 'echo line\n'.repeat(400) + '```\n';
+    const result = taskToolsFormatter.format('ExitPlanMode', { plan }, options);
+
+    const text = result!.permissionText!;
+    expect(text).toContain('…');
+    expect(text.length).toBeLessThan(1700);
+    expect((text.match(/^```/gm) || []).length % 2).toBe(0);
+  });
+
+  it('never rewrites an untruncated plan (inline ``` mentions are not fences)', () => {
+    const plan = 'Users can escape fences by typing ``` in their message.';
+    const result = taskToolsFormatter.format('ExitPlanMode', { plan }, options);
+
+    expect(result!.permissionText).toContain(plan);
+    expect(result!.permissionText).not.toContain('…');
+    expect(result!.permissionText!.endsWith('```')).toBe(false);
+  });
+
+  it('does not add an ellipsis to an emoji-heavy plan that is not actually cut', () => {
+    const plan = '🎉'.repeat(800);
+    const result = taskToolsFormatter.format('ExitPlanMode', { plan }, options);
+
+    expect(result!.permissionText).toContain(plan);
+    expect(result!.permissionText).not.toContain('…');
+  });
+
   it('hides AskUserQuestion', () => {
     const result = taskToolsFormatter.format('AskUserQuestion', {}, options);
 

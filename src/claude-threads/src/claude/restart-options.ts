@@ -43,5 +43,6 @@ export function buildRestartCliOptions(
     uploadDir: getSessionUploadDir(session.platformId, session.threadId),
     outboundFiles: platformMcpConfig.outboundFiles,
     sessionOwnerUsername: session.startedBy,
+    decisionBridgePath: session.decisionBridge?.path,
   };
 }

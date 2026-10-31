@@ -10,6 +10,7 @@ import type { SessionInfo } from '../ui/types.js';
 import type { RecentEvent, ErrorContext } from '../operations/bug-report/index.js';
 import type { ThreadLogger } from '../persistence/thread-logger.js';
 import type { MessageManager } from '../operations/message-manager.js';
+import type { DecisionBridgeServer } from '../mcp/decision-bridge.js';
 import type { QuestionOption } from '../operations/types.js';
 import type { SessionTimers } from './timer-manager.js';
 import { checkTransition } from './lifecycle-fsm.js';
@@ -437,6 +438,9 @@ export interface Session {
 
   // Compaction support
   compactionPostId?: string;  // Post ID of "Compacting..." message (for updating on completion)
+  compactionPostPromise?: Promise<void>;
+  lastAuthErrorPosted?: string;
+  mcpServersSummary?: string;
 
   // Session title and description (auto-generated via quickQuery)
   sessionTitle?: string;       // Short title describing the session topic (3-6 words)
@@ -481,6 +485,8 @@ export interface Session {
    * Always present in running sessions.
    */
   messageManager?: MessageManager;
+
+  decisionBridge?: DecisionBridgeServer;
 }
 
 // =============================================================================

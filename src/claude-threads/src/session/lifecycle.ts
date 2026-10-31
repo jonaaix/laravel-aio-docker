@@ -22,6 +22,7 @@ import { isAuthorizedForSession } from './authorization.js';
 import type { PlatformClient, PlatformFile, ThreadMessage } from '../platform/index.js';
 import type { ClaudeCliOptions, ClaudeEvent, RateLimitHit } from '../claude/cli.js';
 import { ClaudeCli } from '../claude/cli.js';
+import { DecisionBridgeServer, BridgeUnavailableError } from '../mcp/decision-bridge.js';
 import type { AgentBackend } from '../agent/backend.js';
 import { OpencodeAgent, parseOpencodeModel, type OpencodeAgentOptions } from '../opencode/agent.js';
 import { cooldownDeadline } from '../claude/rate-limit-detector.js';
@@ -218,6 +219,7 @@ async function cleanupSession(
     await closeThreadLogger(session, action, details);
   }
   session.messageManager?.dispose();
+  closeDecisionBridge(session);
   ctx.ops.emitSessionRemove(session.sessionId);
   mutableSessions(ctx).delete(session.sessionId);
   if (doCleanupPostIndex) {
@@ -256,11 +258,33 @@ function releaseAccountIfHeld(session: Session, ctx: SessionContext): void {
 function removeFromRegistry(session: Session, ctx: SessionContext): void {
   clearBootAck(session);
   session.messageManager?.dispose();
+  closeDecisionBridge(session);
   ctx.ops.emitSessionRemove(session.sessionId);
   mutableSessions(ctx).delete(session.sessionId);
   cleanupPostIndex(ctx, session.threadId);
   keepAlive.sessionEnded();
   releaseAccountIfHeld(session, ctx);
+}
+
+function closeDecisionBridge(session: Session): void {
+  void session.decisionBridge?.close();
+  session.decisionBridge = undefined;
+}
+
+async function createSessionDecisionBridge(
+  sessionRef: { current?: Session }
+): Promise<DecisionBridgeServer | null> {
+  try {
+    return await DecisionBridgeServer.create(async (request, signal) => {
+      const messageManager = sessionRef.current?.messageManager;
+      // Dropping the connection lets the MCP server fall back to its own prompts; a deny would be final.
+      if (!messageManager) throw new BridgeUnavailableError('Session is not ready for decisions yet');
+      return messageManager.handleBridgeRequest(request, signal);
+    });
+  } catch (err) {
+    log.warn(`Decision bridge unavailable — falling back to legacy MCP prompts: ${err}`);
+    return null;
+  }
 }
 
 /**
@@ -481,12 +505,22 @@ function createMessageManager(
   // These replace the callback-based approach for cleaner separation of concerns
 
   messageManager.events.on('question:complete', ({ toolUseId: _toolUseId, answers }) => {
+    if (messageManager.resolveBridgeQuestion(answers)) {
+      sessionLog(session).info('Question answered via decision bridge');
+      ctx.ops.startTyping(session);
+      return;
+    }
     // Send answers back to Claude
     const answerJson = JSON.stringify(answers);
     session.claude.sendMessage(answerJson);
   });
 
   messageManager.events.on('approval:complete', ({ toolUseId: _toolUseId, approved }) => {
+    if (messageManager.resolveBridgePlan(approved)) {
+      sessionLog(session).info(`Plan ${approved ? 'approved' : 'denied'} via decision bridge`);
+      ctx.ops.startTyping(session);
+      return;
+    }
     // Send approval/denial back to Claude
     const response = approved ? 'approved' : 'denied';
     session.claude.sendMessage(response);
@@ -1225,6 +1259,11 @@ export async function startSession(
     log.info(`Session ${sessionId.substring(0, 20)} reserved Claude account "${claudeAccount.id}"`);
   }
 
+  const bridgeSessionRef: { current?: Session } = {};
+  const decisionBridge = agentBackend === 'claude'
+    ? await createSessionDecisionBridge(bridgeSessionRef)
+    : null;
+
   const cliOptions: ClaudeCliOptions = {
     workingDir,
     threadId: actualThreadId,
@@ -1243,31 +1282,38 @@ export async function startSession(
     uploadDir: getSessionUploadDir(platformId, actualThreadId),
     outboundFiles: platformMcpConfig.outboundFiles,
     sessionOwnerUsername: username,
+    decisionBridgePath: decisionBridge?.path,
   };
   // Spawn the selected backend. opencode ignores the Claude-specific
   // cliOptions (MCP permission tool, account env, statusline) and instead
   // talks to the shared opencode server; it only needs the working directory
   // and the appended system prompt.
-  const claude: AgentBackend = agentBackend === 'opencode'
-    ? new OpencodeAgent({
-        workingDir,
-        logSessionId: sessionId,
-        appendSystemPrompt: systemPrompt,
-        title: `claude-threads: ${options.prompt?.slice(0, 60) ?? 'session'}`,
-        // Per-platform `model` (opencode notation "provider/model"); undefined
-        // → opencode uses its own default from opencode.json.
-        model: parseOpencodeModel(ctx.ops.getPlatformModel(platformId)),
-        writeScopeDirs: writeScopeDirsFor(ctx, platformId, workingDir),
-        mcp: opencodeMcpOptionsFor(
-          platformMcpConfig,
+  let claude: AgentBackend;
+  try {
+    claude = agentBackend === 'opencode'
+      ? new OpencodeAgent({
           workingDir,
-          getSessionUploadDir(platformId, actualThreadId),
-          actualThreadId,
-          username,
-          ctx.config.permissionTimeoutMs ?? 120_000,
-        ),
-      })
-    : new ClaudeCli(cliOptions);
+          logSessionId: sessionId,
+          appendSystemPrompt: systemPrompt,
+          title: `claude-threads: ${options.prompt?.slice(0, 60) ?? 'session'}`,
+          // Per-platform `model` (opencode notation "provider/model"); undefined
+          // → opencode uses its own default from opencode.json.
+          model: parseOpencodeModel(ctx.ops.getPlatformModel(platformId)),
+          writeScopeDirs: writeScopeDirsFor(ctx, platformId, workingDir),
+          mcp: opencodeMcpOptionsFor(
+            platformMcpConfig,
+            workingDir,
+            getSessionUploadDir(platformId, actualThreadId),
+            actualThreadId,
+            username,
+            ctx.config.permissionTimeoutMs ?? 120_000,
+          ),
+        })
+      : new ClaudeCli(cliOptions);
+  } catch (err) {
+    void decisionBridge?.close();
+    throw err;
+  }
 
   // Create the session object
   const session: Session = {
@@ -1310,10 +1356,12 @@ export async function startSession(
     threadLogger: createThreadLogger(platformId, actualThreadId, claudeSessionId, {
       enabled: ctx.config.threadLogsEnabled ?? true,
     }),
+    decisionBridge: decisionBridge ?? undefined,
   };
 
   // Create MessageManager for this session
   session.messageManager = createMessageManager(session, ctx);
+  bridgeSessionRef.current = session;
 
   // Log session start
   session.threadLogger?.logLifecycle('start', {
@@ -1348,7 +1396,7 @@ export async function startSession(
 
   // Bind event handlers (use sessionId which is the composite key)
   claude.on('event', (e: ClaudeEvent) => ctx.ops.handleEvent(sessionId, e));
-  claude.on('exit', (code: number) => ctx.ops.handleExit(sessionId, code));
+  claude.on('exit', (code: number) => ctx.ops.handleExit(sessionId, code, claude));
   claude.on('rate-limit', (hit: RateLimitHit) => handleRateLimit(session, hit, ctx));
 
   try {
@@ -1358,6 +1406,7 @@ export async function startSession(
     clearBootAck(session);
     ctx.ops.stopTyping(session);
     session.messageManager?.dispose();
+    closeDecisionBridge(session);
     ctx.ops.emitSessionRemove(session.sessionId);
     mutableSessions(ctx).delete(session.sessionId);
     releaseAccountIfHeld(session, ctx);
@@ -1465,12 +1514,27 @@ export async function startSession(
   // Persistence happens in events.ts when we receive the first response from Claude.
 }
 
+export type ResumeTrigger = 'user' | 'boot' | 'platform-enabled';
+
+function resumeOutcome(trigger: ResumeTrigger): string {
+  if (trigger === 'user') return 'Reconnected to Claude session. You can continue where you left off.';
+  const stoppedBy = trigger === 'platform-enabled'
+    ? 'when the platform was disabled has stopped'
+    : 'when the bot stopped did not survive the restart';
+  return `Conversation history is intact, but anything that was still running ${stoppedBy} — send a message to pick it up.`;
+}
+
+function resumeSuffix(trigger: ResumeTrigger): string {
+  return trigger === 'platform-enabled' ? ' (platform re-enabled)' : ` after bot restart (v${VERSION})`;
+}
+
 /**
  * Resume a session from persisted state.
  */
 export async function resumeSession(
   state: PersistedSession,
-  ctx: SessionContext
+  ctx: SessionContext,
+  trigger: ResumeTrigger = 'boot'
 ): Promise<void> {
   // Validate required fields - skip gracefully if critical data is missing
   if (!state.threadId || !state.platformId || !state.claudeSessionId || !state.workingDir) {
@@ -1582,6 +1646,11 @@ export async function resumeSession(
     );
   }
 
+  const bridgeSessionRef: { current?: Session } = {};
+  const decisionBridge = resumeAgentBackend === 'claude'
+    ? await createSessionDecisionBridge(bridgeSessionRef)
+    : null;
+
   const cliOptions: ClaudeCliOptions = {
     workingDir: state.workingDir,
     threadId: state.threadId,
@@ -1600,29 +1669,36 @@ export async function resumeSession(
     uploadDir: getSessionUploadDir(platformId, state.threadId),
     outboundFiles: platformMcpConfig.outboundFiles,
     sessionOwnerUsername: state.startedBy,
+    decisionBridgePath: decisionBridge?.path,
   };
   // Resume the opencode session by its own id when we have one; otherwise a
   // fresh opencode session is created (history from before the restart is
   // lost — acceptable degradation for the first cut).
-  const claude: AgentBackend = resumeAgentBackend === 'opencode'
-    ? new OpencodeAgent({
-        workingDir: state.workingDir,
-        logSessionId: sessionId,
-        appendSystemPrompt,
-        opencodeSessionId: state.opencodeSessionId,
-        title: state.sessionTitle ?? 'claude-threads session',
-        model: parseOpencodeModel(ctx.ops.getPlatformModel(state.platformId)),
-        writeScopeDirs: writeScopeDirsFor(ctx, state.platformId, state.workingDir),
-        mcp: opencodeMcpOptionsFor(
-          platformMcpConfig,
-          state.workingDir,
-          getSessionUploadDir(state.platformId, state.threadId),
-          state.threadId,
-          state.startedBy,
-          ctx.config.permissionTimeoutMs ?? 120_000,
-        ),
-      })
-    : new ClaudeCli(cliOptions);
+  let claude: AgentBackend;
+  try {
+    claude = resumeAgentBackend === 'opencode'
+      ? new OpencodeAgent({
+          workingDir: state.workingDir,
+          logSessionId: sessionId,
+          appendSystemPrompt,
+          opencodeSessionId: state.opencodeSessionId,
+          title: state.sessionTitle ?? 'claude-threads session',
+          model: parseOpencodeModel(ctx.ops.getPlatformModel(state.platformId)),
+          writeScopeDirs: writeScopeDirsFor(ctx, state.platformId, state.workingDir),
+          mcp: opencodeMcpOptionsFor(
+            platformMcpConfig,
+            state.workingDir,
+            getSessionUploadDir(state.platformId, state.threadId),
+            state.threadId,
+            state.startedBy,
+            ctx.config.permissionTimeoutMs ?? 120_000,
+          ),
+        })
+      : new ClaudeCli(cliOptions);
+  } catch (err) {
+    void decisionBridge?.close();
+    throw err;
+  }
 
   // Same multi-bot header cap as startSession: hide the header when peers share
   // the channel (input is always concrete here, so coerce the |undefined away).
@@ -1686,6 +1762,7 @@ export async function resumeSession(
     threadLogger: createThreadLogger(platformId, state.threadId, state.claudeSessionId, {
       enabled: ctx.config.threadLogsEnabled ?? true,
     }),
+    decisionBridge: decisionBridge ?? undefined,
   };
 
   // Auto-detect worktree info if workingDir is a worktree but worktreeInfo is not set
@@ -1705,6 +1782,7 @@ export async function resumeSession(
 
   // Create MessageManager for this session
   session.messageManager = createMessageManager(session, ctx);
+  bridgeSessionRef.current = session;
 
   // Restore task list from persisted state (hydrates + bumps to bottom)
   await session.messageManager.restoreTaskListFromPersistence({
@@ -1713,6 +1791,7 @@ export async function resumeSession(
     tasksCompleted: state.tasksCompleted,
     tasksMinimized: state.tasksMinimized,
   });
+  session.messageManager.restoreTaskTracker(state.taskTrackerState);
 
   // Hydrate MessageManager with persisted interactive state (if any)
   // Note: These fields may not exist in older persisted sessions
@@ -1768,7 +1847,7 @@ export async function resumeSession(
 
   // Bind event handlers (use sessionId which is the composite key)
   claude.on('event', (e: ClaudeEvent) => ctx.ops.handleEvent(sessionId, e));
-  claude.on('exit', (code: number) => ctx.ops.handleExit(sessionId, code));
+  claude.on('exit', (code: number) => ctx.ops.handleExit(sessionId, code, claude));
   claude.on('rate-limit', (hit: RateLimitHit) => handleRateLimit(session, hit, ctx));
 
   try {
@@ -1792,9 +1871,13 @@ export async function resumeSession(
     // If we have a lifecyclePostId, this was a timeout/shutdown - update that post
     // Otherwise create a new post (normal for old persisted sessions without lifecyclePostId)
     const sessionFormatter = session.platform.getFormatter();
+    const outcome = resumeOutcome(trigger);
     if (session.lifecyclePostId) {
       const postId = session.lifecyclePostId;
-      const resumeMsg = `🔄 ${sessionFormatter.formatBold('Session resumed')} by ${sessionFormatter.formatUserMention(session.startedBy)}\n${sessionFormatter.formatItalic('Reconnected to Claude session. You can continue where you left off.')}`;
+      const by = trigger === 'user'
+        ? ` by ${sessionFormatter.formatUserMention(session.startedBy)}`
+        : resumeSuffix(trigger);
+      const resumeMsg = `🔄 ${sessionFormatter.formatBold('Session resumed')}${by}\n${sessionFormatter.formatItalic(outcome)}`;
       await withErrorHandling(
         () => session.platform.updatePost(postId, resumeMsg),
         { action: 'Update timeout/shutdown post for resume', session }
@@ -1804,7 +1887,7 @@ export async function resumeSession(
       transitionTo(session, 'active');
     } else {
       // Fallback: create new post if no lifecyclePostId (e.g., old persisted sessions)
-      const restartMsg = `${sessionFormatter.formatBold('Session resumed')} after bot restart (v${VERSION})\n${sessionFormatter.formatItalic('Reconnected to Claude session. You can continue where you left off.')}`;
+      const restartMsg = `${sessionFormatter.formatBold('Session resumed')}${resumeSuffix(trigger)}\n${sessionFormatter.formatItalic(outcome)}`;
       await post(session, 'resume', restartMsg);
     }
 
@@ -1825,6 +1908,7 @@ export async function resumeSession(
   } catch (err) {
     log.error(`Failed to resume session ${shortId}`, err instanceof Error ? err : undefined);
     session.messageManager?.dispose();
+    closeDecisionBridge(session);
     ctx.ops.emitSessionRemove(sessionId);
     mutableSessions(ctx).delete(sessionId);
     ctx.state.sessionStore.remove(sessionId);
@@ -1972,7 +2056,7 @@ export async function resumePausedSession(
   log.info(`🔄 Resuming paused session ${shortId}... for new message`);
 
   // Resume the session
-  await resumeSession(state, ctx);
+  await resumeSession(state, ctx, 'user');
 
   // Deliver the message to the session we JUST resumed — addressed by its
   // composite id. The previous raw-threadId lookup could return a PEER bot's
@@ -2003,7 +2087,8 @@ export async function resumePausedSession(
 export async function handleExit(
   sessionId: string,
   code: number,
-  ctx: SessionContext
+  ctx: SessionContext,
+  source?: AgentBackend
 ): Promise<void> {
   const session = mutableSessions(ctx).get(sessionId);
   const shortId = sessionId.substring(0, 8);
@@ -2012,6 +2097,11 @@ export async function handleExit(
 
   if (!session) {
     log.debug(`Session ${shortId}... not found (already cleaned up)`);
+    return;
+  }
+
+  if (source && session.claude !== source) {
+    sessionLog(session).debug(`Ignoring exit from replaced agent process`);
     return;
   }
 
@@ -2285,6 +2375,16 @@ export async function killAllSessions(ctx: SessionContext): Promise<void> {
 // Cleanup
 // ---------------------------------------------------------------------------
 
+type SessionSilence = 'idle' | 'stalled-turn' | 'waiting-on-human';
+
+function classifySilence(session: Session): SessionSilence {
+  if (!session.isProcessing) return 'idle';
+  const waitingOnHuman =
+    session.messageManager?.hasPendingApproval() === true ||
+    session.messageManager?.hasPendingQuestions() === true;
+  return waitingOnHuman ? 'waiting-on-human' : 'stalled-turn';
+}
+
 /**
  * Clean up idle sessions that have timed out.
  */
@@ -2300,10 +2400,23 @@ export async function cleanupIdleSessions(
 
     // Check for timeout
     if (idleMs > timeoutMs) {
-      sessionLog(session).info(`⏰ Session timed out after ${Math.round(idleMs / 60000)}min idle`);
+      const idleMins = Math.round(idleMs / 60000);
+      const silence = classifySilence(session);
+      sessionLog(session).info(
+        silence === 'waiting-on-human'
+          ? `⏰ Session stopped after ${idleMins}min waiting on a human decision`
+          : silence === 'stalled-turn'
+            ? `⏰ Session stopped responding - no events for ${idleMins}min with a turn open`
+            : `⏰ Session timed out after ${idleMins}min idle`
+      );
 
       const timeoutFormatter = session.platform.getFormatter();
-      const timeoutMessage = `${timeoutFormatter.formatBold('Session timed out')} after ${Math.round(idleMs / 60000)} minutes of inactivity\n\n💡 React with 🔄 to resume, or send a new message to continue.`;
+      const resumeHint = '\n\n💡 React with 🔄 to resume, or send a new message to continue.';
+      const timeoutMessage = silence === 'waiting-on-human'
+        ? `${timeoutFormatter.formatBold('Session still waiting')} for a reply - no answer for ${idleMins} minutes, so the turn was stopped${resumeHint}`
+        : silence === 'stalled-turn'
+          ? `${timeoutFormatter.formatBold('Session stopped responding')} - no output for ${idleMins} minutes while a turn was still running${resumeHint}`
+          : `${timeoutFormatter.formatBold('Session timed out')} after ${idleMins} minutes of inactivity${resumeHint}`;
 
       // Update existing warning post or create a new one
       if (session.lifecyclePostId) {
@@ -2340,7 +2453,12 @@ export async function cleanupIdleSessions(
     if (idleMs > warningThresholdMs && !session.timeoutWarningPosted) {
       const remainingMins = Math.max(0, Math.round((timeoutMs - idleMs) / 60000));
       const warningFormatter = session.platform.getFormatter();
-      const warningMessage = `${warningFormatter.formatBold('Session idle')} - will timeout in ~${remainingMins} minutes without activity`;
+      const silence = classifySilence(session);
+      const warningMessage = silence === 'waiting-on-human'
+        ? `${warningFormatter.formatBold('Session still waiting')} for a reply - will stop in ~${remainingMins} minutes without one`
+        : silence === 'stalled-turn'
+          ? `${warningFormatter.formatBold('No output for a while')} - a turn is still running; will stop in ~${remainingMins} minutes if nothing arrives`
+          : `${warningFormatter.formatBold('Session idle')} - will timeout in ~${remainingMins} minutes without activity`;
 
       // Create the warning post and store its ID for later updates
       const warningPost = await withErrorHandling(

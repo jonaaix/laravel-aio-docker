@@ -263,6 +263,24 @@ describe('resetSessionActivity', () => {
     expect(session.lifecycle.state as string).toBe('active');
   });
 
+  it('does not clobber an in-progress restart', () => {
+    const session = createMockSession();
+    session.lifecycle.state = 'restarting';
+
+    resetSessionActivity(session);
+
+    expect(session.lifecycle.state as string).toBe('restarting');
+  });
+
+  it('does not clobber an in-progress cancel', () => {
+    const session = createMockSession();
+    session.lifecycle.state = 'cancelling';
+
+    resetSessionActivity(session);
+
+    expect(session.lifecycle.state as string).toBe('cancelling');
+  });
+
   it('calls updateWorktreeActivity when session has worktreeInfo', () => {
     const session = createMockSession({
       sessionOverrides: {
