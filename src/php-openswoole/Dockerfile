@@ -21,6 +21,15 @@ RUN apk update && apk add --no-cache \
     git \
     zip \
     imagemagick \
+    poppler-utils \
+    tesseract-ocr \
+    tesseract-ocr-data-deu \
+    tesseract-ocr-data-eng \
+    tesseract-ocr-data-fra \
+    tesseract-ocr-data-ita \
+    tesseract-ocr-data-spa \
+    tesseract-ocr-data-pol \
+    tesseract-ocr-data-osd \
     mysql-client \
     postgresql18-client \
     sqlite \

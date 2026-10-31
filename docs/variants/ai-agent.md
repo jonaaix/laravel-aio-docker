@@ -2,7 +2,7 @@
 
 A PHP-free runtime for **non-coding** AI agents that work over chat and MCP servers. You "program" an instance with a mounted persona and point it at your data sources. For AI-assisted coding against a Laravel app, use [`fpm-claude`](/variants/fpm-claude) instead.
 
-**Includes:** Claude Code CLI · Codex CLI · opencode · claude-threads (opt-in) · Playwright MCP with Chromium baked in (offline HTML render + screenshots) · Python venv (csvkit, pandas, openpyxl, matplotlib, requests, tabulate) · ripgrep, jq, pandoc, sqlite3, miller, poppler-utils, imagemagick. No PHP / Composer / nginx.
+**Includes:** Claude Code CLI · Codex CLI · opencode · claude-threads (opt-in) · Playwright MCP with Chromium baked in (offline HTML render + screenshots) · Python venv (csvkit, pandas, openpyxl, matplotlib, requests, tabulate) · ripgrep, jq, pandoc, sqlite3, miller, poppler-utils, tesseract-ocr (deu, eng, fra, ita, spa, pol), imagemagick. No PHP / Composer / nginx.
 
 ## Image tag
 

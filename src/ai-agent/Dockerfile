@@ -20,6 +20,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 #   sqlite3  — lightweight scratch/analysis store and agent memory
 #   miller   — CSV/JSON stream processing (mlr) for data exports
 #   imagemagick — image conversion/manipulation for chat attachments
+#   tesseract-ocr (+ common European languages) — OCR for scanned PDFs and images sent into the chat
 #   python3 + venv — so agents can write and run their own scripts (see /opt/venv below)
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
@@ -43,6 +44,14 @@ RUN apt-get update \
       sqlite3 \
       miller \
       imagemagick \
+      tesseract-ocr \
+      tesseract-ocr-deu \
+      tesseract-ocr-eng \
+      tesseract-ocr-fra \
+      tesseract-ocr-ita \
+      tesseract-ocr-spa \
+      tesseract-ocr-pol \
+      tesseract-ocr-osd \
       python3 \
       python3-venv \
       python3-pip \

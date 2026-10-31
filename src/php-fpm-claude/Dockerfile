@@ -20,6 +20,15 @@ RUN apt-get update \
       zip \
       unzip \
       imagemagick \
+      poppler-utils \
+      tesseract-ocr \
+      tesseract-ocr-deu \
+      tesseract-ocr-eng \
+      tesseract-ocr-fra \
+      tesseract-ocr-ita \
+      tesseract-ocr-spa \
+      tesseract-ocr-pol \
+      tesseract-ocr-osd \
       default-mysql-client \
       sqlite3 \
       nano \
