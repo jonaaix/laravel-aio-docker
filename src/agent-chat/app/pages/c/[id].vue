@@ -166,20 +166,17 @@ const restoreConversation = () => withFlag(archiving, restore);
             :user="{ side: 'right', variant: 'soft', ui: { content: 'rounded-[1.25rem]' } }"
           >
             <template #content="{ message }">
-              <template v-for="segment in messageSegments(message.id, message.parts)" :key="segment.key">
-                <ChatToolGroup
-                  v-if="segment.kind === 'tools'"
-                  :parts="segment.parts"
-                  :message="message"
-                  :streaming="isStreaming(message.id)"
-                />
-                <ChatMessagePart
-                  v-else
-                  :part="segment.part"
-                  :message="message"
-                  :streaming="isStreaming(message.id)"
-                />
+              <template v-if="message.role === 'assistant'">
+                <ChatThinkingBlock :message="message" :streaming="isStreaming(message.id)" />
+                <ChatWorkingBlock :message="message" :streaming="isStreaming(message.id)" />
               </template>
+              <ChatMessagePart
+                v-for="(part, index) in message.parts.filter(part => part.type === 'text')"
+                :key="`${message.id}-text-${index}`"
+                :part="part"
+                :message="message"
+                :streaming="isStreaming(message.id)"
+              />
             </template>
           </UChatMessages>
         </template>

@@ -67,7 +67,7 @@ function applyToolResult(parts: ChatPart[], block: ClaudeContentBlock): number |
 
 interface StreamEvent {
   type?: string;
-  content_block?: { type?: string };
+  content_block?: { type?: string; id?: string; name?: string };
   delta?: { type?: string; text?: string; thinking?: string };
 }
 
@@ -80,11 +80,17 @@ export function streamStartPart(event: ClaudeEvent): ChatPart | null {
   if (inner?.type !== 'content_block_start') {
     return null;
   }
-  const blockType = inner.content_block?.type;
-  if (blockType === 'text') {
+  const block = inner.content_block;
+  if (block?.type === 'text') {
     return { type: 'text', text: '', state: 'streaming' };
   }
-  return blockType === 'thinking' ? { type: 'reasoning', text: '', state: 'streaming' } : null;
+  if (block?.type === 'thinking') {
+    return { type: 'reasoning', text: '', state: 'streaming' };
+  }
+  if (block?.type === 'tool_use' && block.id && block.name) {
+    return { type: 'dynamic-tool', toolName: block.name, toolCallId: block.id, state: 'input-streaming', input: undefined };
+  }
+  return null;
 }
 
 export function streamDeltaText(event: ClaudeEvent): string | null {

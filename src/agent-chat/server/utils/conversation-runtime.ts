@@ -132,10 +132,10 @@ class ConversationRuntime {
   private settleLivePart(): void {
     const turn = this.turn!;
     const live = turn.liveIndex === null ? undefined : turn.parts[turn.liveIndex];
-    if (!live || (live.type !== 'text' && live.type !== 'reasoning')) {
+    if (!live) {
       return;
     }
-    if (live.text.trim()) {
+    if ((live.type === 'text' || live.type === 'reasoning') && live.text.trim()) {
       turn.parts[turn.liveIndex!] = { ...live, state: 'done' };
       turn.liveIndex = null;
     }

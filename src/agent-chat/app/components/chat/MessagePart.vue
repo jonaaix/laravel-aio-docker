@@ -21,16 +21,8 @@ const toolOutput = computed(() => {
 </script>
 
 <template>
-  <UChatReasoning
-    v-if="part.type === 'reasoning'"
-    :text="part.text"
-    :streaming="isPartStreaming(part) && streaming"
-  >
-    <Markdown :value="part.text" class="*:first:mt-0 *:last:mb-0" />
-  </UChatReasoning>
-
   <UChatTool
-    v-else-if="part.type === 'dynamic-tool'"
+    v-if="part.type === 'dynamic-tool'"
     :text="part.toolName"
     :suffix="toolSummary(part.input)"
     :streaming="isToolStreaming(part) && streaming"

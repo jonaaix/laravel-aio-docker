@@ -49,7 +49,11 @@ container restart with its full history and attachments, and no Mattermost/Slack
   Subagent sidechains are skipped. Text and reasoning stream token by token: a `content_block_start`
   opens a live part that only lives in memory and reaches the browser as `delta` events; the full
   `assistant` event for that block replaces it and is what gets stored. A stopped turn keeps the
-  live text as a finished part. `ClaudeCli` gained `includePartialMessages` for this.
+  live text as a finished part. Tool calls appear live as `input-streaming` from their block start.
+  `ClaudeCli` gained `includePartialMessages` for this.
+- An answer renders as: thinking block (`ChatThinkingBlock`, all reasoning text; only a "Thinking…"
+  line while Claude thinks without sending text, as Opus 5.5 does), working block (`ChatWorkingBlock`,
+  all tool calls with the current step live, collapsed to "Worked · N steps"), then the answer text.
 - History: `chat.sqlite` in `NUXT_DATA_DIR` (default `~/.config/agent-chat`), WAL mode, migrations in
   `server/database/migrations` (copied into `.output/server/migrations` at build, applied on start).
   Tool output is cut to its first 2,000 chars. Each turn's assistant message carries the metrics
@@ -85,7 +89,7 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - Look follows Claude.ai / ChatGPT on the user's call: fully rounded buttons, inputs and badges
   (deliberately rounder than the project design system's pills), doubled `--ui-radius`, Geist
   (self-hosted by `@nuxt/fonts`, bundled with Nuxt UI), a 48rem reading column via `--ui-container`,
-  no hard lines, consecutive tool calls folded into one chip. Theme overrides live in `app.config.ts`.
+  no hard lines, tool calls in one working block per answer as in Mattermost, thinking kept separate from it (user's call). Theme overrides live in `app.config.ts`.
   Icons are served by the app itself (`icon.provider: 'server'`): no request leaves the app.
 - SPA (`ssr: false`): the chat is fully client-driven and runs inside an iframe.
 - SSE + REST instead of WebSockets: Nitro WebSockets are still experimental; SSE reconnects by itself
