@@ -16,7 +16,7 @@ const TOOLS = [
     {
         name: 'send_file',
         description: 'Show a file or image to the user in the chat: screenshots, exports, reports, generated files. '
-            + 'The user cannot see files on disk, so send anything they should look at. Images appear inline, other files as a download.',
+            + 'The user reads the chat in a browser and cannot see files on disk or terminal output, so send anything they should look at. Images appear inline, other files as a download.',
         inputSchema: {
             type: 'object',
             properties: {
