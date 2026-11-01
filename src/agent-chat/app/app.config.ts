@@ -30,7 +30,7 @@ export default defineAppConfig({
             compoundVariants: [{
                 color: 'neutral',
                 variant: 'outline',
-                class: { root: 'dark:bg-elevated has-[textarea:focus-visible]:outline-0 has-[textarea:focus-visible]:ring-2 has-[textarea:focus-visible]:ring-neutral-400 dark:has-[textarea:focus-visible]:ring-neutral-500' },
+                class: { root: 'dark:bg-elevated has-[textarea:focus-visible]:outline-0 has-[textarea:focus-visible]:ring-2 has-[textarea:focus-visible]:ring-inverted' },
             }],
         },
         prose: {
