@@ -22,19 +22,6 @@ const title = computed(() => {
 const showAll = ref(false);
 const hiddenCount = computed(() => showAll.value ? 0 : Math.max(0, tools.value.length - VISIBLE_STEPS));
 const visibleTools = computed(() => tools.value.slice(hiddenCount.value));
-
-const toggled = ref<Record<string, boolean>>({});
-watch(working, () => {
-    toggled.value = {};
-});
-
-function isOpen(part: DynamicToolUIPart): boolean {
-    return toggled.value[part.toolCallId] ?? (working.value && part === tools.value.at(-1));
-}
-
-function setOpen(part: DynamicToolUIPart, open: boolean): void {
-    toggled.value = { ...toggled.value, [part.toolCallId]: open };
-}
 </script>
 
 <template>
@@ -62,8 +49,7 @@ function setOpen(part: DynamicToolUIPart, open: boolean): void {
                 :part="part"
                 :message="message"
                 :streaming="streaming"
-                :open="isOpen(part)"
-                @update:open="setOpen(part, $event)"
+                :show-command="working && part === tools.at(-1)"
             />
         </div>
     </ChatActivityBox>

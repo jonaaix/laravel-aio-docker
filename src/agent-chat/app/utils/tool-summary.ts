@@ -15,3 +15,8 @@ export function toolDetail(value: unknown): string {
     }
     return typeof value === 'string' ? value : JSON.stringify(value, null, 2);
 }
+
+export function toolDescription(input: unknown): string {
+    const description = input && typeof input === 'object' ? (input as Record<string, unknown>).description : undefined;
+    return typeof description === 'string' && description.trim() ? description.trim() : toolSummary(input);
+}

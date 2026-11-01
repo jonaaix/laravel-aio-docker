@@ -53,9 +53,10 @@ container restart with its full history and attachments, and no Mattermost/Slack
   `ClaudeCli` gained `includePartialMessages` for this.
 - An answer renders as a thinking box, a working box, then the answer text (`ChatActivityBox` is the
   shared frame). Thinking: one item per thinking block in a scroll area that follows the newest
-  unless the reader scrolled up. Working: one truncated line per tool call with ✓/✗/spinner, the last
-  5 visible and earlier ones behind "Show N earlier steps"; while Claude works the newest call is open
-  (input/output), once done all are closed. Claude runs with `--thinking-display summarized`,
+  unless the reader scrolled up. Working: one truncated line per tool call (tool name + the call's
+  `description`, else its command/path) with ✓/✗/spinner, the last 5 visible and earlier ones behind
+  "Show N earlier steps"; while Claude works the newest call shows its full command underneath; each
+  line expands to input/output. Claude runs with `--thinking-display summarized`,
   otherwise Claude Code omits the thinking text (Opus 5.5 sends none).
 - History: `chat.sqlite` in `NUXT_DATA_DIR` (default `~/.config/agent-chat`), WAL mode, migrations in
   `server/database/migrations` (copied into `.output/server/migrations` at build, applied on start).
