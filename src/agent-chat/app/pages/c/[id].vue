@@ -1,5 +1,9 @@
 <script setup lang="ts">
 const EARLIER_THRESHOLD_PX = 200;
+const AT_BOTTOM_THRESHOLD_PX = 120;
+const ANSWER_GAP_PX = 32;
+const STICK_TO_BOTTOM_MS = 3000;
+const USER_SCROLL_EVENTS = ['wheel', 'touchmove', 'keydown'] as const;
 
 const route = useRoute();
 const conversationId = route.params.id as string;
@@ -37,51 +41,112 @@ function isStreaming(messageId: string): boolean {
 }
 
 let unsubscribe: (() => void) | undefined;
-let scrollParent: HTMLElement | null = null;
+let contentObserver: ResizeObserver | undefined;
 
-function findScrollParent(node: HTMLElement | null): HTMLElement {
-    let current = node?.parentElement ?? null;
-    while (current && !/auto|scroll/.test(getComputedStyle(current).overflowY)) {
-        current = current.parentElement;
-    }
-    return current ?? document.scrollingElement as HTMLElement;
-}
+const composerBar = ref<HTMLElement | null>(null);
+const atBottom = ref(true);
+const answerSpace = ref(0);
+let sentThisVisit = false;
+let stickToBottom = false;
 
-function scrollEventTarget(parent: HTMLElement): HTMLElement | Window {
-    return parent === document.scrollingElement ? window : parent;
+function scroller(): HTMLElement {
+    return document.scrollingElement as HTMLElement;
 }
 
 async function loadEarlierKeepingPosition(): Promise<void> {
-    const parent = scrollParent;
-    if (!parent || !hasEarlier.value || loadingEarlier.value) {
+    if (!hasEarlier.value || loadingEarlier.value) {
         return;
     }
-    const distanceFromBottom = parent.scrollHeight - parent.scrollTop;
+    const distanceFromBottom = scroller().scrollHeight - scroller().scrollTop;
     await loadEarlier();
     await nextTick();
-    parent.scrollTop = parent.scrollHeight - distanceFromBottom;
+    scroller().scrollTop = scroller().scrollHeight - distanceFromBottom;
+}
+
+function updateAtBottom(): void {
+    const element = scroller();
+    atBottom.value = element.scrollHeight - element.scrollTop - element.clientHeight < AT_BOTTOM_THRESHOLD_PX;
+}
+
+function updateAnswerSpace(): void {
+    const lastUserMessage = [...(timeline.value?.parentElement?.querySelectorAll<HTMLElement>('[data-role="user"]') ?? [])].at(-1);
+    if (!sentThisVisit || !lastUserMessage) {
+        answerSpace.value = 0;
+        return;
+    }
+    const reserved = headerHeight() + (composerBar.value?.offsetHeight ?? 0) + lastUserMessage.offsetHeight + ANSWER_GAP_PX;
+    answerSpace.value = Math.max(0, window.innerHeight - reserved);
 }
 
 function onScroll(): void {
-    if (scrollParent && scrollParent.scrollTop < EARLIER_THRESHOLD_PX) {
+    updateAtBottom();
+    if (scroller().scrollTop < EARLIER_THRESHOLD_PX) {
         loadEarlierKeepingPosition();
     }
 }
+
+function onResize(): void {
+    updateAnswerSpace();
+    updateAtBottom();
+}
+
+function jumpToBottom(): void {
+    window.scrollTo({ top: scroller().scrollHeight, behavior: 'smooth' });
+}
+
+function releaseBottom(): void {
+    stickToBottom = false;
+}
+
+function onContentResize(): void {
+    if (stickToBottom) {
+        scroller().scrollTop = scroller().scrollHeight;
+    }
+    updateAtBottom();
+}
+
+function headerHeight(): number {
+    return (document.getElementById(`conversation-${conversationId}`)?.firstElementChild as HTMLElement | null)?.offsetHeight ?? 0;
+}
+
+async function alignLatestUserMessage(): Promise<void> {
+    await nextTick();
+    updateAnswerSpace();
+    await nextTick();
+    const lastUserMessage = [...(timeline.value?.parentElement?.querySelectorAll<HTMLElement>('[data-role="user"]') ?? [])].at(-1);
+    if (lastUserMessage) {
+        const top = lastUserMessage.getBoundingClientRect().top + scroller().scrollTop - headerHeight() - ANSWER_GAP_PX / 2;
+        window.scrollTo({ top, behavior: 'smooth' });
+    }
+}
+
+watch(() => visibleMessages.value.at(-1), (message, previous) => {
+    if (sentThisVisit && message?.role === 'user' && message.id !== previous?.id) {
+        alignLatestUserMessage();
+    }
+});
 
 onMounted(async () => {
     unsubscribe = subscribe();
     await load();
     await nextTick();
-    scrollParent = findScrollParent(timeline.value);
-    scrollEventTarget(scrollParent).addEventListener('scroll', onScroll, { passive: true });
+    stickToBottom = true;
+    scroller().scrollTop = scroller().scrollHeight;
+    setTimeout(releaseBottom, STICK_TO_BOTTOM_MS);
+    USER_SCROLL_EVENTS.forEach(name => window.addEventListener(name, releaseBottom, { passive: true }));
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize, { passive: true });
+    contentObserver = new ResizeObserver(onContentResize);
+    contentObserver.observe(document.body);
     onScroll();
 });
 
 onBeforeUnmount(() => {
     unsubscribe?.();
-    if (scrollParent) {
-        scrollEventTarget(scrollParent).removeEventListener('scroll', onScroll);
-    }
+    USER_SCROLL_EVENTS.forEach(name => window.removeEventListener(name, releaseBottom));
+    window.removeEventListener('scroll', onScroll);
+    window.removeEventListener('resize', onResize);
+    contentObserver?.disconnect();
 });
 
 async function submit(): Promise<void> {
@@ -90,6 +155,8 @@ async function submit(): Promise<void> {
         return;
     }
     input.value = '';
+    sentThisVisit = true;
+    releaseBottom();
     await send(text);
 }
 
@@ -168,7 +235,10 @@ const restoreConversation = () => withFlag(archiving, restore);
                     <UChatMessages
                         :messages="visibleMessages"
                         :status="chatStatus"
-                                    should-scroll-to-bottom
+                        :auto-scroll="false"
+                        :style="{ '--last-message-height': `${answerSpace}px` }"
+                        :ui="{ root: '[&>article]:scroll-mt-20' }"
+                        :should-scroll-to-bottom="false"
                         :assistant="{ side: 'left', variant: 'naked' }"
                         :user="{ side: 'right', variant: 'soft', ui: { content: 'rounded-[1.25rem]' } }"
                     >
@@ -189,7 +259,26 @@ const restoreConversation = () => withFlag(archiving, restore);
         </template>
 
         <template v-if="loaded && archivedAt === null" #footer>
-            <div class="sticky bottom-0 z-20 bg-default">
+            <div ref="composerBar" class="sticky bottom-0 z-20 bg-default">
+                <Transition
+                    enter-active-class="transition-opacity duration-[180ms] ease-out"
+                    leave-active-class="transition-opacity duration-[160ms] ease-in"
+                    enter-from-class="opacity-0"
+                    leave-to-class="opacity-0"
+                >
+                    <div v-if="!atBottom" class="pointer-events-none absolute inset-x-0 -top-14 flex justify-center">
+                        <UTooltip text="Jump to latest">
+                            <UButton
+                                icon="i-heroicons-arrow-down"
+                                aria-label="Jump to latest"
+                                color="neutral"
+                                variant="outline"
+                                class="pointer-events-auto bg-default shadow-lg"
+                                @click="jumpToBottom"
+                            />
+                        </UTooltip>
+                    </div>
+                </Transition>
                 <UContainer class="pb-4 sm:pb-6">
                     <ChatComposer
                         v-model="input"

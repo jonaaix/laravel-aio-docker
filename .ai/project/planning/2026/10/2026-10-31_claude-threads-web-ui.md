@@ -56,7 +56,11 @@ container restart with its full history and attachments, and no Mattermost/Slack
   `description`, else its command/path) with ✓/✗/spinner, the last 5 visible and earlier ones behind
   "Show N earlier steps"; each line expands to its command (Bash `command`, else
   path/pattern/url) and output; while Claude works the newest call shows that command box already.
-  The chat does not follow the answer: the sent message moves to the top and the answer grows below. Claude runs with `--thinking-display summarized`,
+  The chat does not follow the answer: the sent message moves to the top and the answer grows below.
+  Because the window scrolls, `UChatMessages`' own scroll features are off (they assume an inner
+  scroll container): the page keeps a chat pinned to the bottom while it renders, aligns a sent
+  message under the header, sizes the answer spacer (`--last-message-height`) from the viewport, and
+  shows its own "Jump to latest" button above the composer. Claude runs with `--thinking-display summarized`,
   otherwise Claude Code omits the thinking text (Opus 5.5 sends none).
 - History: `chat.sqlite` in `NUXT_DATA_DIR` (default `~/.config/agent-chat`), WAL mode, migrations in
   `server/database/migrations` (copied into `.output/server/migrations` at build, applied on start).
