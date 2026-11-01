@@ -46,6 +46,7 @@ function isStreaming(messageId: string): boolean {
 let unsubscribe: (() => void) | undefined;
 let contentObserver: ResizeObserver | undefined;
 
+const header = ref<HTMLElement | null>(null);
 const composerBar = ref<HTMLElement | null>(null);
 const atBottom = ref(true);
 const answerSpace = ref(0);
@@ -109,7 +110,7 @@ function onContentResize(): void {
 }
 
 function headerHeight(): number {
-    return (document.getElementById(`conversation-${conversationId}`)?.firstElementChild as HTMLElement | null)?.offsetHeight ?? 0;
+    return header.value?.offsetHeight ?? 0;
 }
 
 async function alignLatestUserMessage(): Promise<void> {
@@ -174,50 +175,59 @@ async function withFlag(flag: Ref<boolean>, action: () => Promise<void>): Promis
 }
 
 const pauseConversation = () => withFlag(pausing, pause);
-const archiveConversation = () => withFlag(archiving, archive);
+const archiveConversation = () => withFlag(archiving, async () => {
+    await archive();
+    await navigateTo('/');
+});
 const restoreConversation = () => withFlag(archiving, restore);
 </script>
 
 <template>
     <UDashboardPanel :id="`conversation-${conversationId}`">
         <template #header>
-            <UDashboardNavbar :title="title">
-                <template #right>
-                    <template v-if="archivedAt !== null">
-                        <UBadge label="Archived" color="neutral" variant="subtle" />
+            <div ref="header" class="sticky top-0 z-30 bg-default">
+                <UDashboardNavbar :title="title">
+                    <template #right>
+                        <template v-if="archivedAt !== null">
+                            <UBadge label="Archived" color="neutral" variant="subtle" />
+                            <UButton
+                                label="Restore"
+                                icon="i-heroicons-arrow-uturn-left"
+                                color="neutral"
+                                variant="outline"
+                                class="bg-white dark:bg-transparent"
+                                :loading="archiving"
+                                @click="restoreConversation"
+                            />
+                        </template>
                         <UButton
-                            label="Restore"
-                            icon="i-heroicons-arrow-uturn-left"
+                            v-else-if="loaded"
+                            label="Archive"
+                            icon="i-heroicons-archive-box"
                             color="neutral"
-                            variant="ghost"
+                            variant="outline"
+                            class="bg-white dark:bg-transparent"
                             :loading="archiving"
-                            @click="restoreConversation"
+                            @click="archiveConversation"
                         />
                     </template>
-                    <template v-else-if="loaded">
-                        <UBadge v-if="status === 'paused'" label="Paused" color="neutral" variant="subtle" />
+                </UDashboardNavbar>
+                <UDashboardToolbar v-if="loaded && archivedAt === null" class="border-b-0 pb-2">
+                    <template #left>
+                        <UBadge v-if="status === 'paused'" label="Session paused" color="neutral" variant="subtle" size="lg" />
                         <UButton
                             v-else
-                            label="Pause"
+                            label="Pause session"
                             icon="i-heroicons-pause"
                             color="neutral"
-                            variant="ghost"
+                            variant="outline"
+                            class="bg-white dark:bg-transparent"
                             :loading="pausing"
                             @click="pauseConversation"
                         />
-                        <UTooltip text="Archive">
-                            <UButton
-                                icon="i-heroicons-archive-box"
-                                aria-label="Archive"
-                                color="neutral"
-                                variant="ghost"
-                                :loading="archiving"
-                                @click="archiveConversation"
-                            />
-                        </UTooltip>
                     </template>
-                </template>
-            </UDashboardNavbar>
+                </UDashboardToolbar>
+            </div>
         </template>
 
         <template #body>
