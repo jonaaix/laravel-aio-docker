@@ -68,7 +68,9 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - Account card at the bottom of the sidebar: email and organization from `claude auth status`
   (read once per server start), session (5 h) and weekly usage from the `rate_limit_event` Claude
   sends with every turn (`unifiedWindows`). The last usage is kept in `<data dir>/usage.json`, so it
-  shows the last known state until the next turn. Live updates ride the sidebar's `/api/events` stream.
+  shows the last known state until the next turn ("Updated HH:MM"; a window whose reset has passed is
+  greyed out). Live updates ride the sidebar's `/api/events` stream. Below the card a settings menu
+  holds the appearance choice (light, dark, system).
 - Conversations are archived (`archived_at`), never deleted; archived ones are read-only (409 on
   send) and listed under `/archived`. A chat opens with its last 50 messages, older pages load
   when scrolling near the top (`GET /api/conversations/:id/messages?before=`).

@@ -83,10 +83,8 @@ onBeforeUnmount(() => unsubscribe?.());
 
             <template #footer="{ collapsed }">
                 <div class="flex w-full flex-col gap-2">
-                    <div class="flex w-full items-center gap-1" :class="collapsed ? 'flex-col' : ''">
-                        <UColorModeButton :class="collapsed ? '' : 'ms-auto'" />
-                    </div>
                     <AccountCard v-if="!collapsed" />
+                    <SettingsMenu :collapsed="collapsed" />
                 </div>
             </template>
         </UDashboardSidebar>
