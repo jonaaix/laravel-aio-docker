@@ -129,7 +129,9 @@ container restart with its full history and attachments, and no Mattermost/Slack
   Material Lighter / Palenight (dark colours switched via `--shiki-dark` in `main.css`), comark's
   default languages plus Laravel-relevant ones; embedded languages (Vue, Blade, HTML) come with them.
   Sent non-image files render as an attachment card (`ChatFileAttachment`: type icon, name, type and
-  size from `providerMetadata.agentChat.size`, download button).
+  size from `providerMetadata.agentChat.size`, download button). Clicking a card opens a preview panel
+  (`ChatFilePreview`) for code and text files (highlighted; Markdown rendered; up to 1 MB); other
+  cards only download via their button.
   Icons are served by the app itself (`icon.provider: 'server'`): no request leaves the app.
 - SPA (`ssr: false`): the chat is fully client-driven and runs inside an iframe.
 - SSE + REST instead of WebSockets: Nitro WebSockets are still experimental; SSE reconnects by itself
