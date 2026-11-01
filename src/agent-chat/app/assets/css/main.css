@@ -11,14 +11,20 @@
 }
 
 @utility scrollbar-slim {
-    scrollbar-width: thin;
-    scrollbar-color: var(--ui-border-accented) transparent;
-
-    &::-webkit-scrollbar {
-        width: 6px;
+    &,
+    & * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--ui-border-accented) transparent;
     }
 
-    &::-webkit-scrollbar-thumb {
+    &::-webkit-scrollbar,
+    & *::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb,
+    & *::-webkit-scrollbar-thumb {
         border-radius: 9999px;
         background: var(--ui-border-accented);
     }
