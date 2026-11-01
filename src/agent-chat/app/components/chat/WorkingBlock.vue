@@ -35,19 +35,19 @@ function setOpen(part: DynamicToolUIPart, open: boolean): void {
     :active="working"
     :icon="failed ? 'i-heroicons-exclamation-triangle' : 'i-heroicons-wrench-screwdriver'"
     :icon-class="failed ? 'text-error' : ''"
-    show-all-label="Show all steps"
-    show-less-label="Show fewer steps"
+    :items="tools"
+    :item-key="part => part.toolCallId"
+    :earlier-label="count => count === 1 ? 'Show 1 earlier step' : `Show ${count} earlier steps`"
+    fewer-label="Show fewer steps"
   >
-    <div class="flex flex-col gap-1">
+    <template #item="{ item, index }">
       <ChatMessagePart
-        v-for="(part, index) in tools"
-        :key="part.toolCallId"
-        :part="part"
+        :part="item"
         :message="message"
         :streaming="streaming"
-        :open="isOpen(part, index)"
-        @update:open="setOpen(part, $event)"
+        :open="isOpen(item, index)"
+        @update:open="setOpen(item, $event)"
       />
-    </div>
+    </template>
   </ChatActivityBox>
 </template>

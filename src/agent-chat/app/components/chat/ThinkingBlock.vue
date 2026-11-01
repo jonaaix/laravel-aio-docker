@@ -30,14 +30,16 @@ const visible = computed(() => thoughts.value.length > 0 || (props.streaming && 
     :title="thinking ? 'Thinking…' : 'Thought'"
     :active="thinking"
     icon="i-heroicons-light-bulb"
-    show-all-label="Show all thoughts"
-    show-less-label="Show fewer thoughts"
+    :items="thoughts"
+    :item-key="(_, index) => `thought-${index}`"
+    :earlier-label="count => count === 1 ? 'Show 1 earlier thought' : `Show ${count} earlier thoughts`"
+    fewer-label="Show fewer thoughts"
   >
-    <ul v-if="thoughts.length > 0" class="flex flex-col text-sm leading-6 text-muted">
-      <li v-for="(thought, index) in thoughts" :key="index" class="flex gap-2">
+    <template #item="{ item }">
+      <div class="flex gap-2 text-sm leading-6 text-muted">
         <span class="mt-2.5 size-1 shrink-0 rounded-full bg-current" />
-        <span class="min-w-0 whitespace-pre-line">{{ thought }}</span>
-      </li>
-    </ul>
+        <span class="min-w-0 whitespace-pre-line">{{ item }}</span>
+      </div>
+    </template>
   </ChatActivityBox>
 </template>

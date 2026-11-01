@@ -54,7 +54,7 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - An answer renders as: a thinking box (`ChatThinkingBlock`, one item per thinking block), a working
   box (`ChatWorkingBlock`, one wrapping, expandable line per tool call with ✓/✗/spinner; the newest
   is open while Claude works, a manual toggle wins), then the answer text. Both boxes are
-  `ChatActivityBox`: a 5-line window that follows new lines, expandable to all. Claude runs with
+  `ChatActivityBox`: the last 5 entries in full, earlier ones behind "Show N earlier …". Claude runs with
   `--thinking-display summarized`, otherwise Claude Code omits the thinking text (Opus 5.5 sends none).
 - History: `chat.sqlite` in `NUXT_DATA_DIR` (default `~/.config/agent-chat`), WAL mode, migrations in
   `server/database/migrations` (copied into `.output/server/migrations` at build, applied on start).
