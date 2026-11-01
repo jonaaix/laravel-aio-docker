@@ -6,8 +6,10 @@ const props = defineProps<{
     part: ChatPart;
     message: ChatMessage;
     streaming: boolean;
-    full?: boolean;
+    open?: boolean;
 }>();
+
+const emit = defineEmits<{ 'update:open': [value: boolean] }>();
 
 const toolRunning = computed(() => props.part.type === 'dynamic-tool' && props.streaming && isToolStreaming(props.part));
 const toolIcon = computed(() => {
@@ -36,15 +38,9 @@ const toolOutput = computed(() => {
         :suffix="toolSummary(part.input)"
         :loading="toolRunning"
         :icon="toolIcon"
-        :ui="full ? {
-            trigger: 'items-start text-start',
-            leading: 'mt-0.5',
-            leadingIcon: part.state === 'output-error' ? 'text-error' : '',
-            trailingIcon: 'mt-0.5',
-            label: 'whitespace-normal! overflow-visible! [overflow-wrap:anywhere]',
-        } : {
-            leadingIcon: part.state === 'output-error' ? 'text-error' : '',
-        }"
+        :open="open"
+        :ui="{ leadingIcon: part.state === 'output-error' ? 'text-error' : '' }"
+        @update:open="emit('update:open', $event)"
     >
         <div class="space-y-2 text-xs">
             <pre v-if="toolInput" class="max-h-64 overflow-auto rounded-md bg-elevated p-3 whitespace-pre-wrap">{{ toolInput }}</pre>

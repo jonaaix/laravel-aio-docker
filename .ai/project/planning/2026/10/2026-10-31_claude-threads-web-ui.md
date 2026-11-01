@@ -51,17 +51,12 @@ container restart with its full history and attachments, and no Mattermost/Slack
   `assistant` event for that block replaces it and is what gets stored. A stopped turn keeps the
   live text as a finished part. Tool calls appear live as `input-streaming` from their block start.
   `ClaudeCli` gained `includePartialMessages` for this.
-- An answer renders as: a thinking box (`ChatThinkingBlock`, one item per thinking block), a working
-  box (`ChatWorkingBlock`, one line per tool call with ✓/✗/spinner: older calls truncated to one
-  line, the newest always written out in full; each expands to input and output), then the answer. Both boxes are
-  `ChatActivityBox`: the last 5 entries in full, earlier ones behind "Show N earlier …". Claude runs with
-  `--thinking-display summarized`, otherwise Claude Code omits the thinking text (Opus 5.5 sends none).
-- History: `chat.sqlite` in `NUXT_DATA_DIR` (default `~/.config/agent-chat`), WAL mode, migrations in
-  `server/database/migrations` (copied into `.output/server/migrations` at build, applied on start).
-  Tool output is cut to its first 2,000 chars. Each turn's assistant message carries the metrics
-  columns (`server/utils/turn-metrics.ts`, from the result event's `model_usage_since_last_result`;
-  `null` where Claude reports nothing, e.g. interrupted turns). A turn without any output still gets
-  an assistant message with empty parts to carry its metrics; the UI hides those.
+- An answer renders as a thinking box, a working box, then the answer text (`ChatActivityBox` is the
+  shared frame). Thinking: one item per thinking block in a scroll area that follows the newest
+  unless the reader scrolled up. Working: one truncated line per tool call with ✓/✗/spinner, the last
+  5 visible and earlier ones behind "Show N earlier steps"; while Claude works the newest call is open
+  (input/output), once done all are closed. Claude runs with `--thinking-display summarized`,
+  otherwise Claude Code omits the thinking text (Opus 5.5 sends none).
 - Conversations are archived (`archived_at`), never deleted; archived ones are read-only (409 on
   send) and listed under `/archived`. A chat opens with its last 50 messages, older pages load
   when scrolling near the top (`GET /api/conversations/:id/messages?before=`).

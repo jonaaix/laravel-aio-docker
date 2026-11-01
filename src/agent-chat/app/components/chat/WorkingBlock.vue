@@ -2,6 +2,8 @@
 import type { ChatMessage } from '#shared/types/conversation';
 import type { DynamicToolUIPart } from 'ai';
 
+const VISIBLE_STEPS = 5;
+
 const props = defineProps<{
     message: ChatMessage;
     streaming: boolean;
@@ -16,6 +18,23 @@ const title = computed(() => {
     }
     return tools.value.length === 1 ? 'Worked · 1 step' : `Worked · ${tools.value.length} steps`;
 });
+
+const showAll = ref(false);
+const hiddenCount = computed(() => showAll.value ? 0 : Math.max(0, tools.value.length - VISIBLE_STEPS));
+const visibleTools = computed(() => tools.value.slice(hiddenCount.value));
+
+const toggled = ref<Record<string, boolean>>({});
+watch(working, () => {
+    toggled.value = {};
+});
+
+function isOpen(part: DynamicToolUIPart): boolean {
+    return toggled.value[part.toolCallId] ?? (working.value && part === tools.value.at(-1));
+}
+
+function setOpen(part: DynamicToolUIPart, open: boolean): void {
+    toggled.value = { ...toggled.value, [part.toolCallId]: open };
+}
 </script>
 
 <template>
@@ -25,18 +44,27 @@ const title = computed(() => {
         :active="working"
         :icon="failed ? 'i-heroicons-exclamation-triangle' : 'i-heroicons-wrench-screwdriver'"
         :icon-class="failed ? 'text-error' : ''"
-        :items="tools"
-        :item-key="part => part.toolCallId"
-        :earlier-label="count => count === 1 ? 'Show 1 earlier step' : `Show ${count} earlier steps`"
-        fewer-label="Show fewer steps"
     >
-        <template #item="{ item, index }">
+        <div class="mt-1 flex flex-col gap-1">
+            <UButton
+                v-if="tools.length > VISIBLE_STEPS"
+                :label="showAll ? 'Show fewer steps' : hiddenCount === 1 ? 'Show 1 earlier step' : `Show ${hiddenCount} earlier steps`"
+                :icon="showAll ? 'i-heroicons-chevron-down' : 'i-heroicons-chevron-up'"
+                color="neutral"
+                variant="link"
+                size="xs"
+                class="self-start px-0"
+                @click="showAll = !showAll"
+            />
             <ChatMessagePart
-                :part="item"
+                v-for="part in visibleTools"
+                :key="part.toolCallId"
+                :part="part"
                 :message="message"
                 :streaming="streaming"
-                :full="index === tools.length - 1"
+                :open="isOpen(part)"
+                @update:open="setOpen(part, $event)"
             />
-        </template>
+        </div>
     </ChatActivityBox>
 </template>
