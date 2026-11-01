@@ -11,6 +11,10 @@
     --ui-container: 52rem;
 }
 
+.light {
+    --ui-bg: var(--ui-color-neutral-50);
+}
+
 .dark .shiki,
 .dark .shiki span {
     color: var(--shiki-dark) !important;

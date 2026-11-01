@@ -26,11 +26,11 @@ export default defineAppConfig({
             },
         },
         chatPrompt: {
-            slots: { root: 'rounded-[1.75rem] p-2.5 shadow-lg shadow-black/5 dark:shadow-black/40' },
+            slots: { root: 'rounded-[1.75rem] p-2.5 shadow-[0_6px_32px_rgb(0_0_0/0.06)] dark:shadow-lg dark:shadow-black/40' },
             compoundVariants: [{
                 color: 'neutral',
                 variant: 'outline',
-                class: { root: 'dark:bg-elevated has-[textarea:focus-visible]:outline-0 has-[textarea:focus-visible]:ring-2 has-[textarea:focus-visible]:ring-inverted' },
+                class: { root: 'bg-white ring-black/5 dark:bg-elevated dark:ring-default has-[textarea:focus-visible]:outline-0 has-[textarea:focus-visible]:ring-black/5 dark:has-[textarea:focus-visible]:ring-default' },
             }],
         },
         prose: {
