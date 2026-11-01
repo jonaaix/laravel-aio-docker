@@ -1,4 +1,4 @@
-import type { ConversationListEvent, ConversationSummary } from '#shared/types/conversation';
+import type { ConversationSummary } from '#shared/types/conversation';
 
 export function useConversations() {
     const conversations = useState<ConversationSummary[]>('conversations', () => []);
@@ -12,10 +12,6 @@ export function useConversations() {
 
     async function load(): Promise<void> {
         conversations.value = await apiFetch<ConversationSummary[]>('conversations');
-    }
-
-    function subscribe(): () => void {
-        return subscribeEvents<ConversationListEvent>('events', event => upsert(event.conversation));
     }
 
     async function start(text: string): Promise<ConversationSummary> {
@@ -32,5 +28,5 @@ export function useConversations() {
         upsert(await apiFetch<ConversationSummary>(`conversations/${conversationId}/restore`, { method: 'POST' }));
     }
 
-    return { conversations, load, loadArchived, subscribe, start, restore };
+    return { conversations, upsert, load, loadArchived, start, restore };
 }

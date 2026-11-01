@@ -1,3 +1,4 @@
+import type { UsageSnapshot } from './account';
 import type { UIMessage } from 'ai';
 
 export type ConversationStatus = 'running' | 'paused';
@@ -34,4 +35,6 @@ export type ConversationEvent =
     | { type: 'title'; title: string }
     | { type: 'error'; message: string };
 
-export type ConversationListEvent = { type: 'conversation'; conversation: ConversationSummary };
+export type ConversationListEvent =
+    | { type: 'conversation'; conversation: ConversationSummary }
+    | { type: 'usage'; usage: UsageSnapshot };

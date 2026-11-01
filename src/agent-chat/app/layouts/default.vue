@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui';
+import type { ConversationListEvent } from '#shared/types/conversation';
 
-const { conversations, load, subscribe } = useConversations();
+const { conversations, upsert, load } = useConversations();
+const { usage, load: loadAccount } = useAccount();
 const { baseURL } = useRuntimeConfig().app;
 
 const items = computed<NavigationMenuItem[][]>(() => groupByRecency(conversations.value).map(group => [
@@ -17,8 +19,15 @@ const items = computed<NavigationMenuItem[][]>(() => groupByRecency(conversation
 let unsubscribe: (() => void) | undefined;
 
 onMounted(async () => {
-    unsubscribe = subscribe();
-    await load();
+    unsubscribe = subscribeEvents<ConversationListEvent>('events', (event) => {
+        if (event.type === 'conversation') {
+            upsert(event.conversation);
+        }
+        else {
+            usage.value = event.usage;
+        }
+    });
+    await Promise.all([load(), loadAccount()]);
 });
 
 onBeforeUnmount(() => unsubscribe?.());
@@ -36,12 +45,12 @@ onBeforeUnmount(() => unsubscribe?.());
             :ui="{ root: 'border-e-0 bg-elevated/50' }"
         >
             <template #header="{ collapsed }">
-                <UTooltip text="New conversation" :disabled="!collapsed">
+                <UTooltip text="New Code Session" :disabled="!collapsed">
                     <UButton
                         to="/"
                         icon="i-heroicons-pencil-square"
-                        :label="collapsed ? undefined : 'New conversation'"
-                        aria-label="New conversation"
+                        :label="collapsed ? undefined : 'New Code Session'"
+                        aria-label="New Code Session"
                         color="neutral"
                         variant="soft"
                         block
@@ -60,19 +69,22 @@ onBeforeUnmount(() => unsubscribe?.());
             </template>
 
             <template #footer="{ collapsed }">
-                <div class="flex w-full items-center gap-1" :class="collapsed ? 'flex-col' : ''">
-                    <UTooltip text="Archived" :disabled="!collapsed">
-                        <UButton
-                            to="/archived"
-                            icon="i-heroicons-archive-box"
-                            :label="collapsed ? undefined : 'Archived'"
-                            aria-label="Archived"
-                            color="neutral"
-                            variant="ghost"
-                            :square="collapsed"
-                        />
-                    </UTooltip>
-                    <UColorModeButton :class="collapsed ? '' : 'ms-auto'" />
+                <div class="flex w-full flex-col gap-2">
+                    <div class="flex w-full items-center gap-1" :class="collapsed ? 'flex-col' : ''">
+                        <UTooltip text="Archived" :disabled="!collapsed">
+                            <UButton
+                                to="/archived"
+                                icon="i-heroicons-archive-box"
+                                :label="collapsed ? undefined : 'Archived'"
+                                aria-label="Archived"
+                                color="neutral"
+                                variant="ghost"
+                                :square="collapsed"
+                            />
+                        </UTooltip>
+                        <UColorModeButton :class="collapsed ? '' : 'ms-auto'" />
+                    </div>
+                    <AccountCard v-if="!collapsed" />
                 </div>
             </template>
         </UDashboardSidebar>

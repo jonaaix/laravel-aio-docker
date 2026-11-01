@@ -65,6 +65,10 @@ container restart with its full history and attachments, and no Mattermost/Slack
   columns (`server/utils/turn-metrics.ts`, from the result event's `model_usage_since_last_result`;
   `null` where Claude reports nothing, e.g. interrupted turns). A turn without any output still gets
   an assistant message with empty parts to carry its metrics; the UI hides those.
+- Account card at the bottom of the sidebar: email and organization from `claude auth status`
+  (read once per server start), session (5 h) and weekly usage from the `rate_limit_event` Claude
+  sends with every turn (`unifiedWindows`). The last usage is kept in `<data dir>/usage.json`, so it
+  shows the last known state until the next turn. Live updates ride the sidebar's `/api/events` stream.
 - Conversations are archived (`archived_at`), never deleted; archived ones are read-only (409 on
   send) and listed under `/archived`. A chat opens with its last 50 messages, older pages load
   when scrolling near the top (`GET /api/conversations/:id/messages?before=`).

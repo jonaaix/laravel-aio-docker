@@ -80,6 +80,9 @@ class ConversationRuntime {
         if (event.type === 'system' && event.subtype === 'init' && typeof event.model === 'string') {
             this.model = event.model;
         }
+        if (event.type === 'rate_limit_event') {
+            recordRateLimit(event.rate_limit_info);
+        }
         if (!this.turn) {
             return;
         }
