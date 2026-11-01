@@ -26,7 +26,7 @@ export default defineAppConfig({
             compoundVariants: [{
                 color: 'neutral',
                 variant: 'outline',
-                class: { root: 'has-[textarea:focus-visible]:outline-0 has-[textarea:focus-visible]:ring-accented' },
+                class: { root: 'dark:bg-elevated has-[textarea:focus-visible]:outline-0 has-[textarea:focus-visible]:ring-accented' },
             }],
         },
         dashboardGroup: {
