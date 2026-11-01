@@ -7,7 +7,7 @@
 
 :root {
     --ui-radius: 0.5rem;
-    --ui-container: 48rem;
+    --ui-container: 52rem;
 }
 
 @utility scrollbar-slim {

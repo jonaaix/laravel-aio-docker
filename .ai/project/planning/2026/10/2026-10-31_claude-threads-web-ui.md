@@ -93,7 +93,7 @@ container restart with its full history and attachments, and no Mattermost/Slack
   live connections need a custom server outside its model.
 - Look follows Claude.ai / ChatGPT on the user's call: fully rounded buttons, inputs and badges
   (deliberately rounder than the project design system's pills), doubled `--ui-radius`, Geist
-  (self-hosted by `@nuxt/fonts`, bundled with Nuxt UI), a 48rem reading column via `--ui-container`,
+  (self-hosted by `@nuxt/fonts`, bundled with Nuxt UI), a 52rem reading column via `--ui-container`,
   no hard lines, tool calls in one working box per answer as in Mattermost, thinking in its own box (user's call). Theme overrides live in `app.config.ts`.
   Icons are served by the app itself (`icon.provider: 'server'`): no request leaves the app.
 - SPA (`ssr: false`): the chat is fully client-driven and runs inside an iframe.
