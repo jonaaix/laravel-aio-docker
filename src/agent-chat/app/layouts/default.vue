@@ -70,7 +70,7 @@ onBeforeUnmount(() => unsubscribe?.());
                         variant="ghost"
                         :square="collapsed"
                         :block="!collapsed"
-                        class="justify-start"
+                        class="justify-start hover:bg-accented/60"
                     />
                 </UTooltip>
                 <UNavigationMenu
