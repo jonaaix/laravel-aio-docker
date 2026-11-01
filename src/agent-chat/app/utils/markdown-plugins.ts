@@ -1,4 +1,5 @@
 import highlight from '@comark/nuxt/plugins/shiki';
+import { visit } from '@comark/nuxt/utils';
 import blade from 'shiki/dist/langs/blade.mjs';
 import css from 'shiki/dist/langs/css.mjs';
 import diff from 'shiki/dist/langs/diff.mjs';
@@ -16,7 +17,23 @@ import materialPalenight from 'shiki/dist/themes/material-theme-palenight.mjs';
 
 export const codeThemes = { light: githubLight, dark: materialPalenight };
 
+const EXTERNAL_LINK = /^https?:\/\//i;
+
+const externalLinksInNewTab = {
+    name: 'external-links-in-new-tab',
+    post(state: { tree: Parameters<typeof visit>[0] }) {
+        visit(state.tree, node => Array.isArray(node) && node[0] === 'a', (node) => {
+            const attributes = (node as [string, Record<string, unknown>])[1];
+            if (typeof attributes.href === 'string' && EXTERNAL_LINK.test(attributes.href)) {
+                attributes.target = '_blank';
+                attributes.rel = 'noopener noreferrer';
+            }
+        });
+    },
+};
+
 export const markdownPlugins = [
+    externalLinksInNewTab,
     highlight({
         preStyles: false,
         registerDefaultThemes: false,
