@@ -13,6 +13,7 @@ const items = computed<NavigationMenuItem[][]>(() => groupByRecency(conversation
         to: `/c/${conversation.id}`,
         icon: conversation.turnActive ? 'i-heroicons-arrow-path' : undefined,
         ui: conversation.turnActive ? { linkLeadingIcon: 'animate-spin' } : undefined,
+        online: conversation.status === 'running',
     })),
 ]));
 
@@ -79,7 +80,11 @@ onBeforeUnmount(() => unsubscribe?.());
                     :collapsed="collapsed"
                     orientation="vertical"
                     :ui="{ link: 'overflow-hidden py-2', linkLabel: 'truncate' }"
-                />
+                >
+                    <template #item-trailing="{ item }">
+                        <span v-if="item.online" class="size-2 rounded-full bg-success"><span class="sr-only">Online</span></span>
+                    </template>
+                </UNavigationMenu>
             </template>
 
             <template #footer="{ collapsed }">
