@@ -6,7 +6,6 @@ export type ConversationStatus = 'running' | 'paused';
 export interface BackgroundTask {
     id: string;
     description: string;
-    command: string | null;
     startedAt: number;
 }
 

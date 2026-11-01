@@ -61,9 +61,9 @@ the session stays online however long that takes. The sidebar marks every conver
 session is online.
 
 While tasks the agent started in the background are running, a box pinned above the message input
-says how many are running; opened, it lists each task with its description, its command and how
-long it has been running. When such a task finishes and the agent reports back on its own, that report appears
-and is stored like any other answer.
+always lists them, each with its description and how long it has been running. When such a task
+finishes and the agent reports back on its own, that report appears and is stored like any other
+answer.
 
 ### Questions, plans and permissions
 

@@ -24,7 +24,6 @@ class ConversationRuntime {
     private model: string | null = null;
     private idleTimer: ReturnType<typeof setTimeout> | null = null;
     private backgroundTasks: BackgroundTask[] = [];
-    private readonly taskCommands = new Map<string, string>();
     private readonly mcpToken = randomBytes(24).toString('hex');
 
     constructor(private readonly conversationId: string) {}
@@ -89,7 +88,6 @@ class ConversationRuntime {
         }
         this.agent = null;
         this.backgroundTasks = [];
-        this.taskCommands.clear();
         this.endTurn(outcomeOnlyMetrics('stopped', this.model));
         await agent.kill();
         this.publishStatus('paused');
@@ -158,38 +156,15 @@ class ConversationRuntime {
             return this.backgroundTasks.find(known => known.id === id) ?? {
                 id,
                 description: typeof description === 'string' && description.trim() ? description.trim() : 'Background task',
-                command: this.taskCommands.get(id) ?? null,
                 startedAt: Date.now(),
             };
         });
-        for (const id of this.taskCommands.keys()) {
-            if (!this.backgroundTasks.some(task => task.id === id)) {
-                this.taskCommands.delete(id);
-            }
-        }
         this.publishStatus('running');
-    }
-
-    private recordTaskCommand(taskId: string, toolUseId: unknown): void {
-        const tool = this.turn?.parts.find(part => part.type === 'dynamic-tool' && part.toolCallId === toolUseId);
-        const command = tool?.type === 'dynamic-tool' ? (tool.input as { command?: unknown } | undefined)?.command : undefined;
-        if (typeof command !== 'string') {
-            return;
-        }
-        this.taskCommands.set(taskId, command);
-        const task = this.backgroundTasks.find(known => known.id === taskId);
-        if (task) {
-            task.command = command;
-            this.publishStatus('running');
-        }
     }
 
     private handleEvent(event: ClaudeEvent): void {
         if (event.type === 'system' && event.subtype === 'background_tasks_changed' && Array.isArray(event.tasks)) {
             this.trackBackgroundTasks(event.tasks);
-        }
-        if (event.type === 'system' && event.subtype === 'task_started' && typeof event.task_id === 'string') {
-            this.recordTaskCommand(event.task_id, event.tool_use_id);
         }
         if (!this.turn && this.agent && TURN_EVENT_TYPES.has(event.type)) {
             this.beginTurn();
@@ -328,7 +303,6 @@ class ConversationRuntime {
         }
         this.agent = null;
         this.backgroundTasks = [];
-        this.taskCommands.clear();
         this.endTurn(outcomeOnlyMetrics('failed', this.model, 'Claude exited unexpectedly.'));
         this.publishStatus('paused');
     }

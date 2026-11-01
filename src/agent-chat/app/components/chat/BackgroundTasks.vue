@@ -22,14 +22,11 @@ onBeforeUnmount(() => clearInterval(timer));
 </script>
 
 <template>
-    <ChatActivityBox :title="title" active :auto-open="false" icon="i-heroicons-arrow-path">
-        <ul class="flex max-h-48 flex-col gap-2 overflow-y-auto pe-1">
-            <li v-for="task in tasks" :key="task.id" class="flex flex-col gap-1">
-                <div class="flex items-baseline gap-3 text-sm">
-                    <span class="min-w-0 flex-1 text-default">{{ task.description }}</span>
-                    <span class="shrink-0 text-muted tabular-nums">{{ formatElapsed(now - task.startedAt) }}</span>
-                </div>
-                <code v-if="task.command" class="truncate rounded-md bg-elevated px-2 py-1 font-mono text-xs text-default">{{ task.command }}</code>
+    <ChatActivityBox :title="title" active always-open :auto-open="true" icon="i-heroicons-arrow-path">
+        <ul class="flex max-h-48 flex-col gap-1 overflow-y-auto pe-1">
+            <li v-for="task in tasks" :key="task.id" class="flex items-baseline gap-3 text-sm">
+                <span class="min-w-0 flex-1 text-default">{{ task.description }}</span>
+                <span class="shrink-0 text-muted tabular-nums">{{ formatElapsed(now - task.startedAt) }}</span>
             </li>
         </ul>
     </ChatActivityBox>
