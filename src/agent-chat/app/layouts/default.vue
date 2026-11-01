@@ -27,6 +27,8 @@ onMounted(async () => {
         else {
             usage.value = event.usage;
         }
+    }, () => {
+        void Promise.all([load(), loadAccount()]);
     });
     await Promise.all([load(), loadAccount()]);
 });

@@ -87,7 +87,9 @@ export function useConversation(conversationId: string) {
     }
 
     function subscribe(): () => void {
-        return subscribeEvents<ConversationEvent>(`conversations/${conversationId}/events`, apply);
+        return subscribeEvents<ConversationEvent>(`conversations/${conversationId}/events`, apply, () => {
+            void load();
+        });
     }
 
     async function send(text: string): Promise<void> {
