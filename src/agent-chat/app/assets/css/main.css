@@ -3,6 +3,7 @@
 
 @theme {
     --font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
 }
 
 :root {

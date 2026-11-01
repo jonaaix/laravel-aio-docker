@@ -20,6 +20,7 @@ export default defineNuxtConfig({
     fonts: {
         families: [
             { name: 'Geist', provider: 'google', weights: [400, 500, 600, 700] },
+            { name: 'JetBrains Mono', provider: 'google', weights: [400, 500] },
         ],
     },
 

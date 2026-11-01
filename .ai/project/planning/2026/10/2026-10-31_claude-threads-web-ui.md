@@ -99,7 +99,8 @@ container restart with its full history and attachments, and no Mattermost/Slack
   live connections need a custom server outside its model.
 - Look follows Claude.ai / ChatGPT on the user's call: fully rounded buttons, inputs and badges
   (deliberately rounder than the project design system's pills), doubled `--ui-radius`, Geist
-  (self-hosted by `@nuxt/fonts`, bundled with Nuxt UI), a 52rem reading column via `--ui-container`,
+  and JetBrains Mono for code, answer code blocks at 12px
+  (both self-hosted by `@nuxt/fonts`, bundled with Nuxt UI), a 52rem reading column via `--ui-container`,
   no hard lines, tool calls in one working box per answer as in Mattermost, thinking in its own box (user's call). Theme overrides live in `app.config.ts`.
   The browser window is the page's scroll container (native scrollbar over the full height): the
   dashboard layout is unpinned in `app.config.ts`, sidebar and navbar stick to the top, the composer

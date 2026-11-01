@@ -29,6 +29,11 @@ export default defineAppConfig({
                 class: { root: 'dark:bg-elevated has-[textarea:focus-visible]:outline-0 has-[textarea:focus-visible]:ring-accented' },
             }],
         },
+        prose: {
+            pre: {
+                slots: { base: 'text-xs/5' },
+            },
+        },
         dashboardGroup: {
             base: 'relative min-h-svh overflow-visible',
         },
