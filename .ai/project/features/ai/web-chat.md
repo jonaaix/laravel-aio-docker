@@ -32,7 +32,8 @@ chat who the user is. Access through the chat's own domain or port is protected 
 
 A sidebar lists the conversations. Each user sees only their own. Someone can start a new
 conversation, open an earlier one and continue it. A conversation that is no longer needed can be
-archived: it leaves the sidebar but stays stored and can be brought back. Each conversation is its own agent session. The agent's answer appears while it is
+archived: its agent session is paused first, it leaves the sidebar, and the user lands on a new
+conversation. It stays stored and can be brought back. Each conversation is its own agent session. The agent's answer appears while it is
 being written; its tool use and reasoning are visible as separate, quieter blocks next to the
 answer rather than mixed into it.
 
