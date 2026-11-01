@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { copyFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import { basename, extname, isAbsolute, join, resolve } from 'node:path';
 
-const MAX_FILE_BYTES = 50 * 1024 * 1024;
+const MAX_FILE_BYTES = 2 * 1024 ** 3;
 const STORED_NAME = /^[\w.-]+$/;
 
 const MEDIA_TYPES: Record<string, string> = {
@@ -41,7 +41,7 @@ export function storeConversationFile(conversationId: string, workingDir: string
         throw new Error(`File not found: ${path}`);
     }
     if (statSync(source).size > MAX_FILE_BYTES) {
-        throw new Error(`File is larger than ${MAX_FILE_BYTES / 1024 / 1024} MB: ${path}`);
+        throw new Error(`File is larger than 2 GB: ${path}`);
     }
     const filename = basename(source);
     const storedName = `${randomUUID()}${extname(filename).toLowerCase().replace(/[^\w.]/g, '')}`;

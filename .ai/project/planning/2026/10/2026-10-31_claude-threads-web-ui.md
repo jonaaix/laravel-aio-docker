@@ -77,7 +77,7 @@ container restart with its full history and attachments, and no Mattermost/Slack
   token; its MCP config goes to `<data dir>/mcp/<id>.json` (0600, keeps the token out of `ps`) and is
   passed as `--mcp-config`. The URL is the local origin of the request (`localServerOrigin`: socket
   port, else the request's port in dev). `send_file` copies the file to `<data dir>/files/<id>/`
-  (50 MB cap) and adds an AI SDK `file` part; `/api/conversations/:id/files/:name` serves it with a
+  (2 GB cap) and adds an AI SDK `file` part; `/api/conversations/:id/files/:name` serves it with a
   `sandbox` CSP. Images render inline, other files as a download tile.
 - Conversations are archived (`archived_at`), never deleted; archived ones are read-only (409 on
   send) and listed under `/archived`. A chat opens with its last 50 messages, older pages load
