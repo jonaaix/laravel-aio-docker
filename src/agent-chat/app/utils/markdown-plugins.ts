@@ -11,10 +11,14 @@ import php from 'shiki/dist/langs/php.mjs';
 import python from 'shiki/dist/langs/python.mjs';
 import sql from 'shiki/dist/langs/sql.mjs';
 import xml from 'shiki/dist/langs/xml.mjs';
+import githubLight from 'shiki/dist/themes/github-light.mjs';
+import materialPalenight from 'shiki/dist/themes/material-theme-palenight.mjs';
 
 export const markdownPlugins = [
     highlight({
         preStyles: false,
+        registerDefaultThemes: false,
+        themes: { light: githubLight, dark: materialPalenight },
         languages: [blade, css, diff, dockerfile, html, ini, markdown, nginx, php, python, sql, xml],
     }),
 ];
