@@ -43,6 +43,13 @@ export default defineNuxtConfig({
 
     compatibilityDate: '2026-06-30',
 
+    vite: {
+        optimizeDeps: {
+            // Comark loads shiki unbundled; a pre-bundled second copy breaks highlighters shared across both.
+            exclude: ['shiki'],
+        },
+    },
+
     typescript: {
         tsConfig: {
             compilerOptions: {

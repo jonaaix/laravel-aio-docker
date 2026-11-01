@@ -14,11 +14,13 @@ import xml from 'shiki/dist/langs/xml.mjs';
 import githubLight from 'shiki/dist/themes/github-light.mjs';
 import materialPalenight from 'shiki/dist/themes/material-theme-palenight.mjs';
 
+export const codeThemes = { light: githubLight, dark: materialPalenight };
+
 export const markdownPlugins = [
     highlight({
         preStyles: false,
         registerDefaultThemes: false,
-        themes: { light: githubLight, dark: materialPalenight },
+        themes: codeThemes,
         languages: [blade, css, diff, dockerfile, html, ini, markdown, nginx, php, python, sql, xml],
     }),
 ];
