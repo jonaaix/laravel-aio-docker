@@ -47,7 +47,7 @@ container restart with its full history and attachments, and no Mattermost/Slack
   in `bypass` permission mode without MCP. Claude stream-json events are mapped to AI SDK
   `UIMessage` parts (`server/utils/claude-event-mapper.ts`): text, reasoning, `dynamic-tool`.
   Subagent sidechains are skipped.
-- History: `chat.sqlite` in `NUXT_DATA_DIR` (default `~/.claude-threads/web`), WAL mode, migrations in
+- History: `chat.sqlite` in `NUXT_DATA_DIR` (default `~/.config/agent-chat`), WAL mode, migrations in
   `server/database/migrations` (copied into `.output/server/migrations` at build, applied on start).
   Tool output is cut to its first 2,000 chars. Each turn's assistant message carries the metrics
   columns (`server/utils/turn-metrics.ts`, from the result event's `model_usage_since_last_result`;
@@ -56,8 +56,9 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - Conversations are archived (`archived_at`), never deleted; archived ones are read-only (409 on
   send) and listed under `/archived`. A chat opens with its last 50 messages, older pages load
   when scrolling near the top (`GET /api/conversations/:id/messages?before=`).
-- Runtime config via env: `NUXT_WORKING_DIR`, `NUXT_DATA_DIR`, `NUXT_CLAUDE_MODEL`,
-  `NUXT_APP_BASE_URL` (sub-path for the iframe).
+- Runtime config via env: `NUXT_WORKING_DIR` (default `<data dir>/workspace`, created on demand),
+  `NUXT_DATA_DIR`, `NUXT_CLAUDE_MODEL`, `NUXT_APP_BASE_URL` (sub-path for the iframe). Paths are
+  resolved in `server/utils/paths.ts`.
 - Scripts in `src/agent-chat`: `dev`, `build`, `preview`, `typecheck`, `db:generate`.
 - The beta image still runs the Mattermost bridge; the web app is not wired into the image yet.
 - Core carries the upstream CLI fixes: modern task/tool_result/rate-limit events, decision bridge
@@ -91,6 +92,10 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - Lean core over a fake `web` platform behind `PlatformClient`: the platform interface is
   post/reaction-shaped. The web app taps `ClaudeEvent` directly. Core stays in `src/` and is cut down
   later; the Mattermost bridge keeps working until then.
+- The app's data lives in `~/.config/agent-chat`, never in `/app` (the Laravel project) and apart
+  from `~/.claude` (Claude Code's own) and `~/.config/claude-threads` (the fork's, going away); in the
+  container it sits in the persisted home volume. `/app` is only where Claude works. Without a
+  configured working dir Claude starts in an empty sandbox folder, never in the app's own code.
 - One SQLite file, not one per conversation: lookups go through the `(conversation_id, seq)` index
   and stay independent of file size (simulated year of 365 chats × 500 turns: 3.3 GB, last 50
   messages in 0.3 ms); per-chat files would need a central list anyway and complicate migrations,
