@@ -1,4 +1,4 @@
 export default defineNitroPlugin((nitroApp) => {
-  markRunningConversationsPaused();
-  nitroApp.hooks.hook('close', () => pauseAllConversations());
+    markRunningConversationsPaused();
+    nitroApp.hooks.hook('close', () => pauseAllConversations());
 });

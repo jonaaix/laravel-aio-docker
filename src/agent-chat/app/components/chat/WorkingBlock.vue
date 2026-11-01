@@ -3,40 +3,40 @@ import type { ChatMessage } from '#shared/types/conversation';
 import type { DynamicToolUIPart } from 'ai';
 
 const props = defineProps<{
-  message: ChatMessage;
-  streaming: boolean;
+    message: ChatMessage;
+    streaming: boolean;
 }>();
 
 const tools = computed(() => props.message.parts.filter((part): part is DynamicToolUIPart => part.type === 'dynamic-tool'));
 const working = computed(() => props.streaming && props.message.parts.at(-1)?.type !== 'text');
 const failed = computed(() => tools.value.some(part => part.state === 'output-error'));
 const title = computed(() => {
-  if (working.value) {
-    return 'Working…';
-  }
-  return tools.value.length === 1 ? 'Worked · 1 step' : `Worked · ${tools.value.length} steps`;
+    if (working.value) {
+        return 'Working…';
+    }
+    return tools.value.length === 1 ? 'Worked · 1 step' : `Worked · ${tools.value.length} steps`;
 });
 </script>
 
 <template>
-  <ChatActivityBox
-    v-if="tools.length > 0"
-    :title="title"
-    :active="working"
-    :icon="failed ? 'i-heroicons-exclamation-triangle' : 'i-heroicons-wrench-screwdriver'"
-    :icon-class="failed ? 'text-error' : ''"
-    :items="tools"
-    :item-key="part => part.toolCallId"
-    :earlier-label="count => count === 1 ? 'Show 1 earlier step' : `Show ${count} earlier steps`"
-    fewer-label="Show fewer steps"
-  >
-    <template #item="{ item, index }">
-      <ChatMessagePart
-        :part="item"
-        :message="message"
-        :streaming="streaming"
-        :full="index === tools.length - 1"
-      />
-    </template>
-  </ChatActivityBox>
+    <ChatActivityBox
+        v-if="tools.length > 0"
+        :title="title"
+        :active="working"
+        :icon="failed ? 'i-heroicons-exclamation-triangle' : 'i-heroicons-wrench-screwdriver'"
+        :icon-class="failed ? 'text-error' : ''"
+        :items="tools"
+        :item-key="part => part.toolCallId"
+        :earlier-label="count => count === 1 ? 'Show 1 earlier step' : `Show ${count} earlier steps`"
+        fewer-label="Show fewer steps"
+    >
+        <template #item="{ item, index }">
+            <ChatMessagePart
+                :part="item"
+                :message="message"
+                :streaming="streaming"
+                :full="index === tools.length - 1"
+            />
+        </template>
+    </ChatActivityBox>
 </template>

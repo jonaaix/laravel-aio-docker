@@ -2,10 +2,10 @@
 @import "@nuxt/ui";
 
 @theme {
-  --font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
+    --font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {
-  --ui-radius: 0.5rem;
-  --ui-container: 48rem;
+    --ui-radius: 0.5rem;
+    --ui-container: 48rem;
 }
