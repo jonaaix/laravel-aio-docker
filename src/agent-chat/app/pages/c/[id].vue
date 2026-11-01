@@ -165,6 +165,24 @@ async function submit(): Promise<void> {
     await send(text);
 }
 
+async function focusComposerAtEnd(): Promise<void> {
+    await nextTick();
+    const textarea = composerBar.value?.querySelector('textarea');
+    if (!textarea) {
+        return;
+    }
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+    textarea.scrollTop = textarea.scrollHeight;
+}
+
+function quote(text: string): void {
+    const quoted = text.split('\n').map(line => line.trim() ? `> ${line}` : '>').join('\n');
+    const existing = input.value.replace(/\s+$/, '');
+    input.value = `${existing ? `${existing}\n\n` : ''}${quoted}\n\n`;
+    focusComposerAtEnd();
+}
+
 async function withFlag(flag: Ref<boolean>, action: () => Promise<void>): Promise<void> {
     flag.value = true;
     try {
@@ -234,6 +252,7 @@ const restoreConversation = () => withFlag(archiving, restore);
         <template #body>
             <UContainer class="flex-1">
                 <div ref="timeline" />
+                <ChatQuoteButton v-if="loaded && archivedAt === null" :root="timeline?.parentElement ?? null" @quote="quote" />
                 <div v-if="!loaded" class="flex flex-col gap-6 py-4">
                     <USkeleton class="ms-auto h-10 w-2/5 rounded-xl" />
                     <USkeleton class="h-24 w-4/5 rounded-xl" />

@@ -37,6 +37,12 @@ conversation. It stays stored and can be brought back. Each conversation is its 
 being written; its tool use and reasoning are visible as separate, quieter blocks next to the
 answer rather than mixed into it.
 
+Any message can be copied with one click. To comment on specific passages, the user selects text
+in the conversation and quotes it: the passage lands in the message input as a quote with the
+cursor below it, ready for a comment. Quoting again appends the next passage below what is already
+written, so several quoted remarks can be collected in one message. Quotes look like quotes while
+writing, and the user's sent messages are formatted like the agent's answers.
+
 Every conversation keeps its full history — messages, tool activity, and the files and images
 exchanged — and comes back complete after a page reload or a container restart.
 
