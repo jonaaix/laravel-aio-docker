@@ -178,7 +178,7 @@ const restoreConversation = () => withFlag(archiving, restore);
                                 <ChatWorkingBlock :message="message" :streaming="isStreaming(message.id)" />
                             </div>
                             <ChatMessagePart
-                                v-for="(part, index) in message.parts.filter(part => part.type === 'text')"
+                                v-for="(part, index) in message.parts.filter(part => part.type === 'text' || part.type === 'file')"
                                 :key="`${message.id}-text-${index}`"
                                 :part="part"
                                 :message="message"

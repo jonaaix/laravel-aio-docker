@@ -24,8 +24,8 @@ container restart with its full history and attachments, and no Mattermost/Slack
       standalone access, conversations scoped per user — blocks image integration
 - [ ] Image integration: supervisor program, nginx sub-path proxy for the iframe, optional own
       port/domain, env (`NUXT_WORKING_DIR=/app`, data dir in the persisted home)
-- [ ] In-process HTTP MCP for Claude: `permission_prompt` → UI decision, `send_file` → attachment
-      stored with the conversation; then drop the bypass permission mode
+- [x] In-process HTTP MCP for Claude with `send_file` → attachment stored with the conversation
+- [ ] `permission_prompt` on the same MCP → decision in the chat; then drop the bypass permission mode
 - [x] Token-level streaming (`--include-partial-messages` + `stream_event` deltas)
 - [x] Turn markers: show "stopped" on interrupted turns, errors inline
 - [ ] Attachments from the user (upload into the conversation, passed to Claude)
@@ -72,6 +72,13 @@ container restart with its full history and attachments, and no Mattermost/Slack
   sends with every turn (`unifiedWindows`). The last usage is kept in `<data dir>/usage.json`, so it
   shows the last known state until the next turn (a window whose reset has passed is greyed out). Live updates ride the sidebar's `/api/events` stream. Below the card a settings menu
   holds the appearance choice (light, dark, system).
+- Chat MCP: `server/api/mcp/[id].post.ts` speaks MCP over plain JSON HTTP (`server/utils/chat-mcp.ts`,
+  hand-rolled: initialize, tools/list, tools/call, ping). Each conversation runtime has a random bearer
+  token; its MCP config goes to `<data dir>/mcp/<id>.json` (0600, keeps the token out of `ps`) and is
+  passed as `--mcp-config`. The URL is the local origin of the request (`localServerOrigin`: socket
+  port, else the request's port in dev). `send_file` copies the file to `<data dir>/files/<id>/`
+  (50 MB cap) and adds an AI SDK `file` part; `/api/conversations/:id/files/:name` serves it with a
+  `sandbox` CSP. Images render inline, other files as a download tile.
 - Conversations are archived (`archived_at`), never deleted; archived ones are read-only (409 on
   send) and listed under `/archived`. A chat opens with its last 50 messages, older pages load
   when scrolling near the top (`GET /api/conversations/:id/messages?before=`).

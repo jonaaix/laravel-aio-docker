@@ -20,3 +20,8 @@ export function toolDescription(input: unknown): string {
     const description = input && typeof input === 'object' ? (input as Record<string, unknown>).description : undefined;
     return typeof description === 'string' && description.trim() ? description.trim() : toolSummary(input);
 }
+
+export function toolDisplayName(name: string): string {
+    const bare = name.replace(/^mcp__[^_]+__/, '');
+    return bare === name ? name : bare.charAt(0).toUpperCase() + bare.slice(1).replace(/_/g, ' ');
+}

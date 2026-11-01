@@ -119,6 +119,7 @@ export interface ClaudeCliOptions {
   includePartialMessages?: boolean;
   thinkingDisplay?: 'summarized' | 'omitted';
   disallowedTools?: string[];
+  mcpConfigPath?: string;
   chrome?: boolean;    // If true, enable Chrome integration with --chrome
   platformConfig?: PlatformMcpConfig;  // Platform-specific config for MCP server
   appendSystemPrompt?: string;  // Additional system prompt to append
@@ -594,6 +595,10 @@ export class ClaudeCli extends EventEmitter implements AgentBackend {
 
     if (this.options.disallowedTools?.length) {
       args.push('--disallowedTools', this.options.disallowedTools.join(','));
+    }
+
+    if (this.options.mcpConfigPath) {
+      args.push('--mcp-config', this.options.mcpConfigPath);
     }
 
     // Chrome integration

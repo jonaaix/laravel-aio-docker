@@ -1,3 +1,6 @@
+import { randomBytes } from 'node:crypto';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { ClaudeCli, type ClaudeEvent } from '#claude-threads/claude/cli';
 import type { ChatMessage, ChatPart, ConversationStatus, ConversationSummary } from '../../shared/types/conversation';
 import { metricsFromResult, outcomeOnlyMetrics, type TurnMetrics } from './turn-metrics';
@@ -17,6 +20,7 @@ class ConversationRuntime {
     private agent: ClaudeCli | null = null;
     private turn: ActiveTurn | null = null;
     private model: string | null = null;
+    private readonly mcpToken = randomBytes(24).toString('hex');
 
     constructor(private readonly conversationId: string) {}
 
@@ -24,7 +28,27 @@ class ConversationRuntime {
         return this.turn !== null;
     }
 
-    send(text: string): void {
+    acceptsMcpToken(token: string): boolean {
+        return token === this.mcpToken;
+    }
+
+    attachFile(path: string): string {
+        const conversation = findConversation(this.conversationId);
+        if (!conversation || !this.turn) {
+            throw new Error('Files can only be sent while answering.');
+        }
+        const stored = storeConversationFile(this.conversationId, conversation.workingDir, path);
+        const index = this.turn.parts.push({
+            type: 'file',
+            mediaType: stored.mediaType,
+            filename: stored.filename,
+            url: `conversations/${this.conversationId}/files/${stored.storedName}`,
+        }) - 1;
+        this.recordParts([index]);
+        return stored.filename;
+    }
+
+    send(text: string, serverOrigin: string): void {
         const conversation = findConversation(this.conversationId);
         if (!conversation) {
             throw createError({ statusCode: 404, statusMessage: 'Conversation not found' });
@@ -35,7 +59,7 @@ class ConversationRuntime {
         const message = appendMessage(this.conversationId, 'user', [{ type: 'text', text }]);
         publishConversationEvent(this.conversationId, { type: 'message', message });
         this.turn = { message: null, parts: [], liveIndex: null, stopRequested: false };
-        const agent = this.agent ?? this.startAgent(conversation);
+        const agent = this.agent ?? this.startAgent(conversation, serverOrigin);
         agent.sendMessage(text);
         this.publishStatus('running');
     }
@@ -58,7 +82,17 @@ class ConversationRuntime {
         this.publishStatus('paused');
     }
 
-    private startAgent(conversation: NonNullable<ReturnType<typeof findConversation>>): ClaudeCli {
+    private writeMcpConfig(serverOrigin: string): string {
+        const dir = join(resolveDataDir(), 'mcp');
+        mkdirSync(dir, { recursive: true, mode: 0o700 });
+        const path = join(dir, `${this.conversationId}.json`);
+        const url = `${serverOrigin}${useRuntimeConfig().app.baseURL.replace(/\/$/, '')}/api/mcp/${this.conversationId}`;
+        const config = { mcpServers: { chat: { type: 'http', url, headers: { Authorization: `Bearer ${this.mcpToken}` } } } };
+        writeFileSync(path, JSON.stringify(config), { mode: 0o600 });
+        return path;
+    }
+
+    private startAgent(conversation: NonNullable<ReturnType<typeof findConversation>>, serverOrigin: string): ClaudeCli {
         const agent = new ClaudeCli({
             workingDir: conversation.workingDir,
             sessionId: conversation.agentSessionRef,
@@ -67,6 +101,7 @@ class ConversationRuntime {
             includePartialMessages: true,
             thinkingDisplay: 'summarized',
             disallowedTools: DISALLOWED_TOOLS,
+            mcpConfigPath: this.writeMcpConfig(serverOrigin),
             // Bypass until permission prompts are answered in the chat; the container is the sandbox.
             permissionMode: 'bypass',
         });

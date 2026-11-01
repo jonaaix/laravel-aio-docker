@@ -3,6 +3,6 @@ export default defineEventHandler(async (event) => {
     if (!text?.trim()) {
         throw createError({ statusCode: 422, statusMessage: 'Message text is required' });
     }
-    useConversationRuntime(getRouterParam(event, 'id')!).send(text);
+    useConversationRuntime(getRouterParam(event, 'id')!).send(text, localServerOrigin(event));
     return { ok: true };
 });

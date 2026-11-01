@@ -4,6 +4,6 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 422, statusMessage: 'Message text is required' });
     }
     const conversation = createConversation(titleFromPrompt(text), resolveWorkingDir());
-    useConversationRuntime(conversation.id).send(text);
+    useConversationRuntime(conversation.id).send(text, localServerOrigin(event));
     return summarize(findConversation(conversation.id)!);
 });
