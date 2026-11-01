@@ -8,6 +8,7 @@ export interface ConversationSummary {
   status: ConversationStatus;
   turnActive: boolean;
   lastActivityAt: number;
+  archivedAt: number | null;
 }
 
 export interface ChatMessageMetadata {
@@ -18,9 +19,12 @@ export type ChatMessage = UIMessage<ChatMessageMetadata>;
 
 export type ChatPart = ChatMessage['parts'][number];
 
-export interface ConversationDetail extends ConversationSummary {
+export interface MessagePage {
   messages: ChatMessage[];
+  hasEarlier: boolean;
 }
+
+export interface ConversationDetail extends ConversationSummary, MessagePage {}
 
 export type ConversationEvent =
   | { type: 'message'; message: ChatMessage }

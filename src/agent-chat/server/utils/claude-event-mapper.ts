@@ -13,8 +13,8 @@ interface ClaudeContentBlock {
   is_error?: boolean;
 }
 
-// Full tool output stays in Claude's own transcript; the chat history only keeps what is worth showing.
-const MAX_TOOL_OUTPUT_CHARS = 64_000;
+// The history keeps a tool call's beginning, enough to see why it failed; full output would bloat the database.
+const MAX_TOOL_OUTPUT_CHARS = 2_000;
 
 function contentBlocks(event: ClaudeEvent): ClaudeContentBlock[] {
   const message = event.message as { content?: unknown } | undefined;

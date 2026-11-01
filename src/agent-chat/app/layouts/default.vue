@@ -57,7 +57,20 @@ onBeforeUnmount(() => unsubscribe?.());
       </template>
 
       <template #footer="{ collapsed }">
-        <UColorModeButton :class="collapsed ? '' : 'ms-auto'" />
+        <div class="flex w-full items-center gap-1" :class="collapsed ? 'flex-col' : ''">
+          <UTooltip text="Archived" :disabled="!collapsed">
+            <UButton
+              to="/archived"
+              icon="i-heroicons-archive-box"
+              :label="collapsed ? undefined : 'Archived'"
+              aria-label="Archived"
+              color="neutral"
+              variant="ghost"
+              :square="collapsed"
+            />
+          </UTooltip>
+          <UColorModeButton :class="collapsed ? '' : 'ms-auto'" />
+        </div>
       </template>
     </UDashboardSidebar>
 

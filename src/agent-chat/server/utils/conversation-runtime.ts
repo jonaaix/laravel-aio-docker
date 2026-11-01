@@ -1,16 +1,19 @@
 import { ClaudeCli, type ClaudeEvent } from '#claude-threads/claude/cli';
 import type { ChatPart, ConversationStatus, ConversationSummary } from '../../shared/types/conversation';
+import { metricsFromResult, outcomeOnlyMetrics, type TurnMetrics } from './turn-metrics';
 
 const TITLE_LENGTH = 60;
 
 interface ActiveTurn {
   messageId: string | null;
   parts: ChatPart[];
+  stopRequested: boolean;
 }
 
 class ConversationRuntime {
   private agent: ClaudeCli | null = null;
   private turn: ActiveTurn | null = null;
+  private model: string | null = null;
 
   constructor(private readonly conversationId: string) {}
 
@@ -23,15 +26,21 @@ class ConversationRuntime {
     if (!conversation) {
       throw createError({ statusCode: 404, statusMessage: 'Conversation not found' });
     }
+    if (conversation.archivedAt !== null) {
+      throw createError({ statusCode: 409, statusMessage: 'Conversation is archived' });
+    }
     const message = appendMessage(this.conversationId, 'user', [{ type: 'text', text }]);
     publishConversationEvent(this.conversationId, { type: 'message', message });
-    this.turn = { messageId: null, parts: [] };
+    this.turn = { messageId: null, parts: [], stopRequested: false };
     const agent = this.agent ?? this.startAgent(conversation);
     agent.sendMessage(text);
     this.publishStatus('running');
   }
 
   stop(): void {
+    if (this.turn) {
+      this.turn.stopRequested = true;
+    }
     this.agent?.interrupt();
   }
 
@@ -41,7 +50,7 @@ class ConversationRuntime {
       return;
     }
     this.agent = null;
-    this.turn = null;
+    this.endTurn(outcomeOnlyMetrics('stopped', this.model));
     await agent.kill();
     this.publishStatus('paused');
   }
@@ -65,11 +74,15 @@ class ConversationRuntime {
   }
 
   private handleEvent(event: ClaudeEvent): void {
+    if (event.type === 'system' && event.subtype === 'init' && typeof event.model === 'string') {
+      this.model = event.model;
+    }
     if (!this.turn) {
       return;
     }
     if (event.type === 'result') {
-      this.finishTurn();
+      this.endTurn(metricsFromResult(event, this.model, this.turn.stopRequested));
+      this.publishStatus('running');
       return;
     }
     const changed = applyClaudeEvent(this.turn.parts, event);
@@ -92,9 +105,14 @@ class ConversationRuntime {
     }
   }
 
-  private finishTurn(): void {
+  private endTurn(metrics: TurnMetrics): void {
+    const turn = this.turn;
+    if (!turn) {
+      return;
+    }
     this.turn = null;
-    this.publishStatus('running');
+    const messageId = turn.messageId ?? appendMessage(this.conversationId, 'assistant', []).id;
+    saveTurnMetrics(this.conversationId, messageId, metrics);
   }
 
   private handleExit(agent: ClaudeCli): void {
@@ -102,7 +120,7 @@ class ConversationRuntime {
       return;
     }
     this.agent = null;
-    this.turn = null;
+    this.endTurn(outcomeOnlyMetrics('failed', this.model));
     this.publishStatus('paused');
   }
 
@@ -141,12 +159,13 @@ export function titleFromPrompt(text: string): string {
   return line.length > TITLE_LENGTH ? `${line.slice(0, TITLE_LENGTH - 1)}…` : line || 'New conversation';
 }
 
-export function summarize(row: { id: string; title: string; status: ConversationStatus; lastActivityAt: number }): ConversationSummary {
+export function summarize(row: Omit<ConversationSummary, 'turnActive'>): ConversationSummary {
   return {
     id: row.id,
     title: row.title,
     status: row.status,
     turnActive: isTurnActive(row.id),
     lastActivityAt: row.lastActivityAt,
+    archivedAt: row.archivedAt,
   };
 }

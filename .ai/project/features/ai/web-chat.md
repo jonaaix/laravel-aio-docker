@@ -25,15 +25,25 @@ users talk to the agent without leaving the app. Optionally the chat can also be
 domain or port, which makes it reachable independently of that app — including when the app
 itself is broken.
 
+Inside the Laravel app, the app opens the chat through a short-lived signed link that tells the
+chat who the user is. Access through the chat's own domain or port is protected by a password.
+
 ### Conversations
 
-A sidebar lists the conversations. Someone can start a new conversation, open an earlier one and
-continue it. Each conversation is its own agent session. The agent's answer appears while it is
+A sidebar lists the conversations. Each user sees only their own. Someone can start a new
+conversation, open an earlier one and continue it. A conversation that is no longer needed can be
+archived: it leaves the sidebar but stays stored and can be brought back. Each conversation is its own agent session. The agent's answer appears while it is
 being written; its tool use and reasoning are visible as separate, quieter blocks next to the
 answer rather than mixed into it.
 
 Every conversation keeps its full history — messages, tool activity, and the files and images
 exchanged — and comes back complete after a page reload or a container restart.
+
+The history is kept permanently and never cleaned up automatically, so the whole development
+process behind an app can be evaluated once the app is finished. For each tool call the history
+keeps the call itself in full — including every change made to a file — whether it succeeded, and
+the beginning of its output, enough to see why a call failed. Each answer also records the model,
+token usage, cost, duration and whether it finished, was stopped or failed.
 
 ### Stopping and pausing
 

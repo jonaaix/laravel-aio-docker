@@ -1,1 +1,1 @@
-export default defineEventHandler(() => listConversations());
+export default defineEventHandler((event) => listConversations(getQuery(event).archived === 'true'));

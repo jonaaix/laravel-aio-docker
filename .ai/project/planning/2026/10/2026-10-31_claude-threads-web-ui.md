@@ -18,9 +18,8 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - [x] First vertical slice: conversations list, start/continue, Claude streaming block-level, tool and
       reasoning blocks, stop, pause/resume, history in SQLite, works under a sub-path
 - [x] Port upstream CLI-compatibility fixes into the core (upstream 1.21–1.37)
-- [ ] History store for evaluation: tool output cut to its first 2,000 characters, per-turn metrics
-      (model, tokens, cost, duration, outcome), archive instead of delete, paged message loading,
-      `auto_vacuum = incremental` — before the first real data exists
+- [x] History store for evaluation: tool output cut to its first 2,000 characters, per-turn metrics
+      (model, tokens, cost, duration, outcome), archive instead of delete, paged message loading
 - [ ] Auth: short-lived signed iframe link from the Laravel app carrying the user, password for
       standalone access, conversations scoped per user — blocks image integration
 - [ ] Image integration: supervisor program, nginx sub-path proxy for the iframe, optional own
@@ -50,7 +49,13 @@ container restart with its full history and attachments, and no Mattermost/Slack
   Subagent sidechains are skipped.
 - History: `chat.sqlite` in `NUXT_DATA_DIR` (default `~/.claude-threads/web`), WAL mode, migrations in
   `server/database/migrations` (copied into `.output/server/migrations` at build, applied on start).
-  Tool output is capped at 64k chars per tool call.
+  Tool output is cut to its first 2,000 chars. Each turn's assistant message carries the metrics
+  columns (`server/utils/turn-metrics.ts`, from the result event's `model_usage_since_last_result`;
+  `null` where Claude reports nothing, e.g. interrupted turns). A turn without any output still gets
+  an assistant message with empty parts to carry its metrics; the UI hides those.
+- Conversations are archived (`archived_at`), never deleted; archived ones are read-only (409 on
+  send) and listed under `/archived`. A chat opens with its last 50 messages, older pages load
+  when scrolling near the top (`GET /api/conversations/:id/messages?before=`).
 - Runtime config via env: `NUXT_WORKING_DIR`, `NUXT_DATA_DIR`, `NUXT_CLAUDE_MODEL`,
   `NUXT_APP_BASE_URL` (sub-path for the iframe).
 - Scripts in `src/agent-chat`: `dev`, `build`, `preview`, `typecheck`, `db:generate`.
@@ -93,6 +98,7 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - History is permanent because the development process gets evaluated after the app is finished.
   Claude's own transcripts are no substitute (deleted after 30 days by default). Conversations are
   archived, never deleted.
+- No `auto_vacuum`: nothing is ever deleted, and pages freed by rewritten rows are reused.
 - Tool output is stored as its first 2,000 characters plus success/error — Mattermost level plus the
   reason a call failed (same simulation: 1.9 GB instead of 3.3 GB). Tool input, including the full
   content of edits, stays complete.

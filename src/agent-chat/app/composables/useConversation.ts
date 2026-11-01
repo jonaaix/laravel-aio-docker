@@ -1,11 +1,15 @@
 import type { ChatStatus } from 'ai';
-import type { ChatMessage, ConversationDetail, ConversationEvent, ConversationStatus } from '#shared/types/conversation';
+import type { ChatMessage, ConversationDetail, ConversationEvent, ConversationStatus, ConversationSummary, MessagePage } from '#shared/types/conversation';
 
 export function useConversation(conversationId: string) {
   const title = ref('');
   const messages = ref<ChatMessage[]>([]);
   const status = ref<ConversationStatus>('paused');
   const turnActive = ref(false);
+  const archivedAt = ref<number | null>(null);
+  const loaded = ref(false);
+  const hasEarlier = ref(false);
+  const loadingEarlier = ref(false);
   const error = ref<Error | undefined>();
 
   const chatStatus = computed<ChatStatus>(() => {
@@ -44,8 +48,31 @@ export function useConversation(conversationId: string) {
     const detail = await apiFetch<ConversationDetail>(`conversations/${conversationId}`);
     title.value = detail.title;
     messages.value = detail.messages;
-    status.value = detail.status;
-    turnActive.value = detail.turnActive;
+    hasEarlier.value = detail.hasEarlier;
+    applySummary(detail);
+    loaded.value = true;
+  }
+
+  function applySummary(summary: ConversationSummary): void {
+    status.value = summary.status;
+    turnActive.value = summary.turnActive;
+    archivedAt.value = summary.archivedAt;
+  }
+
+  async function loadEarlier(): Promise<void> {
+    const oldest = messages.value[0];
+    if (!oldest || !hasEarlier.value || loadingEarlier.value) {
+      return;
+    }
+    loadingEarlier.value = true;
+    try {
+      const page = await apiFetch<MessagePage>(`conversations/${conversationId}/messages`, { query: { before: oldest.id } });
+      messages.value = [...page.messages, ...messages.value];
+      hasEarlier.value = page.hasEarlier;
+    }
+    finally {
+      loadingEarlier.value = false;
+    }
   }
 
   function subscribe(): () => void {
@@ -66,5 +93,32 @@ export function useConversation(conversationId: string) {
     await apiFetch(`conversations/${conversationId}/pause`, { method: 'POST' });
   }
 
-  return { title, messages, status, turnActive, error, chatStatus, load, subscribe, send, stop, pause };
+  async function archive(): Promise<void> {
+    applySummary(await apiFetch<ConversationSummary>(`conversations/${conversationId}/archive`, { method: 'POST' }));
+  }
+
+  async function restore(): Promise<void> {
+    applySummary(await apiFetch<ConversationSummary>(`conversations/${conversationId}/restore`, { method: 'POST' }));
+  }
+
+  return {
+    title,
+    messages,
+    status,
+    turnActive,
+    archivedAt,
+    loaded,
+    hasEarlier,
+    loadingEarlier,
+    error,
+    chatStatus,
+    load,
+    loadEarlier,
+    subscribe,
+    send,
+    stop,
+    pause,
+    archive,
+    restore,
+  };
 }

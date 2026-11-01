@@ -1,12 +1,15 @@
 import { randomUUID } from 'node:crypto';
-import { and, desc, eq, max } from 'drizzle-orm';
+import { and, desc, eq, isNotNull, isNull, lt, max } from 'drizzle-orm';
 import { conversations, messages } from '../database/schema';
-import type { ChatMessage, ConversationDetail, ConversationStatus, ConversationSummary } from '../../shared/types/conversation';
+import type { ChatMessage, ConversationDetail, ConversationStatus, ConversationSummary, MessagePage } from '../../shared/types/conversation';
+import type { TurnMetrics } from './turn-metrics';
 
 type ConversationRow = typeof conversations.$inferSelect;
 type MessageRow = typeof messages.$inferSelect;
 
-function toChatMessage(row: MessageRow): ChatMessage {
+const MESSAGE_PAGE_SIZE = 50;
+
+function toChatMessage(row: Pick<MessageRow, 'id' | 'role' | 'parts' | 'createdAt'>): ChatMessage {
   return {
     id: row.id,
     role: row.role,
@@ -15,11 +18,12 @@ function toChatMessage(row: MessageRow): ChatMessage {
   };
 }
 
-export function listConversations(): ConversationSummary[] {
+export function listConversations(archived: boolean): ConversationSummary[] {
   return useDatabase()
     .select()
     .from(conversations)
-    .orderBy(desc(conversations.lastActivityAt))
+    .where(archived ? isNotNull(conversations.archivedAt) : isNull(conversations.archivedAt))
+    .orderBy(desc(archived ? conversations.archivedAt : conversations.lastActivityAt))
     .all()
     .map(summarize);
 }
@@ -33,13 +37,30 @@ export function getConversationDetail(id: string): ConversationDetail | undefine
   if (!row) {
     return undefined;
   }
+  return { ...summarize(row), ...messagePage(id, null) };
+}
+
+export function getMessagesBefore(conversationId: string, beforeMessageId: string): MessagePage | undefined {
+  const before = useDatabase()
+    .select({ seq: messages.seq })
+    .from(messages)
+    .where(and(eq(messages.id, beforeMessageId), eq(messages.conversationId, conversationId)))
+    .get();
+  return before ? messagePage(conversationId, before.seq) : undefined;
+}
+
+function messagePage(conversationId: string, beforeSeq: number | null): MessagePage {
   const rows = useDatabase()
     .select()
     .from(messages)
-    .where(eq(messages.conversationId, id))
-    .orderBy(messages.seq)
+    .where(and(eq(messages.conversationId, conversationId), beforeSeq === null ? undefined : lt(messages.seq, beforeSeq)))
+    .orderBy(desc(messages.seq))
+    .limit(MESSAGE_PAGE_SIZE + 1)
     .all();
-  return { ...summarize(row), messages: rows.map(toChatMessage) };
+  return {
+    messages: rows.slice(0, MESSAGE_PAGE_SIZE).reverse().map(toChatMessage),
+    hasEarlier: rows.length > MESSAGE_PAGE_SIZE,
+  };
 }
 
 export function createConversation(title: string, workingDir: string): ConversationRow {
@@ -53,6 +74,7 @@ export function createConversation(title: string, workingDir: string): Conversat
     agentSessionStarted: false,
     createdAt: now,
     lastActivityAt: now,
+    archivedAt: null,
   };
   useDatabase().insert(conversations).values(row).run();
   return row;
@@ -60,6 +82,13 @@ export function createConversation(title: string, workingDir: string): Conversat
 
 export function updateConversation(id: string, changes: Partial<Omit<ConversationRow, 'id'>>): void {
   useDatabase().update(conversations).set(changes).where(eq(conversations.id, id)).run();
+}
+
+export function setConversationArchived(id: string, archivedAt: number | null): ConversationSummary {
+  updateConversation(id, { archivedAt });
+  const conversation = summarize(findConversation(id)!);
+  publishConversationListEvent({ type: 'conversation', conversation });
+  return conversation;
 }
 
 export function setConversationStatus(id: string, status: ConversationStatus): void {
@@ -73,14 +102,14 @@ export function appendMessage(conversationId: string, role: ChatMessage['role'],
     .from(messages)
     .where(eq(messages.conversationId, conversationId))
     .get();
-  const row: MessageRow = {
+  const row = {
     id: randomUUID(),
     conversationId,
     seq: (next?.value ?? 0) + 1,
     role,
     parts,
     createdAt: Date.now(),
-  };
+  } satisfies typeof messages.$inferInsert;
   db.insert(messages).values(row).run();
   updateConversation(conversationId, { lastActivityAt: row.createdAt });
   return toChatMessage(row);
@@ -90,6 +119,14 @@ export function saveMessageParts(conversationId: string, messageId: string, part
   useDatabase()
     .update(messages)
     .set({ parts })
+    .where(and(eq(messages.id, messageId), eq(messages.conversationId, conversationId)))
+    .run();
+}
+
+export function saveTurnMetrics(conversationId: string, messageId: string, metrics: TurnMetrics): void {
+  useDatabase()
+    .update(messages)
+    .set(metrics)
     .where(and(eq(messages.id, messageId), eq(messages.conversationId, conversationId)))
     .run();
 }

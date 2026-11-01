@@ -1,19 +1,76 @@
 <script setup lang="ts">
+const EARLIER_THRESHOLD_PX = 200;
+
 const route = useRoute();
 const conversationId = route.params.id as string;
-const { title, messages, status, error, chatStatus, load, subscribe, send, stop, pause } = useConversation(conversationId);
+const {
+  title,
+  messages,
+  status,
+  archivedAt,
+  loaded,
+  hasEarlier,
+  loadingEarlier,
+  error,
+  chatStatus,
+  load,
+  loadEarlier,
+  subscribe,
+  send,
+  stop,
+  pause,
+  archive,
+  restore,
+} = useConversation(conversationId);
 
 const input = ref('');
 const pausing = ref(false);
+const archiving = ref(false);
+const timeline = ref<HTMLElement | null>(null);
+
+const visibleMessages = computed(() => messages.value.filter(message => message.parts.length > 0));
 
 let unsubscribe: (() => void) | undefined;
+let scrollParent: HTMLElement | null = null;
+
+function findScrollParent(node: HTMLElement | null): HTMLElement | null {
+  let current = node?.parentElement ?? null;
+  while (current && !/auto|scroll/.test(getComputedStyle(current).overflowY)) {
+    current = current.parentElement;
+  }
+  return current;
+}
+
+async function loadEarlierKeepingPosition(): Promise<void> {
+  const parent = scrollParent;
+  if (!parent || !hasEarlier.value || loadingEarlier.value) {
+    return;
+  }
+  const distanceFromBottom = parent.scrollHeight - parent.scrollTop;
+  await loadEarlier();
+  await nextTick();
+  parent.scrollTop = parent.scrollHeight - distanceFromBottom;
+}
+
+function onScroll(): void {
+  if (scrollParent && scrollParent.scrollTop < EARLIER_THRESHOLD_PX) {
+    loadEarlierKeepingPosition();
+  }
+}
 
 onMounted(async () => {
   unsubscribe = subscribe();
   await load();
+  await nextTick();
+  scrollParent = findScrollParent(timeline.value);
+  scrollParent?.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
 });
 
-onBeforeUnmount(() => unsubscribe?.());
+onBeforeUnmount(() => {
+  unsubscribe?.();
+  scrollParent?.removeEventListener('scroll', onScroll);
+});
 
 async function submit(): Promise<void> {
   const text = input.value.trim();
@@ -24,15 +81,19 @@ async function submit(): Promise<void> {
   await send(text);
 }
 
-async function pauseConversation(): Promise<void> {
-  pausing.value = true;
+async function withFlag(flag: Ref<boolean>, action: () => Promise<void>): Promise<void> {
+  flag.value = true;
   try {
-    await pause();
+    await action();
   }
   finally {
-    pausing.value = false;
+    flag.value = false;
   }
 }
+
+const pauseConversation = () => withFlag(pausing, pause);
+const archiveConversation = () => withFlag(archiving, archive);
+const restoreConversation = () => withFlag(archiving, restore);
 </script>
 
 <template>
@@ -40,43 +101,81 @@ async function pauseConversation(): Promise<void> {
     <template #header>
       <UDashboardNavbar :title="title">
         <template #right>
-          <UBadge v-if="status === 'paused'" label="Paused" color="neutral" variant="subtle" />
-          <UButton
-            v-else
-            label="Pause"
-            icon="i-heroicons-pause"
-            color="neutral"
-            variant="ghost"
-            :loading="pausing"
-            @click="pauseConversation"
-          />
+          <template v-if="archivedAt !== null">
+            <UBadge label="Archived" color="neutral" variant="subtle" />
+            <UButton
+              label="Restore"
+              icon="i-heroicons-arrow-uturn-left"
+              color="neutral"
+              variant="ghost"
+              :loading="archiving"
+              @click="restoreConversation"
+            />
+          </template>
+          <template v-else-if="loaded">
+            <UBadge v-if="status === 'paused'" label="Paused" color="neutral" variant="subtle" />
+            <UButton
+              v-else
+              label="Pause"
+              icon="i-heroicons-pause"
+              color="neutral"
+              variant="ghost"
+              :loading="pausing"
+              @click="pauseConversation"
+            />
+            <UTooltip text="Archive">
+              <UButton
+                icon="i-heroicons-archive-box"
+                aria-label="Archive"
+                color="neutral"
+                variant="ghost"
+                :loading="archiving"
+                @click="archiveConversation"
+              />
+            </UTooltip>
+          </template>
         </template>
       </UDashboardNavbar>
     </template>
 
     <template #body>
       <UContainer class="flex-1">
-        <UChatMessages
-          :messages="messages"
-          :status="chatStatus"
-          should-auto-scroll
-          :assistant="{ side: 'left', variant: 'naked' }"
-          :user="{ side: 'right', variant: 'soft' }"
-        >
-          <template #content="{ message }">
-            <ChatMessagePart
-              v-for="(part, index) in message.parts"
-              :key="`${message.id}-${index}`"
-              :part="part"
-              :message="message"
-              :streaming="chatStatus === 'streaming' && message.id === messages.at(-1)?.id"
-            />
-          </template>
-        </UChatMessages>
+        <div ref="timeline" />
+        <div v-if="!loaded" class="flex flex-col gap-6 py-4">
+          <USkeleton class="ms-auto h-10 w-2/5 rounded-xl" />
+          <USkeleton class="h-24 w-4/5 rounded-xl" />
+          <USkeleton class="ms-auto h-10 w-1/3 rounded-xl" />
+          <USkeleton class="h-16 w-3/4 rounded-xl" />
+        </div>
+
+        <template v-else>
+          <div v-if="loadingEarlier" class="flex justify-center py-3">
+            <UIcon name="i-heroicons-arrow-path" class="size-5 animate-spin text-muted" />
+          </div>
+
+          <UChatMessages
+            :messages="visibleMessages"
+            :status="chatStatus"
+            should-auto-scroll
+            should-scroll-to-bottom
+            :assistant="{ side: 'left', variant: 'naked' }"
+            :user="{ side: 'right', variant: 'soft' }"
+          >
+            <template #content="{ message }">
+              <ChatMessagePart
+                v-for="(part, index) in message.parts"
+                :key="`${message.id}-${index}`"
+                :part="part"
+                :message="message"
+                :streaming="chatStatus === 'streaming' && message.id === visibleMessages.at(-1)?.id"
+              />
+            </template>
+          </UChatMessages>
+        </template>
       </UContainer>
     </template>
 
-    <template #footer>
+    <template v-if="loaded && archivedAt === null" #footer>
       <UContainer class="pb-4 sm:pb-6">
         <UChatPrompt
           v-model="input"

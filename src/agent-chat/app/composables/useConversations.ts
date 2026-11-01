@@ -5,7 +5,9 @@ export function useConversations() {
 
   function upsert(conversation: ConversationSummary): void {
     const others = conversations.value.filter(existing => existing.id !== conversation.id);
-    conversations.value = [conversation, ...others].sort((a, b) => b.lastActivityAt - a.lastActivityAt);
+    conversations.value = conversation.archivedAt === null
+      ? [conversation, ...others].sort((a, b) => b.lastActivityAt - a.lastActivityAt)
+      : others;
   }
 
   async function load(): Promise<void> {
@@ -22,5 +24,13 @@ export function useConversations() {
     return conversation;
   }
 
-  return { conversations, load, subscribe, start };
+  function loadArchived(): Promise<ConversationSummary[]> {
+    return apiFetch<ConversationSummary[]>('conversations', { query: { archived: 'true' } });
+  }
+
+  async function restore(conversationId: string): Promise<void> {
+    upsert(await apiFetch<ConversationSummary>(`conversations/${conversationId}/restore`, { method: 'POST' }));
+  }
+
+  return { conversations, load, loadArchived, subscribe, start, restore };
 }
