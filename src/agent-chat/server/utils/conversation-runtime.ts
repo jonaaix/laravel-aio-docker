@@ -83,13 +83,12 @@ class ConversationRuntime {
     async pause(): Promise<void> {
         this.clearIdlePause();
         const agent = this.agent;
-        if (!agent) {
-            return;
+        if (agent) {
+            this.agent = null;
+            this.backgroundTasks = [];
+            this.endTurn(outcomeOnlyMetrics('stopped', this.model));
+            await agent.kill();
         }
-        this.agent = null;
-        this.backgroundTasks = [];
-        this.endTurn(outcomeOnlyMetrics('stopped', this.model));
-        await agent.kill();
         this.publishStatus('paused');
     }
 
