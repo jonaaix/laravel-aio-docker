@@ -35,7 +35,7 @@ export default defineAppConfig({
         },
         prose: {
             pre: {
-                slots: { base: 'text-xs/5' },
+                slots: { base: 'bg-white text-xs/5 dark:bg-muted' },
             },
         },
         dashboardGroup: {
