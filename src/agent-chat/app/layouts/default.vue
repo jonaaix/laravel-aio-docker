@@ -42,7 +42,7 @@ onBeforeUnmount(() => unsubscribe?.());
             :min-size="14"
             :default-size="18"
             :max-size="28"
-            :ui="{ root: 'border-e-0 bg-elevated/50' }"
+            :ui="{ root: 'border-e-0 bg-elevated/50', footer: 'pb-4' }"
         >
             <template #header="{ collapsed }">
                 <UTooltip text="New Code Session" :disabled="!collapsed">
