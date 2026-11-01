@@ -116,6 +116,7 @@ export interface ClaudeCliOptions {
   resume?: boolean;    // If true, use --resume instead of --session-id
   /** Model override passed as `--model` (e.g. "sonnet"). Undefined = Claude default. */
   model?: string;
+  includePartialMessages?: boolean;
   chrome?: boolean;    // If true, enable Chrome integration with --chrome
   platformConfig?: PlatformMcpConfig;  // Platform-specific config for MCP server
   appendSystemPrompt?: string;  // Additional system prompt to append
@@ -579,6 +580,10 @@ export class ClaudeCli extends EventEmitter implements AgentBackend {
     // Claude uses its own default.
     if (this.options.model) {
       args.push('--model', this.options.model);
+    }
+
+    if (this.options.includePartialMessages) {
+      args.push('--include-partial-messages');
     }
 
     // Chrome integration

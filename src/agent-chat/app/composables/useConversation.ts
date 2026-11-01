@@ -32,6 +32,12 @@ export function useConversation(conversationId: string) {
         message.parts[event.index] = event.part;
       }
     }
+    if (event.type === 'delta') {
+      const part = messages.value.find(candidate => candidate.id === event.messageId)?.parts[event.index];
+      if (part && (part.type === 'text' || part.type === 'reasoning')) {
+        part.text += event.text;
+      }
+    }
     if (event.type === 'status') {
       status.value = event.status;
       turnActive.value = event.turnActive;

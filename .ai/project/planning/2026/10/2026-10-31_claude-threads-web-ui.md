@@ -27,7 +27,7 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - [ ] In-process HTTP MCP for Claude: `permission_prompt` → UI decision, `send_file` → attachment
       stored with the conversation; then drop the bypass permission mode
 - [ ] Questions and plan approvals (AskUserQuestion, ExitPlanMode) as UI controls
-- [ ] Token-level streaming (`--include-partial-messages` + `stream_event` deltas)
+- [x] Token-level streaming (`--include-partial-messages` + `stream_event` deltas)
 - [ ] Turn markers: show "stopped" on interrupted turns, errors inline
 - [ ] Attachments from the user (upload into the conversation, passed to Claude)
 - [ ] Multi-bot conversations (bots table, mention handoff, catch-up) on top of the new runtime
@@ -46,7 +46,10 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - The web runtime drives `ClaudeCli` from `src/claude/cli.ts` directly, one process per conversation,
   in `bypass` permission mode without MCP. Claude stream-json events are mapped to AI SDK
   `UIMessage` parts (`server/utils/claude-event-mapper.ts`): text, reasoning, `dynamic-tool`.
-  Subagent sidechains are skipped.
+  Subagent sidechains are skipped. Text and reasoning stream token by token: a `content_block_start`
+  opens a live part that only lives in memory and reaches the browser as `delta` events; the full
+  `assistant` event for that block replaces it and is what gets stored. A stopped turn keeps the
+  live text as a finished part. `ClaudeCli` gained `includePartialMessages` for this.
 - History: `chat.sqlite` in `NUXT_DATA_DIR` (default `~/.config/agent-chat`), WAL mode, migrations in
   `server/database/migrations` (copied into `.output/server/migrations` at build, applied on start).
   Tool output is cut to its first 2,000 chars. Each turn's assistant message carries the metrics

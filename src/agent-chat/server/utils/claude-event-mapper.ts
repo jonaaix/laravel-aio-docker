@@ -65,6 +65,36 @@ function applyToolResult(parts: ChatPart[], block: ClaudeContentBlock): number |
   return index;
 }
 
+interface StreamEvent {
+  type?: string;
+  content_block?: { type?: string };
+  delta?: { type?: string; text?: string; thinking?: string };
+}
+
+function innerStreamEvent(event: ClaudeEvent): StreamEvent | null {
+  return event.type === 'stream_event' && !event.parent_tool_use_id ? event.event as StreamEvent : null;
+}
+
+export function streamStartPart(event: ClaudeEvent): ChatPart | null {
+  const inner = innerStreamEvent(event);
+  if (inner?.type !== 'content_block_start') {
+    return null;
+  }
+  const blockType = inner.content_block?.type;
+  if (blockType === 'text') {
+    return { type: 'text', text: '', state: 'streaming' };
+  }
+  return blockType === 'thinking' ? { type: 'reasoning', text: '', state: 'streaming' } : null;
+}
+
+export function streamDeltaText(event: ClaudeEvent): string | null {
+  const inner = innerStreamEvent(event);
+  if (inner?.type !== 'content_block_delta') {
+    return null;
+  }
+  return inner.delta?.text ?? inner.delta?.thinking ?? null;
+}
+
 export function applyClaudeEvent(parts: ChatPart[], event: ClaudeEvent): number[] {
   // Subagent sidechains are not rendered yet; their outcome still reaches the parent tool part.
   if (event.parent_tool_use_id) {

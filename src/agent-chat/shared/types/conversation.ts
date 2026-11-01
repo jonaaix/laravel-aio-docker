@@ -29,6 +29,7 @@ export interface ConversationDetail extends ConversationSummary, MessagePage {}
 export type ConversationEvent =
   | { type: 'message'; message: ChatMessage }
   | { type: 'part'; messageId: string; index: number; part: ChatPart }
+  | { type: 'delta'; messageId: string; index: number; text: string }
   | { type: 'status'; status: ConversationStatus; turnActive: boolean }
   | { type: 'title'; title: string }
   | { type: 'error'; message: string };

@@ -1,12 +1,13 @@
 import { ClaudeCli, type ClaudeEvent } from '#claude-threads/claude/cli';
-import type { ChatPart, ConversationStatus, ConversationSummary } from '../../shared/types/conversation';
+import type { ChatMessage, ChatPart, ConversationStatus, ConversationSummary } from '../../shared/types/conversation';
 import { metricsFromResult, outcomeOnlyMetrics, type TurnMetrics } from './turn-metrics';
 
 const TITLE_LENGTH = 60;
 
 interface ActiveTurn {
-  messageId: string | null;
+  message: ChatMessage | null;
   parts: ChatPart[];
+  liveIndex: number | null;
   stopRequested: boolean;
 }
 
@@ -31,7 +32,7 @@ class ConversationRuntime {
     }
     const message = appendMessage(this.conversationId, 'user', [{ type: 'text', text }]);
     publishConversationEvent(this.conversationId, { type: 'message', message });
-    this.turn = { messageId: null, parts: [], stopRequested: false };
+    this.turn = { message: null, parts: [], liveIndex: null, stopRequested: false };
     const agent = this.agent ?? this.startAgent(conversation);
     agent.sendMessage(text);
     this.publishStatus('running');
@@ -61,6 +62,7 @@ class ConversationRuntime {
       sessionId: conversation.agentSessionRef,
       resume: conversation.agentSessionStarted,
       model: useRuntimeConfig().claudeModel || undefined,
+      includePartialMessages: true,
       // Bypass until permission prompts are answered in the chat; the container is the sandbox.
       permissionMode: 'bypass',
     });
@@ -85,23 +87,101 @@ class ConversationRuntime {
       this.publishStatus('running');
       return;
     }
+    if (event.type === 'stream_event') {
+      this.handleStreamEvent(event);
+      return;
+    }
+    const replacesLivePart = event.type === 'assistant' && this.dropLivePart();
     const changed = applyClaudeEvent(this.turn.parts, event);
+    if (replacesLivePart) {
+      this.saveAndPublishMessage();
+      return;
+    }
     if (changed.length > 0) {
       this.recordParts(changed);
     }
   }
 
-  private recordParts(changed: number[]): void {
+  private handleStreamEvent(event: ClaudeEvent): void {
     const turn = this.turn!;
-    if (!turn.messageId) {
-      const message = appendMessage(this.conversationId, 'assistant', turn.parts);
-      turn.messageId = message.id;
-      publishConversationEvent(this.conversationId, { type: 'message', message });
+    const startPart = streamStartPart(event);
+    if (startPart) {
+      turn.liveIndex = turn.parts.push(startPart) - 1;
+      this.recordParts([turn.liveIndex]);
       return;
     }
-    saveMessageParts(this.conversationId, turn.messageId, turn.parts);
+    const text = streamDeltaText(event);
+    const live = turn.liveIndex === null ? undefined : turn.parts[turn.liveIndex];
+    if (!text || !turn.message || !live || (live.type !== 'text' && live.type !== 'reasoning')) {
+      return;
+    }
+    live.text += text;
+    publishConversationEvent(this.conversationId, { type: 'delta', messageId: turn.message.id, index: turn.liveIndex!, text });
+  }
+
+  private dropLivePart(): boolean {
+    const turn = this.turn!;
+    if (turn.liveIndex === null) {
+      return false;
+    }
+    turn.parts.splice(turn.liveIndex, 1);
+    turn.liveIndex = null;
+    return true;
+  }
+
+  private settleLivePart(): void {
+    const turn = this.turn!;
+    const live = turn.liveIndex === null ? undefined : turn.parts[turn.liveIndex];
+    if (!live || (live.type !== 'text' && live.type !== 'reasoning')) {
+      return;
+    }
+    if (live.text.trim()) {
+      turn.parts[turn.liveIndex!] = { ...live, state: 'done' };
+      turn.liveIndex = null;
+    }
+    else {
+      this.dropLivePart();
+    }
+    this.saveAndPublishMessage();
+  }
+
+  private persistedParts(): ChatPart[] {
+    const turn = this.turn!;
+    return turn.parts.filter((_, index) => index !== turn.liveIndex);
+  }
+
+  private createMessage(): void {
+    const turn = this.turn!;
+    turn.message = appendMessage(this.conversationId, 'assistant', this.persistedParts());
+    this.publishMessage();
+  }
+
+  private publishMessage(): void {
+    const turn = this.turn!;
+    publishConversationEvent(this.conversationId, { type: 'message', message: { ...turn.message!, parts: [...turn.parts] } });
+  }
+
+  private saveAndPublishMessage(): void {
+    const turn = this.turn!;
+    if (!turn.message) {
+      if (turn.parts.length > 0) {
+        this.createMessage();
+      }
+      return;
+    }
+    saveMessageParts(this.conversationId, turn.message.id, this.persistedParts());
+    this.publishMessage();
+  }
+
+  private recordParts(changed: number[]): void {
+    const turn = this.turn!;
+    if (!turn.message) {
+      this.createMessage();
+      return;
+    }
+    saveMessageParts(this.conversationId, turn.message.id, this.persistedParts());
     for (const index of changed) {
-      publishConversationEvent(this.conversationId, { type: 'part', messageId: turn.messageId, index, part: turn.parts[index]! });
+      publishConversationEvent(this.conversationId, { type: 'part', messageId: turn.message.id, index, part: turn.parts[index]! });
     }
   }
 
@@ -110,8 +190,9 @@ class ConversationRuntime {
     if (!turn) {
       return;
     }
+    this.settleLivePart();
     this.turn = null;
-    const messageId = turn.messageId ?? appendMessage(this.conversationId, 'assistant', []).id;
+    const messageId = turn.message?.id ?? appendMessage(this.conversationId, 'assistant', []).id;
     saveTurnMetrics(this.conversationId, messageId, metrics);
   }
 
