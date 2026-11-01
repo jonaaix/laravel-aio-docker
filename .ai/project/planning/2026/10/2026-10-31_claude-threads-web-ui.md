@@ -27,7 +27,7 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - [x] In-process HTTP MCP for Claude with `send_file` → attachment stored with the conversation
 - [x] Token-level streaming (`--include-partial-messages` + `stream_event` deltas)
 - [x] Turn markers: show "stopped" on interrupted turns, errors inline
-- [ ] Attachments from the user (upload into the conversation, passed to Claude)
+- [x] Attachments from the user (upload into the conversation, passed to Claude)
 - [ ] Multi-bot conversations (bots table, mention handoff, catch-up) on top of the new runtime
 - [ ] opencode backend selectable per conversation
 - [ ] Extract lean core: drop Mattermost/Slack, onboarding, auto-update, commands, bug report,
@@ -101,6 +101,10 @@ container restart with its full history and attachments, and no Mattermost/Slack
   bar (mirror div over a transparent textarea). Sent messages render as Markdown with line breaks.
   Expanded working steps highlight their code lazily (`useCodeTokens`, shared shiki highlighter);
   paths inside the working folder are shown relative to it.
+- User attachments: picked, dropped or pasted files upload at once (`PUT /api/uploads`, streamed to
+  `<data dir>/uploads/`, 2 GB cap, cleared on start); on send they move into the conversation's file
+  folder and Claude gets the bridge's path list ahead of the text, never inline content. The image's
+  nginx must allow 2 GB request bodies.
 - Header is one row: title left, "Pause session" and "Archive" right; a sent message is aligned and
   held for 2 s at header height + 16 px (also given to `UChatMessages` as scroll margin).
 - Runtime config via env: `NUXT_WORKING_DIR` (default `<data dir>/workspace`, created on demand),

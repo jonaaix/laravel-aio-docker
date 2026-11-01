@@ -80,7 +80,11 @@ its reply, and the user answers with the next message.
 ### Files and images
 
 Files and images the agent sends — screenshots, reports, exports — appear inline in the
-conversation and are stored with it. People can attach files to their own messages as well.
+conversation and are stored with it. People can attach files of any type to their own messages as
+well — by picking them, dropping them onto the chat or pasting them — up to 2 GB each; a message may
+consist of attachments only. Attached files are stored with the conversation and shown in the sent
+message the same way as the agent's. The agent never receives their content inline: it gets the
+list of saved paths ahead of the message text and reads the files itself.
 
 ### Several bots in one conversation
 

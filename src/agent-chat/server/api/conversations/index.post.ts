@@ -1,9 +1,11 @@
 export default defineEventHandler(async (event) => {
-    const { text } = await readBody<{ text?: string }>(event);
-    if (!text?.trim()) {
-        throw createError({ statusCode: 422, statusMessage: 'Message text is required' });
+    const { text = '', attachments } = await readBody<{ text?: string; attachments?: unknown }>(event);
+    const references = readAttachmentReferences(attachments);
+    if (!text.trim() && references.length === 0) {
+        throw createError({ statusCode: 422, statusMessage: 'Message text or an attachment is required' });
     }
-    const conversation = createConversation(titleFromPrompt(text), resolveWorkingDir());
-    useConversationRuntime(conversation.id).send(text, localServerOrigin(event));
+    const conversation = createConversation(titleFromPrompt(text.trim() ? text : references[0]!.filename), resolveWorkingDir());
+    const stored = adoptUploads(conversation.id, references);
+    useConversationRuntime(conversation.id).send(text, stored, localServerOrigin(event));
     return summarize(findConversation(conversation.id)!);
 });

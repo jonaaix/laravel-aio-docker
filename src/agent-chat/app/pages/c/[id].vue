@@ -33,6 +33,7 @@ const {
 provide(workingDirKey, workingDir);
 
 const input = ref('');
+const { attachments, uploading, ready, add: attach, remove: removeAttachment, take: takeAttachments } = useAttachments();
 const pausing = ref(false);
 const archiving = ref(false);
 const timeline = ref<HTMLElement | null>(null);
@@ -182,13 +183,13 @@ onBeforeUnmount(() => {
 
 async function submit(): Promise<void> {
     const text = input.value.trim();
-    if (!text) {
+    if ((!text && ready.value.length === 0) || uploading.value) {
         return;
     }
     input.value = '';
     sentThisVisit = true;
     releaseBottom();
-    await send(text);
+    await send(text, takeAttachments());
 }
 
 async function focusComposerAtEnd(): Promise<void> {
@@ -345,9 +346,14 @@ const restoreConversation = () => withFlag(archiving, restore);
                         placeholder="Send a message…"
                         :status="chatStatus"
                         :error="error"
+                        :attachments="attachments"
+                        :uploading="uploading"
                         @submit="submit"
                         @stop="stop"
+                        @attach="attach"
+                        @remove="removeAttachment"
                     />
+                    <ChatDropZone @drop="attach" />
                 </UContainer>
             </div>
         </template>

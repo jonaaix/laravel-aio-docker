@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { copyFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import { basename, extname, isAbsolute, join, resolve } from 'node:path';
+import type { ChatPart } from '../../shared/types/conversation';
 
-const MAX_FILE_BYTES = 2 * 1024 ** 3;
+export const MAX_FILE_BYTES = 2 * 1024 ** 3;
 const STORED_NAME = /^[\w.-]+$/;
 
 const MEDIA_TYPES: Record<string, string> = {
@@ -28,12 +29,26 @@ export interface StoredFile {
     size: number;
 }
 
-function conversationFilesDir(conversationId: string): string {
+export function conversationFilesDir(conversationId: string): string {
     return join(resolveDataDir(), 'files', conversationId);
 }
 
 export function mediaTypeFor(filename: string): string {
     return MEDIA_TYPES[extname(filename).toLowerCase()] ?? 'application/octet-stream';
+}
+
+export function storedNameFor(id: string, filename: string): string {
+    return `${id}${extname(filename).toLowerCase().replace(/[^\w.]/g, '')}`;
+}
+
+export function fileUIPart(conversationId: string, stored: StoredFile): ChatPart {
+    return {
+        type: 'file',
+        mediaType: stored.mediaType,
+        filename: stored.filename,
+        url: `conversations/${conversationId}/files/${stored.storedName}`,
+        providerMetadata: { agentChat: { size: stored.size } },
+    };
 }
 
 export function storeConversationFile(conversationId: string, workingDir: string, path: string): StoredFile {
@@ -46,7 +61,7 @@ export function storeConversationFile(conversationId: string, workingDir: string
         throw new Error(`File is larger than 2 GB: ${path}`);
     }
     const filename = basename(source);
-    const storedName = `${randomUUID()}${extname(filename).toLowerCase().replace(/[^\w.]/g, '')}`;
+    const storedName = storedNameFor(randomUUID(), filename);
     const dir = conversationFilesDir(conversationId);
     mkdirSync(dir, { recursive: true });
     copyFileSync(source, join(dir, storedName));

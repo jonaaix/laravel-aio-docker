@@ -1,5 +1,5 @@
 import type { ChatStatus } from 'ai';
-import type { BackgroundTask, ChatMessage, ConversationDetail, ConversationEvent, ConversationStatus, ConversationSummary, MessagePage } from '#shared/types/conversation';
+import type { BackgroundTask, ChatMessage, UploadedFile, ConversationDetail, ConversationEvent, ConversationStatus, ConversationSummary, MessagePage } from '#shared/types/conversation';
 
 export function useConversation(conversationId: string) {
     const title = ref('');
@@ -92,10 +92,10 @@ export function useConversation(conversationId: string) {
         });
     }
 
-    async function send(text: string): Promise<void> {
+    async function send(text: string, attachments: UploadedFile[]): Promise<void> {
         error.value = undefined;
         turnActive.value = true;
-        await apiFetch(`conversations/${conversationId}/messages`, { method: 'POST', body: { text } });
+        await apiFetch(`conversations/${conversationId}/messages`, { method: 'POST', body: { text, attachments } });
     }
 
     async function stop(): Promise<void> {

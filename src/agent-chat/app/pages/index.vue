@@ -2,15 +2,16 @@
 const input = ref('');
 const sending = ref(false);
 const { start } = useConversations();
+const { attachments, uploading, ready, add: attach, remove: removeAttachment, take: takeAttachments } = useAttachments();
 
 async function submit(): Promise<void> {
     const text = input.value.trim();
-    if (!text || sending.value) {
+    if ((!text && ready.value.length === 0) || uploading.value || sending.value) {
         return;
     }
     sending.value = true;
     try {
-        const conversation = await start(text);
+        const conversation = await start(text, takeAttachments());
         input.value = '';
         await navigateTo(`/c/${conversation.id}`);
     }
@@ -36,9 +37,14 @@ async function submit(): Promise<void> {
                     placeholder="Ask anything…"
                     :status="sending ? 'submitted' : 'ready'"
                     :disabled="sending"
+                    :attachments="attachments"
+                    :uploading="uploading"
                     autofocus
                     @submit="submit"
+                    @attach="attach"
+                    @remove="removeAttachment"
                 />
+                <ChatDropZone @drop="attach" />
             </UContainer>
         </template>
     </UDashboardPanel>

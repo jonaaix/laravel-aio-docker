@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ChatStatus } from 'ai';
 import type { CSSProperties } from 'vue';
+import type { PendingAttachment } from '~/composables/useAttachments';
 
 const MAX_ROWS = 10;
 const BAR_ROOM_PX = 12;
@@ -28,11 +29,34 @@ const props = defineProps<{
     error?: Error;
     disabled?: boolean;
     autofocus?: boolean;
+    attachments: PendingAttachment[];
+    uploading: boolean;
 }>();
 
-const emit = defineEmits<{ submit: []; stop: [] }>();
+const emit = defineEmits<{ submit: []; stop: []; attach: [files: File[]]; remove: [key: string] }>();
 
-const empty = computed(() => text.value.trim() === '');
+const empty = computed(() => text.value.trim() === '' && !props.attachments.some(attachment => attachment.upload));
+const fileInput = ref<HTMLInputElement | null>(null);
+
+function pickFiles(): void {
+    fileInput.value?.click();
+}
+
+function onPicked(): void {
+    const files = [...(fileInput.value?.files ?? [])];
+    if (files.length > 0) {
+        emit('attach', files);
+    }
+    fileInput.value!.value = '';
+}
+
+function onPaste(event: ClipboardEvent): void {
+    const files = [...(event.clipboardData?.files ?? [])];
+    if (files.length > 0) {
+        event.preventDefault();
+        emit('attach', files);
+    }
+}
 const busy = computed(() => props.status === 'submitted' || props.status === 'streaming');
 
 const wrapper = ref<HTMLElement | null>(null);
@@ -104,7 +128,7 @@ onBeforeUnmount(() => observer?.disconnect());
 </script>
 
 <template>
-    <div ref="wrapper" class="relative" @scroll.capture="syncScroll">
+    <div ref="wrapper" class="relative" @scroll.capture="syncScroll" @paste.capture="onPaste">
         <UChatPrompt
             v-model="text"
             variant="outline"
@@ -115,15 +139,32 @@ onBeforeUnmount(() => observer?.disconnect());
             :autofocus="autofocus"
             :maxrows="MAX_ROWS"
             :ui="{
-                body: 'items-end ps-3',
-                base: ['py-2 text-base/5 transition-none', hasQuote ? 'text-transparent caret-[var(--ui-text-highlighted)]' : ''],
+                body: 'items-end gap-1.5',
+                base: ['py-2 ps-0 text-base/5 transition-none', hasQuote ? 'text-transparent caret-[var(--ui-text-highlighted)]' : ''],
+                leading: 'static order-first inset-auto ps-0',
             }"
             @submit="emit('submit')"
         >
+            <template v-if="attachments.length > 0" #header>
+                <ChatAttachmentChips :attachments="attachments" @remove="key => emit('remove', key)" />
+            </template>
+            <template #leading>
+                <UTooltip text="Attach files">
+                    <UButton
+                        icon="i-heroicons-paper-clip"
+                        aria-label="Attach files"
+                        color="neutral"
+                        variant="ghost"
+                        :disabled="disabled"
+                        @click="pickFiles"
+                    />
+                </UTooltip>
+                <input ref="fileInput" type="file" multiple class="hidden" @change="onPicked">
+            </template>
             <UTooltip :text="busy ? 'Stop' : 'Send'">
                 <UChatPromptSubmit
                     :status="props.status"
-                    :disabled="props.status === 'ready' && empty"
+                    :disabled="props.status === 'ready' && (empty || uploading)"
                     :aria-label="busy ? 'Stop' : 'Send'"
                     color="neutral"
                     class="shrink-0 disabled:opacity-40"

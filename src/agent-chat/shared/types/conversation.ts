@@ -3,6 +3,13 @@ import type { UIMessage } from 'ai';
 
 export type ConversationStatus = 'running' | 'paused';
 
+export interface UploadedFile {
+    id: string;
+    filename: string;
+    mediaType: string;
+    size: number;
+}
+
 export interface BackgroundTask {
     id: string;
     description: string;

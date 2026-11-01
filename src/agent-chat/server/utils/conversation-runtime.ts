@@ -3,6 +3,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ClaudeCli, type ClaudeEvent } from '#claude-threads/claude/cli';
 import type { BackgroundTask, ChatMessage, ChatPart, ConversationStatus, ConversationSummary } from '../../shared/types/conversation';
+import type { StoredFile } from './conversation-files';
 import { metricsFromResult, outcomeOnlyMetrics, type TurnMetrics } from './turn-metrics';
 
 const TITLE_LENGTH = 60;
@@ -46,18 +47,12 @@ class ConversationRuntime {
             throw new Error('Files can only be sent while answering.');
         }
         const stored = storeConversationFile(this.conversationId, conversation.workingDir, path);
-        const index = this.turn.parts.push({
-            type: 'file',
-            mediaType: stored.mediaType,
-            filename: stored.filename,
-            url: `conversations/${this.conversationId}/files/${stored.storedName}`,
-            providerMetadata: { agentChat: { size: stored.size } },
-        }) - 1;
+        const index = this.turn.parts.push(fileUIPart(this.conversationId, stored)) - 1;
         this.recordParts([index]);
         return stored.filename;
     }
 
-    send(text: string, serverOrigin: string): void {
+    send(text: string, attachments: StoredFile[], serverOrigin: string): void {
         const conversation = findConversation(this.conversationId);
         if (!conversation) {
             throw createError({ statusCode: 404, statusMessage: 'Conversation not found' });
@@ -65,11 +60,15 @@ class ConversationRuntime {
         if (conversation.archivedAt !== null) {
             throw createError({ statusCode: 409, statusMessage: 'Conversation is archived' });
         }
-        const message = appendMessage(this.conversationId, 'user', [{ type: 'text', text }]);
+        const parts: ChatPart[] = attachments.map(file => fileUIPart(this.conversationId, file));
+        if (text.trim()) {
+            parts.push({ type: 'text', text });
+        }
+        const message = appendMessage(this.conversationId, 'user', parts);
         publishConversationEvent(this.conversationId, { type: 'message', message });
         this.beginTurn();
         const agent = this.agent ?? this.startAgent(conversation, serverOrigin);
-        agent.sendMessage(text);
+        agent.sendMessage(promptWithAttachments(this.conversationId, text, attachments));
         this.publishStatus('running');
     }
 

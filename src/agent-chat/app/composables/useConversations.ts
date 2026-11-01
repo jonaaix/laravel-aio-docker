@@ -1,4 +1,4 @@
-import type { ConversationSummary } from '#shared/types/conversation';
+import type { ConversationSummary, UploadedFile } from '#shared/types/conversation';
 
 export function useConversations() {
     const conversations = useState<ConversationSummary[]>('conversations', () => []);
@@ -14,8 +14,8 @@ export function useConversations() {
         conversations.value = await apiFetch<ConversationSummary[]>('conversations');
     }
 
-    async function start(text: string): Promise<ConversationSummary> {
-        const conversation = await apiFetch<ConversationSummary>('conversations', { method: 'POST', body: { text } });
+    async function start(text: string, attachments: UploadedFile[]): Promise<ConversationSummary> {
+        const conversation = await apiFetch<ConversationSummary>('conversations', { method: 'POST', body: { text, attachments } });
         upsert(conversation);
         return conversation;
     }
