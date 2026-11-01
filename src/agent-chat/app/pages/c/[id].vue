@@ -36,10 +36,6 @@ const pausing = ref(false);
 const archiving = ref(false);
 const timeline = ref<HTMLElement | null>(null);
 
-const backgroundLabel = computed(() => backgroundTasks.value.length === 1
-    ? `Running in background: ${backgroundTasks.value[0]}`
-    : `${backgroundTasks.value.length} background tasks running`);
-
 const visibleMessages = computed(() => messages.value.filter(message => message.parts.length > 0
     || message.metadata?.outcome === 'stopped'
     || message.metadata?.outcome === 'failed'));
@@ -230,12 +226,6 @@ const restoreConversation = () => withFlag(archiving, restore);
                             :loading="pausing"
                             @click="pauseConversation"
                         />
-                        <UTooltip v-if="backgroundTasks.length > 0" :text="backgroundTasks.join(' · ')">
-                            <span class="flex min-w-0 items-center gap-1.5 ps-2 text-sm text-muted">
-                                <UIcon name="i-heroicons-arrow-path" class="size-4 shrink-0 animate-spin" />
-                                <span class="truncate">{{ backgroundLabel }}</span>
-                            </span>
-                        </UTooltip>
                     </template>
                 </UDashboardToolbar>
             </div>
@@ -304,6 +294,7 @@ const restoreConversation = () => withFlag(archiving, restore);
                     </div>
                 </Transition>
                 <UContainer class="pb-4 sm:pb-6">
+                    <ChatBackgroundTasks v-if="backgroundTasks.length > 0" :tasks="backgroundTasks" class="mb-2" />
                     <ChatComposer
                         v-model="input"
                         placeholder="Send a message…"

@@ -1,5 +1,5 @@
 import type { ChatStatus } from 'ai';
-import type { ChatMessage, ConversationDetail, ConversationEvent, ConversationStatus, ConversationSummary, MessagePage } from '#shared/types/conversation';
+import type { BackgroundTask, ChatMessage, ConversationDetail, ConversationEvent, ConversationStatus, ConversationSummary, MessagePage } from '#shared/types/conversation';
 
 export function useConversation(conversationId: string) {
     const title = ref('');
@@ -7,7 +7,7 @@ export function useConversation(conversationId: string) {
     const messages = ref<ChatMessage[]>([]);
     const status = ref<ConversationStatus>('paused');
     const turnActive = ref(false);
-    const backgroundTasks = ref<string[]>([]);
+    const backgroundTasks = ref<BackgroundTask[]>([]);
     const archivedAt = ref<number | null>(null);
     const loaded = ref(false);
     const hasEarlier = ref(false);

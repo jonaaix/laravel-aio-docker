@@ -60,8 +60,9 @@ inactivity: while the agent is answering or a task it started in the background 
 the session stays online however long that takes. The sidebar marks every conversation whose
 session is online.
 
-While tasks the agent started in the background are running, the conversation shows them below
-its title. When such a task finishes and the agent reports back on its own, that report appears
+While tasks the agent started in the background are running, a box pinned above the message input
+says how many are running; opened, it lists each task with its description, its command and how
+long it has been running. When such a task finishes and the agent reports back on its own, that report appears
 and is stored like any other answer.
 
 ### Questions, plans and permissions

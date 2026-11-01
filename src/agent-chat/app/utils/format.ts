@@ -22,3 +22,11 @@ export function formatBytes(bytes: number): string {
         maximumFractionDigits: exponent === 0 ? 0 : 1,
     }).format(bytes / 1024 ** exponent);
 }
+
+export function formatElapsed(milliseconds: number): string {
+    const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor(totalSeconds / 60) % 60;
+    const seconds = String(totalSeconds % 60).padStart(2, '0');
+    return hours > 0 ? `${hours}:${String(minutes).padStart(2, '0')}:${seconds}` : `${minutes}:${seconds}`;
+}
