@@ -28,7 +28,7 @@ container restart with its full history and attachments, and no Mattermost/Slack
       stored with the conversation; then drop the bypass permission mode
 - [ ] Questions and plan approvals (AskUserQuestion, ExitPlanMode) as UI controls
 - [x] Token-level streaming (`--include-partial-messages` + `stream_event` deltas)
-- [ ] Turn markers: show "stopped" on interrupted turns, errors inline
+- [x] Turn markers: show "stopped" on interrupted turns, errors inline
 - [ ] Attachments from the user (upload into the conversation, passed to Claude)
 - [ ] Multi-bot conversations (bots table, mention handoff, catch-up) on top of the new runtime
 - [ ] opencode backend selectable per conversation
@@ -64,7 +64,10 @@ container restart with its full history and attachments, and no Mattermost/Slack
   Tool output is cut to its first 2,000 chars. Each turn's assistant message carries the metrics
   columns (`server/utils/turn-metrics.ts`, from the result event's `model_usage_since_last_result`;
   `null` where Claude reports nothing, e.g. interrupted turns). A turn without any output still gets
-  an assistant message with empty parts to carry its metrics; the UI hides those.
+  an assistant message with empty parts to carry its metrics; the UI hides those unless the turn was
+  stopped or failed. A failed turn stores its error (`error_message`: the result text, else a fallback;
+  "Claude exited unexpectedly." when the process dies); outcome and error reach the UI as message
+  metadata and render as a "Stopped" line or a red "Failed" note under the answer.
 - Account card at the bottom of the sidebar: email and organization from `claude auth status`
   (read once per server start), session (5 h) and weekly usage from the `rate_limit_event` Claude
   sends with every turn (`unifiedWindows`). The last usage is kept in `<data dir>/usage.json`, so it

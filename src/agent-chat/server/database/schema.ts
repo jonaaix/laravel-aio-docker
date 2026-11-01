@@ -28,6 +28,7 @@ export const messages = sqliteTable('messages', {
     costUsd: real('cost_usd'),
     durationMs: integer('duration_ms'),
     outcome: text('outcome', { enum: ['completed', 'stopped', 'failed'] }),
+    errorMessage: text('error_message'),
 }, table => [
     index('messages_conversation_seq_idx').on(table.conversationId, table.seq),
 ]);

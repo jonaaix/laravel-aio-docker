@@ -28,7 +28,9 @@ const pausing = ref(false);
 const archiving = ref(false);
 const timeline = ref<HTMLElement | null>(null);
 
-const visibleMessages = computed(() => messages.value.filter(message => message.parts.length > 0));
+const visibleMessages = computed(() => messages.value.filter(message => message.parts.length > 0
+    || message.metadata?.outcome === 'stopped'
+    || message.metadata?.outcome === 'failed'));
 
 function isStreaming(messageId: string): boolean {
     return chatStatus.value === 'streaming' && messageId === visibleMessages.value.at(-1)?.id;
@@ -182,6 +184,7 @@ const restoreConversation = () => withFlag(archiving, restore);
                                 :message="message"
                                 :streaming="isStreaming(message.id)"
                             />
+                            <ChatTurnOutcome v-if="message.role === 'assistant'" :message="message" />
                         </template>
                     </UChatMessages>
                 </template>

@@ -1,6 +1,7 @@
 import type { ClaudeEvent } from '#claude-threads/claude/cli';
+import type { TurnOutcome } from '../../shared/types/conversation';
 
-export type TurnOutcome = 'completed' | 'stopped' | 'failed';
+const FAILED_FALLBACK_MESSAGE = 'The answer could not be completed.';
 
 export interface TurnMetrics {
     model: string | null;
@@ -11,6 +12,7 @@ export interface TurnMetrics {
     costUsd: number | null;
     durationMs: number | null;
     outcome: TurnOutcome;
+    errorMessage: string | null;
 }
 
 interface ModelUsage {
@@ -21,7 +23,7 @@ interface ModelUsage {
     costUSD?: number;
 }
 
-export function outcomeOnlyMetrics(outcome: TurnOutcome, model: string | null): TurnMetrics {
+export function outcomeOnlyMetrics(outcome: TurnOutcome, model: string | null, errorMessage: string | null = null): TurnMetrics {
     return {
         model,
         inputTokens: null,
@@ -31,7 +33,12 @@ export function outcomeOnlyMetrics(outcome: TurnOutcome, model: string | null): 
         costUsd: null,
         durationMs: null,
         outcome,
+        errorMessage,
     };
+}
+
+function resultError(event: ClaudeEvent): string {
+    return typeof event.result === 'string' && event.result.trim() ? event.result.trim() : FAILED_FALLBACK_MESSAGE;
 }
 
 export function metricsFromResult(event: ClaudeEvent, model: string | null, stopRequested: boolean): TurnMetrics {
@@ -49,5 +56,6 @@ export function metricsFromResult(event: ClaudeEvent, model: string | null, stop
         costUsd: sum(entry => entry.costUSD),
         durationMs: typeof event.duration_ms === 'number' ? event.duration_ms : null,
         outcome: stopRequested ? 'stopped' : failed ? 'failed' : 'completed',
+        errorMessage: !stopRequested && failed ? resultError(event) : null,
     };
 }

@@ -12,8 +12,12 @@ export interface ConversationSummary {
     archivedAt: number | null;
 }
 
+export type TurnOutcome = 'completed' | 'stopped' | 'failed';
+
 export interface ChatMessageMetadata {
     createdAt: number;
+    outcome?: TurnOutcome;
+    error?: string;
 }
 
 export type ChatMessage = UIMessage<ChatMessageMetadata>;

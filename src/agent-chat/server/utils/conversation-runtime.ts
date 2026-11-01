@@ -196,8 +196,10 @@ class ConversationRuntime {
         }
         this.settleLivePart();
         this.turn = null;
-        const messageId = turn.message?.id ?? appendMessage(this.conversationId, 'assistant', []).id;
-        saveTurnMetrics(this.conversationId, messageId, metrics);
+        const message = turn.message ?? appendMessage(this.conversationId, 'assistant', []);
+        saveTurnMetrics(this.conversationId, message.id, metrics);
+        const metadata = { ...message.metadata!, outcome: metrics.outcome, error: metrics.errorMessage ?? undefined };
+        publishConversationEvent(this.conversationId, { type: 'message', message: { ...message, parts: [...turn.parts], metadata } });
     }
 
     private handleExit(agent: ClaudeCli): void {
@@ -205,7 +207,7 @@ class ConversationRuntime {
             return;
         }
         this.agent = null;
-        this.endTurn(outcomeOnlyMetrics('failed', this.model));
+        this.endTurn(outcomeOnlyMetrics('failed', this.model, 'Claude exited unexpectedly.'));
         this.publishStatus('paused');
     }
 

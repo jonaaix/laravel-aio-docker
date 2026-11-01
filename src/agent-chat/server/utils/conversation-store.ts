@@ -9,12 +9,12 @@ type MessageRow = typeof messages.$inferSelect;
 
 const MESSAGE_PAGE_SIZE = 50;
 
-function toChatMessage(row: Pick<MessageRow, 'id' | 'role' | 'parts' | 'createdAt'>): ChatMessage {
+function toChatMessage(row: Pick<MessageRow, 'id' | 'role' | 'parts' | 'createdAt'> & Partial<Pick<MessageRow, 'outcome' | 'errorMessage'>>): ChatMessage {
     return {
         id: row.id,
         role: row.role,
         parts: row.parts,
-        metadata: { createdAt: row.createdAt },
+        metadata: { createdAt: row.createdAt, outcome: row.outcome ?? undefined, error: row.errorMessage ?? undefined },
     };
 }
 
