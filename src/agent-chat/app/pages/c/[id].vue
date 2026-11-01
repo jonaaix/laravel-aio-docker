@@ -267,6 +267,9 @@ const restoreConversation = () => withFlag(archiving, restore);
                             </template>
                             <ChatTurnOutcome v-if="message.role === 'assistant'" :message="message" />
                         </template>
+                        <template #actions="{ message }">
+                            <ChatCopyButton v-if="!isStreaming(message.id) && messageText(message)" :text="messageText(message)" />
+                        </template>
                     </UChatMessages>
                 </template>
             </UContainer>
