@@ -63,6 +63,7 @@ class ConversationRuntime {
       resume: conversation.agentSessionStarted,
       model: useRuntimeConfig().claudeModel || undefined,
       includePartialMessages: true,
+      thinkingDisplay: 'summarized',
       // Bypass until permission prompts are answered in the chat; the container is the sandbox.
       permissionMode: 'bypass',
     });

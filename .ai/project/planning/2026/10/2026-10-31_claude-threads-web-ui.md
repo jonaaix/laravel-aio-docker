@@ -51,9 +51,11 @@ container restart with its full history and attachments, and no Mattermost/Slack
   `assistant` event for that block replaces it and is what gets stored. A stopped turn keeps the
   live text as a finished part. Tool calls appear live as `input-streaming` from their block start.
   `ClaudeCli` gained `includePartialMessages` for this.
-- An answer renders as: thinking block (`ChatThinkingBlock`, all reasoning text; only a "Thinking…"
-  line while Claude thinks without sending text, as Opus 5.5 does), working block (`ChatWorkingBlock`,
-  all tool calls with the current step live, collapsed to "Worked · N steps"), then the answer text.
+- An answer renders as: a thinking box (`ChatThinkingBlock`, one item per thinking block), a working
+  box (`ChatWorkingBlock`, one wrapping line per tool call with ✓/✗/spinner), then the answer text.
+  Both boxes are `ChatActivityBox`: a 5-line window that follows new lines, expandable to all; the
+  expanded working box shows each call with input and output. Claude runs with
+  `--thinking-display summarized`, otherwise Claude Code omits the thinking text (Opus 5.5 sends none).
 - History: `chat.sqlite` in `NUXT_DATA_DIR` (default `~/.config/agent-chat`), WAL mode, migrations in
   `server/database/migrations` (copied into `.output/server/migrations` at build, applied on start).
   Tool output is cut to its first 2,000 chars. Each turn's assistant message carries the metrics
@@ -89,7 +91,7 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - Look follows Claude.ai / ChatGPT on the user's call: fully rounded buttons, inputs and badges
   (deliberately rounder than the project design system's pills), doubled `--ui-radius`, Geist
   (self-hosted by `@nuxt/fonts`, bundled with Nuxt UI), a 48rem reading column via `--ui-container`,
-  no hard lines, tool calls in one working block per answer as in Mattermost, thinking kept separate from it (user's call). Theme overrides live in `app.config.ts`.
+  no hard lines, tool calls in one working box per answer as in Mattermost, thinking in its own box (user's call). Theme overrides live in `app.config.ts`.
   Icons are served by the app itself (`icon.provider: 'server'`): no request leaves the app.
 - SPA (`ssr: false`): the chat is fully client-driven and runs inside an iframe.
 - SSE + REST instead of WebSockets: Nitro WebSockets are still experimental; SSE reconnects by itself

@@ -117,6 +117,7 @@ export interface ClaudeCliOptions {
   /** Model override passed as `--model` (e.g. "sonnet"). Undefined = Claude default. */
   model?: string;
   includePartialMessages?: boolean;
+  thinkingDisplay?: 'summarized' | 'omitted';
   chrome?: boolean;    // If true, enable Chrome integration with --chrome
   platformConfig?: PlatformMcpConfig;  // Platform-specific config for MCP server
   appendSystemPrompt?: string;  // Additional system prompt to append
@@ -584,6 +585,10 @@ export class ClaudeCli extends EventEmitter implements AgentBackend {
 
     if (this.options.includePartialMessages) {
       args.push('--include-partial-messages');
+    }
+
+    if (this.options.thinkingDisplay) {
+      args.push('--thinking-display', this.options.thinkingDisplay);
     }
 
     // Chrome integration
