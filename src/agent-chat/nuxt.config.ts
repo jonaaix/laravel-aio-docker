@@ -17,7 +17,14 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  fonts: {
+    families: [
+      { name: 'Geist', provider: 'google', weights: [400, 500, 600, 700] },
+    ],
+  },
+
   icon: {
+    provider: 'server',
     fallbackToApi: false,
     serverBundle: {
       collections: ['heroicons'],

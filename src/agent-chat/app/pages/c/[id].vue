@@ -30,6 +30,10 @@ const timeline = ref<HTMLElement | null>(null);
 
 const visibleMessages = computed(() => messages.value.filter(message => message.parts.length > 0));
 
+function isStreaming(messageId: string): boolean {
+  return chatStatus.value === 'streaming' && messageId === visibleMessages.value.at(-1)?.id;
+}
+
 let unsubscribe: (() => void) | undefined;
 let scrollParent: HTMLElement | null = null;
 
@@ -159,16 +163,23 @@ const restoreConversation = () => withFlag(archiving, restore);
             should-auto-scroll
             should-scroll-to-bottom
             :assistant="{ side: 'left', variant: 'naked' }"
-            :user="{ side: 'right', variant: 'soft' }"
+            :user="{ side: 'right', variant: 'soft', ui: { content: 'rounded-[1.25rem]' } }"
           >
             <template #content="{ message }">
-              <ChatMessagePart
-                v-for="(part, index) in message.parts"
-                :key="`${message.id}-${index}`"
-                :part="part"
-                :message="message"
-                :streaming="chatStatus === 'streaming' && message.id === visibleMessages.at(-1)?.id"
-              />
+              <template v-for="segment in messageSegments(message.id, message.parts)" :key="segment.key">
+                <ChatToolGroup
+                  v-if="segment.kind === 'tools'"
+                  :parts="segment.parts"
+                  :message="message"
+                  :streaming="isStreaming(message.id)"
+                />
+                <ChatMessagePart
+                  v-else
+                  :part="segment.part"
+                  :message="message"
+                  :streaming="isStreaming(message.id)"
+                />
+              </template>
             </template>
           </UChatMessages>
         </template>
@@ -179,7 +190,8 @@ const restoreConversation = () => withFlag(archiving, restore);
       <UContainer class="pb-4 sm:pb-6">
         <UChatPrompt
           v-model="input"
-          variant="subtle"
+          variant="outline"
+          color="neutral"
           placeholder="Send a message…"
           :error="error"
           @submit="submit"

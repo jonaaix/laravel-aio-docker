@@ -33,7 +33,8 @@ async function submit(): Promise<void> {
         </h1>
         <UChatPrompt
           v-model="input"
-          variant="subtle"
+          variant="outline"
+          color="neutral"
           placeholder="Ask anything…"
           :disabled="sending"
           autofocus

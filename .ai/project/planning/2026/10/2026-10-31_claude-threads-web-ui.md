@@ -79,6 +79,11 @@ container restart with its full history and attachments, and no Mattermost/Slack
   out to Iconify. Markdown via `@comark/nuxt`. `ai` is used for its `UIMessage` types only.
 - Next.js rejected: React rules out reusing Vue knowledge and helpers; long-lived child processes and
   live connections need a custom server outside its model.
+- Look follows Claude.ai / ChatGPT on the user's call: fully rounded buttons, inputs and badges
+  (deliberately rounder than the project design system's pills), doubled `--ui-radius`, Geist
+  (self-hosted by `@nuxt/fonts`, bundled with Nuxt UI), a 48rem reading column via `--ui-container`,
+  no hard lines, consecutive tool calls folded into one chip. Theme overrides live in `app.config.ts`.
+  Icons are served by the app itself (`icon.provider: 'server'`): no request leaves the app.
 - SPA (`ssr: false`): the chat is fully client-driven and runs inside an iframe.
 - SSE + REST instead of WebSockets: Nitro WebSockets are still experimental; SSE reconnects by itself
   and passes nginx without upgrade handling.

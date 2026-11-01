@@ -4,12 +4,15 @@ import type { NavigationMenuItem } from '@nuxt/ui';
 const { conversations, load, subscribe } = useConversations();
 const { baseURL } = useRuntimeConfig().app;
 
-const items = computed<NavigationMenuItem[]>(() => conversations.value.map(conversation => ({
-  label: conversation.title,
-  to: `/c/${conversation.id}`,
-  icon: conversation.turnActive ? 'i-heroicons-arrow-path' : undefined,
-  ui: conversation.turnActive ? { linkLeadingIcon: 'animate-spin' } : undefined,
-})));
+const items = computed<NavigationMenuItem[][]>(() => groupByRecency(conversations.value).map(group => [
+  { label: group.label, type: 'label' },
+  ...group.conversations.map(conversation => ({
+    label: conversation.title,
+    to: `/c/${conversation.id}`,
+    icon: conversation.turnActive ? 'i-heroicons-arrow-path' : undefined,
+    ui: conversation.turnActive ? { linkLeadingIcon: 'animate-spin' } : undefined,
+  })),
+]));
 
 let unsubscribe: (() => void) | undefined;
 
@@ -30,7 +33,7 @@ onBeforeUnmount(() => unsubscribe?.());
       :min-size="14"
       :default-size="18"
       :max-size="28"
-      :ui="{ footer: 'border-t border-default' }"
+      :ui="{ root: 'border-e-0 bg-elevated/50' }"
     >
       <template #header="{ collapsed }">
         <UTooltip text="New conversation" :disabled="!collapsed">

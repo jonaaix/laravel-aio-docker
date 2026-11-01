@@ -4,6 +4,34 @@ export default defineAppConfig({
       primary: 'blue',
       neutral: 'neutral',
     },
+    button: {
+      slots: { base: 'rounded-full' },
+    },
+    input: {
+      slots: { base: 'rounded-full' },
+    },
+    badge: {
+      variants: {
+        size: {
+          xs: { base: 'rounded-full' },
+          sm: { base: 'rounded-full' },
+          md: { base: 'rounded-full' },
+          lg: { base: 'rounded-full' },
+          xl: { base: 'rounded-full' },
+        },
+      },
+    },
+    chatPrompt: {
+      slots: { root: 'rounded-[1.75rem] px-4 py-2.5 shadow-lg shadow-black/5 dark:shadow-black/40' },
+      compoundVariants: [{
+        color: 'neutral',
+        variant: 'outline',
+        class: { root: 'has-[textarea:focus-visible]:outline-0 has-[textarea:focus-visible]:ring-accented' },
+      }],
+    },
+    dashboardNavbar: {
+      slots: { root: 'border-b-0' },
+    },
     icons: {
       arrowDown: 'i-heroicons-arrow-down',
       arrowLeft: 'i-heroicons-arrow-left',
