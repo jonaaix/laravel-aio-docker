@@ -46,7 +46,7 @@ const toolOutput = computed(() => {
                 <pre
                     v-if="toolOutput"
                     class="max-h-96 overflow-auto rounded-md p-3 whitespace-pre-wrap"
-                    :class="part.state === 'output-error' ? 'bg-error/10 text-error' : 'bg-elevated'"
+                    :class="part.state === 'output-error' ? 'bg-error/10 text-error' : 'bg-elevated text-default'"
                 >{{ toolOutput }}</pre>
             </div>
         </UChatTool>
