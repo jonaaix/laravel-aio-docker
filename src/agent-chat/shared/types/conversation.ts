@@ -8,6 +8,7 @@ export interface ConversationSummary {
     title: string;
     status: ConversationStatus;
     turnActive: boolean;
+    backgroundTasks: string[];
     lastActivityAt: number;
     archivedAt: number | null;
 }
@@ -37,7 +38,7 @@ export type ConversationEvent =
     | { type: 'message'; message: ChatMessage }
     | { type: 'part'; messageId: string; index: number; part: ChatPart }
     | { type: 'delta'; messageId: string; index: number; text: string }
-    | { type: 'status'; status: ConversationStatus; turnActive: boolean }
+    | { type: 'status'; status: ConversationStatus; turnActive: boolean; backgroundTasks: string[] }
     | { type: 'title'; title: string }
     | { type: 'error'; message: string };
 

@@ -7,6 +7,7 @@ import { metricsFromResult, outcomeOnlyMetrics, type TurnMetrics } from './turn-
 
 const TITLE_LENGTH = 60;
 const IDLE_PAUSE_MS = 30 * 60 * 1000;
+const TURN_EVENT_TYPES = new Set(['stream_event', 'assistant', 'user']);
 // Questions and plans happen as plain chat text; the chat has no controls for these tools.
 const DISALLOWED_TOOLS = ['AskUserQuestion', 'EnterPlanMode', 'ExitPlanMode'];
 
@@ -22,13 +23,17 @@ class ConversationRuntime {
     private turn: ActiveTurn | null = null;
     private model: string | null = null;
     private idleTimer: ReturnType<typeof setTimeout> | null = null;
-    private backgroundTasks = 0;
+    private backgroundTasks: string[] = [];
     private readonly mcpToken = randomBytes(24).toString('hex');
 
     constructor(private readonly conversationId: string) {}
 
     get turnActive(): boolean {
         return this.turn !== null;
+    }
+
+    get runningBackgroundTasks(): string[] {
+        return this.backgroundTasks;
     }
 
     acceptsMcpToken(token: string): boolean {
@@ -62,10 +67,9 @@ class ConversationRuntime {
         }
         const message = appendMessage(this.conversationId, 'user', [{ type: 'text', text }]);
         publishConversationEvent(this.conversationId, { type: 'message', message });
-        this.turn = { message: null, parts: [], liveIndex: null, stopRequested: false };
+        this.beginTurn();
         const agent = this.agent ?? this.startAgent(conversation, serverOrigin);
         agent.sendMessage(text);
-        this.scheduleIdlePause();
         this.publishStatus('running');
     }
 
@@ -83,7 +87,7 @@ class ConversationRuntime {
             return;
         }
         this.agent = null;
-        this.backgroundTasks = 0;
+        this.backgroundTasks = [];
         this.endTurn(outcomeOnlyMetrics('stopped', this.model));
         await agent.kill();
         this.publishStatus('paused');
@@ -91,7 +95,7 @@ class ConversationRuntime {
 
     private scheduleIdlePause(): void {
         this.clearIdlePause();
-        if (!this.agent || this.turn || this.backgroundTasks > 0) {
+        if (!this.agent || this.turn || this.backgroundTasks.length > 0) {
             return;
         }
         this.idleTimer = setTimeout(() => {
@@ -140,9 +144,26 @@ class ConversationRuntime {
         return agent;
     }
 
+    private beginTurn(): void {
+        this.turn = { message: null, parts: [], liveIndex: null, stopRequested: false };
+        this.scheduleIdlePause();
+    }
+
+    private trackBackgroundTasks(tasks: unknown[]): void {
+        this.backgroundTasks = tasks.map(task => {
+            const description = (task as { description?: unknown }).description;
+            return typeof description === 'string' && description.trim() ? description.trim() : 'Background task';
+        });
+        this.publishStatus('running');
+    }
+
     private handleEvent(event: ClaudeEvent): void {
         if (event.type === 'system' && event.subtype === 'background_tasks_changed' && Array.isArray(event.tasks)) {
-            this.backgroundTasks = event.tasks.length;
+            this.trackBackgroundTasks(event.tasks);
+        }
+        if (!this.turn && this.agent && TURN_EVENT_TYPES.has(event.type)) {
+            this.beginTurn();
+            this.publishStatus('running');
         }
         this.scheduleIdlePause();
         if (event.type === 'system' && event.subtype === 'init' && typeof event.model === 'string') {
@@ -276,14 +297,14 @@ class ConversationRuntime {
             return;
         }
         this.agent = null;
-        this.backgroundTasks = 0;
+        this.backgroundTasks = [];
         this.endTurn(outcomeOnlyMetrics('failed', this.model, 'Claude exited unexpectedly.'));
         this.publishStatus('paused');
     }
 
     private publishStatus(status: ConversationStatus): void {
         setConversationStatus(this.conversationId, status);
-        publishConversationEvent(this.conversationId, { type: 'status', status, turnActive: this.turnActive });
+        publishConversationEvent(this.conversationId, { type: 'status', status, turnActive: this.turnActive, backgroundTasks: this.backgroundTasks });
         const conversation = findConversation(this.conversationId);
         if (conversation) {
             publishConversationListEvent({ type: 'conversation', conversation: summarize(conversation) });
@@ -307,6 +328,10 @@ export function isTurnActive(conversationId: string): boolean {
     return runtimes.get(conversationId)?.turnActive ?? false;
 }
 
+export function runningBackgroundTasks(conversationId: string): string[] {
+    return runtimes.get(conversationId)?.runningBackgroundTasks ?? [];
+}
+
 export async function pauseAllConversations(): Promise<void> {
     await Promise.all([...runtimes.values()].map(runtime => runtime.pause()));
 }
@@ -316,12 +341,13 @@ export function titleFromPrompt(text: string): string {
     return line.length > TITLE_LENGTH ? `${line.slice(0, TITLE_LENGTH - 1)}…` : line || 'New conversation';
 }
 
-export function summarize(row: Omit<ConversationSummary, 'turnActive'>): ConversationSummary {
+export function summarize(row: Omit<ConversationSummary, 'turnActive' | 'backgroundTasks'>): ConversationSummary {
     return {
         id: row.id,
         title: row.title,
         status: row.status,
         turnActive: isTurnActive(row.id),
+        backgroundTasks: runningBackgroundTasks(row.id),
         lastActivityAt: row.lastActivityAt,
         archivedAt: row.archivedAt,
     };

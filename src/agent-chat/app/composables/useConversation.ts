@@ -7,6 +7,7 @@ export function useConversation(conversationId: string) {
     const messages = ref<ChatMessage[]>([]);
     const status = ref<ConversationStatus>('paused');
     const turnActive = ref(false);
+    const backgroundTasks = ref<string[]>([]);
     const archivedAt = ref<number | null>(null);
     const loaded = ref(false);
     const hasEarlier = ref(false);
@@ -42,6 +43,7 @@ export function useConversation(conversationId: string) {
         if (event.type === 'status') {
             status.value = event.status;
             turnActive.value = event.turnActive;
+            backgroundTasks.value = event.backgroundTasks;
         }
         if (event.type === 'title') {
             title.value = event.title;
@@ -64,6 +66,7 @@ export function useConversation(conversationId: string) {
     function applySummary(summary: ConversationSummary): void {
         status.value = summary.status;
         turnActive.value = summary.turnActive;
+        backgroundTasks.value = summary.backgroundTasks;
         archivedAt.value = summary.archivedAt;
     }
 
@@ -115,6 +118,7 @@ export function useConversation(conversationId: string) {
         messages,
         status,
         turnActive,
+        backgroundTasks,
         archivedAt,
         loaded,
         hasEarlier,
