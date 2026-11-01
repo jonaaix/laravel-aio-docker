@@ -22,6 +22,7 @@ const title = computed(() => {
 const showAll = ref(false);
 const hiddenCount = computed(() => showAll.value ? 0 : Math.max(0, tools.value.length - VISIBLE_STEPS));
 const visibleTools = computed(() => tools.value.slice(hiddenCount.value));
+const commandTool = computed(() => working.value ? tools.value.findLast(part => toolSummary(part.input) !== '') : undefined);
 </script>
 
 <template>
@@ -49,7 +50,7 @@ const visibleTools = computed(() => tools.value.slice(hiddenCount.value));
                 :part="part"
                 :message="message"
                 :streaming="streaming"
-                :show-command="working && part === tools.at(-1)"
+                :show-command="part === commandTool"
             />
         </div>
     </ChatActivityBox>
