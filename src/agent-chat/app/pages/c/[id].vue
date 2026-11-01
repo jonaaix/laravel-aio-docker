@@ -3,6 +3,7 @@ const EARLIER_THRESHOLD_PX = 200;
 const AT_BOTTOM_THRESHOLD_PX = 120;
 const ANSWER_GAP_PX = 32;
 const STICK_TO_BOTTOM_MS = 3000;
+const PIN_SENT_MESSAGE_MS = 2000;
 const USER_SCROLL_EVENTS = ['wheel', 'touchmove', 'keydown'] as const;
 
 const route = useRoute();
@@ -51,8 +52,11 @@ const header = ref<HTMLElement | null>(null);
 const composerBar = ref<HTMLElement | null>(null);
 const atBottom = ref(true);
 const answerSpace = ref(0);
+const messageScrollMargin = ref(0);
 let sentThisVisit = false;
 let stickToBottom = false;
+let pinnedMessage: HTMLElement | null = null;
+let unpinTimer: ReturnType<typeof setTimeout> | undefined;
 
 function scroller(): HTMLElement {
     return document.scrollingElement as HTMLElement;
@@ -74,6 +78,7 @@ function updateAtBottom(): void {
 }
 
 function updateAnswerSpace(): void {
+    messageScrollMargin.value = headerHeight() + ANSWER_GAP_PX / 2;
     const lastUserMessage = [...(timeline.value?.parentElement?.querySelectorAll<HTMLElement>('[data-role="user"]') ?? [])].at(-1);
     if (!sentThisVisit || !lastUserMessage) {
         answerSpace.value = 0;
@@ -101,12 +106,24 @@ function jumpToBottom(): void {
 
 function releaseBottom(): void {
     stickToBottom = false;
+    pinnedMessage = null;
+}
+
+function keepPinnedMessageInPlace(): void {
+    if (!pinnedMessage) {
+        return;
+    }
+    const offset = pinnedMessage.getBoundingClientRect().top - messageScrollMargin.value;
+    if (Math.abs(offset) > 1) {
+        window.scrollTo({ top: scroller().scrollTop + offset });
+    }
 }
 
 function onContentResize(): void {
     if (stickToBottom) {
         scroller().scrollTop = scroller().scrollHeight;
     }
+    keepPinnedMessageInPlace();
     updateAtBottom();
 }
 
@@ -120,8 +137,13 @@ async function alignLatestUserMessage(): Promise<void> {
     await nextTick();
     const lastUserMessage = [...(timeline.value?.parentElement?.querySelectorAll<HTMLElement>('[data-role="user"]') ?? [])].at(-1);
     if (lastUserMessage) {
-        const top = lastUserMessage.getBoundingClientRect().top + scroller().scrollTop - headerHeight() - ANSWER_GAP_PX / 2;
+        const top = lastUserMessage.getBoundingClientRect().top + scroller().scrollTop - messageScrollMargin.value;
         window.scrollTo({ top, behavior: 'smooth' });
+        pinnedMessage = lastUserMessage;
+        clearTimeout(unpinTimer);
+        unpinTimer = setTimeout(() => {
+            pinnedMessage = null;
+        }, PIN_SENT_MESSAGE_MS);
     }
 }
 
@@ -135,11 +157,13 @@ onMounted(async () => {
     unsubscribe = subscribe();
     await load();
     await nextTick();
+    updateAnswerSpace();
     stickToBottom = true;
     scroller().scrollTop = scroller().scrollHeight;
     setTimeout(releaseBottom, STICK_TO_BOTTOM_MS);
     USER_SCROLL_EVENTS.forEach(name => window.addEventListener(name, releaseBottom, { passive: true }));
     window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('scrollend', keepPinnedMessageInPlace, { passive: true });
     window.addEventListener('resize', onResize, { passive: true });
     contentObserver = new ResizeObserver(onContentResize);
     contentObserver.observe(document.body);
@@ -150,6 +174,8 @@ onBeforeUnmount(() => {
     unsubscribe?.();
     USER_SCROLL_EVENTS.forEach(name => window.removeEventListener(name, releaseBottom));
     window.removeEventListener('scroll', onScroll);
+    window.removeEventListener('scrollend', keepPinnedMessageInPlace);
+    clearTimeout(unpinTimer);
     window.removeEventListener('resize', onResize);
     contentObserver?.disconnect();
 });
@@ -219,33 +245,30 @@ const restoreConversation = () => withFlag(archiving, restore);
                                 @click="restoreConversation"
                             />
                         </template>
-                        <UButton
-                            v-else-if="loaded"
-                            label="Archive"
-                            icon="i-heroicons-archive-box"
-                            color="neutral"
-                            variant="outline"
-                            class="bg-white dark:bg-transparent"
-                            :loading="archiving"
-                            @click="archiveConversation"
-                        />
+                        <template v-else-if="loaded">
+                            <UBadge v-if="status === 'paused'" label="Session paused" color="neutral" variant="subtle" size="lg" />
+                            <UButton
+                                v-else
+                                label="Pause session"
+                                icon="i-heroicons-pause"
+                                color="neutral"
+                                variant="outline"
+                                class="bg-white dark:bg-transparent"
+                                :loading="pausing"
+                                @click="pauseConversation"
+                            />
+                            <UButton
+                                label="Archive"
+                                icon="i-heroicons-archive-box"
+                                color="neutral"
+                                variant="outline"
+                                class="bg-white dark:bg-transparent"
+                                :loading="archiving"
+                                @click="archiveConversation"
+                            />
+                        </template>
                     </template>
                 </UDashboardNavbar>
-                <UDashboardToolbar v-if="loaded && archivedAt === null" class="border-b-0 pb-2">
-                    <template #left>
-                        <UBadge v-if="status === 'paused'" label="Session paused" color="neutral" variant="subtle" size="lg" />
-                        <UButton
-                            v-else
-                            label="Pause session"
-                            icon="i-heroicons-pause"
-                            color="neutral"
-                            variant="outline"
-                            class="bg-white dark:bg-transparent"
-                            :loading="pausing"
-                            @click="pauseConversation"
-                        />
-                    </template>
-                </UDashboardToolbar>
             </div>
         </template>
 
@@ -269,8 +292,8 @@ const restoreConversation = () => withFlag(archiving, restore);
                         :messages="visibleMessages"
                         :status="chatStatus"
                         :auto-scroll="false"
-                        :style="{ '--last-message-height': `${answerSpace}px` }"
-                        :ui="{ root: '[&>article]:scroll-mt-20' }"
+                        :style="{ '--last-message-height': `${answerSpace}px`, '--message-scroll-margin': `${messageScrollMargin}px` }"
+                        :ui="{ root: '[&>article]:scroll-mt-(--message-scroll-margin)' }"
                         :should-scroll-to-bottom="false"
                         :assistant="{ side: 'left', variant: 'naked' }"
                         :user="{ side: 'right', variant: 'soft', ui: { content: 'rounded-[1.25rem]' } }"
