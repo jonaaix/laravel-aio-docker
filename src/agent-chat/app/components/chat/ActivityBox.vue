@@ -23,7 +23,7 @@ const open = computed({
 
 <template>
     <UCollapsible v-model:open="open" :disabled="!expandable" class="scrollbar-slim rounded-xl bg-elevated/40 ring ring-default">
-        <button type="button" class="group flex w-full items-center gap-2 px-4 py-3 text-start text-sm">
+        <button type="button" class="group flex h-9 w-full items-center gap-2 px-3 text-start text-sm">
             <UIcon v-if="active" name="i-heroicons-arrow-path" class="size-4 shrink-0 animate-spin text-muted" />
             <UIcon v-else :name="icon" class="size-4 shrink-0" :class="iconClass || 'text-muted'" />
             <UChatShimmer v-if="active" :text="title" class="font-medium" />
@@ -36,7 +36,7 @@ const open = computed({
         </button>
 
         <template #content>
-            <div class="px-4 pb-4">
+            <div class="px-3 pb-2.5">
                 <slot />
             </div>
         </template>

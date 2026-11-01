@@ -35,7 +35,7 @@ const commandTool = computed(() => working.value ? listedTools.value.findLast(pa
         :icon="failed ? 'i-heroicons-exclamation-triangle' : 'i-heroicons-wrench-screwdriver'"
         :icon-class="failed ? 'text-error' : ''"
     >
-        <div v-if="listedTools.length > 0" class="mt-1 flex flex-col gap-1">
+        <div v-if="listedTools.length > 0" class="flex flex-col gap-0.5">
             <UButton
                 v-if="listedTools.length > VISIBLE_STEPS"
                 :label="showAll ? 'Show fewer steps' : hiddenCount === 1 ? 'Show 1 earlier step' : `Show ${hiddenCount} earlier steps`"

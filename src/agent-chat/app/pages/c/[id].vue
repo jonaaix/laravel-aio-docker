@@ -267,7 +267,7 @@ const restoreConversation = () => withFlag(archiving, restore);
                         :user="{ side: 'right', variant: 'soft', ui: { content: 'rounded-[1.25rem]' } }"
                     >
                         <template #content="{ message }">
-                            <div v-if="message.role === 'assistant'" class="mb-6 flex flex-col gap-3 empty:hidden">
+                            <div v-if="message.role === 'assistant'" class="mb-4 flex flex-col gap-2 empty:hidden">
                                 <ChatThinkingBlock :message="message" :streaming="isStreaming(message.id)" />
                                 <ChatWorkingBlock :message="message" :streaming="isStreaming(message.id)" />
                             </div>
