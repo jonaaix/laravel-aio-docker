@@ -91,6 +91,18 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - Conversations are archived (`archived_at`), never deleted; archived ones are read-only (409 on
   send) and listed under `/archived`. A chat opens with its last 50 messages, older pages load
   when scrolling near the top (`GET /api/conversations/:id/messages?before=`).
+- Session lifecycle: a session pauses after 30 minutes without any CLI event, never during a turn or
+  while background tasks run (tracked from `background_tasks_changed`; listed with description and
+  elapsed time in a box pinned above the composer). Output Claude produces without a user message
+  (its report after a background task) opens a turn of its own. The sidebar marks online sessions.
+  Both event streams reload their state after a reconnect (a dev server reload pauses all sessions).
+- Message actions: copy (text parts only) on every message; selecting text in the timeline offers
+  "Quote", which appends a Markdown quote to the composer; the composer overlays quote lines with a
+  bar (mirror div over a transparent textarea). Sent messages render as Markdown with line breaks.
+  Expanded working steps highlight their code lazily (`useCodeTokens`, shared shiki highlighter);
+  paths inside the working folder are shown relative to it.
+- Header is one row: title left, "Pause session" and "Archive" right; a sent message is aligned and
+  held for 2 s at header height + 16 px (also given to `UChatMessages` as scroll margin).
 - Runtime config via env: `NUXT_WORKING_DIR` (default `<data dir>/workspace`, created on demand),
   `NUXT_DATA_DIR`, `NUXT_CLAUDE_MODEL`, `NUXT_APP_BASE_URL` (sub-path for the iframe). Paths are
   resolved in `server/utils/paths.ts`.
@@ -130,7 +142,8 @@ container restart with its full history and attachments, and no Mattermost/Slack
   disabled while empty. Add-file and dictation join with their features; no model picker per
   conversation.
   Code blocks are highlighted by `shiki` through comark's plugin (`app/utils/markdown-plugins.ts`):
-  Material Lighter / Palenight (dark colours switched via `--shiki-dark` in `main.css`), comark's
+  GitHub Light / Material Palenight (dark colours switched via `--shiki-dark` in `main.css`; Material
+  Lighter was too pale), on a light grey page with white cards and composer, comark's
   default languages plus Laravel-relevant ones; embedded languages (Vue, Blade, HTML) come with them.
   Sent non-image files render as an attachment card (`ChatFileAttachment`: type icon, name, type and
   size from `providerMetadata.agentChat.size`, download button). Clicking a card opens a preview panel
