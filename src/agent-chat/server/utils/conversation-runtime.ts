@@ -1,4 +1,4 @@
-import { ClaudeCli, type ClaudeEvent } from '../../src/claude/cli';
+import { ClaudeCli, type ClaudeEvent } from '#claude-threads/claude/cli';
 import type { ChatPart, ConversationStatus, ConversationSummary } from '../../shared/types/conversation';
 
 const TITLE_LENGTH = 60;

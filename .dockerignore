@@ -2,6 +2,7 @@ src/claude-threads/node_modules
 src/claude-threads/dist
 src/claude-threads/realtest/.prompts
 docs/node_modules
-src/claude-threads/.nuxt
-src/claude-threads/.output
-src/claude-threads/.data
+src/agent-chat/node_modules
+src/agent-chat/.nuxt
+src/agent-chat/.output
+src/agent-chat/.data

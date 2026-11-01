@@ -1,4 +1,4 @@
-import type { ClaudeEvent } from '../../src/claude/cli';
+import type { ClaudeEvent } from '#claude-threads/claude/cli';
 import type { ChatPart } from '../../shared/types/conversation';
 
 interface ClaudeContentBlock {

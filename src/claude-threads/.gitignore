@@ -13,8 +13,3 @@ tests/integration/.env.test
 .idea
 # realtest prompt-capture output (dump-prompts mode)
 realtest/.prompts/
-
-# Nuxt web app
-.nuxt/
-.output/
-.data/

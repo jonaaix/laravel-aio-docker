@@ -1,10 +1,15 @@
 import { cpSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 export default defineNuxtConfig({
   modules: ['@nuxt/ui', '@comark/nuxt'],
 
   ssr: false,
+
+  alias: {
+    '#claude-threads': fileURLToPath(new URL('../claude-threads/src', import.meta.url)),
+  },
 
   devtools: {
     enabled: true,

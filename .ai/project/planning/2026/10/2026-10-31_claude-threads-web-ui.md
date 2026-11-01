@@ -18,7 +18,11 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - [x] First vertical slice: conversations list, start/continue, Claude streaming block-level, tool and
       reasoning blocks, stop, pause/resume, history in SQLite, works under a sub-path
 - [x] Port upstream CLI-compatibility fixes into the core (upstream 1.21–1.37)
-- [ ] Auth/identity for iframe and standalone access — blocks image integration
+- [ ] History store for evaluation: tool output cut to its first 2,000 characters, per-turn metrics
+      (model, tokens, cost, duration, outcome), archive instead of delete, paged message loading,
+      `auto_vacuum = incremental` — before the first real data exists
+- [ ] Auth: short-lived signed iframe link from the Laravel app carrying the user, password for
+      standalone access, conversations scoped per user — blocks image integration
 - [ ] Image integration: supervisor program, nginx sub-path proxy for the iframe, optional own
       port/domain, env (`NUXT_WORKING_DIR=/app`, data dir in the persisted home)
 - [ ] In-process HTTP MCP for Claude: `permission_prompt` → UI decision, `send_file` → attachment
@@ -35,9 +39,11 @@ container restart with its full history and attachments, and no Mattermost/Slack
 
 ## State
 
-- `src/claude-threads/` = vendored fork (`src/`, core + Mattermost bridge, untouched) plus a Nuxt 4 app
-  in the same package: `app/` (Nuxt UI frontend), `server/` (API, SSE, runtime, SQLite),
-  `shared/types/conversation.ts` (message format shared by both sides).
+- `src/claude-threads/` = vendored fork (core + Mattermost bridge), configs as in the fork.
+- `src/agent-chat/` = the Nuxt 4 app, its own package: `app/` (Nuxt UI frontend), `server/` (API,
+  SSE, runtime, SQLite), `shared/types/conversation.ts` (message format shared by both sides). It
+  reaches the fork through the alias `#claude-threads` → `../claude-threads/src`; only
+  `claude/cli` is imported. The fork needs its own `bun install` for the modules that file pulls in.
 - The web runtime drives `ClaudeCli` from `src/claude/cli.ts` directly, one process per conversation,
   in `bypass` permission mode without MCP. Claude stream-json events are mapped to AI SDK
   `UIMessage` parts (`server/utils/claude-event-mapper.ts`): text, reasoning, `dynamic-tool`.
@@ -47,8 +53,7 @@ container restart with its full history and attachments, and no Mattermost/Slack
   Tool output is capped at 64k chars per tool call.
 - Runtime config via env: `NUXT_WORKING_DIR`, `NUXT_DATA_DIR`, `NUXT_CLAUDE_MODEL`,
   `NUXT_APP_BASE_URL` (sub-path for the iframe).
-- Scripts: `dev:web`, `build:web`, `typecheck:web`, `db:generate`; core keeps `build`, `test`,
-  `typecheck` (now against `tsconfig.core.json`).
+- Scripts in `src/agent-chat`: `dev`, `build`, `preview`, `typecheck`, `db:generate`.
 - The beta image still runs the Mattermost bridge; the web app is not wired into the image yet.
 - Core carries the upstream CLI fixes: modern task/tool_result/rate-limit events, decision bridge
   (`src/mcp/decision-bridge.ts`, `MessageManager.handleBridgeRequest` → `resolveBridgePlan` /
@@ -75,13 +80,28 @@ container restart with its full history and attachments, and no Mattermost/Slack
   `(conversation_id, seq)`, capped tool output, files on disk rather than in the DB. Postgres in the
   container would add a daemon for no gain at this write rate; the Laravel app's database would couple
   the chat to the app it may have to repair.
+- The chat app is its own package next to the fork, not inside it: two apps stay apart and the fork
+  keeps its own configs, so upstream fixes can still be ported. Alias instead of a package
+  dependency: no build step or exports map for one imported file.
 - Lean core over a fake `web` platform behind `PlatformClient`: the platform interface is
   post/reaction-shaped. The web app taps `ClaudeEvent` directly. Core stays in `src/` and is cut down
   later; the Mattermost bridge keeps working until then.
+- One SQLite file, not one per conversation: lookups go through the `(conversation_id, seq)` index
+  and stay independent of file size (simulated year of 365 chats × 500 turns: 3.3 GB, last 50
+  messages in 0.3 ms); per-chat files would need a central list anyway and complicate migrations,
+  search and backup. The bottleneck is the browser rendering a whole long chat, hence paged loading.
+- History is permanent because the development process gets evaluated after the app is finished.
+  Claude's own transcripts are no substitute (deleted after 30 days by default). Conversations are
+  archived, never deleted.
+- Tool output is stored as its first 2,000 characters plus success/error — Mattermost level plus the
+  reason a call failed (same simulation: 1.9 GB instead of 3.3 GB). Tool input, including the full
+  content of edits, stays complete.
+- Access: the Laravel app hands out a short-lived signed link for the iframe that carries the user;
+  standalone access is protected by a password. Each user sees only their own conversations.
 - Multi-bot and the opencode backend stay; Claude Code comes first.
 - Worktree code stays in the repo but is disabled.
 
 ## Open
 
-- Auth and identity for iframe and standalone access (signed link from the Laravel app vs. shared
-  password vs. external protection); who sees which conversations.
+- Standalone access: whose conversations someone sees after logging in with the password.
+- How the Laravel app produces the signed link (helper shipped with the image vs. code in each app).
