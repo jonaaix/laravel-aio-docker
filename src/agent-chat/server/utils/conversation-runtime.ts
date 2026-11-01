@@ -43,6 +43,7 @@ class ConversationRuntime {
             mediaType: stored.mediaType,
             filename: stored.filename,
             url: `conversations/${this.conversationId}/files/${stored.storedName}`,
+            providerMetadata: { agentChat: { size: stored.size } },
         }) - 1;
         this.recordParts([index]);
         return stored.filename;

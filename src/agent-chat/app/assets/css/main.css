@@ -11,6 +11,11 @@
     --ui-container: 52rem;
 }
 
+.dark .shiki,
+.dark .shiki span {
+    color: var(--shiki-dark) !important;
+}
+
 @utility scrollbar-slim {
     &,
     & * {

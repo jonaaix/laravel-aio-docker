@@ -56,19 +56,12 @@ const toolOutput = computed(() => {
     <Markdown
         v-else-if="part.type === 'text' && message.role === 'assistant'"
         :value="part.text"
+        :plugins="markdownPlugins"
         :streaming="isPartStreaming(part) && streaming"
         class="*:first:mt-0 *:last:mb-0"
     />
 
     <p v-else-if="part.type === 'text'" class="whitespace-pre-wrap">{{ part.text }}</p>
 
-    <a
-        v-else-if="part.type === 'file'"
-        :href="apiUrl(part.url)"
-        :download="part.filename"
-        class="my-3 flex w-fit max-w-full items-center gap-3 rounded-xl bg-elevated/40 p-3 ring ring-default hover:bg-elevated"
-    >
-        <UIcon name="i-heroicons-document-arrow-down" class="size-5 shrink-0 text-muted" />
-        <span class="min-w-0 truncate text-sm text-default">{{ part.filename }}</span>
-    </a>
+    <ChatFileAttachment v-else-if="part.type === 'file'" :part="part" />
 </template>

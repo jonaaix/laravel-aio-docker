@@ -25,6 +25,7 @@ export interface StoredFile {
     storedName: string;
     filename: string;
     mediaType: string;
+    size: number;
 }
 
 function conversationFilesDir(conversationId: string): string {
@@ -40,7 +41,8 @@ export function storeConversationFile(conversationId: string, workingDir: string
     if (!existsSync(source) || !statSync(source).isFile()) {
         throw new Error(`File not found: ${path}`);
     }
-    if (statSync(source).size > MAX_FILE_BYTES) {
+    const { size } = statSync(source);
+    if (size > MAX_FILE_BYTES) {
         throw new Error(`File is larger than 2 GB: ${path}`);
     }
     const filename = basename(source);
@@ -48,7 +50,7 @@ export function storeConversationFile(conversationId: string, workingDir: string
     const dir = conversationFilesDir(conversationId);
     mkdirSync(dir, { recursive: true });
     copyFileSync(source, join(dir, storedName));
-    return { storedName, filename, mediaType: mediaTypeFor(filename) };
+    return { storedName, filename, mediaType: mediaTypeFor(filename), size };
 }
 
 export function conversationFilePath(conversationId: string, storedName: string): string | null {
