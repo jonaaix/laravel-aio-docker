@@ -31,6 +31,7 @@ const commandTool = computed(() => working.value ? listedTools.value.findLast(pa
         v-if="tools.length > 0"
         :title="title"
         :active="working"
+        :auto-open="streaming"
         :icon="failed ? 'i-heroicons-exclamation-triangle' : 'i-heroicons-wrench-screwdriver'"
         :icon-class="failed ? 'text-error' : ''"
     >

@@ -46,6 +46,7 @@ watch(() => thoughts.value.join('\n').length, async () => {
         v-if="visible"
         :title="thinking ? 'Thinking…' : 'Thought'"
         :active="thinking"
+        :auto-open="streaming"
         icon="i-heroicons-light-bulb"
     >
         <ul

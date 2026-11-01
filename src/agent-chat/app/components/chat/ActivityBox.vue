@@ -1,20 +1,42 @@
 <script setup lang="ts">
-defineProps<{
+const props = defineProps<{
     title: string;
     active: boolean;
+    autoOpen: boolean;
     icon: string;
     iconClass?: string;
 }>();
+
+const toggled = ref<boolean | null>(null);
+watch(() => props.autoOpen, () => {
+    toggled.value = null;
+});
+
+const open = computed({
+    get: () => toggled.value ?? props.autoOpen,
+    set: (value: boolean) => {
+        toggled.value = value;
+    },
+});
 </script>
 
 <template>
-    <div class="scrollbar-slim rounded-xl bg-elevated/40 p-4 ring ring-default">
-        <div class="flex h-6 items-center gap-2 text-sm">
+    <UCollapsible v-model:open="open" class="scrollbar-slim rounded-xl bg-elevated/40 ring ring-default">
+        <button type="button" class="group flex w-full items-center gap-2 px-4 py-3 text-start text-sm">
             <UIcon v-if="active" name="i-heroicons-arrow-path" class="size-4 shrink-0 animate-spin text-muted" />
             <UIcon v-else :name="icon" class="size-4 shrink-0" :class="iconClass || 'text-muted'" />
             <UChatShimmer v-if="active" :text="title" class="font-medium" />
             <span v-else class="font-medium text-default">{{ title }}</span>
-        </div>
-        <slot />
-    </div>
+            <UIcon
+                name="i-heroicons-chevron-down"
+                class="ms-auto size-4 shrink-0 text-muted transition-transform duration-200 group-data-[state=open]:rotate-180"
+            />
+        </button>
+
+        <template #content>
+            <div class="px-4 pb-4">
+                <slot />
+            </div>
+        </template>
+    </UCollapsible>
 </template>

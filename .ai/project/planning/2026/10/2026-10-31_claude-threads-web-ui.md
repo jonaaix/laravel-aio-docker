@@ -50,7 +50,8 @@ container restart with its full history and attachments, and no Mattermost/Slack
   live text as a finished part. Tool calls appear live as `input-streaming` from their block start.
   `ClaudeCli` gained `includePartialMessages` for this.
 - An answer renders as a thinking box, a working box, then the answer text (`ChatActivityBox` is the
-  shared frame). Thinking: one item per thinking block in a scroll area that follows the newest
+  shared frame: open while the answer is being produced, collapsed to its header row once done,
+  toggled by clicking the header). Thinking: one item per thinking block in a scroll area that follows the newest
   unless the reader scrolled up. Working: one truncated line per tool call (tool name + the call's
   `description`, else its command/path) with ✓/✗/spinner, the last 5 visible and earlier ones behind
   "Show N earlier steps"; each line expands to its command (Bash `command`, else
