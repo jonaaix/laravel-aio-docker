@@ -3,6 +3,8 @@ import type { ChatMessage, ChatPart, ConversationStatus, ConversationSummary } f
 import { metricsFromResult, outcomeOnlyMetrics, type TurnMetrics } from './turn-metrics';
 
 const TITLE_LENGTH = 60;
+// Questions and plans happen as plain chat text; the chat has no controls for these tools.
+const DISALLOWED_TOOLS = ['AskUserQuestion', 'EnterPlanMode', 'ExitPlanMode'];
 
 interface ActiveTurn {
     message: ChatMessage | null;
@@ -64,6 +66,7 @@ class ConversationRuntime {
             model: useRuntimeConfig().claudeModel || undefined,
             includePartialMessages: true,
             thinkingDisplay: 'summarized',
+            disallowedTools: DISALLOWED_TOOLS,
             // Bypass until permission prompts are answered in the chat; the container is the sandbox.
             permissionMode: 'bypass',
         });

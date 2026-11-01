@@ -26,7 +26,6 @@ container restart with its full history and attachments, and no Mattermost/Slack
       port/domain, env (`NUXT_WORKING_DIR=/app`, data dir in the persisted home)
 - [ ] In-process HTTP MCP for Claude: `permission_prompt` → UI decision, `send_file` → attachment
       stored with the conversation; then drop the bypass permission mode
-- [ ] Questions and plan approvals (AskUserQuestion, ExitPlanMode) as UI controls
 - [x] Token-level streaming (`--include-partial-messages` + `stream_event` deltas)
 - [x] Turn markers: show "stopped" on interrupted turns, errors inline
 - [ ] Attachments from the user (upload into the conversation, passed to Claude)
@@ -145,6 +144,8 @@ container restart with its full history and attachments, and no Mattermost/Slack
   content of edits, stays complete.
 - Access: the Laravel app hands out a short-lived signed link for the iframe that carries the user;
   standalone access is protected by a password. Each user sees only their own conversations.
+- Questions and plans stay in chat mode: `AskUserQuestion`, `EnterPlanMode` and `ExitPlanMode` are
+  disallowed, so Claude asks and plans in plain text and the user answers with the next message.
 - Multi-bot and the opencode backend stay; Claude Code comes first.
 - Worktree code stays in the repo but is disabled.
 
