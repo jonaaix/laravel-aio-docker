@@ -55,6 +55,11 @@ There are no chat commands. Two controls replace the ones that mattered:
 - **Pause** ends the running agent session but keeps the conversation resumable. Sending a new
   message picks the conversation up again.
 
+A session also pauses on its own after 30 minutes without any activity. Work never counts as
+inactivity: while the agent is answering or a task it started in the background is still running,
+the session stays online however long that takes. The sidebar marks every conversation whose
+session is online.
+
 ### Questions, plans and permissions
 
 The agent works without asking for permission: it runs commands and changes files on its own, so a

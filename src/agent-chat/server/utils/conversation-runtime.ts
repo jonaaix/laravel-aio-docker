@@ -6,6 +6,7 @@ import type { ChatMessage, ChatPart, ConversationStatus, ConversationSummary } f
 import { metricsFromResult, outcomeOnlyMetrics, type TurnMetrics } from './turn-metrics';
 
 const TITLE_LENGTH = 60;
+const IDLE_PAUSE_MS = 30 * 60 * 1000;
 // Questions and plans happen as plain chat text; the chat has no controls for these tools.
 const DISALLOWED_TOOLS = ['AskUserQuestion', 'EnterPlanMode', 'ExitPlanMode'];
 
@@ -20,6 +21,8 @@ class ConversationRuntime {
     private agent: ClaudeCli | null = null;
     private turn: ActiveTurn | null = null;
     private model: string | null = null;
+    private idleTimer: ReturnType<typeof setTimeout> | null = null;
+    private backgroundTasks = 0;
     private readonly mcpToken = randomBytes(24).toString('hex');
 
     constructor(private readonly conversationId: string) {}
@@ -62,6 +65,7 @@ class ConversationRuntime {
         this.turn = { message: null, parts: [], liveIndex: null, stopRequested: false };
         const agent = this.agent ?? this.startAgent(conversation, serverOrigin);
         agent.sendMessage(text);
+        this.scheduleIdlePause();
         this.publishStatus('running');
     }
 
@@ -73,14 +77,35 @@ class ConversationRuntime {
     }
 
     async pause(): Promise<void> {
+        this.clearIdlePause();
         const agent = this.agent;
         if (!agent) {
             return;
         }
         this.agent = null;
+        this.backgroundTasks = 0;
         this.endTurn(outcomeOnlyMetrics('stopped', this.model));
         await agent.kill();
         this.publishStatus('paused');
+    }
+
+    private scheduleIdlePause(): void {
+        this.clearIdlePause();
+        if (!this.agent || this.turn || this.backgroundTasks > 0) {
+            return;
+        }
+        this.idleTimer = setTimeout(() => {
+            this.idleTimer = null;
+            void this.pause();
+        }, IDLE_PAUSE_MS);
+        this.idleTimer.unref();
+    }
+
+    private clearIdlePause(): void {
+        if (this.idleTimer) {
+            clearTimeout(this.idleTimer);
+            this.idleTimer = null;
+        }
     }
 
     private writeMcpConfig(serverOrigin: string): string {
@@ -116,6 +141,10 @@ class ConversationRuntime {
     }
 
     private handleEvent(event: ClaudeEvent): void {
+        if (event.type === 'system' && event.subtype === 'background_tasks_changed' && Array.isArray(event.tasks)) {
+            this.backgroundTasks = event.tasks.length;
+        }
+        this.scheduleIdlePause();
         if (event.type === 'system' && event.subtype === 'init' && typeof event.model === 'string') {
             this.model = event.model;
         }
@@ -235,6 +264,7 @@ class ConversationRuntime {
         }
         this.settleLivePart();
         this.turn = null;
+        this.scheduleIdlePause();
         const message = turn.message ?? appendMessage(this.conversationId, 'assistant', []);
         saveTurnMetrics(this.conversationId, message.id, metrics);
         const metadata = { ...message.metadata!, outcome: metrics.outcome, error: metrics.errorMessage ?? undefined };
@@ -246,6 +276,7 @@ class ConversationRuntime {
             return;
         }
         this.agent = null;
+        this.backgroundTasks = 0;
         this.endTurn(outcomeOnlyMetrics('failed', this.model, 'Claude exited unexpectedly.'));
         this.publishStatus('paused');
     }
