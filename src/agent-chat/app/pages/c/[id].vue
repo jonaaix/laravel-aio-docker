@@ -191,16 +191,14 @@ const restoreConversation = () => withFlag(archiving, restore);
         <template v-if="loaded && archivedAt === null" #footer>
             <div class="sticky bottom-0 z-20 bg-default">
                 <UContainer class="pb-4 sm:pb-6">
-                    <UChatPrompt
+                    <ChatComposer
                         v-model="input"
-                        variant="outline"
-                        color="neutral"
                         placeholder="Send a message…"
+                        :status="chatStatus"
                         :error="error"
                         @submit="submit"
-                    >
-                        <UChatPromptSubmit :status="chatStatus" color="neutral" @stop="stop" />
-                    </UChatPrompt>
+                        @stop="stop"
+                    />
                 </UContainer>
             </div>
         </template>

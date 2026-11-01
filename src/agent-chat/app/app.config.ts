@@ -26,7 +26,7 @@ export default defineAppConfig({
             },
         },
         chatPrompt: {
-            slots: { root: 'rounded-[1.75rem] px-4 py-2.5 shadow-lg shadow-black/5 dark:shadow-black/40' },
+            slots: { root: 'rounded-[1.75rem] p-2.5 shadow-lg shadow-black/5 dark:shadow-black/40' },
             compoundVariants: [{
                 color: 'neutral',
                 variant: 'outline',

@@ -31,17 +31,14 @@ async function submit(): Promise<void> {
                 <h1 class="text-center text-2xl font-bold tracking-tight text-highlighted lg:text-3xl">
                     What should we work on?
                 </h1>
-                <UChatPrompt
+                <ChatComposer
                     v-model="input"
-                    variant="outline"
-                    color="neutral"
                     placeholder="Ask anything…"
+                    :status="sending ? 'submitted' : 'ready'"
                     :disabled="sending"
                     autofocus
                     @submit="submit"
-                >
-                    <UChatPromptSubmit :status="sending ? 'submitted' : 'ready'" color="neutral" />
-                </UChatPrompt>
+                />
             </UContainer>
         </template>
     </UDashboardPanel>
