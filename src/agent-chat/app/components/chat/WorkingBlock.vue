@@ -16,16 +16,6 @@ const title = computed(() => {
   }
   return tools.value.length === 1 ? 'Worked · 1 step' : `Worked · ${tools.value.length} steps`;
 });
-
-const toggled = ref<Record<string, boolean>>({});
-
-function isOpen(part: DynamicToolUIPart, index: number): boolean {
-  return toggled.value[part.toolCallId] ?? (working.value && index === tools.value.length - 1);
-}
-
-function setOpen(part: DynamicToolUIPart, open: boolean): void {
-  toggled.value = { ...toggled.value, [part.toolCallId]: open };
-}
 </script>
 
 <template>
@@ -45,8 +35,7 @@ function setOpen(part: DynamicToolUIPart, open: boolean): void {
         :part="item"
         :message="message"
         :streaming="streaming"
-        :open="isOpen(item, index)"
-        @update:open="setOpen(item, $event)"
+        :full="index === tools.length - 1"
       />
     </template>
   </ChatActivityBox>

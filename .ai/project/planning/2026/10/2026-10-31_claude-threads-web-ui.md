@@ -52,8 +52,8 @@ container restart with its full history and attachments, and no Mattermost/Slack
   live text as a finished part. Tool calls appear live as `input-streaming` from their block start.
   `ClaudeCli` gained `includePartialMessages` for this.
 - An answer renders as: a thinking box (`ChatThinkingBlock`, one item per thinking block), a working
-  box (`ChatWorkingBlock`, one wrapping, expandable line per tool call with ✓/✗/spinner; the newest
-  is open while Claude works, a manual toggle wins), then the answer text. Both boxes are
+  box (`ChatWorkingBlock`, one line per tool call with ✓/✗/spinner: older calls truncated to one
+  line, the newest always written out in full; each expands to input and output), then the answer. Both boxes are
   `ChatActivityBox`: the last 5 entries in full, earlier ones behind "Show N earlier …". Claude runs with
   `--thinking-display summarized`, otherwise Claude Code omits the thinking text (Opus 5.5 sends none).
 - History: `chat.sqlite` in `NUXT_DATA_DIR` (default `~/.config/agent-chat`), WAL mode, migrations in
