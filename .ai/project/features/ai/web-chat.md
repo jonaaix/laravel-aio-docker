@@ -54,10 +54,11 @@ There are no chat commands. Two controls replace the ones that mattered:
 - **Pause** ends the running agent session but keeps the conversation resumable. Sending a new
   message picks the conversation up again.
 
-### Decisions the agent asks for
+### Questions, plans and permissions
 
-When the agent needs a permission, asks a question or proposes a plan, the chat shows it as a
-prompt with the possible answers as controls. The agent waits until someone answers there.
+The agent works without asking for permission: it runs commands and changes files on its own, so a
+task is never held up by approval prompts. When it has a question or proposes a plan, it says so in
+its reply, and the user answers with the next message.
 
 ### Files and images
 

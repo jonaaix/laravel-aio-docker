@@ -102,7 +102,7 @@ class ConversationRuntime {
             thinkingDisplay: 'summarized',
             disallowedTools: DISALLOWED_TOOLS,
             mcpConfigPath: this.writeMcpConfig(serverOrigin),
-            // Bypass until permission prompts are answered in the chat; the container is the sandbox.
+            // Deliberately no permission prompts so work is never held up; the container is the sandbox.
             permissionMode: 'bypass',
         });
         agent.on('event', event => this.handleEvent(event));

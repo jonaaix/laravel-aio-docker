@@ -25,7 +25,6 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - [ ] Image integration: supervisor program, nginx sub-path proxy for the iframe, optional own
       port/domain, env (`NUXT_WORKING_DIR=/app`, data dir in the persisted home)
 - [x] In-process HTTP MCP for Claude with `send_file` → attachment stored with the conversation
-- [ ] `permission_prompt` on the same MCP → decision in the chat; then drop the bypass permission mode
 - [x] Token-level streaming (`--include-partial-messages` + `stream_event` deltas)
 - [x] Turn markers: show "stopped" on interrupted turns, errors inline
 - [ ] Attachments from the user (upload into the conversation, passed to Claude)
@@ -43,7 +42,7 @@ container restart with its full history and attachments, and no Mattermost/Slack
   reaches the fork through the alias `#claude-threads` → `../claude-threads/src`; only
   `claude/cli` is imported. The fork needs its own `bun install` for the modules that file pulls in.
 - The web runtime drives `ClaudeCli` from `src/claude/cli.ts` directly, one process per conversation,
-  in `bypass` permission mode without MCP. Claude stream-json events are mapped to AI SDK
+  in `bypass` permission mode with the chat MCP. Claude stream-json events are mapped to AI SDK
   `UIMessage` parts (`server/utils/claude-event-mapper.ts`): text, reasoning, `dynamic-tool`.
   Subagent sidechains are skipped. Text and reasoning stream token by token: a `content_block_start`
   opens a live part that only lives in memory and reaches the browser as `delta` events; the full
@@ -151,6 +150,8 @@ container restart with its full history and attachments, and no Mattermost/Slack
   content of edits, stays complete.
 - Access: the Laravel app hands out a short-lived signed link for the iframe that carries the user;
   standalone access is protected by a password. Each user sees only their own conversations.
+- No permission prompts: Claude runs in `bypass` on purpose, so work is never held up by approvals
+  (user's call). The container is the sandbox; access to the chat is what needs protecting.
 - Questions and plans stay in chat mode: `AskUserQuestion`, `EnterPlanMode` and `ExitPlanMode` are
   disallowed, so Claude asks and plans in plain text and the user answers with the next message.
 - Multi-bot and the opencode backend stay; Claude Code comes first.
