@@ -16,6 +16,7 @@ const props = defineProps<{
 const emit = defineEmits<{ submit: []; stop: [] }>();
 
 const empty = computed(() => text.value.trim() === '');
+const busy = computed(() => props.status === 'submitted' || props.status === 'streaming');
 </script>
 
 <template>
@@ -31,12 +32,15 @@ const empty = computed(() => text.value.trim() === '');
         :ui="{ body: 'items-end ps-3', base: 'py-2 text-base/5' }"
         @submit="emit('submit')"
     >
-        <UChatPromptSubmit
-            :status="props.status"
-            :disabled="props.status === 'ready' && empty"
-            color="neutral"
-            class="shrink-0 disabled:opacity-40"
-            @stop="emit('stop')"
-        />
+        <UTooltip :text="busy ? 'Stop' : 'Send'">
+            <UChatPromptSubmit
+                :status="props.status"
+                :disabled="props.status === 'ready' && empty"
+                :aria-label="busy ? 'Stop' : 'Send'"
+                color="neutral"
+                class="shrink-0 disabled:opacity-40"
+                @stop="emit('stop')"
+            />
+        </UTooltip>
     </UChatPrompt>
 </template>
