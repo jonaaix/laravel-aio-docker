@@ -60,6 +60,19 @@ onBeforeUnmount(() => unsubscribe?.());
             </template>
 
             <template #default="{ collapsed }">
+                <UTooltip text="Archived" :disabled="!collapsed">
+                    <UButton
+                        to="/archived"
+                        icon="i-heroicons-archive-box"
+                        :label="collapsed ? undefined : 'Archived'"
+                        aria-label="Archived"
+                        color="neutral"
+                        variant="ghost"
+                        :square="collapsed"
+                        :block="!collapsed"
+                        class="justify-start"
+                    />
+                </UTooltip>
                 <UNavigationMenu
                     :items="items"
                     :collapsed="collapsed"
@@ -71,17 +84,6 @@ onBeforeUnmount(() => unsubscribe?.());
             <template #footer="{ collapsed }">
                 <div class="flex w-full flex-col gap-2">
                     <div class="flex w-full items-center gap-1" :class="collapsed ? 'flex-col' : ''">
-                        <UTooltip text="Archived" :disabled="!collapsed">
-                            <UButton
-                                to="/archived"
-                                icon="i-heroicons-archive-box"
-                                :label="collapsed ? undefined : 'Archived'"
-                                aria-label="Archived"
-                                color="neutral"
-                                variant="ghost"
-                                :square="collapsed"
-                            />
-                        </UTooltip>
                         <UColorModeButton :class="collapsed ? '' : 'ms-auto'" />
                     </div>
                     <AccountCard v-if="!collapsed" />
