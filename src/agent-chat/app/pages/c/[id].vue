@@ -9,6 +9,7 @@ const route = useRoute();
 const conversationId = route.params.id as string;
 const {
     title,
+    workingDir,
     messages,
     status,
     archivedAt,
@@ -26,6 +27,8 @@ const {
     archive,
     restore,
 } = useConversation(conversationId);
+
+provide(workingDirKey, workingDir);
 
 const input = ref('');
 const pausing = ref(false);

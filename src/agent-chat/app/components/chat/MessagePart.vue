@@ -9,7 +9,8 @@ const props = defineProps<{
     showCommand?: boolean;
 }>();
 
-const toolLabel = computed(() => props.part.type === 'dynamic-tool' ? toolDescription(props.part.input) : '');
+const workingDir = useWorkingDir();
+const toolLabel = computed(() => props.part.type === 'dynamic-tool' ? toolDescription(props.part.input, workingDir.value) : '');
 
 const toolRunning = computed(() => props.part.type === 'dynamic-tool' && props.streaming && isToolStreaming(props.part));
 const toolIcon = computed(() => {

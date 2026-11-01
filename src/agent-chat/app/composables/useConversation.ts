@@ -3,6 +3,7 @@ import type { ChatMessage, ConversationDetail, ConversationEvent, ConversationSt
 
 export function useConversation(conversationId: string) {
     const title = ref('');
+    const workingDir = ref('');
     const messages = ref<ChatMessage[]>([]);
     const status = ref<ConversationStatus>('paused');
     const turnActive = ref(false);
@@ -53,6 +54,7 @@ export function useConversation(conversationId: string) {
     async function load(): Promise<void> {
         const detail = await apiFetch<ConversationDetail>(`conversations/${conversationId}`);
         title.value = detail.title;
+        workingDir.value = detail.workingDir;
         messages.value = detail.messages;
         hasEarlier.value = detail.hasEarlier;
         applySummary(detail);
@@ -109,6 +111,7 @@ export function useConversation(conversationId: string) {
 
     return {
         title,
+        workingDir,
         messages,
         status,
         turnActive,

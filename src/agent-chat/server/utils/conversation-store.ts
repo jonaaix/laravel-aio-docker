@@ -37,7 +37,7 @@ export function getConversationDetail(id: string): ConversationDetail | undefine
     if (!row) {
         return undefined;
     }
-    return { ...summarize(row), ...messagePage(id, null) };
+    return { ...summarize(row), workingDir: row.workingDir, ...messagePage(id, null) };
 }
 
 export function getMessagesBefore(conversationId: string, beforeMessageId: string): MessagePage | undefined {

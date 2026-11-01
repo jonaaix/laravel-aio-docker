@@ -9,6 +9,8 @@ const props = defineProps<{
     label: string;
 }>();
 
+const workingDir = useWorkingDir();
+
 const record = computed(() => props.input && typeof props.input === 'object' ? props.input as Record<string, unknown> : {});
 
 const edits = computed(() => {
@@ -46,7 +48,7 @@ const preview = computed(() => {
 });
 
 const command = computed(() => {
-    const summary = toolSummary(props.input);
+    const summary = toolSummary(props.input, workingDir.value);
     return summary !== props.label ? summary : '';
 });
 

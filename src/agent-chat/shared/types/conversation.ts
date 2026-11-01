@@ -29,7 +29,9 @@ export interface MessagePage {
     hasEarlier: boolean;
 }
 
-export interface ConversationDetail extends ConversationSummary, MessagePage {}
+export interface ConversationDetail extends ConversationSummary, MessagePage {
+    workingDir: string;
+}
 
 export type ConversationEvent =
     | { type: 'message'; message: ChatMessage }
