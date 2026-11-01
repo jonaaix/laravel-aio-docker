@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { isToolStreaming } from '@nuxt/ui/utils/ai';
 import type { ChatMessage } from '#shared/types/conversation';
 import type { DynamicToolUIPart } from 'ai';
 
@@ -18,11 +17,14 @@ const title = computed(() => {
   return tools.value.length === 1 ? 'Worked · 1 step' : `Worked · ${tools.value.length} steps`;
 });
 
-function lineIcon(part: DynamicToolUIPart): string {
-  if (props.streaming && isToolStreaming(part)) {
-    return 'i-heroicons-arrow-path';
-  }
-  return part.state === 'output-error' ? 'i-heroicons-x-circle' : 'i-heroicons-check';
+const toggled = ref<Record<string, boolean>>({});
+
+function isOpen(part: DynamicToolUIPart, index: number): boolean {
+  return toggled.value[part.toolCallId] ?? (working.value && index === tools.value.length - 1);
+}
+
+function setOpen(part: DynamicToolUIPart, open: boolean): void {
+  toggled.value = { ...toggled.value, [part.toolCallId]: open };
 }
 </script>
 
@@ -36,21 +38,16 @@ function lineIcon(part: DynamicToolUIPart): string {
     show-all-label="Show all steps"
     show-less-label="Show fewer steps"
   >
-    <template #default="{ expanded }">
-      <div v-if="expanded" class="flex flex-col gap-1">
-        <ChatMessagePart v-for="part in tools" :key="part.toolCallId" :part="part" :message="message" :streaming="streaming" />
-      </div>
-      <div v-else class="flex flex-col">
-        <div v-for="part in tools" :key="part.toolCallId" class="flex min-w-0 items-start gap-2 text-sm leading-6">
-          <UIcon
-            :name="lineIcon(part)"
-            class="mt-1 size-4 shrink-0"
-            :class="[lineIcon(part) === 'i-heroicons-arrow-path' ? 'animate-spin text-muted' : '', part.state === 'output-error' ? 'text-error' : 'text-dimmed']"
-          />
-          <span class="shrink-0 text-default">{{ part.toolName }}</span>
-          <span class="min-w-0 text-muted [overflow-wrap:anywhere]">{{ toolSummary(part.input) }}</span>
-        </div>
-      </div>
-    </template>
+    <div class="flex flex-col gap-1">
+      <ChatMessagePart
+        v-for="(part, index) in tools"
+        :key="part.toolCallId"
+        :part="part"
+        :message="message"
+        :streaming="streaming"
+        :open="isOpen(part, index)"
+        @update:open="setOpen(part, $event)"
+      />
+    </div>
   </ChatActivityBox>
 </template>

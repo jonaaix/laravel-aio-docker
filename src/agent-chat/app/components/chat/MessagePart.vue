@@ -6,7 +6,18 @@ const props = defineProps<{
   part: ChatPart;
   message: ChatMessage;
   streaming: boolean;
+  open?: boolean;
 }>();
+
+const emit = defineEmits<{ 'update:open': [value: boolean] }>();
+
+const toolRunning = computed(() => props.part.type === 'dynamic-tool' && props.streaming && isToolStreaming(props.part));
+const toolIcon = computed(() => {
+  if (props.part.type === 'dynamic-tool' && props.part.state === 'output-error') {
+    return 'i-heroicons-x-circle';
+  }
+  return 'i-heroicons-check';
+});
 
 const toolInput = computed(() => props.part.type === 'dynamic-tool' ? toolDetail(props.part.input) : '');
 const toolOutput = computed(() => {
@@ -25,8 +36,18 @@ const toolOutput = computed(() => {
     v-if="part.type === 'dynamic-tool'"
     :text="part.toolName"
     :suffix="toolSummary(part.input)"
-    :streaming="isToolStreaming(part) && streaming"
-    :icon="part.state === 'output-error' ? 'i-heroicons-exclamation-triangle' : 'i-heroicons-wrench-screwdriver'"
+    :loading="toolRunning"
+    :icon="toolIcon"
+    :open="open"
+    :ui="{
+      trigger: 'items-start text-start',
+      leading: 'mt-0.5',
+      leadingIcon: part.state === 'output-error' ? 'text-error' : '',
+      chevronIcon: 'mt-0.5',
+      trailingIcon: 'mt-0.5',
+      label: 'whitespace-normal! overflow-visible! [overflow-wrap:anywhere]',
+    }"
+    @update:open="emit('update:open', $event)"
   >
     <div class="space-y-2 text-xs">
       <pre v-if="toolInput" class="max-h-64 overflow-auto rounded-md bg-elevated p-3 whitespace-pre-wrap">{{ toolInput }}</pre>
