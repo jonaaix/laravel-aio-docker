@@ -29,8 +29,17 @@ export default defineAppConfig({
                 class: { root: 'has-[textarea:focus-visible]:outline-0 has-[textarea:focus-visible]:ring-accented' },
             }],
         },
+        dashboardGroup: {
+            base: 'relative min-h-svh overflow-visible',
+        },
+        dashboardSidebar: {
+            slots: { root: 'sticky top-0 h-svh' },
+        },
+        dashboardPanel: {
+            slots: { body: 'overflow-visible' },
+        },
         dashboardNavbar: {
-            slots: { root: 'border-b-0' },
+            slots: { root: 'sticky top-0 z-30 border-b-0 bg-default' },
         },
         icons: {
             arrowDown: 'i-heroicons-arrow-down',

@@ -37,12 +37,16 @@ function isStreaming(messageId: string): boolean {
 let unsubscribe: (() => void) | undefined;
 let scrollParent: HTMLElement | null = null;
 
-function findScrollParent(node: HTMLElement | null): HTMLElement | null {
+function findScrollParent(node: HTMLElement | null): HTMLElement {
     let current = node?.parentElement ?? null;
     while (current && !/auto|scroll/.test(getComputedStyle(current).overflowY)) {
         current = current.parentElement;
     }
-    return current;
+    return current ?? document.scrollingElement as HTMLElement;
+}
+
+function scrollEventTarget(parent: HTMLElement): HTMLElement | Window {
+    return parent === document.scrollingElement ? window : parent;
 }
 
 async function loadEarlierKeepingPosition(): Promise<void> {
@@ -67,13 +71,15 @@ onMounted(async () => {
     await load();
     await nextTick();
     scrollParent = findScrollParent(timeline.value);
-    scrollParent?.addEventListener('scroll', onScroll, { passive: true });
+    scrollEventTarget(scrollParent).addEventListener('scroll', onScroll, { passive: true });
     onScroll();
 });
 
 onBeforeUnmount(() => {
     unsubscribe?.();
-    scrollParent?.removeEventListener('scroll', onScroll);
+    if (scrollParent) {
+        scrollEventTarget(scrollParent).removeEventListener('scroll', onScroll);
+    }
 });
 
 async function submit(): Promise<void> {
@@ -183,18 +189,20 @@ const restoreConversation = () => withFlag(archiving, restore);
         </template>
 
         <template v-if="loaded && archivedAt === null" #footer>
-            <UContainer class="pb-4 sm:pb-6">
-                <UChatPrompt
-                    v-model="input"
-                    variant="outline"
-                    color="neutral"
-                    placeholder="Send a message…"
-                    :error="error"
-                    @submit="submit"
-                >
-                    <UChatPromptSubmit :status="chatStatus" color="neutral" @stop="stop" />
-                </UChatPrompt>
-            </UContainer>
+            <div class="sticky bottom-0 z-20 bg-default">
+                <UContainer class="pb-4 sm:pb-6">
+                    <UChatPrompt
+                        v-model="input"
+                        variant="outline"
+                        color="neutral"
+                        placeholder="Send a message…"
+                        :error="error"
+                        @submit="submit"
+                    >
+                        <UChatPromptSubmit :status="chatStatus" color="neutral" @stop="stop" />
+                    </UChatPrompt>
+                </UContainer>
+            </div>
         </template>
     </UDashboardPanel>
 </template>
