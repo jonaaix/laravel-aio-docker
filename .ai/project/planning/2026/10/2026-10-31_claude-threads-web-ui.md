@@ -55,8 +55,9 @@ container restart with its full history and attachments, and no Mattermost/Slack
   shared frame). Thinking: one item per thinking block in a scroll area that follows the newest
   unless the reader scrolled up. Working: one truncated line per tool call (tool name + the call's
   `description`, else its command/path) with ✓/✗/spinner, the last 5 visible and earlier ones behind
-  "Show N earlier steps"; while Claude works the newest call shows its full command underneath; each
-  line expands to input/output. Claude runs with `--thinking-display summarized`,
+  "Show N earlier steps"; each line expands to its command (Bash `command`, else
+  path/pattern/url) and output; while Claude works the newest call shows that command box already.
+  The chat does not follow the answer: the sent message moves to the top and the answer grows below. Claude runs with `--thinking-display summarized`,
   otherwise Claude Code omits the thinking text (Opus 5.5 sends none).
 - History: `chat.sqlite` in `NUXT_DATA_DIR` (default `~/.config/agent-chat`), WAL mode, migrations in
   `server/database/migrations` (copied into `.output/server/migrations` at build, applied on start).

@@ -160,8 +160,7 @@ const restoreConversation = () => withFlag(archiving, restore);
                     <UChatMessages
                         :messages="visibleMessages"
                         :status="chatStatus"
-                        should-auto-scroll
-                        should-scroll-to-bottom
+                                    should-scroll-to-bottom
                         :assistant="{ side: 'left', variant: 'naked' }"
                         :user="{ side: 'right', variant: 'soft', ui: { content: 'rounded-[1.25rem]' } }"
                     >

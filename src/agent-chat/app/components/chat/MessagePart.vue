@@ -23,7 +23,7 @@ const toolIcon = computed(() => {
     return 'i-heroicons-check';
 });
 
-const toolInput = computed(() => props.part.type === 'dynamic-tool' ? toolDetail(props.part.input) : '');
+const open = ref(false);
 const toolOutput = computed(() => {
     if (props.part.type !== 'dynamic-tool') {
         return '';
@@ -38,6 +38,7 @@ const toolOutput = computed(() => {
 <template>
     <div v-if="part.type === 'dynamic-tool'">
         <UChatTool
+            v-model:open="open"
             :text="part.toolName"
             :suffix="toolLabel"
             :loading="toolRunning"
@@ -45,7 +46,7 @@ const toolOutput = computed(() => {
             :ui="{ leadingIcon: part.state === 'output-error' ? 'text-error' : '' }"
         >
             <div class="space-y-2 text-xs">
-                <pre v-if="toolInput" class="max-h-64 overflow-auto rounded-md bg-elevated p-3 whitespace-pre-wrap">{{ toolInput }}</pre>
+                <pre v-if="toolCommand" class="max-h-64 overflow-auto rounded-md bg-elevated p-3 whitespace-pre-wrap [overflow-wrap:anywhere]">{{ toolCommand }}</pre>
                 <pre
                     v-if="toolOutput"
                     class="max-h-96 overflow-auto rounded-md p-3 whitespace-pre-wrap"
@@ -53,7 +54,10 @@ const toolOutput = computed(() => {
                 >{{ toolOutput }}</pre>
             </div>
         </UChatTool>
-        <p v-if="showCommand && toolCommand" class="mt-0.5 ps-6 font-mono text-xs leading-5 whitespace-pre-wrap text-muted [overflow-wrap:anywhere]">{{ toolCommand }}</p>
+        <pre
+            v-if="showCommand && toolCommand && !open"
+            class="mt-1 max-h-64 overflow-auto rounded-md bg-elevated p-3 text-xs whitespace-pre-wrap [overflow-wrap:anywhere]"
+        >{{ toolCommand }}</pre>
     </div>
 
     <Markdown
