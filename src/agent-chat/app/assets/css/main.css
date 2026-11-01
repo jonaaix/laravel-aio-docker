@@ -15,6 +15,13 @@
     --ui-bg: var(--ui-color-neutral-50);
 }
 
+@layer base {
+    button:not(:disabled),
+    [role='button']:not(:disabled) {
+        cursor: pointer;
+    }
+}
+
 .dark .shiki,
 .dark .shiki span {
     color: var(--shiki-dark) !important;
