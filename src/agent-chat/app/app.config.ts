@@ -6,6 +6,10 @@ export default defineAppConfig({
         },
         button: {
             slots: { base: 'rounded-full' },
+            defaultVariants: { size: 'lg' },
+        },
+        dropdownMenu: {
+            defaultVariants: { size: 'lg' },
         },
         input: {
             slots: { base: 'rounded-full' },

@@ -10,10 +10,6 @@ const props = defineProps<{
 }>();
 
 const toolLabel = computed(() => props.part.type === 'dynamic-tool' ? toolDescription(props.part.input) : '');
-const toolCommand = computed(() => {
-    const command = props.part.type === 'dynamic-tool' ? toolSummary(props.part.input) : '';
-    return command !== toolLabel.value ? command : '';
-});
 
 const toolRunning = computed(() => props.part.type === 'dynamic-tool' && props.streaming && isToolStreaming(props.part));
 const toolIcon = computed(() => {
@@ -46,7 +42,7 @@ const toolOutput = computed(() => {
             :ui="{ leadingIcon: part.state === 'output-error' ? 'text-error' : '' }"
         >
             <div class="space-y-2 text-xs">
-                <pre v-if="toolCommand" class="max-h-64 overflow-auto rounded-md bg-elevated p-3 whitespace-pre-wrap [overflow-wrap:anywhere]">{{ toolCommand }}</pre>
+                <ChatToolInput :input="part.input" :label="toolLabel" />
                 <pre
                     v-if="toolOutput"
                     class="max-h-96 overflow-auto rounded-md p-3 whitespace-pre-wrap"
@@ -54,10 +50,7 @@ const toolOutput = computed(() => {
                 >{{ toolOutput }}</pre>
             </div>
         </UChatTool>
-        <pre
-            v-if="showCommand && toolCommand && !open"
-            class="mt-1 max-h-64 overflow-auto rounded-md bg-elevated p-3 text-xs whitespace-pre-wrap [overflow-wrap:anywhere]"
-        >{{ toolCommand }}</pre>
+        <ChatToolInput v-if="showCommand && !open" :input="part.input" :label="toolLabel" class="mt-1" />
     </div>
 
     <Markdown

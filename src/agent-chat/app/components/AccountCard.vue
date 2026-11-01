@@ -35,7 +35,7 @@ function meterColor(limit: UsageWindow): 'error' | 'warning' | 'neutral' {
 </script>
 
 <template>
-    <div v-if="profile" class="w-full rounded-xl bg-default/60 p-3 ring ring-default">
+    <div v-if="profile" class="w-full rounded-xl bg-default/60 p-4 ring ring-default">
         <p class="truncate text-sm font-medium text-highlighted">{{ profile.email }}</p>
         <p v-if="profile.organization" class="truncate text-xs text-muted">{{ profile.organization }}</p>
 
@@ -52,7 +52,6 @@ function meterColor(limit: UsageWindow): 'error' | 'warning' | 'neutral' {
                     {{ expired(meter.limit) ? 'Reset since last update' : `Resets ${formatClockTime(meter.limit.resetsAt)}` }}
                 </span>
             </div>
-            <span v-if="usage" class="text-xs text-dimmed tabular-nums">Updated {{ formatClockTime(usage.updatedAt) }}</span>
         </div>
         <p v-else class="mt-3 text-xs text-muted">No usage data yet</p>
     </div>

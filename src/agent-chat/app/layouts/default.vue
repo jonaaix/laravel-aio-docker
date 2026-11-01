@@ -77,7 +77,7 @@ onBeforeUnmount(() => unsubscribe?.());
                     :items="items"
                     :collapsed="collapsed"
                     orientation="vertical"
-                    :ui="{ link: 'overflow-hidden', linkLabel: 'truncate' }"
+                    :ui="{ link: 'overflow-hidden py-2', linkLabel: 'truncate' }"
                 />
             </template>
 

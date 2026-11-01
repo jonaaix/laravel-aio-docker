@@ -68,8 +68,7 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - Account card at the bottom of the sidebar: email and organization from `claude auth status`
   (read once per server start), session (5 h) and weekly usage from the `rate_limit_event` Claude
   sends with every turn (`unifiedWindows`). The last usage is kept in `<data dir>/usage.json`, so it
-  shows the last known state until the next turn ("Updated HH:MM"; a window whose reset has passed is
-  greyed out). Live updates ride the sidebar's `/api/events` stream. Below the card a settings menu
+  shows the last known state until the next turn (a window whose reset has passed is greyed out). Live updates ride the sidebar's `/api/events` stream. Below the card a settings menu
   holds the appearance choice (light, dark, system).
 - Conversations are archived (`archived_at`), never deleted; archived ones are read-only (409 on
   send) and listed under `/archived`. A chat opens with its last 50 messages, older pages load
@@ -105,6 +104,9 @@ container restart with its full history and attachments, and no Mattermost/Slack
   The browser window is the page's scroll container (native scrollbar over the full height): the
   dashboard layout is unpinned in `app.config.ts`, sidebar and navbar stick to the top, the composer
   to the bottom; slim scrollbars only inside the activity boxes.
+  Controls are 36px like the project design system: buttons and dropdown menus default to Nuxt UI
+  size `lg`, sidebar links get `py-2`. Edit/MultiEdit calls show a line diff (`app/utils/line-diff.ts`),
+  Write calls the first 20 lines of the new file (`ChatToolInput`).
   Icons are served by the app itself (`icon.provider: 'server'`): no request leaves the app.
 - SPA (`ssr: false`): the chat is fully client-driven and runs inside an iframe.
 - SSE + REST instead of WebSockets: Nitro WebSockets are still experimental; SSE reconnects by itself
