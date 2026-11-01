@@ -19,10 +19,11 @@ const title = computed(() => {
     return tools.value.length === 1 ? 'Worked · 1 step' : `Worked · ${tools.value.length} steps`;
 });
 
+const listedTools = computed(() => tools.value.filter(part => part.input !== undefined));
 const showAll = ref(false);
-const hiddenCount = computed(() => showAll.value ? 0 : Math.max(0, tools.value.length - VISIBLE_STEPS));
-const visibleTools = computed(() => tools.value.slice(hiddenCount.value));
-const commandTool = computed(() => working.value ? tools.value.findLast(part => toolSummary(part.input) !== '') : undefined);
+const hiddenCount = computed(() => showAll.value ? 0 : Math.max(0, listedTools.value.length - VISIBLE_STEPS));
+const visibleTools = computed(() => listedTools.value.slice(hiddenCount.value));
+const commandTool = computed(() => working.value ? listedTools.value.findLast(part => toolSummary(part.input) !== '') : undefined);
 </script>
 
 <template>
@@ -33,9 +34,9 @@ const commandTool = computed(() => working.value ? tools.value.findLast(part => 
         :icon="failed ? 'i-heroicons-exclamation-triangle' : 'i-heroicons-wrench-screwdriver'"
         :icon-class="failed ? 'text-error' : ''"
     >
-        <div class="mt-1 flex flex-col gap-1">
+        <div v-if="listedTools.length > 0" class="mt-1 flex flex-col gap-1">
             <UButton
-                v-if="tools.length > VISIBLE_STEPS"
+                v-if="listedTools.length > VISIBLE_STEPS"
                 :label="showAll ? 'Show fewer steps' : hiddenCount === 1 ? 'Show 1 earlier step' : `Show ${hiddenCount} earlier steps`"
                 :icon="showAll ? 'i-heroicons-chevron-down' : 'i-heroicons-chevron-up'"
                 color="neutral"
