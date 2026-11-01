@@ -112,7 +112,8 @@ container restart with its full history and attachments, and no Mattermost/Slack
   Write calls the first 20 lines of the new file (`ChatToolInput`).
   The composer (`ChatComposer`, used on the start page and in a chat) follows ChatGPT's: 56px pill,
   10px inset, 16px text, grows to 10 rows, the 36px send/stop circle sits at the bottom and is
-  disabled while empty. Add-file, model picker and dictation join with their features.
+  disabled while empty. Add-file and dictation join with their features; no model picker per
+  conversation.
   Icons are served by the app itself (`icon.provider: 'server'`): no request leaves the app.
 - SPA (`ssr: false`): the chat is fully client-driven and runs inside an iframe.
 - SSE + REST instead of WebSockets: Nitro WebSockets are still experimental; SSE reconnects by itself
