@@ -77,6 +77,13 @@ The agent works without asking for permission: it runs commands and changes file
 task is never held up by approval prompts. When it has a question or proposes a plan, it says so in
 its reply, and the user answers with the next message.
 
+When the agent's latest answer asks numbered questions, each offering lettered options (`a)`, `b)`,
+…), the chat shows answer buttons below it, one row per question, with a recommended option
+starred. Choosing options writes their short form, such as "44 a, 45 b", at the start of the
+message input; choosing again changes it without touching what the user wrote below. One control
+picks every recommended option at once. Nothing is sent until the user sends the message, and the
+agent learns nothing about the buttons: they only read the answer it already wrote.
+
 ### Files and images
 
 Files and images the agent sends — screenshots, reports, exports — appear inline in the

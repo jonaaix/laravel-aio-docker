@@ -101,6 +101,9 @@ container restart with its full history and attachments, and no Mattermost/Slack
   bar (mirror div over a transparent textarea). Sent messages render as Markdown with line breaks.
   Expanded working steps highlight their code lazily (`useCodeTokens`, shared shiki highlighter);
   paths inside the working folder are shown relative to it.
+- Answer buttons: the last finished assistant message is scanned for numbered questions followed
+  by `a)`, `b)`, … lines (`offeredQuestions`); `ChatAnswerPicker` writes "44 a, 45 b" as the first
+  line of the composer and replaces only that line on later picks.
 - User attachments: picked, dropped or pasted files upload at once (`PUT /api/uploads`, streamed to
   `<data dir>/uploads/`, 2 GB cap, cleared on start); on send they move into the conversation's file
   folder and Claude gets the bridge's path list ahead of the text, never inline content. The image's
@@ -188,6 +191,11 @@ container restart with its full history and attachments, and no Mattermost/Slack
   (user's call). The container is the sandbox; access to the chat is what needs protecting.
 - Questions and plans stay in chat mode: `AskUserQuestion`, `EnterPlanMode` and `ExitPlanMode` are
   disallowed, so Claude asks and plans in plain text and the user answers with the next message.
+  Answer buttons come from reading that text, not from a tool: no tokens, and in projects without
+  the lettered question format they simply do not appear.
+- No appended system prompt for web sessions: tokens go to coding. What Claude must know about the
+  chat sits in the chat MCP's tool descriptions (`send_file`: the user reads a browser and sees no
+  files or terminal output).
 - Multi-bot and the opencode backend stay; Claude Code comes first.
 - Worktree code stays in the repo but is disabled.
 

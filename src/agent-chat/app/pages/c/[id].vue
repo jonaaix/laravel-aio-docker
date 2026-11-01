@@ -42,6 +42,13 @@ const visibleMessages = computed(() => messages.value.filter(message => message.
     || message.metadata?.outcome === 'stopped'
     || message.metadata?.outcome === 'failed'));
 
+const openQuestions = computed(() => {
+    const last = visibleMessages.value.at(-1);
+    return last?.role === 'assistant' && chatStatus.value === 'ready' && archivedAt.value === null
+        ? offeredQuestions(messageText(last))
+        : [];
+});
+
 function isStreaming(messageId: string): boolean {
     return chatStatus.value === 'streaming' && messageId === visibleMessages.value.at(-1)?.id;
 }
@@ -187,6 +194,7 @@ async function submit(): Promise<void> {
         return;
     }
     input.value = '';
+    answerLine = '';
     sentThisVisit = true;
     releaseBottom();
     await send(text, takeAttachments());
@@ -207,6 +215,16 @@ function quote(text: string): void {
     const quoted = text.split('\n').map(line => line.trim() ? `> ${line}` : '>').join('\n');
     const existing = input.value.replace(/\s+$/, '');
     input.value = `${existing ? `${existing}\n\n` : ''}${quoted}\n\n`;
+    focusComposerAtEnd();
+}
+
+let answerLine = '';
+
+function answer(line: string): void {
+    const previous = answerLine && input.value.startsWith(answerLine) ? input.value.slice(answerLine.length) : input.value;
+    const rest = previous.trimStart();
+    answerLine = line;
+    input.value = rest && line ? `${line}\n\n${rest}` : line || rest;
     focusComposerAtEnd();
 }
 
@@ -308,6 +326,12 @@ const restoreConversation = () => withFlag(archiving, restore);
                                 <ChatImageGroup v-if="segment.kind === 'images'" :parts="segment.parts" />
                                 <ChatMessagePart v-else :part="segment.part" :message="message" :streaming="isStreaming(message.id)" />
                             </template>
+                            <ChatAnswerPicker
+                                v-if="openQuestions.length > 0 && message.id === visibleMessages.at(-1)?.id"
+                                :key="message.id"
+                                :questions="openQuestions"
+                                @change="answer"
+                            />
                             <ChatTurnOutcome v-if="message.role === 'assistant'" :message="message" />
                         </template>
                         <template #actions="{ message }">
