@@ -63,16 +63,6 @@ const toolOutput = computed(() => {
     <p v-else-if="part.type === 'text'" class="whitespace-pre-wrap">{{ part.text }}</p>
 
     <a
-        v-else-if="part.type === 'file' && part.mediaType.startsWith('image/')"
-        :href="apiUrl(part.url)"
-        target="_blank"
-        rel="noopener"
-        class="my-3 block w-fit"
-    >
-        <img :src="apiUrl(part.url)" :alt="part.filename ?? ''" class="max-h-96 rounded-xl ring ring-default">
-    </a>
-
-    <a
         v-else-if="part.type === 'file'"
         :href="apiUrl(part.url)"
         :download="part.filename"

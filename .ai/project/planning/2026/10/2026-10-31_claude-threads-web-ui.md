@@ -78,7 +78,12 @@ container restart with its full history and attachments, and no Mattermost/Slack
   passed as `--mcp-config`. The URL is the local origin of the request (`localServerOrigin`: socket
   port, else the request's port in dev). `send_file` copies the file to `<data dir>/files/<id>/`
   (2 GB cap) and adds an AI SDK `file` part; `/api/conversations/:id/files/:name` serves it with a
-  `sandbox` CSP. Images render inline, other files as a download tile.
+  `sandbox` CSP. Consecutive images in an answer form one group
+  (`answerSegments`): a single image opens the lightbox, several render as a gallery. Other files
+  render as a download tile.
+- `app/gallery/` is a copy of the user's `jonaaix/laravel-islands-gallery` (Vue, MIT), kept in the
+  repo's layout so updates can be pulled over. Local changes: `IconButton.vue` replaces the Islands
+  helper of the same name, `il-*` tokens became Nuxt UI tokens.
 - Conversations are archived (`archived_at`), never deleted; archived ones are read-only (409 on
   send) and listed under `/archived`. A chat opens with its last 50 messages, older pages load
   when scrolling near the top (`GET /api/conversations/:id/messages?before=`).

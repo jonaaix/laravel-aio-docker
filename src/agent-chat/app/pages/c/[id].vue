@@ -177,13 +177,10 @@ const restoreConversation = () => withFlag(archiving, restore);
                                 <ChatThinkingBlock :message="message" :streaming="isStreaming(message.id)" />
                                 <ChatWorkingBlock :message="message" :streaming="isStreaming(message.id)" />
                             </div>
-                            <ChatMessagePart
-                                v-for="(part, index) in message.parts.filter(part => part.type === 'text' || part.type === 'file')"
-                                :key="`${message.id}-text-${index}`"
-                                :part="part"
-                                :message="message"
-                                :streaming="isStreaming(message.id)"
-                            />
+                            <template v-for="segment in answerSegments(message)" :key="segment.key">
+                                <ChatImageGroup v-if="segment.kind === 'images'" :parts="segment.parts" />
+                                <ChatMessagePart v-else :part="segment.part" :message="message" :streaming="isStreaming(message.id)" />
+                            </template>
                             <ChatTurnOutcome v-if="message.role === 'assistant'" :message="message" />
                         </template>
                     </UChatMessages>
