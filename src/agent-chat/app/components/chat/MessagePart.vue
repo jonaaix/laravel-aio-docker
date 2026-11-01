@@ -62,7 +62,12 @@ const toolOutput = computed(() => {
         class="*:first:mt-0 *:last:mb-0"
     />
 
-    <p v-else-if="part.type === 'text'" class="whitespace-pre-wrap">{{ part.text }}</p>
+    <Markdown
+        v-else-if="part.type === 'text'"
+        :value="part.text"
+        :plugins="userMarkdownPlugins"
+        class="*:first:mt-0 *:last:mb-0"
+    />
 
     <ChatFileAttachment v-else-if="part.type === 'file'" :part="part" />
 </template>

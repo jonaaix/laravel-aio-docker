@@ -1,3 +1,4 @@
+import breaks from '@comark/nuxt/plugins/breaks';
 import highlight from '@comark/nuxt/plugins/shiki';
 import { visit } from '@comark/nuxt/utils';
 import blade from 'shiki/dist/langs/blade.mjs';
@@ -41,3 +42,5 @@ export const markdownPlugins = [
         languages: [blade, css, diff, dockerfile, html, ini, markdown, nginx, php, python, sql, xml],
     }),
 ];
+
+export const userMarkdownPlugins = [breaks(), ...markdownPlugins];
