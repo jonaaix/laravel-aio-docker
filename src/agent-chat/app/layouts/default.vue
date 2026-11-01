@@ -55,6 +55,7 @@ onBeforeUnmount(() => unsubscribe?.());
                         variant="soft"
                         block
                         :square="collapsed"
+                        class="bg-white ring ring-black/5 hover:bg-neutral-100 dark:bg-elevated/50 dark:ring-0 dark:hover:bg-elevated"
                     />
                 </UTooltip>
             </template>
