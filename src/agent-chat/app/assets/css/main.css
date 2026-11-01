@@ -9,3 +9,17 @@
     --ui-radius: 0.5rem;
     --ui-container: 48rem;
 }
+
+@utility scrollbar-slim {
+    scrollbar-width: thin;
+    scrollbar-color: var(--ui-border-accented) transparent;
+
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        border-radius: 9999px;
+        background: var(--ui-border-accented);
+    }
+}

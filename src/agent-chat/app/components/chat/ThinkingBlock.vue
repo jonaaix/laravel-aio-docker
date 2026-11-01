@@ -51,7 +51,7 @@ watch(() => thoughts.value.join('\n').length, async () => {
         <ul
             v-if="thoughts.length > 0"
             ref="viewport"
-            class="mt-1 flex max-h-36 flex-col overflow-y-auto text-sm leading-6 text-muted"
+            class="scrollbar-slim mt-1 flex max-h-36 flex-col overflow-y-auto pe-1 text-sm leading-6 text-muted"
             @scroll.passive="onScroll"
         >
             <li v-for="(thought, index) in thoughts" :key="index" class="flex gap-2">
