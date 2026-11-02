@@ -28,6 +28,10 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - [x] Token-level streaming (`--include-partial-messages` + `stream_event` deltas)
 - [x] Turn markers: show "stopped" on interrupted turns, errors inline
 - [x] Attachments from the user (upload into the conversation, passed to Claude)
+- [x] UI density: 15 px message text, tighter prose spacing (`app.config` prose), 16 px phone gutters,
+  visible user bubble
+- [ ] UI polish: quiet header (archive in a menu, status dot), message footer on hover,
+  flatter composer, denser sidebar
 - [ ] Multi-bot conversations (bots table, mention handoff, catch-up) on top of the new runtime
 - [ ] opencode backend selectable per conversation
 - [ ] Extract lean core: drop Mattermost/Slack, onboarding, auto-update, commands, bug report,
@@ -98,7 +102,7 @@ container restart with its full history and attachments, and no Mattermost/Slack
   Both event streams reload their state after a reconnect (a dev server reload pauses all sessions).
 - Message actions: copy (text parts only) on every message; selecting text in the timeline offers
   "Quote", which appends a Markdown quote to the composer; the composer overlays quote lines with a
-  bar (mirror div over a transparent textarea). Sent messages render as Markdown with line breaks;
+  bar (mirror div over a transparent textarea). All Markdown keeps single line breaks (`breaks()` in `markdownPlugins`), as the terminal shows them;
   past 25 lines they collapse to 15 (`ChatClampedContent`, measured from the line height).
   Expanded working steps highlight their code lazily (`useCodeTokens`, shared shiki highlighter);
   paths inside the working folder are shown relative to it.
@@ -141,6 +145,9 @@ container restart with its full history and attachments, and no Mattermost/Slack
 
 ## Decisions
 
+- The thinking and working boxes (`ChatThinkingBlock`, `ChatWorkingBlock`) are final in look and
+  behaviour; UI polish works around them.
+- "Pause session" stays a button with its label in the header.
 - All relevant code lives in this repo; the fork is copied, not referenced. Only `fpm-claude-beta`
   gets the web UI for now.
 - Nuxt 4 + Nuxt UI (MIT since v4, chat + dashboard components) over hand-built Vue on laravel-islands

@@ -75,7 +75,7 @@ const toolOutput = computed(() => {
                     class="*:first:mt-0 *:last:mb-0"
                 />
             </ChatSectionCard>
-            <div v-else :class="section.kind === 'section' ? 'my-5 border-t border-default pt-4' : ''">
+            <div v-else :class="section.kind === 'section' ? 'mt-5 mb-3 border-t border-default pt-3' : ''">
                 <ChatSectionTitle v-if="section.kind === 'section'" :title="section.title" class="mb-2 font-semibold text-highlighted" />
                 <Markdown
                     :value="section.text"
@@ -90,7 +90,7 @@ const toolOutput = computed(() => {
     <ChatClampedContent v-else-if="part.type === 'text'">
         <Markdown
             :value="part.text"
-            :plugins="userMarkdownPlugins"
+            :plugins="markdownPlugins"
             class="*:first:mt-0 *:last:mb-0"
         />
     </ChatClampedContent>

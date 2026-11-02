@@ -34,6 +34,7 @@ const externalLinksInNewTab = {
 };
 
 export const markdownPlugins = [
+    breaks(),
     externalLinksInNewTab,
     highlight({
         preStyles: false,
@@ -42,5 +43,3 @@ export const markdownPlugins = [
         languages: [blade, css, diff, dockerfile, html, ini, markdown, nginx, php, python, sql, xml],
     }),
 ];
-
-export const userMarkdownPlugins = [breaks(), ...markdownPlugins];

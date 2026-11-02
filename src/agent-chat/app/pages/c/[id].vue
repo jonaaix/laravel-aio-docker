@@ -249,7 +249,7 @@ const restoreConversation = () => withFlag(archiving, restore);
 </script>
 
 <template>
-    <UDashboardPanel :id="`conversation-${conversationId}`">
+    <UDashboardPanel :id="`conversation-${conversationId}`" :ui="{ body: 'px-0 sm:px-0' }">
         <template #header>
             <div ref="header" class="sticky top-0 z-30 bg-default">
                 <UDashboardNavbar :title="title" :ui="{ title: '-ms-2' }">
@@ -317,10 +317,10 @@ const restoreConversation = () => withFlag(archiving, restore);
                         :status="chatStatus"
                         :auto-scroll="false"
                         :style="{ '--last-message-height': `${answerSpace}px`, '--message-scroll-margin': `${messageScrollMargin}px` }"
-                        :ui="{ root: '[&>article]:scroll-mt-(--message-scroll-margin)' }"
+                        :ui="{ root: 'px-0 [&>article]:scroll-mt-(--message-scroll-margin)' }"
                         :should-scroll-to-bottom="false"
-                        :assistant="{ side: 'left', variant: 'naked' }"
-                        :user="{ side: 'right', variant: 'soft', ui: { content: 'rounded-[1.25rem]' } }"
+                        :assistant="{ side: 'left', variant: 'naked', ui: { content: 'text-[0.9375rem]/6' } }"
+                        :user="{ side: 'right', variant: 'soft', ui: { content: 'min-h-0 rounded-xl bg-white px-3.5 py-2 text-[0.9375rem]/6 ring ring-default dark:bg-elevated' } }"
                     >
                         <template #content="{ message }">
                             <div v-if="message.role === 'assistant'" class="mb-4 flex flex-col gap-2 empty:hidden">
