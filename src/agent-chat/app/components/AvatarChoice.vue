@@ -18,36 +18,29 @@ function shuffle(): void {
     seeds.value = [...kept, ...randomAvatarSeeds(CHOICES - kept.length)];
 }
 
+const rows = computed(() => props.presets?.length ? [seeds.value, props.presets] : [seeds.value]);
+
 onMounted(shuffle);
 </script>
 
 <template>
     <div class="flex flex-wrap items-center gap-2 rounded-md p-2 ring ring-default">
-        <button
-            v-for="seed in presets ?? []"
-            :key="seed"
-            type="button"
-            class="rounded-md p-1 transition-colors duration-500 ease-out hover:bg-elevated"
-            :class="seed === current ? 'bg-accented/60' : ''"
-            :aria-label="`Use avatar ${seed}`"
-            @click="emit('select', seed)"
-        >
-            <ParticipantAvatar :participant="{ kind, name: seed, seed }" class="size-12" />
-        </button>
-        <div v-if="presets?.length" class="basis-full" />
-        <button
-            v-for="seed in seeds"
-            :key="seed"
-            type="button"
-            class="rounded-md p-1 transition-colors duration-500 ease-out hover:bg-elevated"
-            :class="seed === current ? 'bg-accented/60' : ''"
-            :aria-label="`Use avatar ${seed}`"
-            @click="emit('select', seed)"
-        >
-            <ParticipantAvatar :participant="{ kind, name: seed, seed }" class="size-12" />
-        </button>
-        <UTooltip text="Shuffle">
-            <UButton icon="i-heroicons-arrow-path" aria-label="Shuffle" color="neutral" variant="ghost" @click="shuffle" />
-        </UTooltip>
+        <template v-for="(row, index) in rows" :key="index">
+            <div v-if="index > 0" class="basis-full" />
+            <button
+                v-for="seed in row"
+                :key="seed"
+                type="button"
+                class="rounded-md p-1 transition-colors duration-500 ease-out hover:bg-elevated"
+                :class="seed === current ? 'bg-accented/60' : ''"
+                :aria-label="`Use avatar ${seed}`"
+                @click="emit('select', seed)"
+            >
+                <ParticipantAvatar :participant="{ kind, name: seed, seed }" class="size-12" />
+            </button>
+            <UTooltip v-if="index === 0" text="Shuffle">
+                <UButton icon="i-heroicons-arrow-path" aria-label="Shuffle" color="neutral" variant="ghost" @click="shuffle" />
+            </UTooltip>
+        </template>
     </div>
 </template>
