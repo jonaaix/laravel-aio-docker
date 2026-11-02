@@ -229,7 +229,7 @@ class ConversationRuntime {
             workingDir: conversation.workingDir,
             sessionId: conversation.agentSessionRef,
             resume: conversation.agentSessionStarted,
-            model: useRuntimeConfig().claudeModel || undefined,
+            model: leadAgent().model || useRuntimeConfig().claudeModel || undefined,
             includePartialMessages: true,
             replayUserMessages: true,
             thinkingDisplay: 'summarized',

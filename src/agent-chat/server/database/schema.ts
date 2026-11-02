@@ -7,6 +7,16 @@ export const users = sqliteTable('users', {
     createdAt: integer('created_at').notNull(),
 }, table => [uniqueIndex('users_name_unique').on(table.name)]);
 
+export const agents = sqliteTable('agents', {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    role: text('role').notNull().default(''),
+    model: text('model'),
+    lead: integer('lead', { mode: 'boolean' }).notNull().default(false),
+    instructions: text('instructions').notNull().default(''),
+    createdAt: integer('created_at').notNull(),
+}, table => [uniqueIndex('agents_name_unique').on(table.name)]);
+
 export const conversations = sqliteTable('conversations', {
     id: text('id').primaryKey(),
     title: text('title').notNull(),

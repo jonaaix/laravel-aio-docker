@@ -16,7 +16,7 @@ and the peer cannot touch the project.
 - [x] Participant list floating top left of the conversation (in the header row below `lg`),
       without making the header taller: the lead plus people who have written; agents follow with
       membership
-- [ ] Agent registry: Settings → "Agents" modal; lead "Karim SA" always present (name, role, model
+- [x] Agent registry: Settings → "Agents" modal; lead "Karim SA" always present (name, role, model
       editable; role default "Lead Senior Software Architect"); peers with name, role, model, a
       description saved as their `CLAUDE.md` and uploaded resource files, all in the peer's own
       empty working folder under the data dir
@@ -31,6 +31,10 @@ and the peer cannot touch the project.
 
 ## State
 
+- Agents live in `agents` (unique name, `lead` flag, `model` alias or null = default, `instructions`);
+  the lead row is created on first use (`leadAgent()`), its model already drives the conversation's
+  Claude session. Peer folders: `<data dir>/agents/<id>/` with `CLAUDE.md` + resource files
+  (uploads moved in on save, removed on delete).
 - Conversations are already separate from the Claude session (`conversations.agent_session_ref`);
   messages store `sender_name`, conversations `creator_name`.
 - The fork's multi-bot logic to port lives in `src/claude-threads/src`: baton in

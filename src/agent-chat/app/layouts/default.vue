@@ -4,6 +4,7 @@ import type { ConversationListEvent } from '#shared/types/conversation';
 
 const { conversations, upsert, load } = useConversations();
 const { usage, load: loadAccount } = useAccount();
+const { load: loadAgents } = useAgents();
 const { baseURL } = useRuntimeConfig().app;
 
 const CLOCK_TICK_MS = 60_000;
@@ -50,7 +51,7 @@ onMounted(async () => {
     }, () => {
         void Promise.all([load(), loadAccount()]);
     });
-    await Promise.all([load(), loadAccount()]);
+    await Promise.all([load(), loadAccount(), loadAgents()]);
     clock = setInterval(() => {
         now.value = Date.now();
     }, CLOCK_TICK_MS);
@@ -138,5 +139,6 @@ onBeforeUnmount(() => {
 
         <slot />
         <UserNameModal />
+        <AgentsModal />
     </UDashboardGroup>
 </template>

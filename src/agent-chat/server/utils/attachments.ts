@@ -85,6 +85,10 @@ export function readAttachmentReferences(value: unknown): AttachmentReference[] 
     });
 }
 
+export function moveUpload(reference: AttachmentReference, target: string): void {
+    renameSync(uploadPath(reference.id), target);
+}
+
 export function adoptUploads(conversationId: string, references: AttachmentReference[]): StoredFile[] {
     if (references.length === 0) {
         return [];

@@ -5,6 +5,7 @@ defineProps<{ collapsed: boolean }>();
 
 const colorMode = useColorMode();
 const { locked: nameLocked, editing: editingName } = useUserName();
+const { managing: managingAgents } = useAgents();
 
 const appearances = [
     { label: 'Light', value: 'light', icon: 'i-heroicons-sun' },
@@ -12,13 +13,22 @@ const appearances = [
     { label: 'System', value: 'system', icon: 'i-heroicons-computer-desktop' },
 ] as const;
 
-const nameItems = computed<DropdownMenuItem[]>(() => nameLocked.value ? [] : [{
-    label: 'Your name',
-    icon: 'i-heroicons-user',
-    onSelect: () => {
-        editingName.value = true;
+const nameItems = computed<DropdownMenuItem[]>(() => [
+    ...(nameLocked.value ? [] : [{
+        label: 'Your name',
+        icon: 'i-heroicons-user',
+        onSelect: () => {
+            editingName.value = true;
+        },
+    }]),
+    {
+        label: 'Agents',
+        icon: 'i-heroicons-cpu-chip',
+        onSelect: () => {
+            managingAgents.value = true;
+        },
     },
-}]);
+]);
 
 const appearanceItems = computed<DropdownMenuItem[]>(() => [
     { label: 'Appearance', type: 'label' },
