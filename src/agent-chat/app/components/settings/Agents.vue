@@ -11,6 +11,7 @@ const { agents, load, save, remove } = useAgents();
 const { attachments, uploading, ready, add: attach, remove: removeAttachment, take: takeAttachments } = useAttachments();
 
 const selectedId = ref<string | null>(null);
+const choiceKey = ref(0);
 const creating = ref(false);
 const name = ref('');
 const role = ref('');
@@ -134,6 +135,7 @@ async function select(agent: Agent): Promise<void> {
     await flushPending();
     creating.value = false;
     selectedId.value = agent.id;
+    choiceKey.value += 1;
     fill(agent);
 }
 
@@ -141,6 +143,7 @@ async function startNew(): Promise<void> {
     await flushPending();
     creating.value = true;
     selectedId.value = null;
+    choiceKey.value += 1;
     fill(null);
 }
 
@@ -284,7 +287,7 @@ async function confirmDelete(): Promise<void> {
                     <input ref="avatarInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="hidden" @change="onAvatarPicked">
                 </div>
                 <AvatarChoice
-                    :key="creating ? 'new' : selectedId ?? ''"
+                    :key="choiceKey"
                     kind="agent"
                     :current="avatarPreview || storedPicture ? null : avatarSeed"
                     :presets="AGENT_PRESET_ROWS"
