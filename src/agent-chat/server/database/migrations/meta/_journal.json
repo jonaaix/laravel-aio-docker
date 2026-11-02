@@ -22,6 +22,13 @@
       "when": 1793502369280,
       "tag": "0002_turn_error",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1793575525674,
+      "tag": "0003_rename_conversation_title",
+      "breakpoints": true
     }
   ]
 }

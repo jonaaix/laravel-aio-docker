@@ -68,6 +68,7 @@ export function createConversation(title: string, workingDir: string): Conversat
     const row: ConversationRow = {
         id: randomUUID(),
         title,
+        titleRenamed: false,
         status: 'paused',
         workingDir,
         agentSessionRef: randomUUID(),
@@ -113,6 +114,16 @@ export function appendMessage(conversationId: string, role: ChatMessage['role'],
     db.insert(messages).values(row).run();
     updateConversation(conversationId, { lastActivityAt: row.createdAt });
     return toChatMessage(row);
+}
+
+export function listUserMessages(conversationId: string): ChatMessage[] {
+    return useDatabase()
+        .select({ id: messages.id, role: messages.role, parts: messages.parts, createdAt: messages.createdAt })
+        .from(messages)
+        .where(and(eq(messages.conversationId, conversationId), eq(messages.role, 'user')))
+        .orderBy(messages.seq)
+        .all()
+        .map(toChatMessage);
 }
 
 export function saveMessageParts(conversationId: string, messageId: string, parts: ChatMessage['parts']): void {

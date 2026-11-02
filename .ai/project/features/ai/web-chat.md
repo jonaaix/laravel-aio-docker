@@ -30,7 +30,14 @@ chat who the user is. Access through the chat's own domain or port is protected 
 
 ### Conversations
 
-A sidebar lists the conversations. Each user sees only their own. Someone can start a new
+A sidebar lists the conversations. Each user sees only their own. A new conversation is named
+after the beginning of its first message. When the user sends the third message, the agent titles
+the session from the user's first three messages, the way Claude Code titles its terminal sessions;
+that title replaces the name in the chat and also names the session in Claude Code's own history.
+Conversations that were already past their third message keep their name. The user can rename a
+conversation at any time by editing its title in place. A name the user gave is kept: no title is
+generated for that conversation anymore, and the name also reaches Claude Code's session history —
+right away while the session runs, otherwise when it resumes. Someone can start a new
 conversation, open an earlier one and continue it. A conversation that is no longer needed can be
 archived: its agent session is paused first, it leaves the sidebar, and the user lands on a new
 conversation. It stays stored and can be brought back. Each conversation is its own agent session. The agent's answer appears while it is

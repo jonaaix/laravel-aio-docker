@@ -1004,6 +1004,15 @@ export class ClaudeCli extends EventEmitter implements AgentBackend {
     return true;
   }
 
+  sendControlRequest(request: Record<string, unknown>): string | null {
+    if (!this.process?.stdin) {
+      return null;
+    }
+    const requestId = `req_${++this.controlRequestSeq}`;
+    this.process.stdin.write(JSON.stringify({ type: 'control_request', request_id: requestId, request }) + '\n');
+    return requestId;
+  }
+
   /**
    * Build the env object for the spawned Claude process.
    *

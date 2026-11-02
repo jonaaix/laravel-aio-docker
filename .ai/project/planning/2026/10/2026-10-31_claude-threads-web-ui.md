@@ -113,6 +113,13 @@ container restart with its full history and attachments, and no Mattermost/Slack
   nginx must allow 2 GB request bodies.
 - Header is one row: title left, "Pause session" and "Archive" right; a sent message is aligned and
   held for 2 s at header height + 16 px (also given to `UChatMessages` as scroll margin).
+- Session titles: a new conversation is named after the first 60 characters of its first message,
+  Markdown markers stripped (`titleFromPrompt`). Headless Claude Code writes no `ai-title`, so on the third user message the
+  runtime sends the CLI's `generate_session_title` control request (`persist: true`, the user
+  texts as description) through `ClaudeCli.sendControlRequest`; the matching `control_response`
+  sets the conversation title (`title` event + list event). Renaming (`POST .../rename`, header
+  `ChatTitleEditor`) sets `title_renamed`, which skips that request and drops a pending answer;
+  the name goes to Claude Code as `rename_session`, and again on every agent start.
 - Runtime config via env: `NUXT_WORKING_DIR` (default `<data dir>/workspace`, created on demand),
   `NUXT_DATA_DIR`, `NUXT_CLAUDE_MODEL`, `NUXT_APP_BASE_URL` (sub-path for the iframe). Paths are
   resolved in `server/utils/paths.ts`.

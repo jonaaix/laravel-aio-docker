@@ -28,6 +28,7 @@ const {
     pause,
     archive,
     restore,
+    rename,
 } = useConversation(conversationId);
 
 provide(workingDirKey, workingDir);
@@ -250,7 +251,10 @@ const restoreConversation = () => withFlag(archiving, restore);
     <UDashboardPanel :id="`conversation-${conversationId}`">
         <template #header>
             <div ref="header" class="sticky top-0 z-30 bg-default">
-                <UDashboardNavbar :title="title">
+                <UDashboardNavbar :title="title" :ui="{ title: '-ms-2' }">
+                    <template #title>
+                        <ChatTitleEditor :title="title" :editable="loaded && archivedAt === null" :save="rename" />
+                    </template>
                     <template #right>
                         <template v-if="archivedAt !== null">
                             <UBadge label="Archived" color="neutral" variant="subtle" />

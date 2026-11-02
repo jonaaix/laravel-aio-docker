@@ -110,6 +110,11 @@ export function useConversation(conversationId: string) {
         applySummary(await apiFetch<ConversationSummary>(`conversations/${conversationId}/archive`, { method: 'POST' }));
     }
 
+    async function rename(newTitle: string): Promise<void> {
+        const summary = await apiFetch<ConversationSummary>(`conversations/${conversationId}/rename`, { method: 'POST', body: { title: newTitle } });
+        title.value = summary.title;
+    }
+
     async function restore(): Promise<void> {
         applySummary(await apiFetch<ConversationSummary>(`conversations/${conversationId}/restore`, { method: 'POST' }));
     }
@@ -135,5 +140,6 @@ export function useConversation(conversationId: string) {
         pause,
         archive,
         restore,
+        rename,
     };
 }

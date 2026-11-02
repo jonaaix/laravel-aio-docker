@@ -7,6 +7,7 @@ import type { StoredFile } from './conversation-files';
 import { metricsFromResult, outcomeOnlyMetrics, type TurnMetrics } from './turn-metrics';
 
 const TITLE_LENGTH = 60;
+const TITLE_AFTER_USER_MESSAGES = 3;
 const IDLE_PAUSE_MS = 30 * 60 * 1000;
 const TURN_EVENT_TYPES = new Set(['stream_event', 'assistant', 'user']);
 // Questions and plans happen as plain chat text; the chat has no controls for these tools.
@@ -25,6 +26,7 @@ class ConversationRuntime {
     private model: string | null = null;
     private idleTimer: ReturnType<typeof setTimeout> | null = null;
     private backgroundTasks: BackgroundTask[] = [];
+    private titleRequestRef: string | null = null;
     private readonly mcpToken = randomBytes(24).toString('hex');
 
     constructor(private readonly conversationId: string) {}
@@ -69,7 +71,50 @@ class ConversationRuntime {
         this.beginTurn();
         const agent = this.agent ?? this.startAgent(conversation, serverOrigin);
         agent.sendMessage(promptWithAttachments(this.conversationId, text, attachments));
+        if (!conversation.titleRenamed) {
+            this.requestTitle(agent);
+        }
         this.publishStatus('running');
+    }
+
+    rename(title: string): void {
+        this.titleRequestRef = null;
+        updateConversation(this.conversationId, { title, titleRenamed: true });
+        this.agent?.sendControlRequest({ subtype: 'rename_session', title });
+        this.publishTitle(title);
+    }
+
+    private publishTitle(title: string): void {
+        publishConversationEvent(this.conversationId, { type: 'title', title });
+        this.publishSummary();
+    }
+
+    private requestTitle(agent: ClaudeCli): void {
+        const userMessages = listUserMessages(this.conversationId);
+        if (userMessages.length !== TITLE_AFTER_USER_MESSAGES) {
+            return;
+        }
+        const description = userMessages
+            .map(message => message.parts.flatMap(part => part.type === 'text' ? [part.text.trim()] : []).join('\n'))
+            .filter(Boolean)
+            .map(text => `User: ${text}`)
+            .join('\n\n');
+        if (description) {
+            this.titleRequestRef = agent.sendControlRequest({ subtype: 'generate_session_title', description, persist: true });
+        }
+    }
+
+    private applyTitle(event: ClaudeEvent): void {
+        const { request_id: requestRef, response } = (event.response ?? {}) as { request_id?: string; response?: { title?: unknown } };
+        if (!requestRef || requestRef !== this.titleRequestRef) {
+            return;
+        }
+        this.titleRequestRef = null;
+        const title = typeof response?.title === 'string' ? response.title.trim() : '';
+        if (title) {
+            updateConversation(this.conversationId, { title });
+            this.publishTitle(title);
+        }
     }
 
     stop(): void {
@@ -137,6 +182,9 @@ class ConversationRuntime {
         agent.on('exit', () => this.handleExit(agent));
         agent.on('error', error => publishConversationEvent(this.conversationId, { type: 'error', message: error.message }));
         agent.start();
+        if (conversation.titleRenamed) {
+            agent.sendControlRequest({ subtype: 'rename_session', title: conversation.title });
+        }
         updateConversation(this.conversationId, { agentSessionStarted: true });
         this.agent = agent;
         return agent;
@@ -161,6 +209,10 @@ class ConversationRuntime {
     }
 
     private handleEvent(event: ClaudeEvent): void {
+        if (event.type === 'control_response') {
+            this.applyTitle(event);
+            return;
+        }
         if (event.type === 'system' && event.subtype === 'background_tasks_changed' && Array.isArray(event.tasks)) {
             this.trackBackgroundTasks(event.tasks);
         }
@@ -308,6 +360,10 @@ class ConversationRuntime {
     private publishStatus(status: ConversationStatus): void {
         setConversationStatus(this.conversationId, status);
         publishConversationEvent(this.conversationId, { type: 'status', status, turnActive: this.turnActive, backgroundTasks: this.backgroundTasks });
+        this.publishSummary();
+    }
+
+    private publishSummary(): void {
         const conversation = findConversation(this.conversationId);
         if (conversation) {
             publishConversationListEvent({ type: 'conversation', conversation: summarize(conversation) });
@@ -340,8 +396,15 @@ export async function pauseAllConversations(): Promise<void> {
 }
 
 export function titleFromPrompt(text: string): string {
-    const line = text.trim().split('\n')[0] ?? '';
-    return line.length > TITLE_LENGTH ? `${line.slice(0, TITLE_LENGTH - 1)}…` : line || 'New conversation';
+    const plain = text
+        .split('\n')
+        .map(line => line.replace(/^\s*(?:>\s*)*(?:#{1,6}\s+|[-*+]\s+(?:\[[ xX]\]\s+)?|\d+[.)]\s+)?/, ''))
+        .join(' ')
+        .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+        .replace(/(\*\*|__|~~|`+)/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    return plain.length > TITLE_LENGTH ? `${plain.slice(0, TITLE_LENGTH - 1).trimEnd()}…` : plain || 'New conversation';
 }
 
 export function summarize(row: Omit<ConversationSummary, 'turnActive' | 'backgroundTasks'>): ConversationSummary {
