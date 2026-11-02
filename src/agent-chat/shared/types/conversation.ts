@@ -27,6 +27,7 @@ export interface ConversationSummary {
     id: string;
     title: string;
     creatorId: string | null;
+    agentIds: string[];
     status: ConversationStatus;
     turnActive: boolean;
     backgroundTasks: BackgroundTask[];

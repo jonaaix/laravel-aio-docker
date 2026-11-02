@@ -486,6 +486,7 @@ export function summarize(row: NonNullable<ReturnType<typeof findConversation>>)
         id: row.id,
         title: row.title,
         creatorId: row.creatorId,
+        agentIds: conversationAgentIds(row.id),
         status: row.status,
         turnActive: isTurnActive(row.id),
         backgroundTasks: runningBackgroundTasks(row.id),

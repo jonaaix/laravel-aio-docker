@@ -1,10 +1,40 @@
 <script setup lang="ts">
+import type { DropdownMenuItem } from '@nuxt/ui';
 import type { Participant } from '~/utils/avatars';
 
-defineProps<{
+export interface AgentOption {
+    id: string;
+    name: string;
+    member: boolean;
+}
+
+const props = defineProps<{
     participants: Participant[];
+    agentOptions: AgentOption[];
+    editable: boolean;
     compact?: boolean;
 }>();
+
+const emit = defineEmits<{ toggle: [agentId: string, member: boolean] }>();
+
+const { managing } = useAgents();
+
+const menuItems = computed<DropdownMenuItem[][]>(() => [
+    props.agentOptions.map(option => ({
+        label: option.name,
+        type: 'checkbox' as const,
+        checked: option.member,
+        onUpdateChecked: (checked: boolean) => emit('toggle', option.id, checked),
+        onSelect: (event: Event) => event.preventDefault(),
+    })),
+    [{
+        label: 'Manage agents',
+        icon: 'i-heroicons-cog-6-tooth',
+        onSelect: () => {
+            managing.value = true;
+        },
+    }],
+].filter(group => group.length > 0));
 </script>
 
 <template>
@@ -19,7 +49,15 @@ defineProps<{
         </button>
         <template #body>
             <ChatParticipantList :participants="participants" />
+            <UDropdownMenu v-if="editable" :items="menuItems" :content="{ align: 'start' }">
+                <UButton label="Add agent" icon="i-heroicons-plus" color="neutral" variant="ghost" class="mt-2 -ms-2" />
+            </UDropdownMenu>
         </template>
     </UModal>
-    <ChatParticipantList v-else :participants="participants" />
+    <div v-else class="flex flex-col items-start">
+        <ChatParticipantList :participants="participants" />
+        <UDropdownMenu v-if="editable" :items="menuItems" :content="{ align: 'start' }">
+            <UButton label="Add agent" icon="i-heroicons-plus" color="neutral" variant="ghost" size="sm" class="mt-1 -ms-1.5 text-muted" />
+        </UDropdownMenu>
+    </div>
 </template>

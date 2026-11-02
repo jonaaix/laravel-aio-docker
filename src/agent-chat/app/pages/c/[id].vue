@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui';
+import type { Agent } from '#shared/types/agent';
 import type { ChatMessage } from '#shared/types/conversation';
 import type { AnswerLine } from '~/utils/answer-line';
 import type { Participant } from '~/utils/avatars';
@@ -21,6 +22,7 @@ const {
     turnActive,
     backgroundTasks,
     queuedMessages,
+    agentIds,
     archivedAt,
     loaded,
     hasEarlier,
@@ -36,6 +38,7 @@ const {
     archive,
     restore,
     rename,
+    setAgent,
 } = useConversation(conversationId);
 
 provide(workingDirKey, workingDir);
@@ -50,7 +53,8 @@ const visibleMessages = computed(() => messages.value.filter(message => message.
     || message.metadata?.outcome === 'stopped'
     || message.metadata?.outcome === 'failed'));
 
-const { lead } = useAgents();
+const { agents, lead } = useAgents();
+const { conversations } = useConversations();
 const leadAgent = computed<Participant>(() => ({ kind: 'agent', name: lead.value?.name ?? LEAD_AGENT_NAME, seed: lead.value ? lead.value.avatarSeed : LEAD_AGENT_AVATAR_SEED, image: lead.value?.avatarUrl }));
 
 const { participant: userParticipant } = useUsers();
@@ -59,9 +63,23 @@ function messageAuthor(message: ChatMessage): Participant {
     return message.role === 'user' ? userParticipant(message.metadata?.senderId) : leadAgent.value;
 }
 
+const memberAgentIds = computed(() => conversations.value.find(conversation => conversation.id === conversationId)?.agentIds ?? agentIds.value);
+const memberAgents = computed(() => memberAgentIds.value.flatMap(id => agents.value.filter(agent => agent.id === id)));
+const peerAgents = computed(() => agents.value.filter(agent => !agent.lead));
+
+const agentOptions = computed(() => peerAgents.value.map(agent => ({ id: agent.id, name: agent.name, member: memberAgentIds.value.includes(agent.id) })));
+
+function agentParticipant(agent: Agent): Participant {
+    return { kind: 'agent', name: agent.name, seed: agent.avatarSeed, image: agent.avatarUrl };
+}
+
 const participants = computed<Participant[]>(() => {
     const senders = new Set(visibleMessages.value.flatMap(message => message.role === 'user' && message.metadata?.senderId ? [message.metadata.senderId] : []));
-    return [leadAgent.value, ...[...senders].map(userParticipant).filter(participant => participant.name)];
+    return [
+        leadAgent.value,
+        ...memberAgents.value.map(agentParticipant),
+        ...[...senders].map(userParticipant).filter(participant => participant.name),
+    ];
 });
 
 const answerableMessageId = computed(() => {
@@ -301,7 +319,7 @@ const conversationActions = computed<DropdownMenuItem[]>(() => [
         <template #header>
             <div ref="header" class="sticky top-0 z-30 bg-default">
                 <div v-if="loaded" class="absolute start-6 top-full mt-3 hidden lg:block">
-                    <ChatParticipants :participants="participants" />
+                    <ChatParticipants :participants="participants" :agent-options="agentOptions" :editable="archivedAt === null" @toggle="setAgent" />
                 </div>
                 <UDashboardNavbar :title="title">
                     <template #title>
@@ -325,7 +343,7 @@ const conversationActions = computed<DropdownMenuItem[]>(() => [
                                 @click="restoreConversation"
                             />
                         </template>
-                        <ChatParticipants v-if="loaded" :participants="participants" compact class="lg:hidden" />
+                        <ChatParticipants v-if="loaded" :participants="participants" :agent-options="agentOptions" :editable="archivedAt === null" compact class="lg:hidden" @toggle="setAgent" />
                         <template v-if="archivedAt === null && loaded">
                             <UButton
                                 v-if="status === 'running'"
@@ -437,6 +455,7 @@ const conversationActions = computed<DropdownMenuItem[]>(() => [
                         :error="error"
                         :attachments="attachments"
                         :uploading="uploading"
+                        :mentions="participants"
                         @submit="submit"
                         @stop="stop"
                         @attach="attach"

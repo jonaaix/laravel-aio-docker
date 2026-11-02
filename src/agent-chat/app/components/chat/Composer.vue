@@ -2,10 +2,13 @@
 import type { ChatStatus } from 'ai';
 import type { CSSProperties } from 'vue';
 import type { PendingAttachment } from '~/composables/useAttachments';
+import type { Participant } from '~/utils/avatars';
 
 const MAX_ROWS = 10;
 const BAR_ROOM_PX = 12;
 const QUOTE_LINE = /^(>\s?)(.*)$/;
+const MENTION_QUERY = /(^|\s)@([^@\n]{0,40})$/;
+const MAX_SUGGESTIONS = 6;
 const MIRRORED_STYLES = [
     'fontFamily',
     'fontSize',
@@ -31,6 +34,7 @@ const props = defineProps<{
     autofocus?: boolean;
     attachments: PendingAttachment[];
     uploading: boolean;
+    mentions?: Participant[];
 }>();
 
 const emit = defineEmits<{ submit: []; stop: []; attach: [files: File[]]; remove: [key: string] }>();
@@ -126,10 +130,98 @@ watch(text, () => {
 });
 
 onBeforeUnmount(() => observer?.disconnect());
+
+const caret = ref(0);
+const activeSuggestion = ref(0);
+const dismissed = ref(false);
+
+function updateCaret(): void {
+    caret.value = textarea()?.selectionStart ?? text.value.length;
+}
+
+const mentionQuery = computed(() => MENTION_QUERY.exec(text.value.slice(0, caret.value))?.[2] ?? null);
+const suggestions = computed(() => {
+    const query = mentionQuery.value?.toLowerCase();
+    if (query === undefined || dismissed.value) {
+        return [];
+    }
+    return (props.mentions ?? []).filter(participant => participant.name.toLowerCase().startsWith(query)).slice(0, MAX_SUGGESTIONS);
+});
+
+watch(text, () => {
+    dismissed.value = false;
+    nextTick(updateCaret);
+});
+watch(suggestions, () => {
+    activeSuggestion.value = 0;
+});
+
+async function pickMention(participant: Participant): Promise<void> {
+    const before = text.value.slice(0, caret.value);
+    const start = before.lastIndexOf('@');
+    const inserted = `@${participant.name} `;
+    text.value = `${text.value.slice(0, start)}${inserted}${text.value.slice(caret.value)}`;
+    await nextTick();
+    const field = textarea();
+    field?.focus();
+    field?.setSelectionRange(start + inserted.length, start + inserted.length);
+    updateCaret();
+}
+
+function onKeydown(event: KeyboardEvent): void {
+    if (suggestions.value.length === 0) {
+        return;
+    }
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        const step = event.key === 'ArrowDown' ? 1 : -1;
+        activeSuggestion.value = (activeSuggestion.value + step + suggestions.value.length) % suggestions.value.length;
+    }
+    else if (event.key === 'Enter' || event.key === 'Tab') {
+        void pickMention(suggestions.value[activeSuggestion.value]!);
+    }
+    else if (event.key === 'Escape') {
+        dismissed.value = true;
+    }
+    else {
+        return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+}
 </script>
 
 <template>
-    <div ref="wrapper" class="relative" @scroll.capture="syncScroll" @paste.capture="onPaste">
+    <div
+        ref="wrapper"
+        class="relative"
+        @scroll.capture="syncScroll"
+        @paste.capture="onPaste"
+        @keydown.capture="onKeydown"
+        @keyup.capture="updateCaret"
+        @click.capture="updateCaret"
+    >
+        <ul
+            v-if="suggestions.length > 0"
+            class="absolute bottom-full start-0 z-20 mb-2 w-64 rounded-md bg-default p-1 shadow-lg ring ring-default"
+            role="listbox"
+            aria-label="Mention"
+        >
+            <li
+                v-for="(participant, index) in suggestions"
+                :key="`${participant.kind}:${participant.name}`"
+                role="option"
+                :aria-selected="index === activeSuggestion"
+                class="flex h-9 cursor-pointer items-center gap-2 rounded-sm px-2 text-sm"
+                :class="index === activeSuggestion ? 'bg-elevated text-highlighted' : 'text-default'"
+                @mousedown.prevent="pickMention(participant)"
+                @mouseenter="activeSuggestion = index"
+            >
+                <span class="flex size-6 shrink-0 items-center justify-center">
+                    <ParticipantAvatar :participant="participant" :class="isVoxelBot(participant) ? 'size-6' : 'size-5'" />
+                </span>
+                <span class="min-w-0 truncate">{{ participant.name }}</span>
+            </li>
+        </ul>
         <UChatPrompt
             v-model="text"
             variant="outline"

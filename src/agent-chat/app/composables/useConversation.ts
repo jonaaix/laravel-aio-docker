@@ -10,6 +10,7 @@ export function useConversation(conversationId: string) {
     const turnActive = ref(false);
     const backgroundTasks = ref<BackgroundTask[]>([]);
     const queuedMessages = ref<QueuedMessage[]>([]);
+    const agentIds = ref<string[]>([]);
     const archivedAt = ref<number | null>(null);
     const loaded = ref(false);
     const hasEarlier = ref(false);
@@ -71,6 +72,7 @@ export function useConversation(conversationId: string) {
         turnActive.value = summary.turnActive;
         backgroundTasks.value = summary.backgroundTasks;
         queuedMessages.value = summary.queuedMessages;
+        agentIds.value = summary.agentIds;
         archivedAt.value = summary.archivedAt;
     }
 
@@ -119,6 +121,10 @@ export function useConversation(conversationId: string) {
         title.value = summary.title;
     }
 
+    async function setAgent(agentId: string, member: boolean): Promise<void> {
+        applySummary(await apiFetch<ConversationSummary>(`conversations/${conversationId}/agents`, { method: 'POST', body: { agentId, member } }));
+    }
+
     async function restore(): Promise<void> {
         applySummary(await apiFetch<ConversationSummary>(`conversations/${conversationId}/restore`, { method: 'POST' }));
     }
@@ -131,6 +137,7 @@ export function useConversation(conversationId: string) {
         turnActive,
         backgroundTasks,
         queuedMessages,
+        agentIds,
         archivedAt,
         loaded,
         hasEarlier,
@@ -146,5 +153,6 @@ export function useConversation(conversationId: string) {
         archive,
         restore,
         rename,
+        setAgent,
     };
 }

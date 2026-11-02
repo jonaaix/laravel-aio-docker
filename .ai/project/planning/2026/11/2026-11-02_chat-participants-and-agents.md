@@ -27,7 +27,7 @@ and the peer cannot touch the project.
       editable; role default "Lead Senior Software Architect"); peers with name, role, model, a
       description saved as their `CLAUDE.md` and uploaded resource files, all in the peer's own
       empty working folder under the data dir
-- [ ] Conversation membership: new conversations contain only the lead; a switch in the participant
+- [x] Conversation membership: new conversations contain only the lead; a switch in the participant
       list adds or removes agents; an added agent can be addressed with `@Name` (composer
       autocomplete), people too once they have written
 - [ ] Per-agent sessions: one agent session per agent and conversation; the first message to each
@@ -45,6 +45,9 @@ and the peer cannot touch the project.
   The lead row is created on first use (`leadAgent()`, red Voxel Bot seed `tarek-52`), its model and effort already drive the conversation's
   Claude session. Peer folders: `<data dir>/agents/<id>/` with `CLAUDE.md` + resource files
   (uploads moved in on save, removed on delete).
+- Membership lives in `conversation_agents` (lead implied, never stored); the participant list's
+  "Add agent" menu toggles it (`POST /api/conversations/<id>/agents`). The composer suggests
+  participants after `@`; until per-agent sessions exist, `@Name` is plain text for the lead.
 - Conversations are already separate from the Claude session (`conversations.agent_session_ref`);
   messages store `sender_name`, conversations `creator_name`.
 - The fork's multi-bot logic to port lives in `src/claude-threads/src`: baton in

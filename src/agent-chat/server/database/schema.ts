@@ -1,4 +1,4 @@
-import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import type { ChatMessage } from '../../shared/types/conversation';
 
 export const users = sqliteTable('users', {
@@ -38,6 +38,12 @@ export const conversations = sqliteTable('conversations', {
     lastActivityAt: integer('last_activity_at').notNull(),
     archivedAt: integer('archived_at'),
 });
+
+export const conversationAgents = sqliteTable('conversation_agents', {
+    conversationId: text('conversation_id').notNull().references(() => conversations.id, { onDelete: 'cascade' }),
+    agentId: text('agent_id').notNull().references(() => agents.id, { onDelete: 'cascade' }),
+    addedAt: integer('added_at').notNull(),
+}, table => [primaryKey({ columns: [table.conversationId, table.agentId] })]);
 
 export const messages = sqliteTable('messages', {
     id: text('id').primaryKey(),
