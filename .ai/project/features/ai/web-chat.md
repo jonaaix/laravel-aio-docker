@@ -147,8 +147,9 @@ list of saved paths ahead of the message text and reads the files itself.
 
 Everyone taking part in a conversation — people and agents — appears with a chat head: a picture
 derived from their name with the name beneath it, next to each of their messages. People and agents
-are drawn in clearly different styles. A small list of the participants floats at the top left of
-the conversation.
+are drawn in clearly different styles. A list of the participants, one per row with picture and name,
+floats at the top left of the conversation; on phones the header shows their pictures, and a tap
+opens the list.
 
 A person without a picture of their own gets a drawn one derived from their name; in their profile
 they can pick another from a random selection, upload a picture of their own or remove it again. When the Laravel app opens the chat, it can pass the address of

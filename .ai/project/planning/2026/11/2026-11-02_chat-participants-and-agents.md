@@ -19,7 +19,8 @@ and the peer cannot touch the project.
       `preset:<design>-<colour>`, recoloured from the user's original by hue shift on saturated pixels), a
       Voxel Bot from 8 random ones, or upload.
       Files in `<data dir>/avatars/` (`user-<id>`/`agent-<id>`, ≤ 5 MB), served by `GET /api/avatars/<file>`
-- [x] Participant list floating top left of the conversation (in the header row below `lg`),
+- [x] Participant list floating top left of the conversation, one row per participant (below `lg` the
+      header shows stacked heads that open the list in a modal),
       without making the header taller: the lead plus people who have written; agents follow with
       membership
 - [x] Agent registry: Settings → "Agents" modal; lead "Tarek LSA" always present (name, role, model
