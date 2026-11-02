@@ -10,3 +10,4 @@
 - 2026-11-02 [user]: Show the sender's name above other people's messages in shared conversations (the name is already stored per message)
 - 2026-11-02 [user]: Unread pings for people addressed with @ in a conversation
 - 2026-11-02 [user]: Agent avatar built from the surprised face plus accessory layers, face colour chosen separately (user designs the accessories)
+- 2026-11-02 [agent]: Header heads show at most four and fold the rest into a "+N" bubble, as Google Docs does, once many people and agents take part
