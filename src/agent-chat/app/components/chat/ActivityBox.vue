@@ -23,7 +23,7 @@ const open = computed({
 </script>
 
 <template>
-    <UCollapsible v-model:open="open" :disabled="!expandable || alwaysOpen" class="scrollbar-slim rounded-xl bg-elevated/40 ring ring-default">
+    <UCollapsible v-model:open="open" :disabled="!expandable || alwaysOpen" class="scrollbar-slim rounded-md bg-elevated/40 ring ring-default">
         <button type="button" class="group flex h-9 w-full items-center gap-2 px-3 text-start text-sm">
             <UIcon v-if="active" name="i-heroicons-arrow-path" class="size-4 shrink-0 animate-spin text-muted" />
             <UIcon v-else :name="icon" class="size-4 shrink-0" :class="iconClass || 'text-muted'" />

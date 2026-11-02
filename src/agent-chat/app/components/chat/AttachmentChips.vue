@@ -13,7 +13,7 @@ const emit = defineEmits<{ remove: [key: string] }>();
         <li
             v-for="attachment in attachments"
             :key="attachment.key"
-            class="flex h-12 max-w-64 items-center gap-2.5 rounded-xl bg-elevated/60 py-1.5 ps-1.5 pe-1 ring ring-default"
+            class="flex h-12 max-w-64 items-center gap-2.5 rounded-md bg-elevated/60 py-1.5 ps-1.5 pe-1 ring ring-default"
             :class="attachment.error ? 'ring-error/40' : ''"
         >
             <img v-if="attachment.previewUrl" :src="attachment.previewUrl" alt="" class="size-9 shrink-0 rounded-lg object-cover">

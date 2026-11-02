@@ -35,7 +35,7 @@ function meterColor(limit: UsageWindow): 'error' | 'warning' | 'neutral' {
 </script>
 
 <template>
-    <div v-if="profile" class="w-full rounded-xl bg-white p-4 ring ring-default dark:bg-default/60">
+    <div v-if="profile" class="w-full rounded-md bg-white p-4 ring ring-default dark:bg-default/60">
         <p class="truncate text-sm font-medium text-highlighted">{{ profile.email }}</p>
         <p v-if="profile.organization" class="truncate text-xs text-muted">{{ profile.organization }}</p>
 

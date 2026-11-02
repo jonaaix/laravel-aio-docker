@@ -11,7 +11,7 @@ defineProps<{ message: ChatMessage }>();
     </p>
     <div
         v-else-if="message.metadata?.outcome === 'failed'"
-        class="mt-3 flex gap-2 rounded-xl bg-error/10 p-3 text-sm text-error ring ring-error/25"
+        class="mt-3 flex gap-2 rounded-md bg-error/10 p-3 text-sm text-error ring ring-error/25"
     >
         <UIcon name="i-heroicons-exclamation-triangle" class="mt-0.5 size-4 shrink-0" />
         <div class="min-w-0">

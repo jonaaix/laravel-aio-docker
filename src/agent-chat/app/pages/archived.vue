@@ -45,7 +45,7 @@ onMounted(load);
         <template #body>
             <UContainer class="py-4">
                 <div v-if="loading" class="flex flex-col gap-2">
-                    <USkeleton v-for="row in 4" :key="row" class="h-12 rounded-xl" />
+                    <USkeleton v-for="row in 4" :key="row" class="h-12 rounded-md" />
                 </div>
 
                 <UAlert
@@ -62,7 +62,7 @@ onMounted(load);
                     <p class="text-sm">No archived conversations</p>
                 </div>
 
-                <ul v-else class="divide-y divide-default rounded-xl ring ring-default">
+                <ul v-else class="divide-y divide-default rounded-md ring ring-default">
                     <li v-for="conversation in archived" :key="conversation.id" class="flex items-center gap-3 px-4 py-2">
                         <ULink :to="`/c/${conversation.id}`" class="min-w-0 flex-1 truncate text-sm text-default hover:text-highlighted">
                             {{ conversation.title }}

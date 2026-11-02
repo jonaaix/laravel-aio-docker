@@ -25,7 +25,7 @@ onBeforeUnmount(() => clearTimeout(reset));
         <UButton
             :icon="copied ? 'i-heroicons-check' : 'i-heroicons-square-2-stack'"
             :aria-label="copied ? 'Copied' : 'Copy'"
-            size="sm"
+            size="xs"
             color="neutral"
             variant="ghost"
             @click="copy"

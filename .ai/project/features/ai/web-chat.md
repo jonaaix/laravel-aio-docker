@@ -82,7 +82,7 @@ moves into the conversation and is answered when the conversation continues.
 A session also pauses on its own after 30 minutes without any activity. Work never counts as
 inactivity: while the agent is answering or a task it started in the background is still running,
 the session stays online however long that takes. The sidebar marks every conversation whose
-session is online.
+session is online, and an open conversation shows next to its title whether its session is online.
 
 While tasks the agent started in the background are running, a box pinned above the message input
 always lists them, each with its description and how long it has been running. When such a task

@@ -18,8 +18,8 @@ const preview = ref<HTMLImageElement | null>(null);
 <template>
     <Gallery v-if="images.length > 1" :images="images" fit="contain" class="my-3" />
     <template v-else-if="images[0]">
-        <button type="button" class="my-3 block w-fit cursor-zoom-in rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" aria-label="Open image" @click="openIndex = 0">
-            <img ref="preview" :src="images[0].src" :alt="images[0].alt" class="max-h-96 rounded-xl ring ring-default">
+        <button type="button" class="my-3 block w-fit cursor-zoom-in rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" aria-label="Open image" @click="openIndex = 0">
+            <img ref="preview" :src="images[0].src" :alt="images[0].alt" class="max-h-96 rounded-md ring ring-default">
         </button>
         <Lightbox :index="openIndex ?? undefined" :images="images" :thumbnails="false" :origin="() => preview?.getBoundingClientRect()" @update:index="openIndex = $event" @close="openIndex = null" />
     </template>

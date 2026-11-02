@@ -28,10 +28,11 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - [x] Token-level streaming (`--include-partial-messages` + `stream_event` deltas)
 - [x] Turn markers: show "stopped" on interrupted turns, errors inline
 - [x] Attachments from the user (upload into the conversation, passed to Claude)
-- [x] UI density: 15 px message text, tighter prose spacing (`app.config` prose), 16 px phone gutters,
-  visible user bubble
-- [ ] UI polish: quiet header (archive in a menu, status dot), message footer on hover,
-  flatter composer, denser sidebar
+- [x] UI density: 16 px message text on a 26 px line, tighter prose spacing (`app.config` prose), 16 px phone gutters
+- [x] Quiet header (status dot beside the title, archive in a "More actions" menu) and a hover
+  footer per message (copy + clock time)
+- [x] Flatter composer (pill shape kept, light shadow, less padding)
+- [ ] Denser sidebar
 - [ ] Multi-bot conversations (bots table, mention handoff, catch-up) on top of the new runtime
 - [ ] opencode backend selectable per conversation
 - [ ] Extract lean core: drop Mattermost/Slack, onboarding, auto-update, commands, bug report,
@@ -150,6 +151,10 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - The thinking and working boxes (`ChatThinkingBlock`, `ChatWorkingBlock`) are final in look and
   behaviour; UI polish works around them.
 - "Pause session" stays a button with its label in the header.
+- Nuxt UI scales radii from `--ui-radius` (0.5rem), so `rounded-xl` is 24 px here, not Tailwind's 12 px;
+  every card-like surface (cards, thinking/working boxes, attachments) uses `rounded-md` (12 px); the
+  composer stays a pill, and the user bubble is filled `bg-accented` with 18 px and no ring so it never
+  reads as a card.
 - All relevant code lives in this repo; the fork is copied, not referenced. Only `fpm-claude-beta`
   gets the web UI for now.
 - Nuxt 4 + Nuxt UI (MIT since v4, chat + dashboard components) over hand-built Vue on laravel-islands

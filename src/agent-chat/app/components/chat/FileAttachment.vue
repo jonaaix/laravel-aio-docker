@@ -28,7 +28,7 @@ function openPreview(): void {
         :role="preview ? 'button' : undefined"
         :tabindex="preview ? 0 : undefined"
         :aria-label="preview ? `Preview ${filename}` : undefined"
-        class="my-3 flex w-full max-w-md items-center gap-3 rounded-xl bg-elevated/40 p-3 ring ring-default transition-colors"
+        class="my-3 flex w-full max-w-md items-center gap-3 rounded-md bg-elevated/40 p-3 ring ring-default transition-colors"
         :class="preview ? 'cursor-pointer hover:bg-elevated focus-visible:outline-2 focus-visible:outline-primary' : ''"
         @click="openPreview"
         @keydown.enter.prevent="openPreview"

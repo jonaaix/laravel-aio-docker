@@ -129,7 +129,7 @@ function onLightboxChange(index) {
     <div v-if="images.length" class="ilg-gallery space-y-2">
         <div
             ref="stage"
-            class="group relative overflow-hidden rounded-xl bg-elevated ring-1 ring-default"
+            class="group relative overflow-hidden rounded-md bg-elevated ring-1 ring-default"
             :class="lightbox ? 'cursor-zoom-in' : ''"
             :style="{ aspectRatio: aspect }"
             style="touch-action: pan-y"

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { DropdownMenuItem } from '@nuxt/ui';
+
 const EARLIER_THRESHOLD_PX = 200;
 const AT_BOTTOM_THRESHOLD_PX = 120;
 const ANSWER_GAP_PX = 32;
@@ -256,14 +258,24 @@ const archiveConversation = () => withFlag(archiving, async () => {
     await navigateTo('/');
 });
 const restoreConversation = () => withFlag(archiving, restore);
+
+const sessionLabel = computed(() => status.value === 'running' ? 'Session online' : 'Session paused');
+const conversationActions = computed<DropdownMenuItem[]>(() => [
+    { label: 'Archive', icon: 'i-heroicons-archive-box', onSelect: archiveConversation },
+]);
 </script>
 
 <template>
     <UDashboardPanel :id="`conversation-${conversationId}`" :ui="{ body: 'px-0 sm:px-0' }">
         <template #header>
             <div ref="header" class="sticky top-0 z-30 bg-default">
-                <UDashboardNavbar :title="title" :ui="{ title: '-ms-2' }">
+                <UDashboardNavbar :title="title">
                     <template #title>
+                        <UTooltip :text="sessionLabel">
+                            <span class="size-2 shrink-0 rounded-full" :class="status === 'running' ? 'bg-success' : 'bg-neutral-300 dark:bg-neutral-600'">
+                                <span class="sr-only">{{ sessionLabel }}</span>
+                            </span>
+                        </UTooltip>
                         <ChatTitleEditor :title="title" :editable="loaded && archivedAt === null" :save="rename" />
                     </template>
                     <template #right>
@@ -280,9 +292,8 @@ const restoreConversation = () => withFlag(archiving, restore);
                             />
                         </template>
                         <template v-else-if="loaded">
-                            <UBadge v-if="status === 'paused'" label="Session paused" color="neutral" variant="subtle" size="lg" class="h-9 px-3" />
                             <UButton
-                                v-else
+                                v-if="status === 'running'"
                                 label="Pause session"
                                 icon="i-heroicons-pause"
                                 color="neutral"
@@ -291,15 +302,18 @@ const restoreConversation = () => withFlag(archiving, restore);
                                 :loading="pausing"
                                 @click="pauseConversation"
                             />
-                            <UButton
-                                label="Archive"
-                                icon="i-heroicons-archive-box"
-                                color="neutral"
-                                variant="outline"
-                                class="bg-white dark:bg-transparent"
-                                :loading="archiving"
-                                @click="archiveConversation"
-                            />
+                            <UDropdownMenu :items="conversationActions" :content="{ align: 'end' }">
+                                <UTooltip text="More actions">
+                                    <UButton
+                                        icon="i-heroicons-ellipsis-horizontal"
+                                        aria-label="More actions"
+                                        color="neutral"
+                                        variant="outline"
+                                        class="bg-white dark:bg-transparent"
+                                        :loading="archiving"
+                                    />
+                                </UTooltip>
+                            </UDropdownMenu>
                         </template>
                     </template>
                 </UDashboardNavbar>
@@ -311,10 +325,10 @@ const restoreConversation = () => withFlag(archiving, restore);
                 <div ref="timeline" />
                 <ChatQuoteButton v-if="loaded && archivedAt === null" :root="timeline?.parentElement ?? null" @quote="quote" />
                 <div v-if="!loaded" class="flex flex-col gap-6 py-4">
-                    <USkeleton class="ms-auto h-10 w-2/5 rounded-xl" />
-                    <USkeleton class="h-24 w-4/5 rounded-xl" />
-                    <USkeleton class="ms-auto h-10 w-1/3 rounded-xl" />
-                    <USkeleton class="h-16 w-3/4 rounded-xl" />
+                    <USkeleton class="ms-auto h-10 w-2/5 rounded-md" />
+                    <USkeleton class="h-24 w-4/5 rounded-md" />
+                    <USkeleton class="ms-auto h-10 w-1/3 rounded-md" />
+                    <USkeleton class="h-16 w-3/4 rounded-md" />
                 </div>
 
                 <template v-else>
@@ -329,8 +343,8 @@ const restoreConversation = () => withFlag(archiving, restore);
                         :style="{ '--last-message-height': `${answerSpace}px`, '--message-scroll-margin': `${messageScrollMargin}px` }"
                         :ui="{ root: 'px-0 [&>article]:scroll-mt-(--message-scroll-margin)' }"
                         :should-scroll-to-bottom="false"
-                        :assistant="{ side: 'left', variant: 'naked', ui: { content: 'text-[0.9375rem]/6' } }"
-                        :user="{ side: 'right', variant: 'soft', ui: { content: 'min-h-0 rounded-xl bg-white px-3.5 py-2 text-[0.9375rem]/6 ring ring-default dark:bg-elevated' } }"
+                        :assistant="{ side: 'left', variant: 'naked', ui: { container: 'pb-7', content: 'text-base/6.5', actions: 'h-6 gap-1' } }"
+                        :user="{ side: 'right', variant: 'soft', ui: { container: 'pb-7', actions: 'h-6 gap-1', content: 'min-h-0 rounded-[1.125rem] bg-accented px-4 py-2.5 text-base/6.5' } }"
                     >
                         <template #content="{ message }">
                             <div v-if="message.role === 'assistant'" class="mb-4 flex flex-col gap-2 empty:hidden">
@@ -344,7 +358,10 @@ const restoreConversation = () => withFlag(archiving, restore);
                             <ChatTurnOutcome v-if="message.role === 'assistant'" :message="message" />
                         </template>
                         <template #actions="{ message }">
-                            <ChatCopyButton v-if="!isStreaming(message.id) && messageText(message)" :text="messageText(message)" />
+                            <template v-if="!isStreaming(message.id)">
+                                <ChatCopyButton v-if="messageText(message)" :text="messageText(message)" />
+                                <span class="px-1 text-xs text-muted tabular-nums">{{ formatClockTime(message.metadata!.createdAt) }}</span>
+                            </template>
                         </template>
                     </UChatMessages>
                 </template>

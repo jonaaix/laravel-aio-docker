@@ -26,7 +26,7 @@ export default defineAppConfig({
             },
         },
         chatPrompt: {
-            slots: { root: 'rounded-[1.75rem] p-2.5 shadow-[0_6px_32px_rgb(0_0_0/0.06)] dark:shadow-lg dark:shadow-black/40' },
+            slots: { root: 'rounded-[1.5rem] p-1.5 shadow-[0_2px_12px_rgb(0_0_0/0.05)] dark:shadow-md dark:shadow-black/30' },
             compoundVariants: [{
                 color: 'neutral',
                 variant: 'outline',
@@ -34,14 +34,14 @@ export default defineAppConfig({
             }],
         },
         prose: {
-            p: { base: 'my-3 leading-6' },
+            p: { base: 'my-3 leading-6.5' },
             ul: { base: 'my-3' },
             ol: { base: 'my-3' },
-            li: { base: 'my-1 leading-6' },
+            li: { base: 'my-1 leading-6.5' },
             h1: { slots: { base: 'mt-6 mb-3 text-xl font-semibold' } },
             h2: { slots: { base: 'mt-6 mb-2 text-lg font-semibold' } },
             h3: { slots: { base: 'mt-5 mb-2 text-base font-semibold' } },
-            h4: { slots: { base: 'mt-4 mb-1 text-[0.9375rem] font-semibold' } },
+            h4: { slots: { base: 'mt-4 mb-1 text-base font-semibold' } },
             hr: { base: 'my-6' },
             blockquote: { base: 'my-3' },
             table: { slots: { root: 'my-3' } },
