@@ -1,5 +1,5 @@
 import { Avatar, Style } from '@dicebear/core';
-import dylan from '@dicebear/styles/dylan.json';
+import glyphs from '@dicebear/styles/glyphs.json';
 import voxelBot from '@dicebear/styles/voxel-bot.json';
 
 export type ParticipantKind = 'person' | 'agent';
@@ -11,14 +11,13 @@ export interface Participant {
     image?: string | null;
 }
 
-const FRIENDLY_MOODS = ['happy', 'hopeful', 'superHappy'];
 const ANIMATION_SPEEDS = ['fastest', 'fast', 'medium', 'slow', 'slowest'];
 const TRANSPARENT = '#00000000';
 
 const STYLES: Record<ParticipantKind, { style: Style<unknown>; options: Record<string, unknown> }> = {
     person: {
-        style: new Style(dylan),
-        options: { flip: 'horizontal', moodVariant: FRIENDLY_MOODS },
+        style: new Style(glyphs),
+        options: {},
     },
     agent: {
         style: new Style(voxelBot),

@@ -117,7 +117,7 @@ function onPicked(): void {
                         class="w-full"
                     />
                 </UFormField>
-                <p class="text-xs text-muted">Drawn avatars: “Dylan” by Natalia Spivak, CC BY 4.0</p>
+                <p class="text-xs text-muted">Drawn avatars: “Glyphs” by Matt Houser, CC BY 4.0</p>
             </form>
         </template>
         <template #footer>
