@@ -33,6 +33,8 @@ const toolOutput = computed(() => {
     }
     return props.part.state === 'output-available' ? toolDetail(props.part.output) : '';
 });
+
+const chatPlugins = useChatMarkdownPlugins();
 </script>
 
 <template>
@@ -70,7 +72,7 @@ const toolOutput = computed(() => {
             <ChatSectionCard v-else-if="section.kind === 'summary'" :title="section.title">
                 <Markdown
                     :value="section.text"
-                    :plugins="markdownPlugins"
+                    :plugins="chatPlugins"
                     :streaming="textStreaming && index === textSections.length - 1"
                     class="*:first:mt-0 *:last:mb-0"
                 />
@@ -79,7 +81,7 @@ const toolOutput = computed(() => {
                 <ChatSectionTitle v-if="section.kind === 'section'" :title="section.title" class="mb-2 font-semibold text-highlighted" />
                 <Markdown
                     :value="section.text"
-                    :plugins="markdownPlugins"
+                    :plugins="chatPlugins"
                     :streaming="textStreaming && index === textSections.length - 1"
                     class="*:first:mt-0 *:last:mb-0"
                 />
@@ -90,7 +92,7 @@ const toolOutput = computed(() => {
     <ChatClampedContent v-else-if="part.type === 'text'">
         <Markdown
             :value="part.text"
-            :plugins="markdownPlugins"
+            :plugins="chatPlugins"
             class="*:first:mt-0 *:last:mb-0"
         />
     </ChatClampedContent>

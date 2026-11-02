@@ -76,8 +76,10 @@ and the peer cannot touch the project.
 - Only Voxel Bots are drawn large and free-standing (`isVoxelBot`); smileys, uploads and people use the round size.
 - Below `sm` the head sits above the message, small, with the name beside it, so text uses the full
   width. Phone text size comes from the 15 px root font (see `.ai/guidelines/app.md`).
-- Chat heads sit in the gutter beside the reading column on wide screens (`lg:-ms-[6.75rem]`, a 6rem name column where names wrap between words, never truncated), so
-  the text column stays aligned with the composer.
+- Chat heads sit in the gutter beside the reading column from `xl` (`xl:-ms-[6.75rem]`, a 6rem name column where names wrap between words, never truncated), so
+  the text column stays aligned with the composer; below `xl` the gutter would clip the right-hand heads. Sizes: people 36 px, Voxel Bots 44 px.
+- `@Name` of a known agent or person is drawn as a pill in chat text (`mentionHighlight`); Comark builds its parser once, so the
+  plugin reads names at parse time and message parts re-render when the name list changes.
 - The participant list lives in the title bar, never beside the conversation: the chat mostly runs in a
   narrow window next to the main app, so a side list has no room.
 - Every agent can run its own model (advisors on Sonnet, for example).

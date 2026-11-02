@@ -58,6 +58,8 @@ const { conversations } = useConversations();
 const leadAgent = computed<Participant>(() => ({ kind: 'agent', name: lead.value?.name ?? LEAD_AGENT_NAME, seed: lead.value ? lead.value.avatarSeed : LEAD_AGENT_AVATAR_SEED, image: lead.value?.avatarUrl }));
 
 const { participant: userParticipant } = useUsers();
+const mentionNames = useMentionNames();
+const mentionKey = computed(() => mentionNames.value.join('|'));
 
 function messageAuthor(message: ChatMessage): Participant {
     if (message.role === 'user') {
@@ -397,8 +399,8 @@ const conversationActions = computed<DropdownMenuItem[]>(() => [
                         :style="{ '--last-message-height': `${answerSpace}px`, '--message-scroll-margin': `${messageScrollMargin}px` }"
                         :ui="{ root: 'px-0 [&>article]:scroll-mt-(--message-scroll-margin)' }"
                         :should-scroll-to-bottom="false"
-                        :assistant="{ side: 'left', variant: 'naked', ui: { container: 'flex-col gap-1.5 pb-7 sm:flex-row sm:gap-3', leading: 'mt-0 self-start lg:-ms-[6.75rem]', content: 'text-base/6.5', actions: 'h-6 gap-1' } }"
-                        :user="{ side: 'right', variant: 'soft', ui: { container: 'max-w-[90%] flex-col items-end gap-1.5 pb-7 sm:max-w-[75%] sm:flex-row-reverse sm:items-start sm:justify-start sm:gap-3', leading: 'mt-0 self-end sm:self-start lg:-me-[6.75rem]', body: 'max-w-full', actions: 'h-6 gap-1', content: 'min-h-0 rounded-[1.125rem] bg-accented px-3.5 py-1.5 text-base/6.5' } }"
+                        :assistant="{ side: 'left', variant: 'naked', ui: { container: 'flex-col gap-1.5 pb-7 sm:flex-row sm:gap-3', leading: 'mt-0 self-start xl:-ms-[6.75rem]', content: 'text-base/6.5', actions: 'h-6 gap-1' } }"
+                        :user="{ side: 'right', variant: 'soft', ui: { container: 'max-w-[90%] flex-col items-end gap-1.5 pb-7 sm:max-w-[75%] sm:flex-row-reverse sm:items-start sm:justify-start sm:gap-3', leading: 'mt-0 self-end sm:self-start xl:-me-[6.75rem]', body: 'max-w-full', actions: 'h-6 gap-1', content: 'min-h-0 rounded-[1.125rem] bg-accented px-3.5 py-1.5 text-base/6.5' } }"
                     >
                         <template #leading="{ message }">
                             <ChatHead :participant="messageAuthor(message)" :reverse="message.role === 'user'" />
@@ -408,7 +410,7 @@ const conversationActions = computed<DropdownMenuItem[]>(() => [
                                 <ChatThinkingBlock :message="message" :streaming="isStreaming(message.id)" />
                                 <ChatWorkingBlock :message="message" :streaming="isStreaming(message.id)" />
                             </div>
-                            <template v-for="segment in answerSegments(message)" :key="segment.key">
+                            <template v-for="segment in answerSegments(message)" :key="`${segment.key}:${mentionKey}`">
                                 <ChatImageGroup v-if="segment.kind === 'images'" :parts="segment.parts" />
                                 <ChatMessagePart v-else :part="segment.part" :message="message" :streaming="isStreaming(message.id)" />
                             </template>

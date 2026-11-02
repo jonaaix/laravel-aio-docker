@@ -33,6 +33,58 @@ const externalLinksInNewTab = {
     },
 };
 
+type MarkdownDocument = Parameters<typeof visit>[0];
+type MarkdownNode = MarkdownDocument['nodes'][number];
+
+const MENTION_CLASS = 'rounded-md bg-inverted/10 px-1 py-px font-semibold text-highlighted';
+const UNMARKED_TAGS = new Set(['a', 'code', 'pre']);
+
+function escapeName(name: string): string {
+    return name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function splitMentions(text: string, pattern: RegExp): MarkdownNode[] {
+    const pieces: MarkdownNode[] = [];
+    let last = 0;
+    for (const match of text.matchAll(pattern)) {
+        if (match.index > last) {
+            pieces.push(text.slice(last, match.index));
+        }
+        pieces.push(['span', { class: MENTION_CLASS }, match[0]]);
+        last = match.index + match[0].length;
+    }
+    if (last < text.length) {
+        pieces.push(text.slice(last));
+    }
+    return pieces;
+}
+
+function markMentions(children: MarkdownNode[], start: number, pattern: RegExp): void {
+    for (let index = start; index < children.length; index++) {
+        const child = children[index]!;
+        if (typeof child === 'string') {
+            const pieces = splitMentions(child, pattern);
+            children.splice(index, 1, ...pieces);
+            index += pieces.length - 1;
+        }
+        else if (typeof child[0] === 'string' && !UNMARKED_TAGS.has(child[0])) {
+            markMentions(child as unknown as MarkdownNode[], 2, pattern);
+        }
+    }
+}
+
+export function mentionHighlight(names: () => string[]) {
+    return {
+        name: 'mention-highlight',
+        post(state: { tree: MarkdownDocument }) {
+            const alternatives = [...new Set(names().filter(Boolean))].sort((a, b) => b.length - a.length).map(escapeName);
+            if (alternatives.length > 0) {
+                markMentions(state.tree.nodes, 0, new RegExp(`@(?:${alternatives.join('|')})(?![\\p{L}\\p{N}_-])`, 'giu'));
+            }
+        },
+    };
+}
+
 export const markdownPlugins = [
     breaks(),
     externalLinksInNewTab,

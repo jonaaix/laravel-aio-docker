@@ -9,11 +9,13 @@ const props = defineProps<{
 const { messageId: answerableMessageId, accept } = useQuestionAnswers();
 
 const active = computed(() => answerableMessageId.value === props.messageId);
+
+const chatPlugins = useChatMarkdownPlugins();
 </script>
 
 <template>
     <ChatSectionCard :title="title">
-        <Markdown :value="text" :plugins="markdownPlugins" :streaming="streaming" class="*:first:mt-0 *:last:mb-0" />
+        <Markdown :value="text" :plugins="chatPlugins" :streaming="streaming" class="*:first:mt-0 *:last:mb-0" />
         <div v-if="active" class="mt-4 flex">
             <UButton
                 label="Accept"

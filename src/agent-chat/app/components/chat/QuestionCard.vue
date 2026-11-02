@@ -48,23 +48,25 @@ function acceptRecommendations(): void {
 function isSelected(question: OfferedQuestion, letter: string): boolean {
     return active.value ? chosen.value[question.number] === letter : sentLetter(question) === letter;
 }
+
+const chatPlugins = useChatMarkdownPlugins();
 </script>
 
 <template>
     <ChatSectionCard :title="section.title">
         <div class="flex flex-col" :class="collapsed ? 'gap-2.5' : 'gap-4'">
-            <Markdown v-if="section.intro && !collapsed" :value="section.intro" :plugins="markdownPlugins" class="*:first:mt-0 *:last:mb-0" />
+            <Markdown v-if="section.intro && !collapsed" :value="section.intro" :plugins="chatPlugins" class="*:first:mt-0 *:last:mb-0" />
             <div
                 v-for="question in section.questions"
                 :key="question.number"
                 class="grid grid-cols-[minmax(1.75rem,auto)_minmax(0,1fr)] gap-x-1 gap-y-1"
             >
                 <span class="font-medium whitespace-nowrap text-highlighted tabular-nums">{{ question.number }}.</span>
-                <Markdown :value="question.text" :plugins="markdownPlugins" class="font-medium text-highlighted *:my-0" />
+                <Markdown :value="question.text" :plugins="chatPlugins" class="font-medium text-highlighted *:my-0" />
                 <Markdown
                     v-if="question.hint && !collapsed"
                     :value="question.hint"
-                    :plugins="markdownPlugins"
+                    :plugins="chatPlugins"
                     class="col-start-2 text-muted *:my-0"
                 />
                 <div v-if="shownOptions(question).length > 0" class="col-start-2 -mx-2 flex flex-col">
@@ -81,7 +83,7 @@ function isSelected(question: OfferedQuestion, letter: string): boolean {
                         @click="pick(question, option.letter)"
                     >
                         <span class="shrink-0" :class="isSelected(question, option.letter) ? '' : 'text-muted'">{{ option.letter }})</span>
-                        <Markdown :value="option.text" :plugins="markdownPlugins" class="min-w-0 flex-1 *:my-0" />
+                        <Markdown :value="option.text" :plugins="chatPlugins" class="min-w-0 flex-1 *:my-0" />
                         <UIcon
                             v-if="isSelected(question, option.letter)"
                             name="i-heroicons-check"
@@ -91,7 +93,7 @@ function isSelected(question: OfferedQuestion, letter: string): boolean {
                 </div>
             </div>
             <p v-if="collapsed && unanswered" class="text-sm text-muted">Not answered</p>
-            <Markdown v-if="section.outro && !collapsed" :value="section.outro" :plugins="markdownPlugins" class="*:first:mt-0 *:last:mb-0" />
+            <Markdown v-if="section.outro && !collapsed" :value="section.outro" :plugins="chatPlugins" class="*:first:mt-0 *:last:mb-0" />
             <UButton
                 v-if="sentAnswer !== undefined"
                 :label="expanded ? 'Show less' : 'Show all options'"
