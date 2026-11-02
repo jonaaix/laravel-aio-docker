@@ -1,11 +1,17 @@
-import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import type { ChatMessage } from '../../shared/types/conversation';
+
+export const users = sqliteTable('users', {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    createdAt: integer('created_at').notNull(),
+}, table => [uniqueIndex('users_name_unique').on(table.name)]);
 
 export const conversations = sqliteTable('conversations', {
     id: text('id').primaryKey(),
     title: text('title').notNull(),
     titleRenamed: integer('title_renamed', { mode: 'boolean' }).notNull().default(false),
-    creatorName: text('creator_name'),
+    creatorId: text('creator_id').references(() => users.id),
     status: text('status', { enum: ['running', 'paused'] }).notNull().default('paused'),
     workingDir: text('working_dir').notNull(),
     agentSessionRef: text('agent_session_ref').notNull(),
@@ -21,6 +27,7 @@ export const messages = sqliteTable('messages', {
     seq: integer('seq').notNull(),
     role: text('role', { enum: ['user', 'assistant', 'system'] }).notNull(),
     parts: text('parts', { mode: 'json' }).$type<ChatMessage['parts']>().notNull(),
+    senderId: text('sender_id').references(() => users.id),
     createdAt: integer('created_at').notNull(),
     model: text('model'),
     inputTokens: integer('input_tokens'),

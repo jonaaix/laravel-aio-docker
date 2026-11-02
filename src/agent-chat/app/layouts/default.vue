@@ -11,13 +11,16 @@ const NAME_PARAM = 'n';
 
 const route = useRoute();
 const router = useRouter();
-const { adopt: adoptUserName } = useUserName();
+const { adopt: adoptUserName, restore: restoreUser } = useUserName();
 const encodedName = route.query[NAME_PARAM];
 if (typeof encodedName === 'string') {
-    adoptUserName(encodedName);
+    void adoptUserName(encodedName);
     const query = { ...route.query };
     delete query[NAME_PARAM];
     void router.replace({ query });
+}
+else {
+    void restoreUser();
 }
 
 const now = ref(Date.now());

@@ -5,6 +5,7 @@ import { ClaudeCli, type ClaudeEvent } from '#claude-threads/claude/cli';
 import type { BackgroundTask, ChatMessage, ChatPart, ConversationStatus, ConversationSummary, QueuedMessage } from '../../shared/types/conversation';
 import type { StoredFile } from './conversation-files';
 import { metricsFromResult, outcomeOnlyMetrics, type TurnMetrics } from './turn-metrics';
+import type { UserRow } from './user-store';
 
 const TITLE_LENGTH = 60;
 const TITLE_AFTER_USER_MESSAGES = 3;
@@ -22,6 +23,7 @@ interface ActiveTurn {
 
 interface QueuedPrompt extends QueuedMessage {
     prompt: string;
+    sender: UserRow | null;
 }
 
 class ConversationRuntime {
@@ -64,7 +66,7 @@ class ConversationRuntime {
         return stored.filename;
     }
 
-    send(text: string, attachments: StoredFile[], serverOrigin: string): void {
+    send(text: string, attachments: StoredFile[], serverOrigin: string, sender: UserRow | null): void {
         const conversation = findConversation(this.conversationId);
         if (!conversation) {
             throw createError({ statusCode: 404, statusMessage: 'Conversation not found' });
@@ -76,23 +78,28 @@ class ConversationRuntime {
         if (text.trim()) {
             parts.push({ type: 'text', text });
         }
-        const prompt = promptWithAttachments(this.conversationId, text, attachments);
+        const prompt = this.withSender(promptWithAttachments(this.conversationId, text, attachments), sender);
         if (this.agent && this.turnActive) {
-            const queued: QueuedPrompt = { ref: randomUUID(), parts, createdAt: Date.now(), prompt };
+            const queued: QueuedPrompt = { ref: randomUUID(), parts, createdAt: Date.now(), prompt, sender };
             this.queue.push(queued);
             this.agent.sendMessage(prompt, queued.ref);
             this.publishStatus('running');
             return;
         }
         const agent = this.agent ?? this.startAgent(conversation, serverOrigin);
-        this.addUserMessage(parts);
+        this.addUserMessage(parts, sender);
         this.beginTurn();
         agent.sendMessage(prompt);
         this.publishStatus('running');
     }
 
-    private addUserMessage(parts: ChatPart[]): void {
-        const message = appendMessage(this.conversationId, 'user', parts);
+    private withSender(prompt: string, sender: UserRow | null): string {
+        const previous = this.queue.length > 0 ? this.queue.at(-1)!.sender?.id ?? null : lastUserSenderId(this.conversationId);
+        return sender && sender.id !== previous ? `<from>${sender.name}</from>\n${prompt}` : prompt;
+    }
+
+    private addUserMessage(parts: ChatPart[], sender: UserRow | null): void {
+        const message = appendMessage(this.conversationId, 'user', parts, sender);
         publishConversationEvent(this.conversationId, { type: 'message', message });
         if (this.agent && !findConversation(this.conversationId)?.titleRenamed) {
             this.requestTitle(this.agent);
@@ -106,7 +113,7 @@ class ConversationRuntime {
         }
         const [queued] = this.queue.splice(index, 1);
         this.closeAnswerBlock();
-        this.addUserMessage(queued!.parts);
+        this.addUserMessage(queued!.parts, queued!.sender);
         this.publishStatus('running');
     }
 
@@ -123,7 +130,7 @@ class ConversationRuntime {
 
     private deferQueue(): void {
         for (const queued of this.queue.splice(0)) {
-            this.addUserMessage(queued.parts);
+            this.addUserMessage(queued.parts, queued.sender);
             this.undelivered.push(queued);
         }
     }
@@ -472,11 +479,11 @@ export function titleFromPrompt(text: string): string {
     return plain.length > TITLE_LENGTH ? `${plain.slice(0, TITLE_LENGTH - 1).trimEnd()}…` : plain || 'New conversation';
 }
 
-export function summarize(row: Omit<ConversationSummary, 'turnActive' | 'backgroundTasks' | 'queuedMessages'>): ConversationSummary {
+export function summarize(row: NonNullable<ReturnType<typeof findConversation>>): ConversationSummary {
     return {
         id: row.id,
         title: row.title,
-        creatorName: row.creatorName,
+        creatorName: findUser(row.creatorId)?.name ?? null,
         status: row.status,
         turnActive: isTurnActive(row.id),
         backgroundTasks: runningBackgroundTasks(row.id),

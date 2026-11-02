@@ -2,7 +2,7 @@ import type { ConversationSummary, UploadedFile } from '#shared/types/conversati
 
 export function useConversations() {
     const conversations = useState<ConversationSummary[]>('conversations', () => []);
-    const { name: creatorName } = useUserName();
+    const { userId } = useUserName();
 
     function upsert(conversation: ConversationSummary): void {
         const others = conversations.value.filter(existing => existing.id !== conversation.id);
@@ -16,7 +16,7 @@ export function useConversations() {
     }
 
     async function start(text: string, attachments: UploadedFile[]): Promise<ConversationSummary> {
-        const conversation = await apiFetch<ConversationSummary>('conversations', { method: 'POST', body: { text, attachments, creatorName: creatorName.value } });
+        const conversation = await apiFetch<ConversationSummary>('conversations', { method: 'POST', body: { text, attachments, creatorId: userId.value } });
         upsert(conversation);
         return conversation;
     }

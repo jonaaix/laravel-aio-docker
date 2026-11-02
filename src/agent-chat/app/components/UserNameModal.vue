@@ -1,14 +1,17 @@
 <script setup lang="ts">
-const { name, locked, editing, save } = useUserName();
+const { name, ready, locked, editing, save } = useUserName();
 
-const open = computed(() => !locked.value && (!name.value || editing.value));
+const open = computed(() => ready.value && !locked.value && (!name.value || editing.value));
 const required = computed(() => !name.value);
 const draft = ref('');
+const saving = ref(false);
+const error = ref<string | undefined>();
 const valid = computed(() => normalizeUserName(draft.value) !== null);
 
 watch(open, (isOpen) => {
     if (isOpen) {
         draft.value = name.value ?? '';
+        error.value = undefined;
     }
 }, { immediate: true });
 
@@ -16,9 +19,20 @@ function close(): void {
     editing.value = false;
 }
 
-function submit(): void {
-    if (valid.value) {
-        save(draft.value);
+async function submit(): Promise<void> {
+    if (!valid.value || saving.value) {
+        return;
+    }
+    saving.value = true;
+    error.value = undefined;
+    try {
+        await save(draft.value);
+    }
+    catch (failure) {
+        error.value = (failure as { statusMessage?: string }).statusMessage ?? 'Could not save the name';
+    }
+    finally {
+        saving.value = false;
     }
 }
 </script>
@@ -35,19 +49,21 @@ function submit(): void {
     >
         <template #body>
             <form id="user-name-form" @submit.prevent="submit">
-                <UInput
-                    v-model="draft"
-                    :maxlength="USER_NAME_MAX_LENGTH"
-                    placeholder="Name"
-                    aria-label="Your name"
-                    autofocus
-                    class="w-full"
-                />
+                <UFormField :error="error">
+                    <UInput
+                        v-model="draft"
+                        :maxlength="USER_NAME_MAX_LENGTH"
+                        placeholder="Name"
+                        aria-label="Your name"
+                        autofocus
+                        class="w-full"
+                    />
+                </UFormField>
             </form>
         </template>
         <template #footer>
             <UButton v-if="!required" label="Cancel" color="neutral" variant="outline" @click="close" />
-            <UButton type="submit" form="user-name-form" label="Save" :disabled="!valid" />
+            <UButton type="submit" form="user-name-form" label="Save" :loading="saving" :disabled="!valid" />
         </template>
     </UModal>
 </template>

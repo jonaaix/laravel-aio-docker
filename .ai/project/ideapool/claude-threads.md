@@ -7,4 +7,4 @@
 - 2026-11-01 [agent]: Clickable answer options for Claude's questions and a plan approval control (would re-enable AskUserQuestion / plan-mode tools)
 - 2026-11-01 [user]: Edit own messages by branching the conversation (CLI can resume at a message and fork); files Claude changed stay as they are — probably not worth it
 - 2026-11-02 [agent]: Edit or remove a queued message before Claude picks it up (Claude Code lets you pull it back into the input)
-- 2026-11-02 [user]: Record the sender's name on every user message and show it above other people's messages in shared conversations
+- 2026-11-02 [user]: Show the sender's name above other people's messages in shared conversations (the name is already stored per message)

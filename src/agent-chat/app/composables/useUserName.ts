@@ -1,6 +1,12 @@
-const NAME_COOKIE = 'chat-user-name';
+const USER_COOKIE = 'chat-user-id';
+const LEGACY_NAME_COOKIE = 'chat-user-name';
 const LOCKED_COOKIE = 'chat-user-name-locked';
 const COOKIE_MAX_AGE_S = 60 * 60 * 24 * 365;
+
+interface ChatUser {
+    id: string;
+    name: string;
+}
 
 function decodeBase64Url(value: string): string | null {
     try {
@@ -20,36 +26,75 @@ export function useUserName() {
         encode: (value: string | null) => encodeURIComponent(value ?? ''),
         decode: (value: string) => decodeURIComponent(value),
     };
-    const nameCookie = useCookie<string | null>(NAME_COOKIE, { ...cookieOptions, default: () => null });
+    const userCookie = useCookie<string | null>(USER_COOKIE, { ...cookieOptions, default: () => null });
+    const legacyNameCookie = useCookie<string | null>(LEGACY_NAME_COOKIE, { ...cookieOptions, default: () => null });
     const lockedCookie = useCookie<string | null>(LOCKED_COOKIE, { ...cookieOptions, default: () => null });
-    const name = useState<string | null>('user-name', () => normalizeUserName(nameCookie.value));
-    const locked = useState<boolean>('user-name-locked', () => lockedCookie.value === 'true');
-    const editing = useState<boolean>('user-name-editing', () => false);
+    const user = useState<ChatUser | null>('chat-user', () => null);
+    const ready = useState<boolean>('chat-user-ready', () => false);
+    const locked = useState<boolean>('chat-user-locked', () => lockedCookie.value === 'true');
+    const editing = useState<boolean>('chat-user-editing', () => false);
+    const userId = computed(() => user.value?.id ?? null);
+    const name = computed(() => user.value?.name ?? null);
 
-    function store(value: string, lock: boolean): void {
-        name.value = value;
-        nameCookie.value = value;
+    function remember(value: ChatUser, lock: boolean): void {
+        user.value = value;
+        userCookie.value = value.id;
+        legacyNameCookie.value = null;
         locked.value = lock;
         lockedCookie.value = lock ? 'true' : null;
     }
 
-    function save(value: string): boolean {
-        const normalized = normalizeUserName(value);
-        if (!normalized || locked.value) {
-            return false;
-        }
-        store(normalized, false);
-        editing.value = false;
-        return true;
-    }
-
-    function adopt(encoded: string): boolean {
-        const normalized = normalizeUserName(decodeBase64Url(encoded));
+    async function signIn(rawName: string, lock: boolean): Promise<void> {
+        const normalized = normalizeUserName(rawName);
         if (normalized) {
-            store(normalized, true);
+            remember(await apiFetch<ChatUser>('users', { method: 'POST', body: { name: normalized } }), lock);
         }
-        return normalized !== null;
     }
 
-    return { name, locked, editing, save, adopt };
+    async function restore(): Promise<void> {
+        if (ready.value) {
+            return;
+        }
+        try {
+            if (userCookie.value) {
+                user.value = await apiFetch<ChatUser>(`users/${userCookie.value}`);
+            }
+            else if (legacyNameCookie.value) {
+                await signIn(legacyNameCookie.value, locked.value);
+            }
+        }
+        catch {
+            user.value = null;
+            userCookie.value = null;
+        }
+        finally {
+            ready.value = true;
+        }
+    }
+
+    async function save(rawName: string): Promise<void> {
+        if (locked.value) {
+            return;
+        }
+        if (user.value) {
+            const normalized = normalizeUserName(rawName);
+            if (normalized) {
+                remember(await apiFetch<ChatUser>(`users/${user.value.id}/rename`, { method: 'POST', body: { name: normalized } }), false);
+            }
+        }
+        else {
+            await signIn(rawName, false);
+        }
+        editing.value = false;
+    }
+
+    async function adopt(encoded: string): Promise<void> {
+        const decoded = decodeBase64Url(encoded);
+        if (decoded) {
+            await signIn(decoded, true);
+        }
+        ready.value = true;
+    }
+
+    return { user, userId, name, ready, locked, editing, restore, save, adopt };
 }

@@ -32,9 +32,14 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - [x] Quiet header (status dot beside the title, archive in a "More actions" menu) and a hover
   footer per message (copy + clock time)
 - [x] Flatter composer (pill shape kept, light shadow, less padding)
-- [x] User name: enforced "Your name" modal (cookie `chat-user-name`), `?n=<base64url>` adopts and
-  locks it (`chat-user-name-locked`), "Your name" in Settings, `conversations.creator_name` shown in
-  the sidebar. Laravel side: `rtrim(strtr(base64_encode($name), '+/', '-_'), '=')`
+- [x] User name: enforced "Your name" modal, `?n=<base64url>` signs in and locks it
+  (`chat-user-name-locked`), "Your name" in Settings, creator shown in the sidebar. Laravel side:
+  `rtrim(strtr(base64_encode($name), '+/', '-_'), '=')`
+- [x] Users: `users` table (unique name), `messages.sender_id` / `conversations.creator_id`; the browser keeps
+  `chat-user-id` (legacy `chat-user-name` cookies sign in once). A known name signs in as that user,
+  renaming refuses a taken name (409). Migration 0006 backfilled users from the old name columns, 0007
+  dropped them. Claude's prompt starts with `<from>Name</from>` on the first message and on every
+  sender change (compared by user id with the last queued or stored user message)
 - [x] Denser sidebar: two-line entries (title; Working/Active/Paused from `sessionState` · relative
   last activity), account card at the bottom with one line per usage meter
 - [ ] Multi-bot conversations (bots table, mention handoff, catch-up) on top of the new runtime

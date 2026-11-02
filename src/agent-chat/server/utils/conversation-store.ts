@@ -1,20 +1,21 @@
 import { randomUUID } from 'node:crypto';
-import { and, desc, eq, isNotNull, isNull, lt, max } from 'drizzle-orm';
-import { conversations, messages } from '../database/schema';
+import { and, desc, eq, getTableColumns, isNotNull, isNull, lt, max } from 'drizzle-orm';
+import { conversations, messages, users } from '../database/schema';
 import type { ChatMessage, ConversationDetail, ConversationStatus, ConversationSummary, MessagePage } from '../../shared/types/conversation';
 import type { TurnMetrics } from './turn-metrics';
+import type { UserRow } from './user-store';
 
 type ConversationRow = typeof conversations.$inferSelect;
 type MessageRow = typeof messages.$inferSelect;
 
 const MESSAGE_PAGE_SIZE = 50;
 
-function toChatMessage(row: Pick<MessageRow, 'id' | 'role' | 'parts' | 'createdAt'> & Partial<Pick<MessageRow, 'outcome' | 'errorMessage'>>): ChatMessage {
+function toChatMessage(row: Pick<MessageRow, 'id' | 'role' | 'parts' | 'createdAt'> & Partial<Pick<MessageRow, 'outcome' | 'errorMessage'>> & { senderName?: string | null }): ChatMessage {
     return {
         id: row.id,
         role: row.role,
         parts: row.parts,
-        metadata: { createdAt: row.createdAt, outcome: row.outcome ?? undefined, error: row.errorMessage ?? undefined },
+        metadata: { createdAt: row.createdAt, senderName: row.senderName ?? undefined, outcome: row.outcome ?? undefined, error: row.errorMessage ?? undefined },
     };
 }
 
@@ -51,8 +52,9 @@ export function getMessagesBefore(conversationId: string, beforeMessageId: strin
 
 function messagePage(conversationId: string, beforeSeq: number | null): MessagePage {
     const rows = useDatabase()
-        .select()
+        .select({ ...getTableColumns(messages), senderName: users.name })
         .from(messages)
+        .leftJoin(users, eq(messages.senderId, users.id))
         .where(and(eq(messages.conversationId, conversationId), beforeSeq === null ? undefined : lt(messages.seq, beforeSeq)))
         .orderBy(desc(messages.seq))
         .limit(MESSAGE_PAGE_SIZE + 1)
@@ -63,13 +65,13 @@ function messagePage(conversationId: string, beforeSeq: number | null): MessageP
     };
 }
 
-export function createConversation(title: string, workingDir: string, creatorName: string | null): ConversationRow {
+export function createConversation(title: string, workingDir: string, creatorId: string | null): ConversationRow {
     const now = Date.now();
     const row: ConversationRow = {
         id: randomUUID(),
         title,
         titleRenamed: false,
-        creatorName,
+        creatorId,
         status: 'paused',
         workingDir,
         agentSessionRef: randomUUID(),
@@ -97,7 +99,7 @@ export function setConversationStatus(id: string, status: ConversationStatus): v
     updateConversation(id, { status, lastActivityAt: Date.now() });
 }
 
-export function appendMessage(conversationId: string, role: ChatMessage['role'], parts: ChatMessage['parts']): ChatMessage {
+export function appendMessage(conversationId: string, role: ChatMessage['role'], parts: ChatMessage['parts'], sender: UserRow | null = null): ChatMessage {
     const db = useDatabase();
     const next = db
         .select({ value: max(messages.seq) })
@@ -110,11 +112,12 @@ export function appendMessage(conversationId: string, role: ChatMessage['role'],
         seq: (next?.value ?? 0) + 1,
         role,
         parts,
+        senderId: sender?.id ?? null,
         createdAt: Date.now(),
     } satisfies typeof messages.$inferInsert;
     db.insert(messages).values(row).run();
     updateConversation(conversationId, { lastActivityAt: row.createdAt });
-    return toChatMessage(row);
+    return toChatMessage({ ...row, senderName: sender?.name });
 }
 
 export function listUserMessages(conversationId: string): ChatMessage[] {
@@ -125,6 +128,17 @@ export function listUserMessages(conversationId: string): ChatMessage[] {
         .orderBy(messages.seq)
         .all()
         .map(toChatMessage);
+}
+
+export function lastUserSenderId(conversationId: string): string | null | undefined {
+    const last = useDatabase()
+        .select({ senderId: messages.senderId })
+        .from(messages)
+        .where(and(eq(messages.conversationId, conversationId), eq(messages.role, 'user')))
+        .orderBy(desc(messages.seq))
+        .limit(1)
+        .get();
+    return last ? last.senderId : undefined;
 }
 
 export function saveMessageParts(conversationId: string, messageId: string, parts: ChatMessage['parts']): void {
