@@ -6,35 +6,32 @@ const props = defineProps<{
     messageId: string;
 }>();
 
-const { messageId: answerableMessageId, answer } = useQuestionAnswers();
+const { messageId: answerableMessageId, chosen, answer } = useQuestionAnswers();
 
 const active = computed(() => answerableMessageId.value === props.messageId);
-const selected = ref<Record<string, string>>({});
 const recommendable = computed(() => props.section.questions.filter(question => question.options.some(option => option.recommended)));
 
-function publish(): void {
+function publish(selection: Record<string, string>): void {
     answer(props.section.questions
-        .filter(question => selected.value[question.number])
-        .map(question => `${question.number} ${selected.value[question.number]}`)
+        .filter(question => selection[question.number])
+        .map(question => `${question.number} ${selection[question.number]}`)
         .join(', '));
 }
 
 function pick(question: OfferedQuestion, letter: string): void {
-    const { [question.number]: current, ...others } = selected.value;
-    selected.value = current === letter ? others : { ...others, [question.number]: letter };
-    publish();
+    const { [question.number]: current, ...others } = chosen.value;
+    publish(current === letter ? others : { ...others, [question.number]: letter });
 }
 
 function acceptRecommendations(): void {
-    selected.value = Object.fromEntries(recommendable.value.map(question => [
+    publish(Object.fromEntries(recommendable.value.map(question => [
         question.number,
         question.options.find(option => option.recommended)!.letter,
-    ]));
-    publish();
+    ])));
 }
 
 function isSelected(question: OfferedQuestion, letter: string): boolean {
-    return selected.value[question.number] === letter;
+    return active.value && chosen.value[question.number] === letter;
 }
 </script>
 
@@ -62,7 +59,7 @@ function isSelected(question: OfferedQuestion, letter: string): boolean {
                         type="button"
                         :disabled="!active"
                         :aria-pressed="isSelected(question, option.letter)"
-                        class="flex w-full items-start gap-2 rounded-lg px-2 py-0.5 text-start transition-colors duration-500 ease-out disabled:cursor-default"
+                        class="flex w-full items-start gap-2 rounded-sm px-2 py-0.5 text-start transition-colors duration-500 ease-out disabled:cursor-default"
                         :class="isSelected(question, option.letter)
                             ? 'bg-accented/50 text-highlighted'
                             : 'text-default enabled:hover:bg-elevated/60'"
@@ -78,7 +75,8 @@ function isSelected(question: OfferedQuestion, letter: string): boolean {
                     </button>
                 </div>
             </div>
-            <div v-if="active && recommendable.length > 1" class="flex justify-end">
+            <Markdown v-if="section.outro" :value="section.outro" :plugins="markdownPlugins" class="*:first:mt-0 *:last:mb-0" />
+            <div v-if="active && recommendable.length > 1" class="flex">
                 <UButton
                     label="Accept recommendations"
                     icon="i-heroicons-star"

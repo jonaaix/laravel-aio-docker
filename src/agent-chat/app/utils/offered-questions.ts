@@ -19,6 +19,7 @@ export interface QuestionSection {
     title: string;
     intro: string;
     questions: OfferedQuestion[];
+    outro: string;
 }
 
 function joinLine(existing: string, line: string): string {
@@ -26,9 +27,12 @@ function joinLine(existing: string, line: string): string {
 }
 
 export function parseQuestionSection(title: string, lines: string[]): QuestionSection {
-    const section: QuestionSection = { title, intro: '', questions: [] };
+    const section: QuestionSection = { title, intro: '', questions: [], outro: '' };
+    let afterBlank = false;
     for (const line of lines) {
+        const trimmed = line.trim();
         const current = section.questions.at(-1);
+        const lastOption = current?.options.at(-1);
         const question = QUESTION_LINE.exec(line);
         const option = current ? OPTION_LINE.exec(line) : null;
         if (question) {
@@ -38,12 +42,19 @@ export function parseQuestionSection(title: string, lines: string[]): QuestionSe
             const text = option[2]!.trim();
             current.options.push({ letter: option[1]!, text, recommended: text.includes(RECOMMENDED_MARK) });
         }
-        else if (current && line.trim()) {
-            current.hint = joinLine(current.hint, line.trim());
+        else if (lastOption && trimmed && !afterBlank && !section.outro) {
+            lastOption.text = `${lastOption.text} ${trimmed}`;
         }
-        else if (line.trim()) {
-            section.intro = joinLine(section.intro, line.trim());
+        else if (lastOption && trimmed) {
+            section.outro = joinLine(section.outro, trimmed);
         }
+        else if (current && trimmed) {
+            current.hint = joinLine(current.hint, trimmed);
+        }
+        else if (trimmed) {
+            section.intro = joinLine(section.intro, trimmed);
+        }
+        afterBlank = !trimmed;
     }
     return section;
 }

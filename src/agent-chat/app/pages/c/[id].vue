@@ -5,6 +5,10 @@ const ANSWER_GAP_PX = 32;
 const STICK_TO_BOTTOM_MS = 3000;
 const PIN_SENT_MESSAGE_MS = 2000;
 const USER_SCROLL_EVENTS = ['wheel', 'touchmove', 'keydown'] as const;
+const ANSWER_SEPARATOR = /,|&|\b(?:und|and)\b/i;
+const ANSWER_TOKEN = /^(?:ok|\d+[\s:.)]*[a-z](?:\s+\d+[\s:.)]*[a-z])*)$/i;
+const PENDING_NUMBER = /^\d+$/;
+const CHOSEN_OPTION = /(\d+)[\s:.)]*([a-z])\b/gi;
 
 const route = useRoute();
 const conversationId = route.params.id as string;
@@ -194,7 +198,6 @@ async function submit(): Promise<void> {
         return;
     }
     input.value = '';
-    answerLine = '';
     sentThisVisit = true;
     releaseBottom();
     await send(text, takeAttachments());
@@ -218,17 +221,24 @@ function quote(text: string): void {
     focusComposerAtEnd();
 }
 
-let answerLine = '';
+const answerLine = computed(() => {
+    const first = input.value.split('\n')[0]!;
+    const tokens = first.split(ANSWER_SEPARATOR).map(token => token.trim()).filter(Boolean);
+    const complete = PENDING_NUMBER.test(tokens.at(-1) ?? '') ? tokens.slice(0, -1) : tokens;
+    return complete.length > 0 && complete.every(token => ANSWER_TOKEN.test(token)) ? first : '';
+});
+
+const chosenOptions = computed(() => Object.fromEntries(
+    [...answerLine.value.matchAll(CHOSEN_OPTION)].map(([, number, letter]) => [number!, letter!.toLowerCase()]),
+));
 
 function answer(line: string): void {
-    const previous = answerLine && input.value.startsWith(answerLine) ? input.value.slice(answerLine.length) : input.value;
-    const rest = previous.trimStart();
-    answerLine = line;
+    const rest = (answerLine.value ? input.value.split('\n').slice(1).join('\n') : input.value).trimStart();
     input.value = rest && line ? `${line}\n\n${rest}` : line || rest;
     focusComposerAtEnd();
 }
 
-provide(questionAnswersKey, { messageId: answerableMessageId, answer });
+provide(questionAnswersKey, { messageId: answerableMessageId, chosen: chosenOptions, answer });
 
 async function withFlag(flag: Ref<boolean>, action: () => Promise<void>): Promise<void> {
     flag.value = true;
