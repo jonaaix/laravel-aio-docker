@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { DropdownMenuItem } from '@nuxt/ui';
 import type { Agent } from '#shared/types/agent';
 import type { ChatMessage } from '#shared/types/conversation';
 import type { AnswerLine } from '~/utils/answer-line';
@@ -337,9 +336,6 @@ const archiveConversation = () => withFlag(archiving, async () => {
 const restoreConversation = () => withFlag(archiving, restore);
 
 const session = computed(() => sessionState(status.value, turnActive.value));
-const conversationActions = computed<DropdownMenuItem[]>(() => [
-    { label: 'Archive', icon: 'i-heroicons-archive-box', onSelect: archiveConversation },
-]);
 </script>
 
 <template>
@@ -380,18 +376,17 @@ const conversationActions = computed<DropdownMenuItem[]>(() => [
                                 :loading="pausing"
                                 @click="pauseConversation"
                             />
-                            <UDropdownMenu :items="conversationActions" :content="{ align: 'end' }">
-                                <UTooltip text="More actions">
-                                    <UButton
-                                        icon="i-heroicons-ellipsis-horizontal"
-                                        aria-label="More actions"
-                                        color="neutral"
-                                        variant="outline"
-                                        class="bg-white dark:bg-transparent"
-                                        :loading="archiving"
-                                    />
-                                </UTooltip>
-                            </UDropdownMenu>
+                            <UTooltip text="Archive">
+                                <UButton
+                                    icon="i-heroicons-archive-box"
+                                    aria-label="Archive"
+                                    color="neutral"
+                                    variant="outline"
+                                    class="bg-white dark:bg-transparent"
+                                    :loading="archiving"
+                                    @click="archiveConversation"
+                                />
+                            </UTooltip>
                         </template>
                     </template>
                 </UDashboardNavbar>
