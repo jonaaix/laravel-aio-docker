@@ -156,7 +156,7 @@ async function submit(): Promise<void> {
     saving.value = true;
     error.value = undefined;
     try {
-        const saved = await save(selected.value?.id ?? null, {
+        await save(selected.value?.id ?? null, {
             name: name.value,
             role: role.value,
             model: model.value === 'default' ? null : model.value,
@@ -168,7 +168,7 @@ async function submit(): Promise<void> {
             avatarUpload: avatarUpload.value ? { id: avatarUpload.value.id, filename: avatarUpload.value.filename } : null,
             removeAvatar: removeAvatar.value,
         });
-        select(agents.value.find(agent => agent.id === saved.id) ?? saved);
+        managing.value = false;
     }
     catch (failure) {
         error.value = (failure as { statusMessage?: string }).statusMessage ?? 'Could not save the agent';
