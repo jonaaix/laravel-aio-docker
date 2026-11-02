@@ -1,3 +1,5 @@
+import { COLOR_MODES, FONT_CHOICES, type ColorModeChoice } from '../../../../shared/utils/fonts';
+
 export default defineEventHandler(async (event) => {
     const user = findUser(getRouterParam(event, 'id'));
     if (!user) {

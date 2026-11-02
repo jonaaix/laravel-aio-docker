@@ -57,6 +57,10 @@ onMounted(async () => {
         }
         else if (event.type === 'user') {
             upsertUser(event.user);
+            if (event.user.id === user.value?.id) {
+                user.value = event.user;
+                adoptAppearance(event.user);
+            }
         }
         else if (event.type === 'agents') {
             void loadAgents();
