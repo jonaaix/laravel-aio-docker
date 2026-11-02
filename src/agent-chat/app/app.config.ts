@@ -43,6 +43,7 @@ export default defineAppConfig({
             h3: { slots: { base: 'mt-5 mb-2 text-base font-semibold' } },
             h4: { slots: { base: 'mt-4 mb-1 text-base font-semibold' } },
             hr: { base: 'my-6' },
+            code: { base: 'inline [overflow-wrap:anywhere]' },
             blockquote: { base: 'my-3' },
             table: { slots: { root: 'my-3' } },
             pre: {

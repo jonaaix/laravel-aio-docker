@@ -54,7 +54,7 @@ function isSelected(question: OfferedQuestion, letter: string): boolean {
 
 <template>
     <ChatSectionCard :title="section.title">
-        <div class="flex flex-col" :class="collapsed ? 'gap-3' : 'gap-5'">
+        <div class="flex flex-col" :class="collapsed ? 'gap-2.5' : 'gap-4'">
             <Markdown v-if="section.intro && !collapsed" :value="section.intro" :plugins="markdownPlugins" class="*:first:mt-0 *:last:mb-0" />
             <div
                 v-for="question in section.questions"
@@ -62,14 +62,14 @@ function isSelected(question: OfferedQuestion, letter: string): boolean {
                 class="grid grid-cols-[minmax(1.75rem,auto)_minmax(0,1fr)] gap-x-1 gap-y-1"
             >
                 <span class="font-medium whitespace-nowrap text-highlighted tabular-nums">{{ question.number }}.</span>
-                <Markdown :value="question.text" :plugins="markdownPlugins" class="font-medium text-highlighted *:my-0" />
+                <Markdown :value="question.text" :plugins="markdownPlugins" class="font-medium text-highlighted *:my-0 *:leading-6" />
                 <Markdown
                     v-if="question.hint && !collapsed"
                     :value="question.hint"
                     :plugins="markdownPlugins"
-                    class="col-start-2 text-muted *:my-0"
+                    class="col-start-2 text-sm text-muted *:my-0 *:leading-5.5"
                 />
-                <div v-if="shownOptions(question).length > 0" class="col-start-2 -mx-2 flex flex-col">
+                <div v-if="shownOptions(question).length > 0" class="col-start-2 -mx-2 flex flex-col text-sm">
                     <button
                         v-for="option in shownOptions(question)"
                         :key="option.letter"
@@ -83,11 +83,11 @@ function isSelected(question: OfferedQuestion, letter: string): boolean {
                         @click="pick(question, option.letter)"
                     >
                         <span class="shrink-0" :class="isSelected(question, option.letter) ? '' : 'text-muted'">{{ option.letter }})</span>
-                        <Markdown :value="option.text" :plugins="markdownPlugins" class="min-w-0 flex-1 *:my-0" />
+                        <Markdown :value="option.text" :plugins="markdownPlugins" class="min-w-0 flex-1 *:my-0 *:leading-5.5" />
                         <UIcon
                             v-if="isSelected(question, option.letter)"
                             name="i-heroicons-check"
-                            class="mt-1 size-4 shrink-0"
+                            class="mt-0.5 size-4 shrink-0"
                         />
                     </button>
                 </div>

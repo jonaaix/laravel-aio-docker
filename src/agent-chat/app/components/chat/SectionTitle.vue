@@ -13,7 +13,7 @@ const parts = computed(() => {
 
 <template>
     <span class="flex items-center gap-2">
-        <span v-if="parts.emoji" class="text-xl/none" aria-hidden="true">{{ parts.emoji }}</span>
+        <span v-if="parts.emoji" class="text-[1.25em]/none" aria-hidden="true">{{ parts.emoji }}</span>
         <span>{{ parts.text }}</span>
     </span>
 </template>
