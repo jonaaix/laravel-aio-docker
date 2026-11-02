@@ -117,6 +117,7 @@ function onPicked(): void {
                     v-if="user && !user.avatarLocked"
                     kind="person"
                     :current="user.avatarUrl ? null : user.avatarSeed"
+                    :presets="PERSON_PRESET_SEEDS"
                     @select="pickAvatar"
                 />
                 <UFormField :label="required ? undefined : 'Name'" :error="error">

@@ -1,4 +1,5 @@
 import { Avatar, Style } from '@dicebear/core';
+import { joinURL } from 'ufo';
 import glyphs from '@dicebear/styles/glyphs.json';
 import voxelBot from '@dicebear/styles/voxel-bot.json';
 
@@ -25,6 +26,11 @@ const STYLES: Record<ParticipantKind, { style: Style<unknown>; options: Record<s
     },
 };
 
+const PRESET_PREFIX = 'preset:';
+const SMILEY_COLORS = ['red', 'orange', 'yellow', 'green', 'teal', 'blue', 'purple', 'pink'];
+
+export const PERSON_PRESET_SEEDS = SMILEY_COLORS.map(color => `${PRESET_PREFIX}smiley-${color}`);
+
 const cache = new Map<string, string>();
 
 export function generatedAvatarUri(kind: ParticipantKind, seed: string): string {
@@ -41,6 +47,9 @@ export function generatedAvatarUri(kind: ParticipantKind, seed: string): string 
 export function avatarUri(participant: Participant): string {
     if (participant.image) {
         return participant.image.startsWith('avatars/') ? apiUrl(participant.image) : participant.image;
+    }
+    if (participant.seed?.startsWith(PRESET_PREFIX)) {
+        return joinURL(useRuntimeConfig().app.baseURL, 'avatars', `${participant.seed.slice(PRESET_PREFIX.length)}.png`);
     }
     return generatedAvatarUri(participant.kind, participant.seed || participant.name);
 }
