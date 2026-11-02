@@ -122,6 +122,7 @@ function onPicked(): void {
                 kind="person"
                 :current="user.avatarUrl ? null : user.avatarSeed"
                 :styles="PERSON_STYLE_PREFIXES"
+                size="lg"
                 class="min-w-0 flex-1"
                 @select="pickAvatar"
             />

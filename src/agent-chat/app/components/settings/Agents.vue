@@ -308,7 +308,7 @@ async function confirmDelete(): Promise<void> {
                     kind="agent"
                     :current="avatarPreview || storedPicture ? null : avatarSeed"
                     :presets="AGENT_PRESET_ROWS"
-                    compact
+                    size="sm"
                     class="min-w-0 flex-1"
                     @select="chooseAvatar"
                 />
