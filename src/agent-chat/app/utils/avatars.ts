@@ -1,5 +1,5 @@
 import { Avatar, Style } from '@dicebear/core';
-import shadows from '@dicebear/styles/shadows.json';
+import cameo from '@dicebear/styles/cameo.json';
 import voxelBot from '@dicebear/styles/voxel-bot.json';
 
 export type ParticipantKind = 'person' | 'agent';
@@ -10,7 +10,7 @@ export interface Participant {
 }
 
 const STYLES: Record<ParticipantKind, Style<unknown>> = {
-    person: new Style(shadows),
+    person: new Style(cameo),
     agent: new Style(voxelBot),
 };
 
