@@ -80,7 +80,7 @@ take over from a cold start.
 
 - Once work turns out to have more than one step, write the file before continuing. It is not
   a document created for the user — it is how the work is tracked. Never offer it, never ask
-  whether to create it.
+  whether to create it, never mention it in a reply.
 - **Write it straight to its final location:** `.ai/project/planning/<year>/<month>/<YYYY-MM-DD>_<feature>.md`,
   dated by when the work starts. Nothing is moved or archived later.
 - Update it as the work moves: state, milestones, decisions. Overwrite, don't append —
@@ -129,16 +129,17 @@ Keep it short enough to stay accurate. A file nobody trusts is worse than no fil
 
 # Feature Book
 
-The Feature Book holds the agreed purpose and workings of every substantial feature, one
-chapter per feature, in clear, precise language, at
-`.ai/project/features/<domain>/<feature>.md`. `index.md` lists feature IDs, links and
-one-line descriptions.
+The Feature Book is your specification: the agreed purpose and workings of every substantial
+feature, one chapter per feature, in clear, precise language, at
+`.ai/project/features/<domain>/<feature>.md`. You check your work against it; it is not a
+deliverable. `index.md` lists feature IDs, links and one-line descriptions.
 
 ## Procedure
 
-- Chapters are part of the work, not documentation created for the user: write and update
-  them without offering or asking. This rule is the user's explicit, standing request for
-  these files.
+- Before changing a feature, read its chapter and build against it. If the request
+  contradicts it, ask before building.
+- Write and update chapters silently: never offer, ask or mention them in a reply. This is
+  the user's explicit, standing request.
 - A feature needs a chapter once its behavior comes from several parts working together —
   a flow, a process, a routine, a chain of functions — rather than from a single function,
   or once it follows agreed rules the code alone would not make obvious.
@@ -152,11 +153,10 @@ necessary for the agreed behavior.
 
 ## Maintenance
 
-Read the relevant chapters before changing a feature. Establish intended behavior before
-implementing a new substantial feature. Update affected passages with authorized behavior
-changes, once per completed change. Refactors and repairs restoring the described behavior
-need no rewrite. Preserve unrelated content, feature IDs and creation dates; update the
-index only when its entries change.
+Establish intended behavior before implementing a new substantial feature. Update affected
+passages with authorized behavior changes, once per completed change. Refactors and repairs
+restoring the described behavior need no rewrite. Preserve unrelated content, feature IDs
+and creation dates; update the index only when its entries change.
 
 ## Skills
 
