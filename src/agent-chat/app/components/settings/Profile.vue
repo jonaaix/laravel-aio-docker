@@ -108,23 +108,24 @@ function onPicked(): void {
                 class="w-full"
             />
         </UFormField>
-        <div v-if="user" class="flex items-center gap-4">
-            <ParticipantAvatar :participant="{ kind: 'person', name: user.name, seed: user.avatarSeed, image: user.avatarUrl }" class="size-16" />
-            <div v-if="!user.avatarLocked" class="flex flex-col items-start gap-1.5">
-                <div class="flex gap-2">
-                    <UButton label="Upload picture" icon="i-heroicons-arrow-up-tray" color="neutral" variant="outline" :loading="pictureBusy" @click="fileInput?.click()" />
-                    <UButton v-if="user.avatarUrl" label="Remove" color="neutral" variant="ghost" :disabled="pictureBusy" @click="removePicture" />
+        <div v-if="user" class="flex flex-col gap-3 sm:flex-row sm:items-start">
+            <div class="flex shrink-0 items-center gap-3 sm:w-28 sm:flex-col">
+                <ParticipantAvatar :participant="{ kind: 'person', name: user.name, seed: user.avatarSeed, image: user.avatarUrl }" class="size-20" />
+                <div v-if="!user.avatarLocked" class="flex gap-2 sm:w-full sm:flex-col">
+                    <UButton label="Upload" icon="i-heroicons-arrow-up-tray" color="neutral" variant="outline" class="sm:w-full sm:justify-center" :loading="pictureBusy" @click="fileInput?.click()" />
+                    <UButton v-if="user.avatarUrl" label="Remove" color="neutral" variant="ghost" class="sm:w-full sm:justify-center" :disabled="pictureBusy" @click="removePicture" />
                 </div>
-                <p v-if="pictureError" class="text-sm text-error">{{ pictureError }}</p>
+                <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="hidden" @change="onPicked">
             </div>
-            <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="hidden" @change="onPicked">
+            <AvatarChoice
+                v-if="!user.avatarLocked"
+                kind="person"
+                :current="user.avatarUrl ? null : user.avatarSeed"
+                class="min-w-0 flex-1"
+                @select="pickAvatar"
+            />
         </div>
-        <AvatarChoice
-            v-if="user && !user.avatarLocked"
-            kind="person"
-            :current="user.avatarUrl ? null : user.avatarSeed"
-            @select="pickAvatar"
-        />
+        <p v-if="pictureError" class="text-sm text-error">{{ pictureError }}</p>
         <p class="text-xs text-muted">Drawn avatars: “Glyphs” by Matt Houser, CC BY 4.0</p>
     </form>
     <Teleport v-if="actionsTarget" defer :to="actionsTarget">
