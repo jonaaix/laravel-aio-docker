@@ -60,6 +60,21 @@ const toolOutput = computed(() => {
     <template v-else-if="textSections">
         <template v-for="(section, index) in textSections" :key="index">
             <ChatQuestionCard v-if="section.kind === 'questions'" :section="section.section" :message-id="message.id" />
+            <ChatNextStepCard
+                v-else-if="section.kind === 'next'"
+                :title="section.title"
+                :text="section.text"
+                :message-id="message.id"
+                :streaming="textStreaming && index === textSections.length - 1"
+            />
+            <ChatSectionCard v-else-if="section.kind === 'summary'" :title="section.title">
+                <Markdown
+                    :value="section.text"
+                    :plugins="markdownPlugins"
+                    :streaming="textStreaming && index === textSections.length - 1"
+                    class="*:first:mt-0 *:last:mb-0"
+                />
+            </ChatSectionCard>
             <div v-else :class="section.kind === 'section' ? 'my-5 border-t border-default pt-4' : ''">
                 <ChatSectionTitle v-if="section.kind === 'section'" :title="section.title" class="mb-2 font-semibold text-highlighted" />
                 <Markdown

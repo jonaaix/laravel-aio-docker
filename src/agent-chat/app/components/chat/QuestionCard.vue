@@ -39,11 +39,8 @@ function isSelected(question: OfferedQuestion, letter: string): boolean {
 </script>
 
 <template>
-    <div class="my-4 rounded-xl bg-white ring ring-default dark:bg-elevated/40">
-        <div class="flex h-11 items-center border-b border-default px-3 font-semibold text-highlighted">
-            <ChatSectionTitle :title="section.title" />
-        </div>
-        <div class="flex flex-col gap-5 p-4">
+    <ChatSectionCard :title="section.title">
+        <div class="flex flex-col gap-5">
             <Markdown v-if="section.intro" :value="section.intro" :plugins="markdownPlugins" class="*:first:mt-0 *:last:mb-0" />
             <div
                 v-for="question in section.questions"
@@ -92,5 +89,5 @@ function isSelected(question: OfferedQuestion, letter: string): boolean {
                 />
             </div>
         </div>
-    </div>
+    </ChatSectionCard>
 </template>

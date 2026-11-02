@@ -95,7 +95,10 @@ task is never held up by approval prompts. When it has a question or proposes a 
 its reply, and the user answers with the next message.
 
 Sections the agent marks off with bars — a bar, a title such as "🎯 Plan", another bar — appear
-as plain headings with a fine line above them; the bars themselves are not shown.
+as plain headings with a fine line above them; the bars themselves are not shown. A summary section
+("🔑") and a next-step section ("🚀") stand out as cards in the same look as the question card. In
+the latest answer the next-step card offers to accept the suggestion: it writes "ok" at the start of
+the message input, the same way choosing an option does, and nothing is sent until the user sends.
 
 When an answer contains a questions section — a "❓" heading between two bars, numbered questions,
 each with lettered options (`a)`, `b)`, …) or a hint for a free answer, and a closing bar — the

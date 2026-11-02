@@ -104,7 +104,8 @@ container restart with its full history and attachments, and no Mattermost/Slack
   paths inside the working folder are shown relative to it.
 - Answer sections: an assistant text part is split at bar/title/bar markers (`splitTextSections`);
   sections render as a heading with a top border, lone bars are dropped, a "❓" section is parsed
-  (`parseQuestionSection`) and renders as `ChatQuestionCard`. The page provides which message is answerable
+  (`parseQuestionSection`) and renders as `ChatQuestionCard`; "🔑" and "🚀" sections render as
+  cards (`ChatSectionCard`, the frame all cards share; `ChatNextStepCard` adds "Accept" → "ok"). The page provides which message is answerable
   (last one, finished, not archived) and the composer hook (`useQuestionAnswers`); a pick writes
   "44 a, 45 b" as the composer's first line and replaces only that line on later picks.
 - User attachments: picked, dropped or pasted files upload at once (`PUT /api/uploads`, streamed to
