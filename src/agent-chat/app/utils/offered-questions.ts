@@ -1,4 +1,4 @@
-const QUESTION_LINE = /^\s*(?:\*\*)?(\d+)[.)](?:\*\*)?\s+\S/;
+const QUESTION_LINE = /^\s*(?:\*\*)?(\d+)[.)](?:\*\*)?\s+(.+)$/;
 const OPTION_LINE = /^\s*(?:[-*]\s+)?([a-z])\)\s+(.+)$/;
 const RECOMMENDED_MARK = '⭐';
 
@@ -10,27 +10,40 @@ export interface OfferedOption {
 
 export interface OfferedQuestion {
     number: string;
+    text: string;
+    hint: string;
     options: OfferedOption[];
 }
 
-function optionsBelow(lines: string[], start: number): OfferedOption[] {
-    const options: OfferedOption[] = [];
-    for (const line of lines.slice(start)) {
-        const match = OPTION_LINE.exec(line);
-        const expected = String.fromCharCode('a'.charCodeAt(0) + options.length);
-        if (!match || match[1] !== expected) {
-            break;
-        }
-        options.push({ letter: expected, text: match[2]!.trim(), recommended: match[2]!.includes(RECOMMENDED_MARK) });
-    }
-    return options;
+export interface QuestionSection {
+    title: string;
+    intro: string;
+    questions: OfferedQuestion[];
 }
 
-export function offeredQuestions(text: string): OfferedQuestion[] {
-    const lines = text.split('\n');
-    return lines.flatMap((line, index) => {
-        const match = QUESTION_LINE.exec(line);
-        const options = match ? optionsBelow(lines, index + 1) : [];
-        return options.length >= 2 ? [{ number: match![1]!, options }] : [];
-    });
+function joinLine(existing: string, line: string): string {
+    return existing ? `${existing}\n${line}` : line;
+}
+
+export function parseQuestionSection(title: string, lines: string[]): QuestionSection {
+    const section: QuestionSection = { title, intro: '', questions: [] };
+    for (const line of lines) {
+        const current = section.questions.at(-1);
+        const question = QUESTION_LINE.exec(line);
+        const option = current ? OPTION_LINE.exec(line) : null;
+        if (question) {
+            section.questions.push({ number: question[1]!, text: question[2]!.trim(), hint: '', options: [] });
+        }
+        else if (option && current) {
+            const text = option[2]!.trim();
+            current.options.push({ letter: option[1]!, text, recommended: text.includes(RECOMMENDED_MARK) });
+        }
+        else if (current && line.trim()) {
+            current.hint = joinLine(current.hint, line.trim());
+        }
+        else if (line.trim()) {
+            section.intro = joinLine(section.intro, line.trim());
+        }
+    }
+    return section;
 }

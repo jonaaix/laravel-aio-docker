@@ -102,9 +102,11 @@ container restart with its full history and attachments, and no Mattermost/Slack
   past 25 lines they collapse to 15 (`ChatClampedContent`, measured from the line height).
   Expanded working steps highlight their code lazily (`useCodeTokens`, shared shiki highlighter);
   paths inside the working folder are shown relative to it.
-- Answer buttons: the last finished assistant message is scanned for numbered questions followed
-  by `a)`, `b)`, … lines (`offeredQuestions`); `ChatAnswerPicker` writes "44 a, 45 b" as the first
-  line of the composer and replaces only that line on later picks.
+- Answer sections: an assistant text part is split at bar/title/bar markers (`splitTextSections`);
+  sections render as a heading with a top border, lone bars are dropped, a "❓" section is parsed
+  (`parseQuestionSection`) and renders as `ChatQuestionCard`. The page provides which message is answerable
+  (last one, finished, not archived) and the composer hook (`useQuestionAnswers`); a pick writes
+  "44 a, 45 b" as the composer's first line and replaces only that line on later picks.
 - User attachments: picked, dropped or pasted files upload at once (`PUT /api/uploads`, streamed to
   `<data dir>/uploads/`, 2 GB cap, cleared on start); on send they move into the conversation's file
   folder and Claude gets the bridge's path list ahead of the text, never inline content. The image's

@@ -20,6 +20,9 @@ const toolIcon = computed(() => {
     return 'i-heroicons-check';
 });
 
+const textSections = computed(() => props.part.type === 'text' && props.message.role === 'assistant' ? splitTextSections(props.part.text) : null);
+const textStreaming = computed(() => props.part.type === 'text' && isPartStreaming(props.part) && props.streaming);
+
 const open = ref(false);
 const toolOutput = computed(() => {
     if (props.part.type !== 'dynamic-tool') {
@@ -54,13 +57,20 @@ const toolOutput = computed(() => {
         <ChatToolInput v-if="showCommand && !open" :input="part.input" :label="toolLabel" class="mt-1" />
     </div>
 
-    <Markdown
-        v-else-if="part.type === 'text' && message.role === 'assistant'"
-        :value="part.text"
-        :plugins="markdownPlugins"
-        :streaming="isPartStreaming(part) && streaming"
-        class="*:first:mt-0 *:last:mb-0"
-    />
+    <template v-else-if="textSections">
+        <template v-for="(section, index) in textSections" :key="index">
+            <ChatQuestionCard v-if="section.kind === 'questions'" :section="section.section" :message-id="message.id" />
+            <div v-else :class="section.kind === 'section' ? 'my-5 border-t border-default pt-4' : ''">
+                <ChatSectionTitle v-if="section.kind === 'section'" :title="section.title" class="mb-2 font-semibold text-highlighted" />
+                <Markdown
+                    :value="section.text"
+                    :plugins="markdownPlugins"
+                    :streaming="textStreaming && index === textSections.length - 1"
+                    class="*:first:mt-0 *:last:mb-0"
+                />
+            </div>
+        </template>
+    </template>
 
     <ChatClampedContent v-else-if="part.type === 'text'">
         <Markdown

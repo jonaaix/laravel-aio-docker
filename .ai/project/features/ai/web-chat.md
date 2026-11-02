@@ -79,12 +79,18 @@ The agent works without asking for permission: it runs commands and changes file
 task is never held up by approval prompts. When it has a question or proposes a plan, it says so in
 its reply, and the user answers with the next message.
 
-When the agent's latest answer asks numbered questions, each offering lettered options (`a)`, `b)`,
-…), the chat shows answer buttons below it, one row per question, with a recommended option
-starred. Choosing options writes their short form, such as "44 a, 45 b", at the start of the
+Sections the agent marks off with bars — a bar, a title such as "🎯 Plan", another bar — appear
+as plain headings with a fine line above them; the bars themselves are not shown.
+
+When an answer contains a questions section — a "❓" heading between two bars, numbered questions,
+each with lettered options (`a)`, `b)`, …) or a hint for a free answer, and a closing bar — the
+chat shows that section as a question card of its own instead of the raw text: every question with
+its full text, its options as selectable rows, the recommended one marked. In the latest answer the
+options can be chosen: choosing writes their short form, such as "44 a, 45 b", at the start of the
 message input; choosing again changes it without touching what the user wrote below. One control
 picks every recommended option at once. Nothing is sent until the user sends the message, and the
-agent learns nothing about the buttons: they only read the answer it already wrote.
+agent learns nothing about the card: it only reads the answer the agent already wrote. Cards in
+earlier answers stay visible but can no longer be chosen from.
 
 ### Files and images
 

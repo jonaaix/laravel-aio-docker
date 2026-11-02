@@ -42,11 +42,9 @@ const visibleMessages = computed(() => messages.value.filter(message => message.
     || message.metadata?.outcome === 'stopped'
     || message.metadata?.outcome === 'failed'));
 
-const openQuestions = computed(() => {
+const answerableMessageId = computed(() => {
     const last = visibleMessages.value.at(-1);
-    return last?.role === 'assistant' && chatStatus.value === 'ready' && archivedAt.value === null
-        ? offeredQuestions(messageText(last))
-        : [];
+    return last?.role === 'assistant' && chatStatus.value === 'ready' && archivedAt.value === null ? last.id : null;
 });
 
 function isStreaming(messageId: string): boolean {
@@ -228,6 +226,8 @@ function answer(line: string): void {
     focusComposerAtEnd();
 }
 
+provide(questionAnswersKey, { messageId: answerableMessageId, answer });
+
 async function withFlag(flag: Ref<boolean>, action: () => Promise<void>): Promise<void> {
     flag.value = true;
     try {
@@ -326,12 +326,6 @@ const restoreConversation = () => withFlag(archiving, restore);
                                 <ChatImageGroup v-if="segment.kind === 'images'" :parts="segment.parts" />
                                 <ChatMessagePart v-else :part="segment.part" :message="message" :streaming="isStreaming(message.id)" />
                             </template>
-                            <ChatAnswerPicker
-                                v-if="openQuestions.length > 0 && message.id === visibleMessages.at(-1)?.id"
-                                :key="message.id"
-                                :questions="openQuestions"
-                                @change="answer"
-                            />
                             <ChatTurnOutcome v-if="message.role === 'assistant'" :message="message" />
                         </template>
                         <template #actions="{ message }">
