@@ -258,7 +258,7 @@ const restoreConversation = () => withFlag(archiving, restore);
                     </template>
                     <template #right>
                         <template v-if="archivedAt !== null">
-                            <UBadge label="Archived" color="neutral" variant="subtle" />
+                            <UBadge label="Archived" color="neutral" variant="subtle" size="lg" class="h-9 px-3" />
                             <UButton
                                 label="Restore"
                                 icon="i-heroicons-arrow-uturn-left"
@@ -270,7 +270,7 @@ const restoreConversation = () => withFlag(archiving, restore);
                             />
                         </template>
                         <template v-else-if="loaded">
-                            <UBadge v-if="status === 'paused'" label="Session paused" color="neutral" variant="subtle" size="lg" />
+                            <UBadge v-if="status === 'paused'" label="Session paused" color="neutral" variant="subtle" size="lg" class="h-9 px-3" />
                             <UButton
                                 v-else
                                 label="Pause session"
