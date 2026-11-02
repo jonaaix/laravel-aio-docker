@@ -228,7 +228,7 @@ async function confirmDelete(): Promise<void> {
                         <div class="flex items-center gap-4">
                             <ParticipantAvatar :participant="avatarParticipant" class="size-16" />
                             <div class="flex flex-wrap gap-2">
-                                <UButton label="Choose bot" icon="i-heroicons-sparkles" color="neutral" variant="outline" @click="toggleAvatarChoice" />
+                                <UButton label="Choose avatar" icon="i-heroicons-sparkles" color="neutral" variant="outline" @click="toggleAvatarChoice" />
                                 <UButton label="Upload picture" icon="i-heroicons-arrow-up-tray" color="neutral" variant="outline" :loading="avatarBusy" @click="avatarInput?.click()" />
                                 <UButton v-if="avatarPreview || storedPicture" label="Remove picture" color="neutral" variant="ghost" @click="clearPicture" />
                             </div>

@@ -1,5 +1,5 @@
 import { Avatar, Style } from '@dicebear/core';
-import openPeeps from '@dicebear/styles/open-peeps.json';
+import critters from '@dicebear/styles/critters.json';
 import voxelBot from '@dicebear/styles/voxel-bot.json';
 
 export type ParticipantKind = 'person' | 'agent';
@@ -11,15 +11,15 @@ export interface Participant {
     image?: string | null;
 }
 
-const FRIENDLY_EXPRESSIONS = ['calm', 'cheeky', 'cute', 'eatingHappy', 'lovingGrin1', 'lovingGrin2', 'smile', 'smileBig', 'smileLOL', 'smileTeethGap'];
-const ACCESSORIES = ['glasses', 'glasses2', 'glasses3', 'glasses4', 'glasses5', 'sunglasses', 'sunglasses2'];
+const FRIENDLY_MOUTHS = ['smile', 'tinySmile', 'grin', 'laugh', 'teeth', 'catMouth', 'tongue', 'blep'];
+const FRIENDLY_EYES = ['round', 'dots', 'bigPupils', 'happy', 'wink', 'wide', 'closedLine', 'sleepy'];
 const ANIMATION_SPEEDS = ['fastest', 'fast', 'medium', 'slow', 'slowest'];
 const TRANSPARENT = '#00000000';
 
 const STYLES: Record<ParticipantKind, { style: Style<unknown>; options: Record<string, unknown> }> = {
     person: {
-        style: new Style(openPeeps),
-        options: { flip: 'horizontal', expressionVariant: FRIENDLY_EXPRESSIONS, accessoriesVariant: ACCESSORIES, maskProbability: 0 },
+        style: new Style(critters),
+        options: { flip: 'horizontal', mouthVariant: FRIENDLY_MOUTHS, eyesVariant: FRIENDLY_EYES },
     },
     agent: {
         style: new Style(voxelBot),

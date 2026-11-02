@@ -10,10 +10,10 @@ and the peer cannot touch the project.
 
 ## Milestones
 
-- [x] Chat heads: DiceBear as local npm packages (`@dicebear/core`, `@dicebear/styles`), "Open Peeps" (friendly faces)
+- [x] Chat heads: DiceBear as local npm packages (`@dicebear/core`, `@dicebear/styles`), "Critters" (friendly faces)
       for people, "Voxel Bot" (animated, larger, no circle or background) for agents, seeded by name; head with the name below it beside every
       message, own messages included
-- [x] Pictures: people default to Open Peeps (friendly expressions, no masks/eyepatch, mirrored), may
+- [x] Pictures: people default to Critters (friendly mouths and eyes, mirrored), may
       upload one in Profile; `?a=<base64url image URL>` from Laravel is downloaded (re-fetched when the
       URL changes) and locks the picture; agents pick a Voxel Bot seed from 8 random ones or upload.
       Files in `<data dir>/avatars/` (`user-<id>`/`agent-<id>`, ≤ 5 MB), served by `GET /api/avatars/<file>`
@@ -64,7 +64,7 @@ and the peer cannot touch the project.
   block the file-writing tools for the project path (they hold even without permission prompts). Peers
   keep the shell (a Python scratchpad, search commands); shell writes are held back only by the fork's
   write-scope instruction, which tells them to hand project changes to the lead with path and content.
-- DiceBear never through its HTTP API. "Open Peeps" and "Voxel Bot" are both CC0, no credit needed.
+- DiceBear never through its HTTP API. "Critters" and "Voxel Bot" are both CC0, no credit needed.
 
 ## Open
 
