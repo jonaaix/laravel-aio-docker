@@ -78,7 +78,7 @@ and the peer cannot touch the project.
 - Below `sm` the head sits above the message, small, with the name beside it, so text uses the full
   width. Phone text size comes from the 15 px root font (see `.ai/guidelines/app.md`).
 - Chat heads sit in the gutter beside the reading column from `xl` (`xl:-ms-[6.75rem]`, a 6rem name column where names wrap between words, never truncated), so
-  the text column stays aligned with the composer; below `xl` the gutter would clip the right-hand heads. Sizes: round heads 38 px, Voxel Bots 44 px.
+  the text column stays aligned with the composer; below `xl` the gutter would clip the right-hand heads. Sizes: round heads 40 px, Voxel Bots 44 px.
 - `@Name` of a known agent or person is drawn as a pill in the theme's `info` blue in chat text (`mentionHighlight`; grey on the grey bubble was rejected); Comark builds its parser once, so the
   plugin reads names at parse time and message parts re-render when the name list changes.
 - The participant list lives in the title bar, never beside the conversation: the chat mostly runs in a
