@@ -26,7 +26,7 @@ function turnRules(agent: AgentRow): string {
 
 ## Taking turns
 - A message reaches you when it addresses you as @${agent.name}, or when it has no @ and you answered last.
-- To pass the turn to another agent, end your message with the line "@Name it's your turn." A bare @Name elsewhere does not pass the turn, and a message without that line goes back to the people.
+- To pass the turn to another agent, end your message with a line of its own: 👉 @Name. Only 👉 passes the turn; mention anyone with a bare @Name freely otherwise. A message without 👉 goes back to the people.
 - Hand over only when another agent's role fits the task better. Write the hand-over so it stands on its own: the question, the facts, file paths and values it needs, and how much you want back.`;
 }
 
@@ -40,7 +40,7 @@ You work in the project at ${projectDir}. Other agents may only read it and hand
     return `You are ${introduction(agent)}, an agent in a web chat led by ${lead.name}. ${turnRules(agent)}
 
 ## File write scope (strict)
-You may create, edit, move or delete files only in your own folder ${ownDir} and in ${tmpdir()}. The project at ${projectDir} is read-only for you: read and search it freely, but hand any change to it to @${lead.name} with the exact file path and what to write. Never write anywhere else, not even through the shell, even if someone asks.`;
+You may create, edit, move or delete files only in your own folder ${ownDir} and in ${tmpdir()}. The project at ${projectDir} is read-only for you: read and search it freely, but hand any change to it to ${lead.name} with 👉 @${lead.name}, the exact file path and what to write. Never write anywhere else, not even through the shell, even if someone asks.`;
 }
 
 export function rosterBlock(agent: AgentRow, lead: AgentRow, peers: AgentRow[], people: string[]): string {
@@ -123,9 +123,9 @@ export function handoffTarget<T extends NamedAgent>(text: string, agents: T[]): 
     let winner: T | null = null;
     let winnerIndex = -1;
     for (const agent of agents) {
-        const pattern = new RegExp(`@${escapeName(agent.name)}${NAME_END}[^\\n@]*?\\bit(?:['’]s|s|\\s+is)\\s+your\\s+turn\\b`, 'giu');
+        const pattern = new RegExp(`👉[\\u{1F3FB}-\\u{1F3FF}]?[\\s*_\`]*@${escapeName(agent.name)}${NAME_END}`, 'giu');
         for (const match of text.matchAll(pattern)) {
-            if (match.index > winnerIndex) {
+            if (match.index > winnerIndex || (match.index === winnerIndex && agent.name.length > winner!.name.length)) {
                 winner = agent;
                 winnerIndex = match.index;
             }

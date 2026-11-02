@@ -172,7 +172,8 @@ Each agent keeps its own session per conversation, with its own model. The first
 receives in a conversation tells it who takes part and what role each agent has. One agent answers
 at a time: the first one addressed with `@Name`, otherwise the one that answered last. A message for
 an agent other than the one currently answering waits until that answer is finished. An agent hands
-the turn to another by ending its answer with "@Name it's your turn.", writing its handover so it can
+the turn to another only with "👉 @Name", ideally as the last line of its answer; it counts wherever it
+stands, while a plain `@Name` is just a mention and never passes the turn. It writes its handover so it can
 be understood on its own; after 25 handovers without a message from a person, the agents stop and
 wait for one. An agent that takes over first catches up on the messages it missed, each labelled with
 its author. Every answer shows the chat head of the agent that wrote it.

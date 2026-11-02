@@ -30,7 +30,7 @@ and the peer cannot touch the project.
       list adds or removes agents; an added agent can be addressed with `@Name` (composer
       autocomplete), people too once they have written
 - [x] Per-agent sessions: one agent session per agent and conversation; the first message to each
-      agent carries the roster (name + role of everyone); baton routing, `@Name it's your turn.`
+      agent carries the roster (name + role of everyone); baton routing, `👉 @Name`
       handoff (cap 25), catch-up of missed messages (40, `<from>` labels) as in the fork
 - [x] Peer confinement: peers read and search the project, write only in their own folder
 - [x] Feature Book chapter: agreed behaviour written
