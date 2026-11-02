@@ -170,8 +170,8 @@ container restart with its full history and attachments, and no Mattermost/Slack
   `--ui-primary` is pinned to neutral-900 / neutral-50 in `main.css`.
 - Nuxt UI scales radii from `--ui-radius` (0.5rem), so `rounded-xl` is 24 px here, not Tailwind's 12 px;
   every card-like surface (cards, thinking/working boxes, attachments) uses `rounded-md` (12 px); the
-  composer stays a pill, and the user bubble is filled `bg-accented` with 18 px and no ring so it never
-  reads as a card.
+  composer stays a pill, and the user bubble is filled `bg-accented/50` (a very light grey, as in ChatGPT)
+  with 18 px, `py-2` and no ring so it never reads as a card.
 - All relevant code lives in this repo; the fork is copied, not referenced. Only `fpm-claude-beta`
   gets the web UI for now.
 - Nuxt 4 + Nuxt UI (MIT since v4, chat + dashboard components) over hand-built Vue on laravel-islands
