@@ -20,6 +20,19 @@
     --ui-primary: var(--ui-color-neutral-50);
 }
 
+@media (width < 40rem) {
+    html {
+        font-size: 93.75%;
+    }
+
+    /* iOS zooms into any form field below 16px, so fields keep 16px while the rest scales down. */
+    input,
+    textarea,
+    select {
+        font-size: 16px !important;
+    }
+}
+
 @layer base {
     button:not(:disabled),
     [role='button']:not(:disabled),

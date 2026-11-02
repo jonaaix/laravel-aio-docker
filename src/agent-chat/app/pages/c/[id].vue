@@ -369,8 +369,8 @@ const conversationActions = computed<DropdownMenuItem[]>(() => [
                         :style="{ '--last-message-height': `${answerSpace}px`, '--message-scroll-margin': `${messageScrollMargin}px` }"
                         :ui="{ root: 'px-0 [&>article]:scroll-mt-(--message-scroll-margin)' }"
                         :should-scroll-to-bottom="false"
-                        :assistant="{ side: 'left', variant: 'naked', ui: { container: 'flex-col gap-1.5 pb-7 sm:flex-row sm:gap-3', leading: 'mt-0 self-start lg:-ms-[6.75rem]', content: 'text-[0.9375rem]/6 sm:text-base/6.5', actions: 'h-6 gap-1' } }"
-                        :user="{ side: 'right', variant: 'soft', ui: { container: 'flex-col items-end gap-1.5 pb-7 sm:flex-row-reverse sm:items-start sm:justify-start sm:gap-3', leading: 'mt-0 self-end sm:self-start lg:-me-[6.75rem]', actions: 'h-6 gap-1', content: 'min-h-0 rounded-[1.125rem] bg-accented px-4 py-2.5 text-[0.9375rem]/6 sm:text-base/6.5' } }"
+                        :assistant="{ side: 'left', variant: 'naked', ui: { container: 'flex-col gap-1.5 pb-7 sm:flex-row sm:gap-3', leading: 'mt-0 self-start lg:-ms-[6.75rem]', content: 'text-base/6.5', actions: 'h-6 gap-1' } }"
+                        :user="{ side: 'right', variant: 'soft', ui: { container: 'flex-col items-end gap-1.5 pb-7 sm:flex-row-reverse sm:items-start sm:justify-start sm:gap-3', leading: 'mt-0 self-end sm:self-start lg:-me-[6.75rem]', actions: 'h-6 gap-1', content: 'min-h-0 rounded-[1.125rem] bg-accented px-4 py-2.5 text-base/6.5' } }"
                     >
                         <template #leading="{ message }">
                             <ChatHead :participant="messageAuthor(message)" :reverse="message.role === 'user'" />

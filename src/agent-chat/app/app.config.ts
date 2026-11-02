@@ -34,10 +34,10 @@ export default defineAppConfig({
             }],
         },
         prose: {
-            p: { base: 'my-3 leading-6 sm:leading-6.5' },
+            p: { base: 'my-3 leading-6.5' },
             ul: { base: 'my-3' },
             ol: { base: 'my-3' },
-            li: { base: 'my-1 leading-6 sm:leading-6.5' },
+            li: { base: 'my-1 leading-6.5' },
             h1: { slots: { base: 'mt-6 mb-3 text-xl font-semibold' } },
             h2: { slots: { base: 'mt-6 mb-2 text-lg font-semibold' } },
             h3: { slots: { base: 'mt-5 mb-2 text-base font-semibold' } },
