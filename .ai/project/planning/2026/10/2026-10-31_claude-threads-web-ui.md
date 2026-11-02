@@ -30,7 +30,7 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - [x] Turn markers: show "stopped" on interrupted turns, errors inline
 - [x] Attachments from the user (upload into the conversation, passed to Claude)
 - [x] UI density: 16 px message text on a 26 px line, tighter prose spacing (`app.config` prose), 16 px phone gutters
-- [x] Quiet header (status dot beside the title, archive in a "More actions" menu) and a hover
+- [x] Quiet header (status dot beside the title, archive as an icon button) and a hover
   footer per message (copy + clock time)
 - [x] Flatter composer (pill shape kept, light shadow, less padding)
 - [x] User name: enforced "Your name" modal, `?n=<base64url>` signs in and locks it
