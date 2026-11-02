@@ -462,9 +462,8 @@ const conversationActions = computed<DropdownMenuItem[]>(() => [
                     <ChatQueuedMessages v-if="queuedMessages.length > 0" :messages="queuedMessages" class="mb-2" />
                     <div class="flex h-6 items-center px-3.5">
                         <Transition enter-active-class="transition-opacity duration-150 ease-out" enter-from-class="opacity-0" leave-active-class="transition-opacity duration-150 ease-in" leave-to-class="opacity-0">
-                            <div v-if="typingAgent" class="flex min-w-0 items-center gap-1.5 text-xs text-muted">
-                                <ParticipantAvatar :participant="typingAgent" class="size-4 shrink-0" />
-                                <span class="truncate"><span class="font-medium text-toned">{{ typingAgent.name }}</span> is typing…</span>
+                            <div v-if="typingAgent" class="min-w-0 truncate text-xs text-muted">
+                                <span class="font-medium text-toned">{{ typingAgent.name }}</span> is typing…
                             </div>
                         </Transition>
                     </div>
