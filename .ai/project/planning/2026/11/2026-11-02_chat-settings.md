@@ -11,7 +11,7 @@ settings path lives in it, and a font change applies at once and survives a relo
 
 - [x] Appearance stored per person: `users.color_mode`, `users.font`, `POST /api/users/<id>/appearance`,
       applied on sign-in, cached in the browser against a flash on load
-- [x] Fonts: System UI (default), Geist, Inter, Source Sans 3, IBM Plex Sans via `@nuxt/fonts`
+- [x] Fonts: System UI (default), Geist, Inter, Source Sans 3, IBM Plex Sans, JetBrains Mono via `@nuxt/fonts`
 - [x] Settings window with categories; Profile and Agents moved in from their own windows; sidebar
       button and "Manage agents" open it; the first-visit name prompt stays its own window
 - [x] Feature Book split into four chapters (web chat, people and profile, agents, settings; [`ai-chat-settings`](../../../features/ai/chat-settings.md))

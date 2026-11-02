@@ -21,7 +21,8 @@ a conversation opens the same window at Agents.
   [People in the chat](chat-people.md). The very first prompt for a name is not part of this window
   and cannot be dismissed.
 - **Appearance** sets the theme — light, dark or the system's — and the font of the whole chat:
-  System UI (the default), Geist, Inter, Source Sans 3 or IBM Plex Sans, each shown in its own
+  System UI (the default), Geist, Inter, Source Sans 3, IBM Plex Sans or, for those who prefer
+  monospaced text throughout, JetBrains Mono, each shown in its own
   typeface. It also holds "Move sent message to top", off by default: when off, the conversation
   stays at the bottom after sending and follows the answer; when on, the sent message moves to the
   top with room below for the answer. Every choice applies at once and belongs to the person, so it
