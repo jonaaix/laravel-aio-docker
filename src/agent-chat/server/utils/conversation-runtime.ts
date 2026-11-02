@@ -225,11 +225,13 @@ class ConversationRuntime {
     }
 
     private startAgent(conversation: NonNullable<ReturnType<typeof findConversation>>, serverOrigin: string): ClaudeCli {
+        const lead = leadAgent();
         const agent = new ClaudeCli({
             workingDir: conversation.workingDir,
             sessionId: conversation.agentSessionRef,
             resume: conversation.agentSessionStarted,
-            model: leadAgent().model || useRuntimeConfig().claudeModel || undefined,
+            model: lead.model || useRuntimeConfig().claudeModel || undefined,
+            effort: lead.effort ?? undefined,
             includePartialMessages: true,
             replayUserMessages: true,
             thinkingDisplay: 'summarized',

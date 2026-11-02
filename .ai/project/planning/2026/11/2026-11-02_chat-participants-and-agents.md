@@ -31,8 +31,10 @@ and the peer cannot touch the project.
 
 ## State
 
-- Agents live in `agents` (unique name, `lead` flag, `model` alias or null = default, `instructions`);
-  the lead row is created on first use (`leadAgent()`), its model already drives the conversation's
+- Agents live in `agents` (unique name, `lead` flag, `model` + `effort` or null = default, `instructions`).
+  The model list is Claude's own: the CLI's `initialize` control response (`GET /api/models`, fetched
+  once per server start, aliases as fallback) with each model's effort levels; `--effort` starts the session.
+  The lead row is created on first use (`leadAgent()`), its model and effort already drive the conversation's
   Claude session. Peer folders: `<data dir>/agents/<id>/` with `CLAUDE.md` + resource files
   (uploads moved in on save, removed on delete).
 - Conversations are already separate from the Claude session (`conversations.agent_session_ref`);

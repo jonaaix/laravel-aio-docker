@@ -1,12 +1,8 @@
 <script setup lang="ts">
 import type { Agent } from '#shared/types/agent';
+import type { ClaudeModel } from '#shared/types/model';
 
-const MODEL_ITEMS = [
-    { label: 'Default', value: 'default' },
-    { label: 'Opus', value: 'opus' },
-    { label: 'Sonnet', value: 'sonnet' },
-    { label: 'Haiku', value: 'haiku' },
-];
+const DEFAULT_EFFORT = 'default';
 
 const { agents, managing, load, save, remove } = useAgents();
 const { attachments, uploading, ready, add: attach, remove: removeAttachment, take: takeAttachments } = useAttachments();
@@ -16,6 +12,8 @@ const creating = ref(false);
 const name = ref('');
 const role = ref('');
 const model = ref('default');
+const effort = ref(DEFAULT_EFFORT);
+const models = ref<ClaudeModel[]>([]);
 const instructions = ref('');
 const removedResources = ref<string[]>([]);
 const saving = ref(false);
@@ -26,12 +24,29 @@ const fileInput = ref<HTMLInputElement | null>(null);
 const selected = computed(() => creating.value ? null : agents.value.find(agent => agent.id === selectedId.value) ?? null);
 const isLead = computed(() => selected.value?.lead ?? false);
 const keptResources = computed(() => (selected.value?.resources ?? []).filter(resource => !removedResources.value.includes(resource.name)));
+const modelItems = computed(() => {
+    const items = models.value.map(entry => ({ label: entry.name, description: entry.description || undefined, value: entry.value }));
+    return items.some(item => item.value === model.value) ? items : [...items, { label: model.value, description: undefined, value: model.value }];
+});
+const effortLevels = computed(() => models.value.find(entry => entry.value === model.value)?.effortLevels ?? []);
+const effortItems = computed(() => [
+    { label: 'Default', value: DEFAULT_EFFORT },
+    ...effortLevels.value.map(level => ({ label: level === 'xhigh' ? 'Extra high' : level.charAt(0).toUpperCase() + level.slice(1), value: level })),
+]);
+
+watch(effortLevels, (levels) => {
+    if (effort.value !== DEFAULT_EFFORT && !levels.includes(effort.value)) {
+        effort.value = DEFAULT_EFFORT;
+    }
+});
+
 const valid = computed(() => normalizeUserName(name.value) !== null && !uploading.value);
 
 function fill(agent: Agent | null): void {
     name.value = agent?.name ?? '';
     role.value = agent?.role ?? '';
     model.value = agent?.model ?? 'default';
+    effort.value = agent?.effort ?? DEFAULT_EFFORT;
     instructions.value = agent?.instructions ?? '';
     removedResources.value = [];
     error.value = undefined;
@@ -52,7 +67,8 @@ function startNew(): void {
 
 watch(managing, async (open) => {
     if (open) {
-        await load();
+        const [, available] = await Promise.all([load(), apiFetch<ClaudeModel[]>('models')]);
+        models.value = available;
         const first = agents.value[0];
         if (first) {
             select(first);
@@ -80,6 +96,7 @@ async function submit(): Promise<void> {
             name: name.value,
             role: role.value,
             model: model.value === 'default' ? null : model.value,
+            effort: effort.value === DEFAULT_EFFORT ? null : effort.value,
             instructions: instructions.value,
             uploads: ready.value.map(upload => ({ id: upload.id, filename: upload.filename })),
             removedResources: removedResources.value,
@@ -137,9 +154,14 @@ async function confirmDelete(): Promise<void> {
                     <UFormField label="Role">
                         <UInput v-model="role" :maxlength="AGENT_ROLE_MAX_LENGTH" class="w-full" />
                     </UFormField>
-                    <UFormField label="Model">
-                        <USelect v-model="model" :items="MODEL_ITEMS" class="w-full" />
-                    </UFormField>
+                    <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
+                        <UFormField label="Model">
+                            <USelect v-model="model" :items="modelItems" class="w-full" :ui="{ content: 'min-w-72' }" />
+                        </UFormField>
+                        <UFormField v-if="effortLevels.length > 0" label="Effort">
+                            <USelect v-model="effort" :items="effortItems" class="w-full" />
+                        </UFormField>
+                    </div>
                     <template v-if="!isLead">
                         <UFormField label="Instructions" hint="CLAUDE.md">
                             <UTextarea v-model="instructions" :rows="8" autoresize :maxrows="16" class="w-full font-mono text-sm" />

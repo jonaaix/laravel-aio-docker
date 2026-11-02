@@ -14,6 +14,7 @@ export interface AgentChanges {
     name: string;
     role: string;
     model: string | null;
+    effort: string | null;
     instructions: string;
     uploads: AttachmentReference[];
     removedResources: string[];
@@ -35,7 +36,7 @@ function resources(row: AgentRow): AgentResource[] {
 }
 
 function toAgent(row: AgentRow): Agent {
-    return { id: row.id, name: row.name, role: row.role, model: row.model, lead: row.lead, instructions: row.instructions, resources: resources(row) };
+    return { id: row.id, name: row.name, role: row.role, model: row.model, effort: row.effort, lead: row.lead, instructions: row.instructions, resources: resources(row) };
 }
 
 export function leadAgent(): AgentRow {
@@ -43,7 +44,7 @@ export function leadAgent(): AgentRow {
     if (existing) {
         return existing;
     }
-    const row: AgentRow = { id: randomUUID(), name: LEAD_AGENT_NAME, role: LEAD_AGENT_ROLE, model: null, lead: true, instructions: '', createdAt: Date.now() };
+    const row: AgentRow = { id: randomUUID(), name: LEAD_AGENT_NAME, role: LEAD_AGENT_ROLE, model: null, effort: null, lead: true, instructions: '', createdAt: Date.now() };
     useDatabase().insert(agents).values(row).run();
     return row;
 }
@@ -91,6 +92,7 @@ export function createAgent(changes: AgentChanges): Agent {
         name: changes.name,
         role: changes.role,
         model: changes.model,
+        effort: changes.effort,
         lead: false,
         instructions: changes.instructions,
         createdAt: Date.now(),
@@ -107,6 +109,7 @@ export function updateAgent(row: AgentRow, changes: AgentChanges): Agent {
         name: changes.name,
         role: changes.role,
         model: changes.model,
+        effort: changes.effort,
         instructions: row.lead ? '' : changes.instructions,
     };
     useDatabase().update(agents).set(updated).where(eq(agents.id, row.id)).run();
@@ -135,6 +138,7 @@ export function readAgentChanges(body: Record<string, unknown>): AgentChanges {
         name,
         role,
         model: normalizeAgentModel(body.model),
+        effort: normalizeAgentEffort(body.effort),
         instructions: typeof body.instructions === 'string' ? body.instructions : '',
         uploads: readAttachmentReferences(body.uploads),
         removedResources: removed,

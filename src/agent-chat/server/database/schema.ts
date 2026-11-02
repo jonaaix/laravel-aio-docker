@@ -12,6 +12,7 @@ export const agents = sqliteTable('agents', {
     name: text('name').notNull(),
     role: text('role').notNull().default(''),
     model: text('model'),
+    effort: text('effort'),
     lead: integer('lead', { mode: 'boolean' }).notNull().default(false),
     instructions: text('instructions').notNull().default(''),
     createdAt: integer('created_at').notNull(),

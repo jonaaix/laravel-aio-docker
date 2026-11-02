@@ -118,6 +118,7 @@ export interface ClaudeCliOptions {
   model?: string;
   includePartialMessages?: boolean;
   replayUserMessages?: boolean;
+  effort?: string;
   thinkingDisplay?: 'summarized' | 'omitted';
   disallowedTools?: string[];
   mcpConfigPath?: string;
@@ -592,6 +593,10 @@ export class ClaudeCli extends EventEmitter implements AgentBackend {
 
     if (this.options.replayUserMessages) {
       args.push('--replay-user-messages');
+    }
+
+    if (this.options.effort) {
+      args.push('--effort', this.options.effort);
     }
 
     if (this.options.thinkingDisplay) {
