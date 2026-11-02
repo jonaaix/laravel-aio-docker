@@ -21,7 +21,7 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - [x] History store for evaluation: tool output cut to its first 2,000 characters, per-turn metrics
       (model, tokens, cost, duration, outcome), archive instead of delete, paged message loading
 - [ ] Auth: short-lived signed iframe link from the Laravel app carrying the user, password for
-      standalone access, conversations scoped per user — blocks image integration
+      standalone access — blocks image integration
 - [ ] Image integration: supervisor program, nginx sub-path proxy for the iframe, optional own
       port/domain, env (`NUXT_WORKING_DIR=/app`, data dir in the persisted home)
 - [x] In-process HTTP MCP for Claude with `send_file` → attachment stored with the conversation
@@ -32,7 +32,8 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - [x] Quiet header (status dot beside the title, archive in a "More actions" menu) and a hover
   footer per message (copy + clock time)
 - [x] Flatter composer (pill shape kept, light shadow, less padding)
-- [ ] Denser sidebar
+- [x] Denser sidebar: two-line entries (title; Working/Active/Paused from `sessionState` · relative
+  last activity), account card at the bottom with one line per usage meter
 - [ ] Multi-bot conversations (bots table, mention handoff, catch-up) on top of the new runtime
 - [ ] opencode backend selectable per conversation
 - [ ] Extract lean core: drop Mattermost/Slack, onboarding, auto-update, commands, bug report,
@@ -151,6 +152,8 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - The thinking and working boxes (`ChatThinkingBlock`, `ChatWorkingBlock`) are final in look and
   behaviour; UI polish works around them.
 - "Pause session" stays a button with its label in the header.
+- The UI is grayscale with black as the accent (white in dark mode): `primary` is `neutral` and
+  `--ui-primary` is pinned to neutral-900 / neutral-50 in `main.css`.
 - Nuxt UI scales radii from `--ui-radius` (0.5rem), so `rounded-xl` is 24 px here, not Tailwind's 12 px;
   every card-like surface (cards, thinking/working boxes, attachments) uses `rounded-md` (12 px); the
   composer stays a pill, and the user bubble is filled `bg-accented` with 18 px and no ring so it never

@@ -30,7 +30,11 @@ chat who the user is. Access through the chat's own domain or port is protected 
 
 ### Conversations
 
-A sidebar lists the conversations. Each user sees only their own. A new conversation is named
+A sidebar lists the conversations. Everyone working in the same container sees all of them, each
+with the name of the person who started it: a development conversation is long-lived, and a team
+works on the same app. Each entry shows the title and, below it, whether the session is working
+(the agent is answering), active (running and waiting) or paused, and when something last
+happened. A new conversation is named
 after the beginning of its first message. When the user sends the third message, the agent titles
 the session from the user's first three messages, the way Claude Code titles its terminal sessions;
 that title replaces the name in the chat and also names the session in Claude Code's own history.
@@ -81,8 +85,8 @@ moves into the conversation and is answered when the conversation continues.
 
 A session also pauses on its own after 30 minutes without any activity. Work never counts as
 inactivity: while the agent is answering or a task it started in the background is still running,
-the session stays online however long that takes. The sidebar marks every conversation whose
-session is online, and an open conversation shows next to its title whether its session is online.
+the session stays online however long that takes. An open conversation shows the same state next
+to its title.
 
 While tasks the agent started in the background are running, a box pinned above the message input
 always lists them, each with its description and how long it has been running. When such a task

@@ -19,6 +19,7 @@ const {
     workingDir,
     messages,
     status,
+    turnActive,
     backgroundTasks,
     queuedMessages,
     archivedAt,
@@ -259,7 +260,7 @@ const archiveConversation = () => withFlag(archiving, async () => {
 });
 const restoreConversation = () => withFlag(archiving, restore);
 
-const sessionLabel = computed(() => status.value === 'running' ? 'Session online' : 'Session paused');
+const session = computed(() => sessionState(status.value, turnActive.value));
 const conversationActions = computed<DropdownMenuItem[]>(() => [
     { label: 'Archive', icon: 'i-heroicons-archive-box', onSelect: archiveConversation },
 ]);
@@ -271,9 +272,9 @@ const conversationActions = computed<DropdownMenuItem[]>(() => [
             <div ref="header" class="sticky top-0 z-30 bg-default">
                 <UDashboardNavbar :title="title">
                     <template #title>
-                        <UTooltip :text="sessionLabel">
-                            <span class="size-2 shrink-0 rounded-full" :class="status === 'running' ? 'bg-success' : 'bg-neutral-300 dark:bg-neutral-600'">
-                                <span class="sr-only">{{ sessionLabel }}</span>
+                        <UTooltip :text="session.label">
+                            <span class="size-2 shrink-0 rounded-full" :class="session.dotClass">
+                                <span class="sr-only">{{ session.label }}</span>
                             </span>
                         </UTooltip>
                         <ChatTitleEditor :title="title" :editable="loaded && archivedAt === null" :save="rename" />

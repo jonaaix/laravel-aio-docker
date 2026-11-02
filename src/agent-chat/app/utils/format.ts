@@ -23,6 +23,22 @@ export function formatBytes(bytes: number): string {
     }).format(bytes / 1024 ** exponent);
 }
 
+const RELATIVE_UNITS = [
+    ['year', 31_536_000],
+    ['month', 2_592_000],
+    ['week', 604_800],
+    ['day', 86_400],
+    ['hour', 3_600],
+    ['minute', 60],
+] as const;
+
+export function formatRelativeTime(timestamp: number, now = Date.now()): string {
+    const seconds = Math.round((timestamp - now) / 1000);
+    const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto', style: 'short' });
+    const [unit, size] = RELATIVE_UNITS.find(([, unitSeconds]) => Math.abs(seconds) >= unitSeconds) ?? ['minute', 60];
+    return formatter.format(Math.round(seconds / size), unit);
+}
+
 export function formatElapsed(milliseconds: number): string {
     const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
     const hours = Math.floor(totalSeconds / 3600);

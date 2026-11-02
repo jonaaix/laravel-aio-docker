@@ -6,14 +6,17 @@ const { conversations, upsert, load } = useConversations();
 const { usage, load: loadAccount } = useAccount();
 const { baseURL } = useRuntimeConfig().app;
 
+const CLOCK_TICK_MS = 60_000;
+const now = ref(Date.now());
+let clock: ReturnType<typeof setInterval> | undefined;
+
 const items = computed<NavigationMenuItem[][]>(() => groupByRecency(conversations.value).map(group => [
     { label: group.label, type: 'label' },
     ...group.conversations.map(conversation => ({
         label: conversation.title,
         to: `/c/${conversation.id}`,
-        icon: conversation.turnActive ? 'i-heroicons-arrow-path' : undefined,
-        ui: conversation.turnActive ? { linkLeadingIcon: 'animate-spin' } : undefined,
-        online: conversation.status === 'running',
+        session: sessionState(conversation.status, conversation.turnActive),
+        lastActivityAt: conversation.lastActivityAt,
     })),
 ]));
 
@@ -31,9 +34,15 @@ onMounted(async () => {
         void Promise.all([load(), loadAccount()]);
     });
     await Promise.all([load(), loadAccount()]);
+    clock = setInterval(() => {
+        now.value = Date.now();
+    }, CLOCK_TICK_MS);
 });
 
-onBeforeUnmount(() => unsubscribe?.());
+onBeforeUnmount(() => {
+    unsubscribe?.();
+    clearInterval(clock);
+});
 </script>
 
 <template>
@@ -81,18 +90,27 @@ onBeforeUnmount(() => unsubscribe?.());
                     :items="items"
                     :collapsed="collapsed"
                     orientation="vertical"
-                    :ui="{ link: 'overflow-hidden py-2', linkLabel: 'truncate' }"
+                    :ui="{ link: 'overflow-hidden py-1.5 before:transition-colors before:duration-500 before:ease-out hover:before:bg-accented/60 aria-[current=page]:before:bg-accented/80 aria-[current=page]:text-highlighted', linkLabel: 'min-w-0 flex-1' }"
                 >
-                    <template #item-trailing="{ item }">
-                        <span v-if="item.online" class="size-2 rounded-full bg-success"><span class="sr-only">Online</span></span>
+                    <template #item-label="{ item }">
+                        <template v-if="item.session">
+                            <span class="block truncate">{{ item.label }}</span>
+                            <span class="mt-0.5 flex items-center gap-1.5 text-xs font-normal text-muted">
+                                <span class="size-1.5 shrink-0 rounded-full" :class="item.session.dotClass" />
+                                <span>{{ item.session.label }}</span>
+                                <span aria-hidden="true">·</span>
+                                <span class="truncate tabular-nums">{{ formatRelativeTime(item.lastActivityAt, now) }}</span>
+                            </span>
+                        </template>
+                        <span v-else class="block truncate">{{ item.label }}</span>
                     </template>
                 </UNavigationMenu>
             </template>
 
             <template #footer="{ collapsed }">
                 <div class="flex w-full flex-col gap-2">
-                    <AccountCard v-if="!collapsed" />
                     <SettingsMenu :collapsed="collapsed" />
+                    <AccountCard v-if="!collapsed" />
                 </div>
             </template>
         </UDashboardSidebar>
