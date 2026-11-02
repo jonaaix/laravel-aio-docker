@@ -54,6 +54,10 @@ export function avatarUri(participant: Participant): string {
     return generatedAvatarUri(participant.kind, participant.seed || participant.name);
 }
 
+export function isVoxelBot(participant: Participant): boolean {
+    return participant.kind === 'agent' && !participant.image && !participant.seed?.startsWith(PRESET_PREFIX);
+}
+
 export function randomAvatarSeeds(count: number): string[] {
     return Array.from({ length: count }, () => Math.random().toString(36).slice(2, 10));
 }

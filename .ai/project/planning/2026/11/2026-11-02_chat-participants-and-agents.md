@@ -59,6 +59,7 @@ and the peer cannot touch the project.
 - People and agents are one participant concept; chat heads for people come first, agents build on it.
 - Handover is the fork's: missed messages plus self-contained handoff messages, no summary step.
 - A message without `@` goes to the agent that answered last (baton), as in the fork.
+- Only Voxel Bots are drawn large and free-standing (`isVoxelBot`); smileys, uploads and people use the round size.
 - Below `sm` the head sits above the message, small, with the name beside it, so text uses the full
   width. Phone text size comes from the 15 px root font (see `.ai/guidelines/app.md`).
 - Chat heads sit in the gutter beside the reading column on wide screens (`lg:-ms-[6.75rem]`, a 6rem name column where names wrap between words, never truncated), so

@@ -9,7 +9,7 @@ const props = defineProps<{
 }>();
 
 const label = computed(() => props.participant.name.replaceAll('-', NON_BREAKING_HYPHEN));
-const freeStanding = computed(() => props.participant.kind === 'agent' && !props.participant.image);
+const freeStanding = computed(() => isVoxelBot(props.participant));
 </script>
 
 <template>
