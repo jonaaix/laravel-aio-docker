@@ -36,10 +36,10 @@ const modelItems = computed(() => {
     return items.some(item => item.value === model.value) ? items : [...items, { label: model.value, description: undefined, value: model.value }];
 });
 const effortLevels = computed(() => models.value.find(entry => entry.value === model.value)?.effortLevels ?? []);
-const effortItems = computed(() => effortLevels.value.map(level => ({
-    label: level === 'xhigh' ? 'Extra high' : level.charAt(0).toUpperCase() + level.slice(1),
-    value: level,
-})));
+const effortItems = computed(() => effortLevels.value.map((level) => {
+    const name = level === 'xhigh' ? 'Extra high' : level.charAt(0).toUpperCase() + level.slice(1);
+    return { label: level === DEFAULT_EFFORT ? `${name} (default)` : name, value: level };
+}));
 
 watch(effortLevels, (levels) => {
     if (levels.length > 0 && !levels.includes(effort.value)) {
