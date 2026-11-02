@@ -321,7 +321,13 @@ async function confirmDelete(): Promise<void> {
                     <USelect v-model="effort" :items="effortItems" class="w-full" />
                 </UFormField>
             </div>
-            <template v-if="!isLead">
+            <UFormField v-if="isLead" label="Instructions">
+                <p class="flex items-center gap-2 rounded-md bg-elevated/60 px-3 py-2 text-sm text-toned">
+                    <UIcon name="i-heroicons-information-circle" class="size-4 shrink-0 text-muted" />
+                    Uses the CLAUDE.md of the project it works in.
+                </p>
+            </UFormField>
+            <template v-else>
                 <UFormField label="Instructions" hint="CLAUDE.md">
                     <UTextarea v-model="instructions" :rows="4" autoresize :maxrows="8" class="w-full font-mono text-sm" />
                 </UFormField>
