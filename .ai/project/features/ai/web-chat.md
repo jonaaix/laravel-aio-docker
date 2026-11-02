@@ -70,6 +70,14 @@ There are no chat commands. Two controls replace the ones that mattered:
 - **Pause** ends the running agent session but keeps the conversation resumable. Sending a new
   message picks the conversation up again.
 
+While the agent is answering, the user can keep writing. With an empty message input the send
+button stops the answer; once something is typed, it sends. A message sent during an answer does
+not interrupt it: it waits in a queue shown above the message input, and the agent takes it up at
+its next step, the way Claude Code does. At that moment the message moves into the conversation and
+the agent's answer continues below it. A message still queued when an answer ends or is stopped is
+answered next. If the session is paused before the agent took up a queued message, the message
+moves into the conversation and is answered when the conversation continues.
+
 A session also pauses on its own after 30 minutes without any activity. Work never counts as
 inactivity: while the agent is answering or a task it started in the background is still running,
 the session stays online however long that takes. The sidebar marks every conversation whose

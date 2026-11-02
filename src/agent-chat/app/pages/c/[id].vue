@@ -14,6 +14,7 @@ const {
     messages,
     status,
     backgroundTasks,
+    queuedMessages,
     archivedAt,
     loaded,
     hasEarlier,
@@ -363,6 +364,7 @@ const restoreConversation = () => withFlag(archiving, restore);
                 </Transition>
                 <UContainer class="pb-4 sm:pb-6">
                     <ChatBackgroundTasks v-if="backgroundTasks.length > 0" :tasks="backgroundTasks" class="mb-2" />
+                    <ChatQueuedMessages v-if="queuedMessages.length > 0" :messages="queuedMessages" class="mb-2" />
                     <ChatComposer
                         v-model="input"
                         placeholder="Send a message…"

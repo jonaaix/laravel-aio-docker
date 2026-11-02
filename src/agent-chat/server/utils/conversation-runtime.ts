@@ -1,8 +1,8 @@
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ClaudeCli, type ClaudeEvent } from '#claude-threads/claude/cli';
-import type { BackgroundTask, ChatMessage, ChatPart, ConversationStatus, ConversationSummary } from '../../shared/types/conversation';
+import type { BackgroundTask, ChatMessage, ChatPart, ConversationStatus, ConversationSummary, QueuedMessage } from '../../shared/types/conversation';
 import type { StoredFile } from './conversation-files';
 import { metricsFromResult, outcomeOnlyMetrics, type TurnMetrics } from './turn-metrics';
 
@@ -20,6 +20,10 @@ interface ActiveTurn {
     stopRequested: boolean;
 }
 
+interface QueuedPrompt extends QueuedMessage {
+    prompt: string;
+}
+
 class ConversationRuntime {
     private agent: ClaudeCli | null = null;
     private turn: ActiveTurn | null = null;
@@ -27,12 +31,18 @@ class ConversationRuntime {
     private idleTimer: ReturnType<typeof setTimeout> | null = null;
     private backgroundTasks: BackgroundTask[] = [];
     private titleRequestRef: string | null = null;
+    private queue: QueuedPrompt[] = [];
+    private undelivered: QueuedPrompt[] = [];
     private readonly mcpToken = randomBytes(24).toString('hex');
 
     constructor(private readonly conversationId: string) {}
 
     get turnActive(): boolean {
-        return this.turn !== null;
+        return this.turn !== null || this.queue.length > 0;
+    }
+
+    get queuedMessages(): QueuedMessage[] {
+        return this.queue.map(({ ref, parts, createdAt }) => ({ ref, parts, createdAt }));
     }
 
     get runningBackgroundTasks(): BackgroundTask[] {
@@ -66,15 +76,56 @@ class ConversationRuntime {
         if (text.trim()) {
             parts.push({ type: 'text', text });
         }
+        const prompt = promptWithAttachments(this.conversationId, text, attachments);
+        if (this.agent && this.turnActive) {
+            const queued: QueuedPrompt = { ref: randomUUID(), parts, createdAt: Date.now(), prompt };
+            this.queue.push(queued);
+            this.agent.sendMessage(prompt, queued.ref);
+            this.publishStatus('running');
+            return;
+        }
+        const agent = this.agent ?? this.startAgent(conversation, serverOrigin);
+        this.addUserMessage(parts);
+        this.beginTurn();
+        agent.sendMessage(prompt);
+        this.publishStatus('running');
+    }
+
+    private addUserMessage(parts: ChatPart[]): void {
         const message = appendMessage(this.conversationId, 'user', parts);
         publishConversationEvent(this.conversationId, { type: 'message', message });
-        this.beginTurn();
-        const agent = this.agent ?? this.startAgent(conversation, serverOrigin);
-        agent.sendMessage(promptWithAttachments(this.conversationId, text, attachments));
-        if (!conversation.titleRenamed) {
-            this.requestTitle(agent);
+        if (this.agent && !findConversation(this.conversationId)?.titleRenamed) {
+            this.requestTitle(this.agent);
         }
+    }
+
+    private takeQueued(ref: unknown): void {
+        const index = this.queue.findIndex(queued => queued.ref === ref);
+        if (index === -1) {
+            return;
+        }
+        const [queued] = this.queue.splice(index, 1);
+        this.closeAnswerBlock();
+        this.addUserMessage(queued!.parts);
         this.publishStatus('running');
+    }
+
+    private closeAnswerBlock(): void {
+        const turn = this.turn;
+        if (!turn?.message) {
+            return;
+        }
+        this.settleLivePart();
+        turn.message = null;
+        turn.parts = [];
+        turn.liveIndex = null;
+    }
+
+    private deferQueue(): void {
+        for (const queued of this.queue.splice(0)) {
+            this.addUserMessage(queued.parts);
+            this.undelivered.push(queued);
+        }
     }
 
     rename(title: string): void {
@@ -131,6 +182,7 @@ class ConversationRuntime {
             this.agent = null;
             this.backgroundTasks = [];
             this.endTurn(outcomeOnlyMetrics('stopped', this.model));
+            this.deferQueue();
             await agent.kill();
         }
         this.publishStatus('paused');
@@ -172,6 +224,7 @@ class ConversationRuntime {
             resume: conversation.agentSessionStarted,
             model: useRuntimeConfig().claudeModel || undefined,
             includePartialMessages: true,
+            replayUserMessages: true,
             thinkingDisplay: 'summarized',
             disallowedTools: DISALLOWED_TOOLS,
             mcpConfigPath: this.writeMcpConfig(serverOrigin),
@@ -184,6 +237,9 @@ class ConversationRuntime {
         agent.start();
         if (conversation.titleRenamed) {
             agent.sendControlRequest({ subtype: 'rename_session', title: conversation.title });
+        }
+        for (const queued of this.undelivered.splice(0)) {
+            agent.sendMessage(queued.prompt);
         }
         updateConversation(this.conversationId, { agentSessionStarted: true });
         this.agent = agent;
@@ -226,6 +282,10 @@ class ConversationRuntime {
         }
         if (event.type === 'rate_limit_event') {
             recordRateLimit(event.rate_limit_info);
+        }
+        if (event.type === 'user' && event.isReplay) {
+            this.takeQueued(event.uuid);
+            return;
         }
         if (!this.turn) {
             return;
@@ -354,12 +414,13 @@ class ConversationRuntime {
         this.agent = null;
         this.backgroundTasks = [];
         this.endTurn(outcomeOnlyMetrics('failed', this.model, 'Claude exited unexpectedly.'));
+        this.deferQueue();
         this.publishStatus('paused');
     }
 
     private publishStatus(status: ConversationStatus): void {
         setConversationStatus(this.conversationId, status);
-        publishConversationEvent(this.conversationId, { type: 'status', status, turnActive: this.turnActive, backgroundTasks: this.backgroundTasks });
+        publishConversationEvent(this.conversationId, { type: 'status', status, turnActive: this.turnActive, backgroundTasks: this.backgroundTasks, queuedMessages: this.queuedMessages });
         this.publishSummary();
     }
 
@@ -391,6 +452,10 @@ export function runningBackgroundTasks(conversationId: string): BackgroundTask[]
     return runtimes.get(conversationId)?.runningBackgroundTasks ?? [];
 }
 
+export function queuedMessages(conversationId: string): QueuedMessage[] {
+    return runtimes.get(conversationId)?.queuedMessages ?? [];
+}
+
 export async function pauseAllConversations(): Promise<void> {
     await Promise.all([...runtimes.values()].map(runtime => runtime.pause()));
 }
@@ -407,13 +472,14 @@ export function titleFromPrompt(text: string): string {
     return plain.length > TITLE_LENGTH ? `${plain.slice(0, TITLE_LENGTH - 1).trimEnd()}…` : plain || 'New conversation';
 }
 
-export function summarize(row: Omit<ConversationSummary, 'turnActive' | 'backgroundTasks'>): ConversationSummary {
+export function summarize(row: Omit<ConversationSummary, 'turnActive' | 'backgroundTasks' | 'queuedMessages'>): ConversationSummary {
     return {
         id: row.id,
         title: row.title,
         status: row.status,
         turnActive: isTurnActive(row.id),
         backgroundTasks: runningBackgroundTasks(row.id),
+        queuedMessages: queuedMessages(row.id),
         lastActivityAt: row.lastActivityAt,
         archivedAt: row.archivedAt,
     };

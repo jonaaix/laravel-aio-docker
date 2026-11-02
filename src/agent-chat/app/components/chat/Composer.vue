@@ -58,6 +58,7 @@ function onPaste(event: ClipboardEvent): void {
     }
 }
 const busy = computed(() => props.status === 'submitted' || props.status === 'streaming');
+const stoppable = computed(() => busy.value && empty.value);
 
 const wrapper = ref<HTMLElement | null>(null);
 const mirror = ref<HTMLElement | null>(null);
@@ -161,11 +162,11 @@ onBeforeUnmount(() => observer?.disconnect());
                 </UTooltip>
                 <input ref="fileInput" type="file" multiple class="hidden" @change="onPicked">
             </template>
-            <UTooltip :text="busy ? 'Stop' : 'Send'">
+            <UTooltip :text="stoppable ? 'Stop' : 'Send'">
                 <UChatPromptSubmit
-                    :status="props.status"
-                    :disabled="props.status === 'ready' && (empty || uploading)"
-                    :aria-label="busy ? 'Stop' : 'Send'"
+                    :status="stoppable ? props.status : 'ready'"
+                    :disabled="!stoppable && (empty || uploading)"
+                    :aria-label="stoppable ? 'Stop' : 'Send'"
                     color="neutral"
                     class="shrink-0 disabled:opacity-40"
                     @stop="emit('stop')"

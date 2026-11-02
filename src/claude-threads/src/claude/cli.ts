@@ -117,6 +117,7 @@ export interface ClaudeCliOptions {
   /** Model override passed as `--model` (e.g. "sonnet"). Undefined = Claude default. */
   model?: string;
   includePartialMessages?: boolean;
+  replayUserMessages?: boolean;
   thinkingDisplay?: 'summarized' | 'omitted';
   disallowedTools?: string[];
   mcpConfigPath?: string;
@@ -589,6 +590,10 @@ export class ClaudeCli extends EventEmitter implements AgentBackend {
       args.push('--include-partial-messages');
     }
 
+    if (this.options.replayUserMessages) {
+      args.push('--replay-user-messages');
+    }
+
     if (this.options.thinkingDisplay) {
       args.push('--thinking-display', this.options.thinkingDisplay);
     }
@@ -725,11 +730,12 @@ export class ClaudeCli extends EventEmitter implements AgentBackend {
   }
 
   // Send a user message via JSON stdin.
-  sendMessage(content: string): void {
+  sendMessage(content: string, uuid?: string): void {
     if (!this.process?.stdin) throw new Error('Not running');
 
     const msg = JSON.stringify({
       type: 'user',
+      ...(uuid ? { uuid } : {}),
       message: { role: 'user', content }
     }) + '\n';
     const preview = content.substring(0, 50);

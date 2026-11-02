@@ -1,5 +1,5 @@
 import type { ChatStatus } from 'ai';
-import type { BackgroundTask, ChatMessage, UploadedFile, ConversationDetail, ConversationEvent, ConversationStatus, ConversationSummary, MessagePage } from '#shared/types/conversation';
+import type { BackgroundTask, ChatMessage, UploadedFile, ConversationDetail, ConversationEvent, ConversationStatus, ConversationSummary, MessagePage, QueuedMessage } from '#shared/types/conversation';
 
 export function useConversation(conversationId: string) {
     const title = ref('');
@@ -8,6 +8,7 @@ export function useConversation(conversationId: string) {
     const status = ref<ConversationStatus>('paused');
     const turnActive = ref(false);
     const backgroundTasks = ref<BackgroundTask[]>([]);
+    const queuedMessages = ref<QueuedMessage[]>([]);
     const archivedAt = ref<number | null>(null);
     const loaded = ref(false);
     const hasEarlier = ref(false);
@@ -44,6 +45,7 @@ export function useConversation(conversationId: string) {
             status.value = event.status;
             turnActive.value = event.turnActive;
             backgroundTasks.value = event.backgroundTasks;
+            queuedMessages.value = event.queuedMessages;
         }
         if (event.type === 'title') {
             title.value = event.title;
@@ -67,6 +69,7 @@ export function useConversation(conversationId: string) {
         status.value = summary.status;
         turnActive.value = summary.turnActive;
         backgroundTasks.value = summary.backgroundTasks;
+        queuedMessages.value = summary.queuedMessages;
         archivedAt.value = summary.archivedAt;
     }
 
@@ -126,6 +129,7 @@ export function useConversation(conversationId: string) {
         status,
         turnActive,
         backgroundTasks,
+        queuedMessages,
         archivedAt,
         loaded,
         hasEarlier,

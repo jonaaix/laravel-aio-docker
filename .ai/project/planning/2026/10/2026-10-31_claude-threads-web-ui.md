@@ -120,6 +120,11 @@ container restart with its full history and attachments, and no Mattermost/Slack
   sets the conversation title (`title` event + list event). Renaming (`POST .../rename`, header
   `ChatTitleEditor`) sets `title_renamed`, which skips that request and drops a pending answer;
   the name goes to Claude Code as `rename_session`, and again on every agent start.
+- Queued messages: the CLI runs with `--replay-user-messages`; a message sent while a turn runs (or
+  others wait) is written to stdin with its own `uuid` and kept in the runtime queue (status event,
+  `ChatQueuedMessages`). Its replay echo marks the moment Claude took it up: the current assistant
+  block is closed, the user message is appended, and the turn continues in a new block. Pause/exit
+  moves the queue into the timeline and resends it on the next agent start (memory only).
 - Runtime config via env: `NUXT_WORKING_DIR` (default `<data dir>/workspace`, created on demand),
   `NUXT_DATA_DIR`, `NUXT_CLAUDE_MODEL`, `NUXT_APP_BASE_URL` (sub-path for the iframe). Paths are
   resolved in `server/utils/paths.ts`.
