@@ -83,6 +83,9 @@ and the peer cannot touch the project.
   plugin reads names at parse time and message parts re-render when the name list changes.
 - The participant list lives in the title bar, never beside the conversation: the chat mostly runs in a
   narrow window next to the main app, so a side list has no room.
+- Chat agents keep Claude's `ListAgents`/`SendMessage`, although they can see and message other Claude
+  sessions on the same machine: rejected blocking them, an edge case that vanishes inside the Docker
+  container, where no other sessions run; blocking would also cost follow-ups to running subagents.
 - One working folder per agent, shared by all conversations (they all work on the same app), so notes and
   Claude's memory carry over between chats.
 - Every agent can run its own model (advisors on Sonnet, for example).
