@@ -45,10 +45,11 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
         <UModal title="Participants">
             <button type="button" class="flex items-center -space-x-2.5" aria-label="Participants">
                 <ParticipantAvatar
-                    v-for="participant in participants"
+                    v-for="(participant, index) in participants"
                     :key="`${participant.kind}:${participant.name}`"
                     :participant="participant"
-                    class="relative z-10 size-9 rounded-full ring ring-accented"
+                    :style="{ zIndex: participants.length - index }"
+                    class="relative size-9 rounded-full ring ring-accented"
                     :class="isVoxelBot(participant) ? 'bg-elevated' : ''"
                 />
             </button>
