@@ -28,7 +28,6 @@ const avatarUpload = ref<UploadedFile | null>(null);
 const avatarPreview = ref<string | null>(null);
 const removeAvatar = ref(false);
 const avatarBusy = ref(false);
-const choosingAvatar = ref(false);
 const avatarSeeds = ref<string[]>([]);
 
 const selected = computed(() => creating.value ? null : agents.value.find(agent => agent.id === selectedId.value) ?? null);
@@ -62,7 +61,8 @@ function releasePreview(): void {
 }
 
 function shuffleAvatars(): void {
-    avatarSeeds.value = randomAvatarSeeds(AVATAR_CHOICES);
+    const kept = avatarSeed.value && !avatarPreview.value && !storedPicture.value ? [avatarSeed.value] : [];
+    avatarSeeds.value = [...kept, ...randomAvatarSeeds(AVATAR_CHOICES - kept.length)];
 }
 
 function chooseAvatar(seed: string): void {
@@ -70,14 +70,6 @@ function chooseAvatar(seed: string): void {
     avatarUpload.value = null;
     releasePreview();
     removeAvatar.value = true;
-    choosingAvatar.value = false;
-}
-
-function toggleAvatarChoice(): void {
-    choosingAvatar.value = !choosingAvatar.value;
-    if (choosingAvatar.value) {
-        shuffleAvatars();
-    }
 }
 
 async function onAvatarPicked(): Promise<void> {
@@ -97,7 +89,6 @@ async function onAvatarPicked(): Promise<void> {
         releasePreview();
         avatarPreview.value = URL.createObjectURL(file);
         removeAvatar.value = false;
-        choosingAvatar.value = false;
     }
     finally {
         avatarBusy.value = false;
@@ -122,7 +113,7 @@ function fill(agent: Agent | null): void {
     avatarUpload.value = null;
     releasePreview();
     removeAvatar.value = false;
-    choosingAvatar.value = false;
+    shuffleAvatars();
     takeAttachments();
 }
 
@@ -228,18 +219,18 @@ async function confirmDelete(): Promise<void> {
                         <div class="flex items-center gap-4">
                             <ParticipantAvatar :participant="avatarParticipant" class="size-16" />
                             <div class="flex flex-wrap gap-2">
-                                <UButton label="Choose avatar" icon="i-heroicons-sparkles" color="neutral" variant="outline" @click="toggleAvatarChoice" />
                                 <UButton label="Upload picture" icon="i-heroicons-arrow-up-tray" color="neutral" variant="outline" :loading="avatarBusy" @click="avatarInput?.click()" />
                                 <UButton v-if="avatarPreview || storedPicture" label="Remove picture" color="neutral" variant="ghost" @click="clearPicture" />
                             </div>
                             <input ref="avatarInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="hidden" @change="onAvatarPicked">
                         </div>
-                        <div v-if="choosingAvatar" class="flex flex-wrap items-center gap-2 rounded-md p-2 ring ring-default">
+                        <div class="flex flex-wrap items-center gap-2 rounded-md p-2 ring ring-default">
                             <button
                                 v-for="seed in avatarSeeds"
                                 :key="seed"
                                 type="button"
                                 class="rounded-md p-1 transition-colors duration-500 ease-out hover:bg-elevated"
+                                :class="seed === avatarSeed && !avatarPreview && !storedPicture ? 'bg-accented/60' : ''"
                                 :aria-label="`Use bot ${seed}`"
                                 @click="chooseAvatar(seed)"
                             >
