@@ -98,7 +98,8 @@ container restart with its full history and attachments, and no Mattermost/Slack
   Both event streams reload their state after a reconnect (a dev server reload pauses all sessions).
 - Message actions: copy (text parts only) on every message; selecting text in the timeline offers
   "Quote", which appends a Markdown quote to the composer; the composer overlays quote lines with a
-  bar (mirror div over a transparent textarea). Sent messages render as Markdown with line breaks.
+  bar (mirror div over a transparent textarea). Sent messages render as Markdown with line breaks;
+  past 25 lines they collapse to 15 (`ChatClampedContent`, measured from the line height).
   Expanded working steps highlight their code lazily (`useCodeTokens`, shared shiki highlighter);
   paths inside the working folder are shown relative to it.
 - Answer buttons: the last finished assistant message is scanned for numbered questions followed
