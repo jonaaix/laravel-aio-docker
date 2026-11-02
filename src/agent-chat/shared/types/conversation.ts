@@ -39,6 +39,7 @@ export type TurnOutcome = 'completed' | 'stopped' | 'failed';
 export interface ChatMessageMetadata {
     createdAt: number;
     senderName?: string;
+    senderAvatar?: string;
     outcome?: TurnOutcome;
     error?: string;
 }

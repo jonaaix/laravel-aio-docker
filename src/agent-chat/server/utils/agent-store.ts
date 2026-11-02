@@ -18,6 +18,9 @@ export interface AgentChanges {
     instructions: string;
     uploads: AttachmentReference[];
     removedResources: string[];
+    avatarSeed: string | null;
+    avatarUpload: AttachmentReference | null;
+    removeAvatar: boolean;
 }
 
 export function agentDir(id: string): string {
@@ -36,7 +39,7 @@ function resources(row: AgentRow): AgentResource[] {
 }
 
 function toAgent(row: AgentRow): Agent {
-    return { id: row.id, name: row.name, role: row.role, model: row.model, effort: row.effort, lead: row.lead, instructions: row.instructions, resources: resources(row) };
+    return { id: row.id, name: row.name, role: row.role, model: row.model, effort: row.effort, lead: row.lead, instructions: row.instructions, avatarSeed: row.avatarSeed, avatarUrl: avatarUrl(row.avatarFile, row.avatarUpdatedAt), resources: resources(row) };
 }
 
 export function leadAgent(): AgentRow {
@@ -44,7 +47,7 @@ export function leadAgent(): AgentRow {
     if (existing) {
         return existing;
     }
-    const row: AgentRow = { id: randomUUID(), name: LEAD_AGENT_NAME, role: LEAD_AGENT_ROLE, model: null, effort: DEFAULT_EFFORT, lead: true, instructions: '', createdAt: Date.now() };
+    const row: AgentRow = { id: randomUUID(), name: LEAD_AGENT_NAME, role: LEAD_AGENT_ROLE, model: null, effort: DEFAULT_EFFORT, lead: true, instructions: '', avatarSeed: null, avatarFile: null, avatarUpdatedAt: null, createdAt: Date.now() };
     useDatabase().insert(agents).values(row).run();
     return row;
 }
@@ -95,11 +98,14 @@ export function createAgent(changes: AgentChanges): Agent {
         effort: changes.effort,
         lead: false,
         instructions: changes.instructions,
+        avatarSeed: changes.avatarSeed,
+        avatarFile: null,
+        avatarUpdatedAt: null,
         createdAt: Date.now(),
     };
     useDatabase().insert(agents).values(row).run();
     writeWorkspace(row, changes);
-    return toAgent(row);
+    return toAgent(applyAvatar(row, changes));
 }
 
 export function updateAgent(row: AgentRow, changes: AgentChanges): Agent {
@@ -111,12 +117,31 @@ export function updateAgent(row: AgentRow, changes: AgentChanges): Agent {
         model: changes.model,
         effort: changes.effort,
         instructions: row.lead ? '' : changes.instructions,
+        avatarSeed: changes.avatarSeed,
     };
     useDatabase().update(agents).set(updated).where(eq(agents.id, row.id)).run();
     if (!row.lead) {
         writeWorkspace(updated, changes);
     }
-    return toAgent(updated);
+    return toAgent(applyAvatar(updated, changes));
+}
+
+function applyAvatar(row: AgentRow, changes: AgentChanges): AgentRow {
+    const base = `agent-${row.id}`;
+    let avatarFile = row.avatarFile;
+    if (changes.avatarUpload) {
+        avatarFile = storeUploadedAvatar(changes.avatarUpload, base);
+    }
+    else if (changes.removeAvatar) {
+        removeAvatar(base);
+        avatarFile = null;
+    }
+    if (avatarFile === row.avatarFile) {
+        return row;
+    }
+    const avatar = { avatarFile, avatarUpdatedAt: Date.now() };
+    useDatabase().update(agents).set(avatar).where(eq(agents.id, row.id)).run();
+    return { ...row, ...avatar };
 }
 
 export function deleteAgent(row: AgentRow): void {
@@ -125,6 +150,7 @@ export function deleteAgent(row: AgentRow): void {
     }
     useDatabase().delete(agents).where(eq(agents.id, row.id)).run();
     rmSync(agentDir(row.id), { recursive: true, force: true });
+    removeAvatar(`agent-${row.id}`);
 }
 
 export function readAgentChanges(body: Record<string, unknown>): AgentChanges {
@@ -142,5 +168,8 @@ export function readAgentChanges(body: Record<string, unknown>): AgentChanges {
         instructions: typeof body.instructions === 'string' ? body.instructions : '',
         uploads: readAttachmentReferences(body.uploads),
         removedResources: removed,
+        avatarSeed: typeof body.avatarSeed === 'string' && body.avatarSeed.trim() ? body.avatarSeed.trim().slice(0, AVATAR_SEED_MAX_LENGTH) : null,
+        avatarUpload: body.avatarUpload ? readAttachmentReferences([body.avatarUpload])[0]! : null,
+        removeAvatar: body.removeAvatar === true,
     };
 }

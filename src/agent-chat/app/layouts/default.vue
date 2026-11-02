@@ -9,15 +9,18 @@ const { baseURL } = useRuntimeConfig().app;
 
 const CLOCK_TICK_MS = 60_000;
 const NAME_PARAM = 'n';
+const AVATAR_PARAM = 'a';
 
 const route = useRoute();
 const router = useRouter();
 const { adopt: adoptUserName, restore: restoreUser } = useUserName();
 const encodedName = route.query[NAME_PARAM];
+const encodedAvatar = route.query[AVATAR_PARAM];
 if (typeof encodedName === 'string') {
-    void adoptUserName(encodedName);
+    void adoptUserName(encodedName, typeof encodedAvatar === 'string' ? encodedAvatar : undefined);
     const query = { ...route.query };
     delete query[NAME_PARAM];
+    delete query[AVATAR_PARAM];
     void router.replace({ query });
 }
 else {

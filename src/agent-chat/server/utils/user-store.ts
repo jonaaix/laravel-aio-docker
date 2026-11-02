@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { users } from '../database/schema';
+import type { ChatUser } from '../../shared/types/user';
 
 export type UserRow = typeof users.$inferSelect;
 
@@ -16,7 +17,7 @@ export function findOrCreateUser(name: string): UserRow {
     if (existing) {
         return existing;
     }
-    const row: UserRow = { id: randomUUID(), name, createdAt: Date.now() };
+    const row: UserRow = { id: randomUUID(), name, avatarFile: null, avatarSource: null, avatarUpdatedAt: null, createdAt: Date.now() };
     useDatabase().insert(users).values(row).run();
     return row;
 }
@@ -28,4 +29,37 @@ export function renameUser(id: string, name: string): UserRow {
     }
     useDatabase().update(users).set({ name }).where(eq(users.id, id)).run();
     return findUser(id)!;
+}
+
+export function toChatUser(row: UserRow): ChatUser {
+    return { id: row.id, name: row.name, avatarUrl: avatarUrl(row.avatarFile, row.avatarUpdatedAt), avatarLocked: row.avatarSource !== null };
+}
+
+function userAvatarBase(row: UserRow): string {
+    return `user-${row.id}`;
+}
+
+function saveAvatar(row: UserRow, avatarFile: string | null, avatarSource: string | null): UserRow {
+    const changes = { avatarFile, avatarSource, avatarUpdatedAt: Date.now() };
+    useDatabase().update(users).set(changes).where(eq(users.id, row.id)).run();
+    return { ...row, ...changes };
+}
+
+export async function syncLinkedAvatar(row: UserRow, source: string): Promise<UserRow> {
+    if (row.avatarSource === source && row.avatarFile) {
+        return row;
+    }
+    const file = await downloadAvatar(source, userAvatarBase(row));
+    return file ? saveAvatar(row, file, source) : row;
+}
+
+export function setUploadedAvatar(row: UserRow, upload: AttachmentReference | null): UserRow {
+    if (row.avatarSource !== null) {
+        throw createError({ statusCode: 409, statusMessage: 'This picture is set by the app that opened the chat' });
+    }
+    if (!upload) {
+        removeAvatar(userAvatarBase(row));
+        return saveAvatar(row, null, null);
+    }
+    return saveAvatar(row, storeUploadedAvatar(upload, userAvatarBase(row)), null);
 }

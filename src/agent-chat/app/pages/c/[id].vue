@@ -51,15 +51,20 @@ const visibleMessages = computed(() => messages.value.filter(message => message.
     || message.metadata?.outcome === 'failed'));
 
 const { lead } = useAgents();
-const leadAgent = computed<Participant>(() => ({ kind: 'agent', name: lead.value?.name ?? LEAD_AGENT_NAME }));
+const leadAgent = computed<Participant>(() => ({ kind: 'agent', name: lead.value?.name ?? LEAD_AGENT_NAME, seed: lead.value?.avatarSeed, image: lead.value?.avatarUrl }));
 
 function messageAuthor(message: ChatMessage): Participant {
-    return message.role === 'user' ? { kind: 'person', name: message.metadata?.senderName ?? '' } : leadAgent.value;
+    return message.role === 'user' ? { kind: 'person', name: message.metadata?.senderName ?? '', image: message.metadata?.senderAvatar } : leadAgent.value;
 }
 
 const participants = computed<Participant[]>(() => {
-    const people = [...new Set(visibleMessages.value.flatMap(message => message.role === 'user' && message.metadata?.senderName ? [message.metadata.senderName] : []))];
-    return [leadAgent.value, ...people.map(name => ({ kind: 'person' as const, name }))];
+    const people = new Map<string, Participant>();
+    for (const message of visibleMessages.value) {
+        if (message.role === 'user' && message.metadata?.senderName) {
+            people.set(message.metadata.senderName, messageAuthor(message));
+        }
+    }
+    return [leadAgent.value, ...people.values()];
 });
 
 const answerableMessageId = computed(() => {

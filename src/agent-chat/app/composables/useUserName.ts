@@ -1,12 +1,10 @@
+import type { UploadedFile } from '#shared/types/conversation';
+import type { ChatUser } from '#shared/types/user';
+
 const USER_COOKIE = 'chat-user-id';
 const LEGACY_NAME_COOKIE = 'chat-user-name';
 const LOCKED_COOKIE = 'chat-user-name-locked';
 const COOKIE_MAX_AGE_S = 60 * 60 * 24 * 365;
-
-interface ChatUser {
-    id: string;
-    name: string;
-}
 
 function decodeBase64Url(value: string): string | null {
     try {
@@ -44,10 +42,10 @@ export function useUserName() {
         lockedCookie.value = lock ? 'true' : null;
     }
 
-    async function signIn(rawName: string, lock: boolean): Promise<void> {
+    async function signIn(rawName: string, lock: boolean, avatarUrl?: string): Promise<void> {
         const normalized = normalizeUserName(rawName);
         if (normalized) {
-            remember(await apiFetch<ChatUser>('users', { method: 'POST', body: { name: normalized } }), lock);
+            remember(await apiFetch<ChatUser>('users', { method: 'POST', body: { name: normalized, avatarUrl } }), lock);
         }
     }
 
@@ -88,13 +86,19 @@ export function useUserName() {
         editing.value = false;
     }
 
-    async function adopt(encoded: string): Promise<void> {
-        const decoded = decodeBase64Url(encoded);
+    async function adopt(encodedName: string, encodedAvatar?: string): Promise<void> {
+        const decoded = decodeBase64Url(encodedName);
         if (decoded) {
-            await signIn(decoded, true);
+            await signIn(decoded, true, encodedAvatar ? decodeBase64Url(encodedAvatar) ?? undefined : undefined);
         }
         ready.value = true;
     }
 
-    return { user, userId, name, ready, locked, editing, restore, save, adopt };
+    async function setAvatar(upload: UploadedFile | null): Promise<void> {
+        if (user.value) {
+            user.value = await apiFetch<ChatUser>(`users/${user.value.id}/avatar`, { method: 'POST', body: { upload } });
+        }
+    }
+
+    return { user, userId, name, ready, locked, editing, restore, save, adopt, setAvatar };
 }

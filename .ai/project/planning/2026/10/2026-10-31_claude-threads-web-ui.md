@@ -35,7 +35,7 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - [x] Flatter composer (pill shape kept, light shadow, less padding)
 - [x] User name: enforced "Your name" modal, `?n=<base64url>` signs in and locks it
   (`chat-user-name-locked`), "Your name" in Settings, creator shown in the sidebar. Laravel side:
-  `rtrim(strtr(base64_encode($name), '+/', '-_'), '=')`
+  `rtrim(strtr(base64_encode($name), '+/', '-_'), '=')`; `a=` carries the picture URL the same way
 - [x] Users: `users` table (unique name), `messages.sender_id` / `conversations.creator_id`; the browser keeps
   `chat-user-id` (legacy `chat-user-name` cookies sign in once). A known name signs in as that user,
   renaming refuses a taken name (409). Migration 0006 backfilled users from the old name columns, 0007

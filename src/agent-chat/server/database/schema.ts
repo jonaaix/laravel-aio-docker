@@ -4,6 +4,9 @@ import type { ChatMessage } from '../../shared/types/conversation';
 export const users = sqliteTable('users', {
     id: text('id').primaryKey(),
     name: text('name').notNull(),
+    avatarFile: text('avatar_file'),
+    avatarSource: text('avatar_source'),
+    avatarUpdatedAt: integer('avatar_updated_at'),
     createdAt: integer('created_at').notNull(),
 }, table => [uniqueIndex('users_name_unique').on(table.name)]);
 
@@ -15,6 +18,9 @@ export const agents = sqliteTable('agents', {
     effort: text('effort'),
     lead: integer('lead', { mode: 'boolean' }).notNull().default(false),
     instructions: text('instructions').notNull().default(''),
+    avatarSeed: text('avatar_seed'),
+    avatarFile: text('avatar_file'),
+    avatarUpdatedAt: integer('avatar_updated_at'),
     createdAt: integer('created_at').notNull(),
 }, table => [uniqueIndex('agents_name_unique').on(table.name)]);
 

@@ -6,11 +6,14 @@ const props = defineProps<{
     label?: string;
 }>();
 
-const frame = computed(() => props.participant.kind === 'person'
-    ? 'rounded-full bg-neutral-100 ring ring-default dark:bg-neutral-300 dark:ring-2 dark:ring-neutral-400'
-    : '');
+const framed = computed(() => props.participant.kind === 'person' || !!props.participant.image);
 </script>
 
 <template>
-    <img :src="avatarUri(participant)" :alt="label ?? ''" class="shrink-0" :class="frame">
+    <img
+        :src="avatarUri(participant)"
+        :alt="label ?? ''"
+        class="shrink-0"
+        :class="framed ? 'rounded-full bg-neutral-100 object-cover ring ring-default dark:bg-neutral-300 dark:ring-2 dark:ring-neutral-400' : ''"
+    >
 </template>

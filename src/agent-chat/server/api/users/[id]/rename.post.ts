@@ -7,6 +7,5 @@ export default defineEventHandler(async (event) => {
     if (!name) {
         throw createError({ statusCode: 422, statusMessage: 'A name is required' });
     }
-    const { id, name: storedName } = renameUser(user.id, name);
-    return { id, name: storedName };
+    return toChatUser(renameUser(user.id, name));
 });

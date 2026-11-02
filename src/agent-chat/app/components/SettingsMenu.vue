@@ -4,7 +4,7 @@ import type { DropdownMenuItem } from '@nuxt/ui';
 defineProps<{ collapsed: boolean }>();
 
 const colorMode = useColorMode();
-const { locked: nameLocked, editing: editingName } = useUserName();
+const { user, locked: nameLocked, editing: editingName } = useUserName();
 const { managing: managingAgents } = useAgents();
 
 const appearances = [
@@ -14,8 +14,8 @@ const appearances = [
 ] as const;
 
 const nameItems = computed<DropdownMenuItem[]>(() => [
-    ...(nameLocked.value ? [] : [{
-        label: 'Your name',
+    ...(nameLocked.value && user.value?.avatarLocked ? [] : [{
+        label: 'Profile',
         icon: 'i-heroicons-user',
         onSelect: () => {
             editingName.value = true;

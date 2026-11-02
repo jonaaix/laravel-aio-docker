@@ -148,6 +148,13 @@ derived from their name with the name beneath it, next to each of their messages
 are drawn in clearly different styles. A small list of the participants floats at the top left of
 the conversation.
 
+A person without a picture of their own gets a friendly drawn face; they can upload a picture in
+their profile or remove it again. When the Laravel app opens the chat, it can pass the address of
+the person's picture along with the name; the chat fetches it, fetches it again whenever the address
+changes, and the person cannot replace it in the chat. An agent shows a robot — derived from its
+name until one is picked from a random selection — or an uploaded picture. Uploaded pictures appear
+in a circle, robots stand free.
+
 Every conversation starts with the lead coding agent, "Tarek LSA" unless renamed. The lead works in
 the project with the project's own instructions, sees the whole conversation and gives it its
 title. Further agents are defined once in the settings — each with a name, a role, a model, a

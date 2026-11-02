@@ -10,12 +10,12 @@ type MessageRow = typeof messages.$inferSelect;
 
 const MESSAGE_PAGE_SIZE = 50;
 
-function toChatMessage(row: Pick<MessageRow, 'id' | 'role' | 'parts' | 'createdAt'> & Partial<Pick<MessageRow, 'outcome' | 'errorMessage'>> & { senderName?: string | null }): ChatMessage {
+function toChatMessage(row: Pick<MessageRow, 'id' | 'role' | 'parts' | 'createdAt'> & Partial<Pick<MessageRow, 'outcome' | 'errorMessage'>> & { senderName?: string | null; senderAvatar?: string | null }): ChatMessage {
     return {
         id: row.id,
         role: row.role,
         parts: row.parts,
-        metadata: { createdAt: row.createdAt, senderName: row.senderName ?? undefined, outcome: row.outcome ?? undefined, error: row.errorMessage ?? undefined },
+        metadata: { createdAt: row.createdAt, senderName: row.senderName ?? undefined, senderAvatar: row.senderAvatar ?? undefined, outcome: row.outcome ?? undefined, error: row.errorMessage ?? undefined },
     };
 }
 
@@ -52,7 +52,7 @@ export function getMessagesBefore(conversationId: string, beforeMessageId: strin
 
 function messagePage(conversationId: string, beforeSeq: number | null): MessagePage {
     const rows = useDatabase()
-        .select({ ...getTableColumns(messages), senderName: users.name })
+        .select({ ...getTableColumns(messages), senderName: users.name, senderAvatarFile: users.avatarFile, senderAvatarUpdatedAt: users.avatarUpdatedAt })
         .from(messages)
         .leftJoin(users, eq(messages.senderId, users.id))
         .where(and(eq(messages.conversationId, conversationId), beforeSeq === null ? undefined : lt(messages.seq, beforeSeq)))
@@ -60,7 +60,7 @@ function messagePage(conversationId: string, beforeSeq: number | null): MessageP
         .limit(MESSAGE_PAGE_SIZE + 1)
         .all();
     return {
-        messages: rows.slice(0, MESSAGE_PAGE_SIZE).reverse().map(toChatMessage),
+        messages: rows.slice(0, MESSAGE_PAGE_SIZE).reverse().map(row => toChatMessage({ ...row, senderAvatar: avatarUrl(row.senderAvatarFile, row.senderAvatarUpdatedAt) })),
         hasEarlier: rows.length > MESSAGE_PAGE_SIZE,
     };
 }
@@ -117,7 +117,7 @@ export function appendMessage(conversationId: string, role: ChatMessage['role'],
     } satisfies typeof messages.$inferInsert;
     db.insert(messages).values(row).run();
     updateConversation(conversationId, { lastActivityAt: row.createdAt });
-    return toChatMessage({ ...row, senderName: sender?.name });
+    return toChatMessage({ ...row, senderName: sender?.name, senderAvatar: sender ? avatarUrl(sender.avatarFile, sender.avatarUpdatedAt) : null });
 }
 
 export function listUserMessages(conversationId: string): ChatMessage[] {

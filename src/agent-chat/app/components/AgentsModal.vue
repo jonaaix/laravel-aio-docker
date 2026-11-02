@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { Agent } from '#shared/types/agent';
 import type { ClaudeModel } from '#shared/types/model';
+import type { UploadedFile } from '#shared/types/conversation';
+
+const AVATAR_CHOICES = 8;
 
 
 const { agents, managing, load, save, remove } = useAgents();
@@ -19,6 +22,14 @@ const saving = ref(false);
 const error = ref<string | undefined>();
 const confirmingDelete = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
+const avatarInput = ref<HTMLInputElement | null>(null);
+const avatarSeed = ref<string | null>(null);
+const avatarUpload = ref<UploadedFile | null>(null);
+const avatarPreview = ref<string | null>(null);
+const removeAvatar = ref(false);
+const avatarBusy = ref(false);
+const choosingAvatar = ref(false);
+const avatarSeeds = ref<string[]>([]);
 
 const selected = computed(() => creating.value ? null : agents.value.find(agent => agent.id === selectedId.value) ?? null);
 const isLead = computed(() => selected.value?.lead ?? false);
@@ -39,7 +50,65 @@ watch(effortLevels, (levels) => {
     }
 });
 
-const valid = computed(() => normalizeUserName(name.value) !== null && !uploading.value);
+const valid = computed(() => normalizeUserName(name.value) !== null && !uploading.value && !avatarBusy.value);
+const storedPicture = computed(() => removeAvatar.value ? null : selected.value?.avatarUrl ?? null);
+const avatarParticipant = computed(() => ({ kind: 'agent' as const, name: name.value || 'agent', seed: avatarSeed.value, image: avatarPreview.value ?? storedPicture.value }));
+
+function releasePreview(): void {
+    if (avatarPreview.value) {
+        URL.revokeObjectURL(avatarPreview.value);
+    }
+    avatarPreview.value = null;
+}
+
+function shuffleAvatars(): void {
+    avatarSeeds.value = randomAvatarSeeds(AVATAR_CHOICES);
+}
+
+function chooseAvatar(seed: string): void {
+    avatarSeed.value = seed;
+    avatarUpload.value = null;
+    releasePreview();
+    removeAvatar.value = true;
+    choosingAvatar.value = false;
+}
+
+function toggleAvatarChoice(): void {
+    choosingAvatar.value = !choosingAvatar.value;
+    if (choosingAvatar.value) {
+        shuffleAvatars();
+    }
+}
+
+async function onAvatarPicked(): Promise<void> {
+    const file = avatarInput.value?.files?.[0];
+    avatarInput.value!.value = '';
+    if (!file) {
+        return;
+    }
+    avatarBusy.value = true;
+    try {
+        avatarUpload.value = await apiFetch<UploadedFile>('uploads', {
+            method: 'PUT',
+            query: { name: file.name },
+            body: file,
+            headers: { 'content-type': 'application/octet-stream' },
+        });
+        releasePreview();
+        avatarPreview.value = URL.createObjectURL(file);
+        removeAvatar.value = false;
+        choosingAvatar.value = false;
+    }
+    finally {
+        avatarBusy.value = false;
+    }
+}
+
+function clearPicture(): void {
+    avatarUpload.value = null;
+    releasePreview();
+    removeAvatar.value = true;
+}
 
 function fill(agent: Agent | null): void {
     name.value = agent?.name ?? '';
@@ -49,6 +118,11 @@ function fill(agent: Agent | null): void {
     instructions.value = agent?.instructions ?? '';
     removedResources.value = [];
     error.value = undefined;
+    avatarSeed.value = agent?.avatarSeed ?? null;
+    avatarUpload.value = null;
+    releasePreview();
+    removeAvatar.value = false;
+    choosingAvatar.value = false;
     takeAttachments();
 }
 
@@ -99,6 +173,9 @@ async function submit(): Promise<void> {
             instructions: instructions.value,
             uploads: ready.value.map(upload => ({ id: upload.id, filename: upload.filename })),
             removedResources: removedResources.value,
+            avatarSeed: avatarSeed.value,
+            avatarUpload: avatarUpload.value ? { id: avatarUpload.value.id, filename: avatarUpload.value.filename } : null,
+            removeAvatar: removeAvatar.value,
         });
         select(agents.value.find(agent => agent.id === saved.id) ?? saved);
     }
@@ -137,7 +214,7 @@ async function confirmDelete(): Promise<void> {
                         :class="!creating && agent.id === selectedId ? 'bg-elevated' : ''"
                         @click="select(agent)"
                     >
-                        <ParticipantAvatar :participant="{ kind: 'agent', name: agent.name }" class="size-10" />
+                        <ParticipantAvatar :participant="{ kind: 'agent', name: agent.name, seed: agent.avatarSeed, image: agent.avatarUrl }" class="size-10" />
                         <span class="min-w-0">
                             <span class="block truncate text-sm font-medium text-highlighted">{{ agent.name }}</span>
                             <span class="line-clamp-2 text-xs text-muted">{{ agent.role || 'No role' }}</span>
@@ -147,6 +224,32 @@ async function confirmDelete(): Promise<void> {
                 </nav>
 
                 <form id="agent-form" class="flex min-w-0 flex-1 flex-col gap-4" @submit.prevent="submit">
+                    <div class="flex flex-col gap-3">
+                        <div class="flex items-center gap-4">
+                            <ParticipantAvatar :participant="avatarParticipant" class="size-16" />
+                            <div class="flex flex-wrap gap-2">
+                                <UButton label="Choose bot" icon="i-heroicons-sparkles" color="neutral" variant="outline" @click="toggleAvatarChoice" />
+                                <UButton label="Upload picture" icon="i-heroicons-arrow-up-tray" color="neutral" variant="outline" :loading="avatarBusy" @click="avatarInput?.click()" />
+                                <UButton v-if="avatarPreview || storedPicture" label="Remove picture" color="neutral" variant="ghost" @click="clearPicture" />
+                            </div>
+                            <input ref="avatarInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="hidden" @change="onAvatarPicked">
+                        </div>
+                        <div v-if="choosingAvatar" class="flex flex-wrap items-center gap-2 rounded-md p-2 ring ring-default">
+                            <button
+                                v-for="seed in avatarSeeds"
+                                :key="seed"
+                                type="button"
+                                class="rounded-md p-1 transition-colors duration-500 ease-out hover:bg-elevated"
+                                :aria-label="`Use bot ${seed}`"
+                                @click="chooseAvatar(seed)"
+                            >
+                                <ParticipantAvatar :participant="{ kind: 'agent', name: seed, seed }" class="size-12" />
+                            </button>
+                            <UTooltip text="Shuffle">
+                                <UButton icon="i-heroicons-arrow-path" aria-label="Shuffle" color="neutral" variant="ghost" @click="shuffleAvatars" />
+                            </UTooltip>
+                        </div>
+                    </div>
                     <UFormField label="Name" :error="error">
                         <UInput v-model="name" :maxlength="USER_NAME_MAX_LENGTH" class="w-full" />
                     </UFormField>
