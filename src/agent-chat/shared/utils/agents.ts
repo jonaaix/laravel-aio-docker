@@ -1,5 +1,6 @@
 export const LEAD_AGENT_NAME = 'Tarek LSA';
 export const LEAD_AGENT_ROLE = 'Lead Senior Software Architect';
+export const LEAD_AGENT_AVATAR_SEED = 'tarek-52';
 export const AGENT_ROLE_MAX_LENGTH = 200;
 export const AVATAR_SEED_MAX_LENGTH = 64;
 export const EFFORT_LEVELS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;

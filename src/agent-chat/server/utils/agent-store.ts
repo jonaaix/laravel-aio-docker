@@ -52,7 +52,7 @@ export function leadAgent(): AgentRow {
     if (existing) {
         return existing;
     }
-    const row: AgentRow = { id: randomUUID(), name: LEAD_AGENT_NAME, role: LEAD_AGENT_ROLE, model: null, effort: DEFAULT_EFFORT, lead: true, instructions: '', avatarSeed: null, avatarFile: null, avatarUpdatedAt: null, createdAt: Date.now() };
+    const row: AgentRow = { id: randomUUID(), name: LEAD_AGENT_NAME, role: LEAD_AGENT_ROLE, model: null, effort: DEFAULT_EFFORT, lead: true, instructions: '', avatarSeed: LEAD_AGENT_AVATAR_SEED, avatarFile: null, avatarUpdatedAt: null, createdAt: Date.now() };
     useDatabase().insert(agents).values(row).run();
     return row;
 }
