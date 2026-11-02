@@ -367,8 +367,8 @@ const conversationActions = computed<DropdownMenuItem[]>(() => [
                         :style="{ '--last-message-height': `${answerSpace}px`, '--message-scroll-margin': `${messageScrollMargin}px` }"
                         :ui="{ root: 'px-0 [&>article]:scroll-mt-(--message-scroll-margin)' }"
                         :should-scroll-to-bottom="false"
-                        :assistant="{ side: 'left', variant: 'naked', ui: { container: 'pb-7', leading: 'mt-0 self-start lg:-ms-[5.25rem]', content: 'text-base/6.5', actions: 'h-6 gap-1' } }"
-                        :user="{ side: 'right', variant: 'soft', ui: { container: 'flex-row-reverse justify-start pb-7', leading: 'mt-0 self-start lg:-me-[5.25rem]', actions: 'h-6 gap-1', content: 'min-h-0 rounded-[1.125rem] bg-accented px-4 py-2.5 text-base/6.5' } }"
+                        :assistant="{ side: 'left', variant: 'naked', ui: { container: 'pb-7', leading: 'mt-0 self-start lg:-ms-[6.75rem]', content: 'text-base/6.5', actions: 'h-6 gap-1' } }"
+                        :user="{ side: 'right', variant: 'soft', ui: { container: 'flex-row-reverse justify-start pb-7', leading: 'mt-0 self-start lg:-me-[6.75rem]', actions: 'h-6 gap-1', content: 'min-h-0 rounded-[1.125rem] bg-accented px-4 py-2.5 text-base/6.5' } }"
                     >
                         <template #leading="{ message }">
                             <ChatHead :participant="messageAuthor(message)" />

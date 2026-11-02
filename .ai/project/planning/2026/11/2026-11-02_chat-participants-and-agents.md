@@ -53,7 +53,7 @@ and the peer cannot touch the project.
 - People and agents are one participant concept; chat heads for people come first, agents build on it.
 - Handover is the fork's: missed messages plus self-contained handoff messages, no summary step.
 - A message without `@` goes to the agent that answered last (baton), as in the fork.
-- Chat heads sit in the gutter beside the reading column on wide screens (`lg:-ms-[5.25rem]`), so
+- Chat heads sit in the gutter beside the reading column on wide screens (`lg:-ms-[6.75rem]`, a 6rem name column where names wrap between words, never truncated), so
   the text column stays aligned with the composer.
 - Every agent can run its own model (advisors on Sonnet, for example).
 - Peers may read and search the project but write only in their own folder: Claude's deny rules
