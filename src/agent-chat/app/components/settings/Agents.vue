@@ -283,17 +283,19 @@ async function confirmDelete(): Promise<void> {
             <UButton label="New agent" icon="i-heroicons-plus" color="neutral" variant="ghost" class="justify-start" @click="startNew" />
         </nav>
 
-        <form v-if="selected || creating" id="agent-form" class="flex min-w-0 flex-1 flex-col gap-4" @submit.prevent="roleTouched = true; persist()">
-            <UFormField label="Name" required :error="error">
-                <UInput v-model="name" :maxlength="USER_NAME_MAX_LENGTH" class="w-full" />
-            </UFormField>
-            <UFormField label="Role" required :error="roleMissing && roleTouched ? 'Required' : undefined">
-                <UInput v-model="role" :maxlength="AGENT_ROLE_MAX_LENGTH" class="w-full" @blur="roleTouched = true" />
-            </UFormField>
-            <div class="flex flex-col gap-3">
-                <div class="flex items-center gap-4">
-                    <span class="flex size-16 shrink-0 items-center justify-center">
-                        <ParticipantAvatar :participant="avatarParticipant" :class="isVoxelBot(avatarParticipant) ? 'size-16' : 'size-12.5'" />
+        <form v-if="selected || creating" id="agent-form" class="flex min-w-0 flex-1 flex-col gap-3.5" @submit.prevent="roleTouched = true; persist()">
+            <div class="grid gap-3.5 sm:grid-cols-2">
+                <UFormField label="Name" required :error="error">
+                    <UInput v-model="name" :maxlength="USER_NAME_MAX_LENGTH" class="w-full" />
+                </UFormField>
+                <UFormField label="Role" required :error="roleMissing && roleTouched ? 'Required' : undefined">
+                    <UInput v-model="role" :maxlength="AGENT_ROLE_MAX_LENGTH" class="w-full" @blur="roleTouched = true" />
+                </UFormField>
+            </div>
+            <div class="flex flex-col gap-2">
+                <div class="flex items-center gap-3">
+                    <span class="flex size-12 shrink-0 items-center justify-center">
+                        <ParticipantAvatar :participant="avatarParticipant" :class="isVoxelBot(avatarParticipant) ? 'size-12' : 'size-10'" />
                     </span>
                     <div class="flex flex-wrap gap-2">
                         <UButton label="Upload picture" icon="i-heroicons-arrow-up-tray" color="neutral" variant="outline" :loading="avatarBusy" @click="avatarInput?.click()" />
@@ -306,10 +308,11 @@ async function confirmDelete(): Promise<void> {
                     kind="agent"
                     :current="avatarPreview || storedPicture ? null : avatarSeed"
                     :presets="AGENT_PRESET_ROWS"
+                    compact
                     @select="chooseAvatar"
                 />
             </div>
-            <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_13rem]">
+            <div class="grid gap-3.5 sm:grid-cols-[minmax(0,1fr)_13rem]">
                 <UFormField label="Model">
                     <USelect v-model="model" :items="modelItems" class="w-full" :ui="{ content: 'min-w-72' }" />
                 </UFormField>
@@ -319,7 +322,7 @@ async function confirmDelete(): Promise<void> {
             </div>
             <template v-if="!isLead">
                 <UFormField label="Instructions" hint="CLAUDE.md">
-                    <UTextarea v-model="instructions" :rows="8" autoresize :maxrows="16" class="w-full font-mono text-sm" />
+                    <UTextarea v-model="instructions" :rows="4" autoresize :maxrows="8" class="w-full font-mono text-sm" />
                 </UFormField>
                 <UFormField label="Resources">
                     <div class="flex flex-col gap-2">
