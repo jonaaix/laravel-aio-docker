@@ -36,7 +36,7 @@ const externalLinksInNewTab = {
 type MarkdownDocument = Parameters<typeof visit>[0];
 type MarkdownNode = MarkdownDocument['nodes'][number];
 
-const MENTION_CLASS = 'rounded-md bg-inverted/10 px-1 py-px font-semibold text-highlighted';
+const MENTION_CLASS = 'rounded-md bg-inverted/10 px-1 py-px font-medium text-highlighted';
 const UNMARKED_TAGS = new Set(['a', 'code', 'pre']);
 
 function escapeName(name: string): string {
