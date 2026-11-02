@@ -11,7 +11,7 @@ and the peer cannot touch the project.
 ## Milestones
 
 - [x] Chat heads: DiceBear as local npm packages (`@dicebear/core`, `@dicebear/styles`), "Pixel Art" (happy mouths only)
-      for people, "Voxel Bot" (animated) for agents, seeded by name; head with the name below it beside every
+      for people, "Voxel Bot" (animated, larger, no circle or background) for agents, seeded by name; head with the name below it beside every
       message, own messages included
 - [x] Participant list floating top left of the conversation (in the header row below `lg`),
       without making the header taller: the lead plus people who have written; agents follow with

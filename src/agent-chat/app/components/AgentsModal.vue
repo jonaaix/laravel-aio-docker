@@ -137,7 +137,7 @@ async function confirmDelete(): Promise<void> {
                         :class="!creating && agent.id === selectedId ? 'bg-elevated' : ''"
                         @click="select(agent)"
                     >
-                        <ParticipantAvatar :participant="{ kind: 'agent', name: agent.name }" class="size-8" />
+                        <ParticipantAvatar :participant="{ kind: 'agent', name: agent.name }" class="size-10" />
                         <span class="min-w-0">
                             <span class="block truncate text-sm font-medium text-highlighted">{{ agent.name }}</span>
                             <span class="line-clamp-2 text-xs text-muted">{{ agent.role || 'No role' }}</span>

@@ -11,10 +11,11 @@ export interface Participant {
 
 const HAPPY_MOUTHS = Array.from({ length: 13 }, (_, index) => `happy${String(index + 1).padStart(2, '0')}`);
 const ANIMATION_SPEEDS = ['fastest', 'fast', 'medium', 'slow', 'slowest'];
+const TRANSPARENT = '#00000000';
 
 const STYLES: Record<ParticipantKind, { style: Style<unknown>; options: Record<string, unknown> }> = {
     person: { style: new Style(pixelArt), options: { mouthVariant: HAPPY_MOUTHS } },
-    agent: { style: new Style(voxelBot), options: { flip: 'horizontal', animationVariant: ANIMATION_SPEEDS } },
+    agent: { style: new Style(voxelBot), options: { flip: 'horizontal', animationVariant: ANIMATION_SPEEDS, backgroundColor: TRANSPARENT } },
 };
 
 const cache = new Map<string, string>();
