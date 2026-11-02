@@ -105,7 +105,7 @@ function onPicked(): void {
                 placeholder="Name"
                 aria-label="Your name"
                 autofocus
-                class="w-full"
+                class="w-full sm:max-w-sm"
             />
         </UFormField>
         <div v-if="user" class="flex flex-col gap-3 sm:flex-row sm:items-start">
@@ -121,12 +121,13 @@ function onPicked(): void {
                 v-if="!user.avatarLocked"
                 kind="person"
                 :current="user.avatarUrl ? null : user.avatarSeed"
+                :styles="PERSON_STYLE_PREFIXES"
                 class="min-w-0 flex-1"
                 @select="pickAvatar"
             />
         </div>
         <p v-if="pictureError" class="text-sm text-error">{{ pictureError }}</p>
-        <p class="text-xs text-muted">Drawn avatars: “Glyphs” by Matt Houser, CC BY 4.0</p>
+        <p class="text-xs text-muted">Drawn avatars: “Glyphs” by Matt Houser and “Dylan” by Natalia Spivak, CC BY 4.0; “Notionists” by Zoish, CC0</p>
     </form>
     <Teleport v-if="actionsTarget" defer :to="actionsTarget">
         <span />

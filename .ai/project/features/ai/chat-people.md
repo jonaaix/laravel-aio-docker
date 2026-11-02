@@ -36,7 +36,8 @@ are drawn in clearly different styles. The title bar shows the participants' pic
 right, all the same size and each in a circle, with the name on hover.
 
 A person without a picture of their own gets a drawn one derived from their name; in their profile
-they can pick another from a random selection, upload a picture of their own or remove it again.
+they can pick another from a random selection in three drawn styles (abstract glyphs, hand-drawn
+Notionists heads and Dylan faces), upload a picture of their own or remove it again.
 When the Laravel app opens the chat, it can pass the address of the person's picture along with the
 name; the chat fetches it, fetches it again whenever the address changes, and the person cannot
 replace it in the chat. Agent pictures are described in [Agents in the chat](chat-agents.md).

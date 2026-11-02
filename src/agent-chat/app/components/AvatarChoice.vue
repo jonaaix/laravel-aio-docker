@@ -8,18 +8,26 @@ const props = defineProps<{
     current: string | null;
     presets?: string[][];
     compact?: boolean;
+    styles?: string[];
 }>();
 
 const emit = defineEmits<{ select: [seed: string] }>();
 
-const seeds = ref<string[]>([]);
+const randomRows = ref<string[][]>([]);
 
-function shuffle(): void {
-    const kept = props.current && !props.presets?.some(row => row.includes(props.current!)) ? [props.current] : [];
-    seeds.value = [...kept, ...randomAvatarSeeds(CHOICES - kept.length)];
+function styleOf(seed: string): string {
+    return (props.styles ?? ['']).find(prefix => prefix && seed.startsWith(prefix)) ?? '';
 }
 
-const rows = computed(() => [seeds.value, ...(props.presets ?? [])]);
+function shuffle(): void {
+    const current = props.current && !props.presets?.some(row => row.includes(props.current!)) ? props.current : null;
+    randomRows.value = (props.styles ?? ['']).map((prefix) => {
+        const kept = current && styleOf(current) === prefix ? [current] : [];
+        return [...kept, ...randomAvatarSeeds(CHOICES - kept.length).map(seed => `${prefix}${seed}`)];
+    });
+}
+
+const rows = computed(() => [...randomRows.value, ...(props.presets ?? [])]);
 
 onMounted(shuffle);
 </script>

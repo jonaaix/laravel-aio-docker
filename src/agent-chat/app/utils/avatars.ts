@@ -1,6 +1,8 @@
 import { Avatar, Style } from '@dicebear/core';
 import { joinURL } from 'ufo';
+import dylan from '@dicebear/styles/dylan.json';
 import glyphs from '@dicebear/styles/glyphs.json';
+import notionists from '@dicebear/styles/notionists.json';
 import voxelBot from '@dicebear/styles/voxel-bot.json';
 
 export type ParticipantKind = 'person' | 'agent';
@@ -27,6 +29,15 @@ const STYLES: Record<ParticipantKind, { style: Style<unknown>; options: Record<s
     },
 };
 
+const PASTEL_BACKGROUNDS = ['#b6e3f4', '#c0aede', '#d1d4f9', '#ffd5dc', '#ffdfbf', '#c7f0d8'];
+
+const PERSON_STYLES: Record<string, Style<unknown>> = {
+    'notionists:': new Style(notionists),
+    'dylan:': new Style(dylan),
+};
+
+export const PERSON_STYLE_PREFIXES = ['', ...Object.keys(PERSON_STYLES)];
+
 const PRESET_PREFIX = 'preset:';
 const SMILEY_COLORS = ['red', 'orange', 'yellow', 'green', 'teal', 'blue', 'purple', 'pink'];
 
@@ -40,8 +51,10 @@ export function generatedAvatarUri(kind: ParticipantKind, seed: string): string 
     const key = `${kind}:${seed}`;
     let uri = cache.get(key);
     if (!uri) {
-        const { style, options } = STYLES[kind];
-        uri = new Avatar(style, { ...options, seed }).toDataUri();
+        const prefix = kind === 'person' ? Object.keys(PERSON_STYLES).find(candidate => seed.startsWith(candidate)) : undefined;
+        uri = prefix
+            ? new Avatar(PERSON_STYLES[prefix]!, { seed: seed.slice(prefix.length), backgroundColor: PASTEL_BACKGROUNDS }).toDataUri()
+            : new Avatar(STYLES[kind].style, { ...STYLES[kind].options, seed }).toDataUri();
         cache.set(key, uri);
     }
     return uri;
