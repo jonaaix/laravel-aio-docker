@@ -1,14 +1,31 @@
 <script setup lang="ts">
-import type { OfferedQuestion, QuestionSection } from '~/utils/offered-questions';
+import type { OfferedOption, OfferedQuestion, QuestionSection } from '~/utils/offered-questions';
 
 const props = defineProps<{
     section: QuestionSection;
     messageId: string;
 }>();
 
-const { messageId: answerableMessageId, chosen, answer } = useQuestionAnswers();
+const { messageId: answerableMessageId, chosen, sent, answer } = useQuestionAnswers();
 
 const active = computed(() => answerableMessageId.value === props.messageId);
+const sentAnswer = computed(() => active.value ? undefined : sent(props.messageId));
+const expanded = ref(false);
+const collapsed = computed(() => sentAnswer.value !== undefined && !expanded.value);
+const unanswered = computed(() => sentAnswer.value !== undefined && props.section.questions.every(question => !sentLetter(question)));
+
+function sentLetter(question: OfferedQuestion): string | undefined {
+    const answer = sentAnswer.value;
+    if (!answer) {
+        return undefined;
+    }
+    return answer.chosen[question.number] ?? (answer.accepted ? question.options.find(option => option.recommended)?.letter : undefined);
+}
+
+function shownOptions(question: OfferedQuestion): OfferedOption[] {
+    return collapsed.value ? question.options.filter(option => option.letter === sentLetter(question)) : question.options;
+}
+
 const recommendable = computed(() => props.section.questions.filter(question => question.options.some(option => option.recommended)));
 
 function publish(selection: Record<string, string>): void {
@@ -31,14 +48,14 @@ function acceptRecommendations(): void {
 }
 
 function isSelected(question: OfferedQuestion, letter: string): boolean {
-    return active.value && chosen.value[question.number] === letter;
+    return active.value ? chosen.value[question.number] === letter : sentLetter(question) === letter;
 }
 </script>
 
 <template>
     <ChatSectionCard :title="section.title">
-        <div class="flex flex-col gap-5">
-            <Markdown v-if="section.intro" :value="section.intro" :plugins="markdownPlugins" class="*:first:mt-0 *:last:mb-0" />
+        <div class="flex flex-col" :class="collapsed ? 'gap-3' : 'gap-5'">
+            <Markdown v-if="section.intro && !collapsed" :value="section.intro" :plugins="markdownPlugins" class="*:first:mt-0 *:last:mb-0" />
             <div
                 v-for="question in section.questions"
                 :key="question.number"
@@ -47,14 +64,14 @@ function isSelected(question: OfferedQuestion, letter: string): boolean {
                 <span class="font-medium whitespace-nowrap text-highlighted tabular-nums">{{ question.number }}.</span>
                 <Markdown :value="question.text" :plugins="markdownPlugins" class="font-medium text-highlighted *:my-0" />
                 <Markdown
-                    v-if="question.hint"
+                    v-if="question.hint && !collapsed"
                     :value="question.hint"
                     :plugins="markdownPlugins"
                     class="col-start-2 text-muted *:my-0"
                 />
-                <div v-if="question.options.length > 0" class="col-start-2 -mx-2 flex flex-col">
+                <div v-if="shownOptions(question).length > 0" class="col-start-2 -mx-2 flex flex-col">
                     <button
-                        v-for="option in question.options"
+                        v-for="option in shownOptions(question)"
                         :key="option.letter"
                         type="button"
                         :disabled="!active"
@@ -75,7 +92,18 @@ function isSelected(question: OfferedQuestion, letter: string): boolean {
                     </button>
                 </div>
             </div>
-            <Markdown v-if="section.outro" :value="section.outro" :plugins="markdownPlugins" class="*:first:mt-0 *:last:mb-0" />
+            <p v-if="collapsed && unanswered" class="text-sm text-muted">Not answered</p>
+            <Markdown v-if="section.outro && !collapsed" :value="section.outro" :plugins="markdownPlugins" class="*:first:mt-0 *:last:mb-0" />
+            <UButton
+                v-if="sentAnswer !== undefined"
+                :label="expanded ? 'Show less' : 'Show all options'"
+                :trailing-icon="expanded ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
+                color="neutral"
+                variant="link"
+                size="sm"
+                class="-mt-2 self-start px-0"
+                @click="expanded = !expanded"
+            />
             <div v-if="active && recommendable.length > 1" class="flex">
                 <UButton
                     label="Accept recommendations"

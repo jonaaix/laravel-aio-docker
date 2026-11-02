@@ -123,7 +123,8 @@ container restart with its full history and attachments, and no Mattermost/Slack
   (last one, finished, not archived) and the composer hook (`useQuestionAnswers`); a pick writes
   "44 a, 45 b" as the composer's first line and replaces only that line on later picks. The
   selection is derived from that first line (`answerLine` on the page; tolerant of "14a, 15: b und 16"
-  while typing), so the input is the only state.
+  while typing), so the input is the only state. Parsing lives in `readAnswerLine`; once a later user
+  message exists, the card collapses to the options that message chose ("ok" = recommendations).
 - User attachments: picked, dropped or pasted files upload at once (`PUT /api/uploads`, streamed to
   `<data dir>/uploads/`, 2 GB cap, cleared on start); on send they move into the conversation's file
   folder and Claude gets the bridge's path list ahead of the text, never inline content. The image's

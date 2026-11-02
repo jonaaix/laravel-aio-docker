@@ -1,0 +1,22 @@
+const ANSWER_SEPARATOR = /,|&|\b(?:und|and)\b/i;
+const ANSWER_TOKEN = /^(?:ok|\d+[\s:.)]*[a-z](?:\s+\d+[\s:.)]*[a-z])*)$/i;
+const ACCEPT_TOKEN = /^ok$/i;
+const PENDING_NUMBER = /^\d+$/;
+const CHOSEN_OPTION = /(\d+)[\s:.)]*([a-z])\b/gi;
+
+export interface AnswerLine {
+    accepted: boolean;
+    chosen: Record<string, string>;
+}
+
+export function readAnswerLine(line: string): AnswerLine | null {
+    const tokens = line.split(ANSWER_SEPARATOR).map(token => token.trim()).filter(Boolean);
+    const complete = PENDING_NUMBER.test(tokens.at(-1) ?? '') ? tokens.slice(0, -1) : tokens;
+    if (complete.length === 0 || !complete.every(token => ANSWER_TOKEN.test(token))) {
+        return null;
+    }
+    return {
+        accepted: complete.some(token => ACCEPT_TOKEN.test(token)),
+        chosen: Object.fromEntries([...line.matchAll(CHOSEN_OPTION)].map(([, number, letter]) => [number!, letter!.toLowerCase()])),
+    };
+}

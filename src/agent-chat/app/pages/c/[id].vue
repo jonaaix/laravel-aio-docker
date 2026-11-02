@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui';
 import type { ChatMessage } from '#shared/types/conversation';
+import type { AnswerLine } from '~/utils/answer-line';
 import type { Participant } from '~/utils/avatars';
 
 const EARLIER_THRESHOLD_PX = 200;
@@ -9,10 +10,6 @@ const ANSWER_GAP_PX = 32;
 const STICK_TO_BOTTOM_MS = 3000;
 const PIN_SENT_MESSAGE_MS = 2000;
 const USER_SCROLL_EVENTS = ['wheel', 'touchmove', 'keydown'] as const;
-const ANSWER_SEPARATOR = /,|&|\b(?:und|and)\b/i;
-const ANSWER_TOKEN = /^(?:ok|\d+[\s:.)]*[a-z](?:\s+\d+[\s:.)]*[a-z])*)$/i;
-const PENDING_NUMBER = /^\d+$/;
-const CHOSEN_OPTION = /(\d+)[\s:.)]*([a-z])\b/gi;
 
 const route = useRoute();
 const conversationId = route.params.id as string;
@@ -237,16 +234,26 @@ function quote(text: string): void {
     focusComposerAtEnd();
 }
 
-const answerLine = computed(() => {
-    const first = input.value.split('\n')[0]!;
-    const tokens = first.split(ANSWER_SEPARATOR).map(token => token.trim()).filter(Boolean);
-    const complete = PENDING_NUMBER.test(tokens.at(-1) ?? '') ? tokens.slice(0, -1) : tokens;
-    return complete.length > 0 && complete.every(token => ANSWER_TOKEN.test(token)) ? first : '';
-});
+const draftAnswer = computed(() => readAnswerLine(input.value.split('\n')[0]!));
+const answerLine = computed(() => draftAnswer.value ? input.value.split('\n')[0]! : '');
+const chosenOptions = computed(() => draftAnswer.value?.chosen ?? {});
 
-const chosenOptions = computed(() => Object.fromEntries(
-    [...answerLine.value.matchAll(CHOSEN_OPTION)].map(([, number, letter]) => [number!, letter!.toLowerCase()]),
-));
+const NOT_ANSWERED: AnswerLine = { accepted: false, chosen: {} };
+
+const sentAnswers = computed(() => {
+    const answers = new Map<string, AnswerLine>();
+    let pending: string[] = [];
+    for (const message of visibleMessages.value) {
+        if (message.role === 'assistant') {
+            pending.push(message.id);
+            continue;
+        }
+        const reply = readAnswerLine(messageText(message).split('\n')[0] ?? '') ?? NOT_ANSWERED;
+        pending.forEach(id => answers.set(id, reply));
+        pending = [];
+    }
+    return answers;
+});
 
 function answer(line: string): void {
     const rest = (answerLine.value ? input.value.split('\n').slice(1).join('\n') : input.value).trimStart();
@@ -254,7 +261,7 @@ function answer(line: string): void {
     focusComposerAtEnd();
 }
 
-provide(questionAnswersKey, { messageId: answerableMessageId, chosen: chosenOptions, answer });
+provide(questionAnswersKey, { messageId: answerableMessageId, chosen: chosenOptions, sent: messageId => sentAnswers.value.get(messageId), answer });
 
 async function withFlag(flag: Ref<boolean>, action: () => Promise<void>): Promise<void> {
     flag.value = true;
