@@ -8,3 +8,9 @@
 - A modal that can open on top of another one opens through Nuxt UI's `useOverlay` (created with
   `destroyOnClose`, forwarding `after:leave`), never as a modal mounted with the layout: modals stack in
   the order they were mounted, so one mounted at page load ends up beneath every later one.
+
+## Nuxt auto-imports
+
+- Nuxt's auto-import does not see a name that is directly followed by a type assertion (`as`, `satisfies`)
+  or a non-null `!`, e.g. `(COLOR_MODES as readonly unknown[])`; the type check passes and the call fails at
+  runtime with "is not defined". Import such a name explicitly, or keep the assertion off the bare name.
