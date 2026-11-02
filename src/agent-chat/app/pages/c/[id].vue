@@ -382,7 +382,7 @@ const session = computed(() => sessionState(status.value, turnActive.value));
                                     aria-label="Archive"
                                     color="neutral"
                                     variant="outline"
-                                    class="bg-white dark:bg-transparent"
+                                    class="size-9.5 justify-center bg-white dark:bg-transparent"
                                     :loading="archiving"
                                     @click="archiveConversation"
                                 />

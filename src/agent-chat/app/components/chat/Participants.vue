@@ -48,7 +48,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
                     :participant="participant"
                     :label="participant.name"
                     :style="{ zIndex: participants.length - index }"
-                    class="relative size-9 rounded-full outline outline-(--ui-border-accented) -outline-offset-1"
+                    class="relative size-9 rounded-full ring ring-accented"
                     :class="isVoxelBot(participant) ? 'bg-elevated' : ''"
                 />
             </UTooltip>
@@ -58,7 +58,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
                 <button
                     type="button"
                     aria-label="Agents"
-                    class="relative z-0 -ms-2 flex size-9 lg:ms-1 items-center justify-center rounded-full bg-default text-muted ring ring-inset ring-accented transition-colors hover:text-default"
+                    class="relative z-0 -ms-2 flex size-9 lg:ms-1 items-center justify-center rounded-full bg-default text-muted ring ring-accented transition-colors hover:text-default"
                 >
                     <UIcon name="i-heroicons-plus" class="size-5" />
                 </button>
