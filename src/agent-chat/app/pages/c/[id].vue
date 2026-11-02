@@ -318,9 +318,6 @@ const conversationActions = computed<DropdownMenuItem[]>(() => [
     <UDashboardPanel :id="`conversation-${conversationId}`" :ui="{ body: 'px-0 sm:px-0' }">
         <template #header>
             <div ref="header" class="sticky top-0 z-30 bg-default">
-                <div v-if="loaded" class="absolute start-6 top-full mt-3 hidden lg:block">
-                    <ChatParticipants :participants="participants" :agent-options="agentOptions" :editable="archivedAt === null" @toggle="setAgent" />
-                </div>
                 <UDashboardNavbar :title="title">
                     <template #title>
                         <UTooltip :text="session.label">
@@ -343,7 +340,7 @@ const conversationActions = computed<DropdownMenuItem[]>(() => [
                                 @click="restoreConversation"
                             />
                         </template>
-                        <ChatParticipants v-if="loaded" :participants="participants" :agent-options="agentOptions" :editable="archivedAt === null" compact class="lg:hidden" @toggle="setAgent" />
+                        <ChatParticipants v-if="loaded" :participants="participants" :agent-options="agentOptions" :editable="archivedAt === null" @toggle="setAgent" />
                         <template v-if="archivedAt === null && loaded">
                             <UButton
                                 v-if="status === 'running'"

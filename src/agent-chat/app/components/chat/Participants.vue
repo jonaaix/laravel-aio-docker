@@ -12,7 +12,6 @@ const props = defineProps<{
     participants: Participant[];
     agentOptions: AgentOption[];
     editable: boolean;
-    compact?: boolean;
 }>();
 
 const emit = defineEmits<{ toggle: [agentId: string, member: boolean] }>();
@@ -38,7 +37,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
 </script>
 
 <template>
-    <UModal v-if="compact" title="Participants">
+    <UModal title="Participants">
         <button type="button" class="flex items-center -space-x-2" aria-label="Participants">
             <ParticipantAvatar
                 v-for="participant in participants"
@@ -54,10 +53,4 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
             </UDropdownMenu>
         </template>
     </UModal>
-    <div v-else class="flex flex-col items-start">
-        <ChatParticipantList :participants="participants" />
-        <UDropdownMenu v-if="editable" :items="menuItems" :content="{ align: 'start' }">
-            <UButton label="Add agent" icon="i-heroicons-plus" color="neutral" variant="ghost" size="sm" class="mt-1 -ms-1.5 text-muted" />
-        </UDropdownMenu>
-    </div>
 </template>

@@ -19,9 +19,8 @@ and the peer cannot touch the project.
       `preset:<design>-<colour>`, recoloured from the user's original by hue shift on saturated pixels), a
       Voxel Bot from 8 random ones, or upload.
       Files in `<data dir>/avatars/` (`user-<id>`/`agent-<id>`, ≤ 5 MB), served by `GET /api/avatars/<file>`
-- [x] Participant list floating top left of the conversation, one row per participant (below `lg` the
-      header shows stacked heads that open the list in a modal),
-      without making the header taller: the lead plus people who have written; agents follow with
+- [x] Participant list: stacked heads at the top right of the title bar open a modal with one row per
+      participant, without making the header taller: the lead plus people who have written; agents follow with
       membership
 - [x] Agent registry: Settings → "Agents" modal; lead "Tarek LSA" always present (name, role, model
       editable; role default "Lead Senior Software Architect"); peers with name, role, model, a
@@ -45,7 +44,7 @@ and the peer cannot touch the project.
   The lead row is created on first use (`leadAgent()`, red Voxel Bot seed `tarek-52`), its model and effort already drive the conversation's
   Claude session. Peer folders: `<data dir>/agents/<id>/` with `CLAUDE.md` + resource files
   (uploads moved in on save, removed on delete).
-- Membership lives in `conversation_agents` (lead implied, never stored); the participant list's
+- Membership lives in `conversation_agents` (lead implied, never stored); the participant modal's
   "Add agent" menu toggles it (`POST /api/conversations/<id>/agents`). The composer suggests
   participants after `@`; until per-agent sessions exist, `@Name` is plain text for the lead.
 - Conversations are already separate from the Claude session (`conversations.agent_session_ref`);
@@ -68,6 +67,8 @@ and the peer cannot touch the project.
   width. Phone text size comes from the 15 px root font (see `.ai/guidelines/app.md`).
 - Chat heads sit in the gutter beside the reading column on wide screens (`lg:-ms-[6.75rem]`, a 6rem name column where names wrap between words, never truncated), so
   the text column stays aligned with the composer.
+- The participant list lives in the title bar, never beside the conversation: the chat mostly runs in a
+  narrow window next to the main app, so a side list has no room.
 - Every agent can run its own model (advisors on Sonnet, for example).
 - Peers may read and search the project but write only in their own folder: Claude's deny rules
   block the file-writing tools for the project path (they hold even without permission prompts). Peers
