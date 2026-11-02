@@ -1,0 +1,1 @@
+ALTER TABLE `conversations` ADD `announced_agents` text DEFAULT '[]' NOT NULL;

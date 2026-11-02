@@ -47,6 +47,8 @@ and the peer cannot touch the project.
 - Membership lives in `conversation_agents` (lead implied, never stored); the participant modal's
   "Add agent" menu toggles it (`POST /api/conversations/<id>/agents`). The composer suggests
   participants after `@`; until per-agent sessions exist, `@Name` is plain text for the lead.
+  `conversations.announced_agents` holds the agents Claude was told about; the next prompt starts
+  with `<status>Name joined/left the chat.</status>` lines for the difference.
 - Conversations are already separate from the Claude session (`conversations.agent_session_ref`);
   messages store `sender_name`, conversations `creator_name`.
 - The fork's multi-bot logic to port lives in `src/claude-threads/src`: baton in

@@ -75,6 +75,7 @@ export function createConversation(title: string, workingDir: string, creatorId:
         workingDir,
         agentSessionRef: randomUUID(),
         agentSessionStarted: false,
+        announcedAgents: [],
         createdAt: now,
         lastActivityAt: now,
         archivedAt: null,

@@ -162,9 +162,10 @@ Every conversation starts with the lead coding agent, "Tarek LSA" unless renamed
 the project with the project's own instructions, sees the whole conversation and gives it its
 title. Further agents are defined once in the settings — each with a name, a role, a model, a
 description that becomes its own instructions, and files it may use as resources — and can be
-switched into or out of any conversation at any time from the participant list. An agent in the
-conversation can be addressed with `@Name`, and so can every person who has written in it; typing
-`@` suggests them.
+switched into or out of any conversation at any time from the participant list. The agents in the
+conversation learn about it with the next message: it starts with a short note such as "Peter
+Peer joined the chat." or "Peter Peer left the chat.". An agent in the conversation can be
+addressed with `@Name`, and so can every person who has written in it; typing `@` suggests them.
 
 Each agent keeps its own session per conversation. The first message an agent receives in a
 conversation tells it who takes part and what role each agent has. One agent answers at a time:

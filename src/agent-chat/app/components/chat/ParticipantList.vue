@@ -13,6 +13,9 @@ defineProps<{
                 <ParticipantAvatar :participant="participant" :class="isVoxelBot(participant) ? 'size-7' : 'size-6'" />
             </span>
             <span class="min-w-0 truncate text-sm text-default">{{ participant.name }}</span>
+            <span class="ms-auto">
+                <slot name="trailing" :participant="participant" />
+            </span>
         </li>
     </ul>
 </template>

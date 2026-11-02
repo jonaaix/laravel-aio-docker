@@ -19,6 +19,10 @@ const emit = defineEmits<{ toggle: [agentId: string, member: boolean] }>();
 
 const agentsWindow = useAgentsWindow();
 
+function memberOption(participant: Participant): AgentOption | null {
+    return participant.kind === 'agent' ? props.agentOptions.find(option => option.member && option.name === participant.name) ?? null : null;
+}
+
 const menuItems = computed<DropdownMenuItem[][]>(() => [
     props.agentOptions.map(option => ({
         label: option.name,
@@ -47,7 +51,21 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
             />
         </button>
         <template #body>
-            <ChatParticipantList :participants="participants" />
+            <ChatParticipantList :participants="participants">
+                <template #trailing="{ participant }">
+                    <UTooltip v-if="editable && memberOption(participant)" text="Remove">
+                        <UButton
+                            icon="i-heroicons-x-mark"
+                            color="neutral"
+                            variant="ghost"
+                            size="xs"
+                            aria-label="Remove"
+                            class="text-dimmed"
+                            @click="emit('toggle', memberOption(participant)!.id, false)"
+                        />
+                    </UTooltip>
+                </template>
+            </ChatParticipantList>
             <UDropdownMenu v-if="editable" :items="menuItems" :content="{ align: 'start' }">
                 <UButton label="Add agent" icon="i-heroicons-plus" color="neutral" variant="ghost" class="mt-2 -ms-2" />
                 <template #item-leading="{ item }">

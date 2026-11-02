@@ -1,6 +1,11 @@
 import { index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import type { ChatMessage } from '../../shared/types/conversation';
 
+export interface AnnouncedAgent {
+    id: string;
+    name: string;
+}
+
 export const users = sqliteTable('users', {
     id: text('id').primaryKey(),
     name: text('name').notNull(),
@@ -34,6 +39,7 @@ export const conversations = sqliteTable('conversations', {
     workingDir: text('working_dir').notNull(),
     agentSessionRef: text('agent_session_ref').notNull(),
     agentSessionStarted: integer('agent_session_started', { mode: 'boolean' }).notNull().default(false),
+    announcedAgents: text('announced_agents', { mode: 'json' }).$type<AnnouncedAgent[]>().notNull().default([]),
     createdAt: integer('created_at').notNull(),
     lastActivityAt: integer('last_activity_at').notNull(),
     archivedAt: integer('archived_at'),

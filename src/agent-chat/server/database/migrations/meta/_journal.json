@@ -99,6 +99,13 @@
       "when": 1793649733562,
       "tag": "0013_conversation_agents",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1793651963405,
+      "tag": "0014_conversation_announced_agents",
+      "breakpoints": true
     }
   ]
 }

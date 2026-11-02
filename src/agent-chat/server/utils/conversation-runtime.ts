@@ -78,7 +78,7 @@ class ConversationRuntime {
         if (text.trim()) {
             parts.push({ type: 'text', text });
         }
-        const prompt = this.withSender(promptWithAttachments(this.conversationId, text, attachments), sender);
+        const prompt = this.withMembershipNotice(this.withSender(promptWithAttachments(this.conversationId, text, attachments), sender));
         if (this.agent && this.turnActive) {
             const queued: QueuedPrompt = { ref: randomUUID(), parts, createdAt: Date.now(), prompt, sender };
             this.queue.push(queued);
@@ -96,6 +96,11 @@ class ConversationRuntime {
     private withSender(prompt: string, sender: UserRow | null): string {
         const previous = this.queue.length > 0 ? this.queue.at(-1)!.sender?.id ?? null : lastUserSenderId(this.conversationId);
         return sender && sender.id !== previous ? `<from>${sender.name}</from>\n${prompt}` : prompt;
+    }
+
+    private withMembershipNotice(prompt: string): string {
+        const notice = takeMembershipNotice(this.conversationId);
+        return notice ? `${notice}\n${prompt}` : prompt;
     }
 
     private addUserMessage(parts: ChatPart[], sender: UserRow | null): void {
