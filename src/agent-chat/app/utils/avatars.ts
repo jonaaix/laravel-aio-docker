@@ -1,5 +1,5 @@
 import { Avatar, Style } from '@dicebear/core';
-import critters from '@dicebear/styles/critters.json';
+import dylan from '@dicebear/styles/dylan.json';
 import voxelBot from '@dicebear/styles/voxel-bot.json';
 
 export type ParticipantKind = 'person' | 'agent';
@@ -11,15 +11,14 @@ export interface Participant {
     image?: string | null;
 }
 
-const FRIENDLY_MOUTHS = ['smile', 'tinySmile', 'grin', 'laugh', 'teeth', 'catMouth', 'tongue', 'blep'];
-const FRIENDLY_EYES = ['round', 'dots', 'bigPupils', 'happy', 'wink', 'wide', 'closedLine', 'sleepy'];
+const FRIENDLY_MOODS = ['happy', 'hopeful', 'superHappy'];
 const ANIMATION_SPEEDS = ['fastest', 'fast', 'medium', 'slow', 'slowest'];
 const TRANSPARENT = '#00000000';
 
 const STYLES: Record<ParticipantKind, { style: Style<unknown>; options: Record<string, unknown> }> = {
     person: {
-        style: new Style(critters),
-        options: { flip: 'horizontal', mouthVariant: FRIENDLY_MOUTHS, eyesVariant: FRIENDLY_EYES, animationVariant: 'none' },
+        style: new Style(dylan),
+        options: { flip: 'horizontal', moodVariant: FRIENDLY_MOODS },
     },
     agent: {
         style: new Style(voxelBot),
