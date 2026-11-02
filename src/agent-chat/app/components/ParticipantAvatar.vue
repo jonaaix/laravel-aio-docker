@@ -14,6 +14,6 @@ const framed = computed(() => props.participant.kind === 'person' || !!props.par
         :src="avatarUri(participant)"
         :alt="label ?? ''"
         class="shrink-0"
-        :class="framed ? 'rounded-full bg-neutral-100 object-cover ring ring-default dark:bg-neutral-300 dark:ring-2 dark:ring-neutral-400' : ''"
+        :class="[framed ? 'rounded-full object-cover' : '', participant.image ? 'ring ring-default' : '']"
     >
 </template>
