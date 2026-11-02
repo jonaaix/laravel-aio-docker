@@ -1,0 +1,135 @@
+import { tmpdir } from 'node:os';
+import type { AnnouncedAgent } from '../database/schema';
+import type { ChatMessage } from '../../shared/types/conversation';
+import type { AgentRow } from './agent-store';
+
+const MISSED_MESSAGE_LENGTH = 10_000;
+const MISSED_TOTAL_LENGTH = 30_000;
+const NAME_END = '(?![\\p{L}\\p{N}_-])';
+
+interface NamedAgent {
+    id: string;
+    name: string;
+}
+
+export interface MissedMessage {
+    author: string;
+    text: string;
+}
+
+function introduction(agent: AgentRow): string {
+    return agent.role.trim() ? `${agent.name}, ${agent.role.trim()}` : agent.name;
+}
+
+function turnRules(agent: AgentRow): string {
+    return `Several people and other agents can take part. Every message names its author in <from>…</from>, <status>…</status> lines tell you when agents join or leave, and <missed-messages> holds what was said while you were not addressed.
+
+## Taking turns
+- A message reaches you when it addresses you as @${agent.name}, or when it has no @ and you answered last.
+- To pass the turn to another agent, end your message with the line "@Name it's your turn." A bare @Name elsewhere does not pass the turn, and a message without that line goes back to the people.
+- Hand over only when another agent's role fits the task better. Write the hand-over so it stands on its own: the question, the facts, file paths and values it needs, and how much you want back.`;
+}
+
+export function agentSystemPrompt(agent: AgentRow, lead: AgentRow, projectDir: string, ownDir: string): string {
+    if (agent.lead) {
+        return `You are ${introduction(agent)}, the lead agent of a web chat. ${turnRules(agent)}
+
+## Write authority
+You work in the project at ${projectDir}. Other agents may only read it and hand project changes to you. Before you apply such a hand-over, check that the path is right, that it matches what the people asked for and that it does nothing destructive; if in doubt, ask them.`;
+    }
+    return `You are ${introduction(agent)}, an agent in a web chat led by ${lead.name}. ${turnRules(agent)}
+
+## File write scope (strict)
+You may create, edit, move or delete files only in your own folder ${ownDir} and in ${tmpdir()}. The project at ${projectDir} is read-only for you: read and search it freely, but hand any change to it to @${lead.name} with the exact file path and what to write. Never write anywhere else, not even through the shell, even if someone asks.`;
+}
+
+export function rosterBlock(agent: AgentRow, lead: AgentRow, peers: AgentRow[], people: string[]): string {
+    const agentLine = (member: AgentRow, kind: string) => `${introduction(member)} (${kind})${member.id === agent.id ? ' — you' : ''}`;
+    return [
+        '<participants>',
+        agentLine(lead, 'lead agent'),
+        ...peers.map(peer => agentLine(peer, 'agent')),
+        ...people.map(name => `${name} (person)`),
+        '</participants>',
+    ].join('\n');
+}
+
+export function membershipNotice(announced: AnnouncedAgent[], peers: AnnouncedAgent[]): string | null {
+    const left = announced.filter(agent => !peers.some(peer => peer.id === agent.id));
+    const joined = peers.filter(peer => !announced.some(agent => agent.id === peer.id));
+    if (left.length === 0 && joined.length === 0) {
+        return null;
+    }
+    return [
+        ...left.map(agent => `<status>${agent.name} left the chat.</status>`),
+        ...joined.map(agent => `<status>${agent.name} joined the chat.</status>`),
+    ].join('\n');
+}
+
+export function missedMessagesBlock(messages: MissedMessage[]): string | null {
+    let budget = MISSED_TOTAL_LENGTH;
+    const entries: string[] = [];
+    for (const message of messages.filter(entry => entry.text.trim()).reverse()) {
+        if (budget <= 0) {
+            break;
+        }
+        const text = message.text.length > MISSED_MESSAGE_LENGTH ? `${message.text.slice(0, MISSED_MESSAGE_LENGTH)}…` : message.text;
+        const fitted = text.length > budget ? `${text.slice(0, budget)}…` : text;
+        budget -= fitted.length;
+        entries.unshift(`<from>${message.author}</from>\n${fitted}`);
+    }
+    if (entries.length === 0) {
+        return null;
+    }
+    return [
+        '<missed-messages>',
+        'Messages from this conversation that you have not seen yet. Use them as context for the message that follows.',
+        '',
+        entries.join('\n\n'),
+        '</missed-messages>',
+    ].join('\n');
+}
+
+export function plainMessageText(message: ChatMessage): string {
+    return message.parts
+        .flatMap((part) => {
+            if (part.type === 'text') {
+                return [part.text.trim()];
+            }
+            return part.type === 'file' ? [`[file: ${part.filename ?? 'attachment'}]`] : [];
+        })
+        .filter(Boolean)
+        .join('\n');
+}
+
+function escapeName(name: string): string {
+    return name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+export function mentionedAgent<T extends NamedAgent>(text: string, agents: T[]): T | null {
+    let winner: T | null = null;
+    let winnerIndex = Infinity;
+    for (const agent of agents) {
+        const index = text.search(new RegExp(`@${escapeName(agent.name)}${NAME_END}`, 'iu'));
+        if (index >= 0 && (index < winnerIndex || (index === winnerIndex && agent.name.length > winner!.name.length))) {
+            winner = agent;
+            winnerIndex = index;
+        }
+    }
+    return winner;
+}
+
+export function handoffTarget<T extends NamedAgent>(text: string, agents: T[]): T | null {
+    let winner: T | null = null;
+    let winnerIndex = -1;
+    for (const agent of agents) {
+        const pattern = new RegExp(`@${escapeName(agent.name)}${NAME_END}[^\\n@]*?\\bit(?:['’]s|s|\\s+is)\\s+your\\s+turn\\b`, 'giu');
+        for (const match of text.matchAll(pattern)) {
+            if (match.index > winnerIndex) {
+                winner = agent;
+                winnerIndex = match.index;
+            }
+        }
+    }
+    return winner;
+}

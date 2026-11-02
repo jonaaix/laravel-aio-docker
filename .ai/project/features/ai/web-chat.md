@@ -167,11 +167,14 @@ conversation learn about it with the next message: it starts with a short note s
 Peer joined the chat." or "Peter Peer left the chat.". An agent in the conversation can be
 addressed with `@Name`, and so can every person who has written in it; typing `@` suggests them.
 
-Each agent keeps its own session per conversation. The first message an agent receives in a
-conversation tells it who takes part and what role each agent has. One agent answers at a time:
-the one addressed, otherwise the one that answered last. An agent hands the turn to another by
-naming it, writing its handover so it can be understood on its own. An agent that takes over first
-catches up on the messages it missed.
+Each agent keeps its own session per conversation, with its own model. The first message an agent
+receives in a conversation tells it who takes part and what role each agent has. One agent answers
+at a time: the first one addressed with `@Name`, otherwise the one that answered last. A message for
+an agent other than the one currently answering waits until that answer is finished. An agent hands
+the turn to another by ending its answer with "@Name it's your turn.", writing its handover so it can
+be understood on its own; after 25 handovers without a message from a person, the agents stop and
+wait for one. An agent that takes over first catches up on the messages it missed, each labelled with
+its author. Every answer shows the chat head of the agent that wrote it.
 
 Agents other than the lead work in their own folder. They may read and search the project but not
 change it: changes to the project are handed to the lead, with the file and what to write.

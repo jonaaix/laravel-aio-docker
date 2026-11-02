@@ -29,10 +29,10 @@ and the peer cannot touch the project.
 - [x] Conversation membership: new conversations contain only the lead; a switch in the participant
       list adds or removes agents; an added agent can be addressed with `@Name` (composer
       autocomplete), people too once they have written
-- [ ] Per-agent sessions: one agent session per agent and conversation; the first message to each
+- [x] Per-agent sessions: one agent session per agent and conversation; the first message to each
       agent carries the roster (name + role of everyone); baton routing, `@Name it's your turn.`
       handoff (cap 25), catch-up of missed messages (40, `<from>` labels) as in the fork
-- [ ] Peer confinement: peers read and search the project, write only in their own folder
+- [x] Peer confinement: peers read and search the project, write only in their own folder
 - [x] Feature Book chapter: agreed behaviour written
 
 ## State
@@ -49,8 +49,17 @@ and the peer cannot touch the project.
   participants after `@`; until per-agent sessions exist, `@Name` is plain text for the lead.
   `conversations.announced_agents` holds the agents Claude was told about; the next prompt starts
   with `<status>Name joined/left the chat.</status>` lines for the difference.
-- Conversations are already separate from the Claude session (`conversations.agent_session_ref`);
-  messages store `sender_name`, conversations `creator_name`.
+- Sessions: `AgentSession` (`server/utils/agent-session.ts`) wraps one Claude process and its answer
+  stream; `ConversationRuntime` routes (`@` → first named, else last answering agent), holds messages
+  for a busy conversation, fires handoffs at turn end (`agent-prompts.ts`). Lead session state stays on
+  `conversations` (`agent_session_ref`, `agent_session_started`, `announced_agents`), peers' on
+  `conversation_agents`. `messages.agent_id` is the author of an answer or the recipient of a person's
+  message; catch-up = messages after the agent's latest own row (cap 40).
+- Peer confinement: peers run in `<data dir>/agents/<id>/` with `Edit/Write/NotebookEdit(//<project>/**)`
+  denied and the write-scope prompt. In the test chat Peter Peer refused project writes from the prompt
+  alone, so the deny rule itself has not been seen firing yet.
+- `messages.agent_id` has no ON DELETE rule in the database (migration ran before it was added);
+  `deleteAgent` clears it first.
 - The fork's multi-bot logic to port lives in `src/claude-threads/src`: baton in
   `message-handler.ts:131-166`, handoff `session/manager.ts:388-470`, catch-up
   `operations/context-prompt/handler.ts:337-440`, roster `commands/system-prompt-generator.ts`.

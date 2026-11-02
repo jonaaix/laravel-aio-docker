@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { and, desc, eq, isNotNull, isNull, lt, max } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, isNotNull, isNull, lt, max, ne, or } from 'drizzle-orm';
 import { conversations, messages } from '../database/schema';
 import type { ChatMessage, ConversationDetail, ConversationStatus, ConversationSummary, MessagePage } from '../../shared/types/conversation';
 import type { TurnMetrics } from './turn-metrics';
@@ -10,12 +10,12 @@ type MessageRow = typeof messages.$inferSelect;
 
 const MESSAGE_PAGE_SIZE = 50;
 
-function toChatMessage(row: Pick<MessageRow, 'id' | 'role' | 'parts' | 'createdAt'> & Partial<Pick<MessageRow, 'outcome' | 'errorMessage' | 'senderId'>>): ChatMessage {
+function toChatMessage(row: Pick<MessageRow, 'id' | 'role' | 'parts' | 'createdAt'> & Partial<Pick<MessageRow, 'outcome' | 'errorMessage' | 'senderId' | 'agentId'>>): ChatMessage {
     return {
         id: row.id,
         role: row.role,
         parts: row.parts,
-        metadata: { createdAt: row.createdAt, senderId: row.senderId ?? undefined, outcome: row.outcome ?? undefined, error: row.errorMessage ?? undefined },
+        metadata: { createdAt: row.createdAt, senderId: row.senderId ?? undefined, agentId: row.agentId ?? undefined, outcome: row.outcome ?? undefined, error: row.errorMessage ?? undefined },
     };
 }
 
@@ -99,7 +99,7 @@ export function setConversationStatus(id: string, status: ConversationStatus): v
     updateConversation(id, { status, lastActivityAt: Date.now() });
 }
 
-export function appendMessage(conversationId: string, role: ChatMessage['role'], parts: ChatMessage['parts'], sender: UserRow | null = null): ChatMessage {
+export function appendMessage(conversationId: string, role: ChatMessage['role'], parts: ChatMessage['parts'], agentId: string, sender: UserRow | null = null): ChatMessage {
     const db = useDatabase();
     const next = db
         .select({ value: max(messages.seq) })
@@ -113,6 +113,7 @@ export function appendMessage(conversationId: string, role: ChatMessage['role'],
         role,
         parts,
         senderId: sender?.id ?? null,
+        agentId,
         createdAt: Date.now(),
     } satisfies typeof messages.$inferInsert;
     db.insert(messages).values(row).run();
@@ -130,15 +131,58 @@ export function listUserMessages(conversationId: string): ChatMessage[] {
         .map(toChatMessage);
 }
 
-export function lastUserSenderId(conversationId: string): string | null | undefined {
+export function lastUserSenderId(conversationId: string, agentId: string): string | null | undefined {
     const last = useDatabase()
         .select({ senderId: messages.senderId })
         .from(messages)
-        .where(and(eq(messages.conversationId, conversationId), eq(messages.role, 'user')))
+        .where(and(eq(messages.conversationId, conversationId), eq(messages.role, 'user'), eq(messages.agentId, agentId)))
         .orderBy(desc(messages.seq))
         .limit(1)
         .get();
     return last ? last.senderId : undefined;
+}
+
+export function lastAnsweringAgentId(conversationId: string): string | null {
+    return useDatabase()
+        .select({ agentId: messages.agentId })
+        .from(messages)
+        .where(and(eq(messages.conversationId, conversationId), eq(messages.role, 'assistant'), isNotNull(messages.agentId)))
+        .orderBy(desc(messages.seq))
+        .limit(1)
+        .get()?.agentId ?? null;
+}
+
+export function missedMessages(conversationId: string, agentId: string, excludedMessageId: string | null, limit: number): ChatMessage[] {
+    const database = useDatabase();
+    const seen = database
+        .select({ value: max(messages.seq) })
+        .from(messages)
+        .where(and(eq(messages.conversationId, conversationId), eq(messages.agentId, agentId)))
+        .get()?.value ?? 0;
+    return database
+        .select()
+        .from(messages)
+        .where(and(
+            eq(messages.conversationId, conversationId),
+            gt(messages.seq, seen),
+            inArray(messages.role, ['user', 'assistant']),
+            or(isNull(messages.agentId), ne(messages.agentId, agentId)),
+            excludedMessageId ? ne(messages.id, excludedMessageId) : undefined,
+        ))
+        .orderBy(desc(messages.seq))
+        .limit(limit)
+        .all()
+        .reverse()
+        .map(toChatMessage);
+}
+
+export function conversationSenderIds(conversationId: string): string[] {
+    return useDatabase()
+        .selectDistinct({ senderId: messages.senderId })
+        .from(messages)
+        .where(and(eq(messages.conversationId, conversationId), isNotNull(messages.senderId)))
+        .all()
+        .map(row => row.senderId!);
 }
 
 export function saveMessageParts(conversationId: string, messageId: string, parts: ChatMessage['parts']): void {

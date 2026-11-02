@@ -49,6 +49,9 @@ export const conversationAgents = sqliteTable('conversation_agents', {
     conversationId: text('conversation_id').notNull().references(() => conversations.id, { onDelete: 'cascade' }),
     agentId: text('agent_id').notNull().references(() => agents.id, { onDelete: 'cascade' }),
     addedAt: integer('added_at').notNull(),
+    sessionRef: text('session_ref'),
+    sessionStarted: integer('session_started', { mode: 'boolean' }).notNull().default(false),
+    announcedAgents: text('announced_agents', { mode: 'json' }).$type<AnnouncedAgent[]>().notNull().default([]),
 }, table => [primaryKey({ columns: [table.conversationId, table.agentId] })]);
 
 export const messages = sqliteTable('messages', {
@@ -58,6 +61,8 @@ export const messages = sqliteTable('messages', {
     role: text('role', { enum: ['user', 'assistant', 'system'] }).notNull(),
     parts: text('parts', { mode: 'json' }).$type<ChatMessage['parts']>().notNull(),
     senderId: text('sender_id').references(() => users.id),
+    // The database column lacks this delete rule (added by ALTER TABLE), so deleteAgent clears it first.
+    agentId: text('agent_id').references(() => agents.id, { onDelete: 'set null' }),
     createdAt: integer('created_at').notNull(),
     model: text('model'),
     inputTokens: integer('input_tokens'),

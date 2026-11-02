@@ -60,7 +60,11 @@ const leadAgent = computed<Participant>(() => ({ kind: 'agent', name: lead.value
 const { participant: userParticipant } = useUsers();
 
 function messageAuthor(message: ChatMessage): Participant {
-    return message.role === 'user' ? userParticipant(message.metadata?.senderId) : leadAgent.value;
+    if (message.role === 'user') {
+        return userParticipant(message.metadata?.senderId);
+    }
+    const author = agents.value.find(agent => agent.id === message.metadata?.agentId);
+    return author && !author.lead ? agentParticipant(author) : leadAgent.value;
 }
 
 const memberAgentIds = computed(() => conversations.value.find(conversation => conversation.id === conversationId)?.agentIds ?? agentIds.value);

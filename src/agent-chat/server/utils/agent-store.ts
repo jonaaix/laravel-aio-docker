@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { asc, desc, eq } from 'drizzle-orm';
-import { agents } from '../database/schema';
+import { agents, messages } from '../database/schema';
 import type { Agent, AgentResource } from '../../shared/types/agent';
 import type { AttachmentReference } from './attachments';
 
@@ -153,6 +153,7 @@ export function deleteAgent(row: AgentRow): void {
     if (row.lead) {
         throw createError({ statusCode: 409, statusMessage: 'The lead agent cannot be deleted' });
     }
+    useDatabase().update(messages).set({ agentId: null }).where(eq(messages.agentId, row.id)).run();
     useDatabase().delete(agents).where(eq(agents.id, row.id)).run();
     rmSync(agentDir(row.id), { recursive: true, force: true });
     removeAvatar(`agent-${row.id}`);

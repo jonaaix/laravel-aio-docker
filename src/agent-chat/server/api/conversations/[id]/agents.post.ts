@@ -10,6 +10,9 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 422, statusMessage: 'Agent not found' });
     }
     setConversationAgent(id, agent.id, member === true);
+    if (member !== true) {
+        useConversationRuntime(id).removeAgent(agent.id);
+    }
     const summary = summarize(findConversation(id)!);
     publishConversationListEvent({ type: 'conversation', conversation: summary });
     return summary;

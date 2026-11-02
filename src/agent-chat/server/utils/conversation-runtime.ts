@@ -1,54 +1,64 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { ClaudeCli, type ClaudeEvent } from '#claude-threads/claude/cli';
-import type { BackgroundTask, ChatMessage, ChatPart, ConversationStatus, ConversationSummary, QueuedMessage } from '../../shared/types/conversation';
+import type { ClaudeEvent } from '#claude-threads/claude/cli';
+import type { BackgroundTask, ChatMessage, ChatPart, ConversationSummary, QueuedMessage } from '../../shared/types/conversation';
+import { AgentSession, type AgentSessionHooks, type QueuedPrompt } from './agent-session';
+import type { AgentRow } from './agent-store';
 import type { StoredFile } from './conversation-files';
-import { metricsFromResult, outcomeOnlyMetrics, type TurnMetrics } from './turn-metrics';
 import type { UserRow } from './user-store';
 
 const TITLE_LENGTH = 60;
 const TITLE_AFTER_USER_MESSAGES = 3;
 const IDLE_PAUSE_MS = 30 * 60 * 1000;
-const TURN_EVENT_TYPES = new Set(['stream_event', 'assistant', 'user']);
-// Questions and plans happen as plain chat text; the chat has no controls for these tools.
-const DISALLOWED_TOOLS = ['AskUserQuestion', 'EnterPlanMode', 'ExitPlanMode'];
+const HANDOFF_LIMIT = 25;
+const MISSED_MESSAGE_LIMIT = 40;
 
-interface ActiveTurn {
-    message: ChatMessage | null;
-    parts: ChatPart[];
-    liveIndex: number | null;
-    stopRequested: boolean;
+interface PromptAuthor {
+    name: string;
+    changed: boolean;
+    person: boolean;
 }
 
-interface QueuedPrompt extends QueuedMessage {
-    prompt: string;
+interface PendingMessage extends QueuedMessage {
+    text: string;
+    attachments: StoredFile[];
     sender: UserRow | null;
+    agentId: string;
 }
 
 class ConversationRuntime {
-    private agent: ClaudeCli | null = null;
-    private turn: ActiveTurn | null = null;
-    private model: string | null = null;
+    private readonly sessions = new Map<string, AgentSession>();
+    private pending: PendingMessage[] = [];
+    private handoffs = 0;
+    private pausing = false;
+    private serverOrigin = '';
     private idleTimer: ReturnType<typeof setTimeout> | null = null;
-    private backgroundTasks: BackgroundTask[] = [];
     private titleRequestRef: string | null = null;
-    private queue: QueuedPrompt[] = [];
-    private undelivered: QueuedPrompt[] = [];
     private readonly mcpToken = randomBytes(24).toString('hex');
+    private readonly hooks: AgentSessionHooks = {
+        userMessage: (session, queued) => this.addUserMessage(queued.parts, queued.sender, session),
+        turnEnded: (session, message, stopped) => this.afterTurn(session, message, stopped),
+        controlResponse: event => this.applyTitle(event),
+        changed: () => this.publishStatus(),
+        exited: () => this.publishStatus(),
+    };
 
     constructor(private readonly conversationId: string) {}
 
     get turnActive(): boolean {
-        return this.turn !== null || this.queue.length > 0;
+        return this.pending.length > 0 || [...this.sessions.values()].some(session => session.turnActive);
     }
 
     get queuedMessages(): QueuedMessage[] {
-        return this.queue.map(({ ref, parts, createdAt }) => ({ ref, parts, createdAt }));
+        return [
+            ...[...this.sessions.values()].flatMap(session => session.queuedMessages),
+            ...this.pending.map(({ ref, parts, createdAt }) => ({ ref, parts, createdAt })),
+        ];
     }
 
     get runningBackgroundTasks(): BackgroundTask[] {
-        return this.backgroundTasks;
+        return [...this.sessions.values()].flatMap(session => session.backgroundTasks);
     }
 
     acceptsMcpToken(token: string): boolean {
@@ -56,14 +66,11 @@ class ConversationRuntime {
     }
 
     attachFile(path: string): string {
-        const conversation = findConversation(this.conversationId);
-        if (!conversation || !this.turn) {
+        const session = [...this.sessions.values()].find(candidate => candidate.answering);
+        if (!session) {
             throw new Error('Files can only be sent while answering.');
         }
-        const stored = storeConversationFile(this.conversationId, conversation.workingDir, path);
-        const index = this.turn.parts.push(fileUIPart(this.conversationId, stored)) - 1;
-        this.recordParts([index]);
-        return stored.filename;
+        return session.attachFile(path);
     }
 
     send(text: string, attachments: StoredFile[], serverOrigin: string, sender: UserRow | null): void {
@@ -74,76 +81,179 @@ class ConversationRuntime {
         if (conversation.archivedAt !== null) {
             throw createError({ statusCode: 409, statusMessage: 'Conversation is archived' });
         }
-        const parts: ChatPart[] = attachments.map(file => fileUIPart(this.conversationId, file));
-        if (text.trim()) {
-            parts.push({ type: 'text', text });
-        }
-        const prompt = this.withMembershipNotice(this.withSender(promptWithAttachments(this.conversationId, text, attachments), sender));
-        if (this.agent && this.turnActive) {
-            const queued: QueuedPrompt = { ref: randomUUID(), parts, createdAt: Date.now(), prompt, sender };
-            this.queue.push(queued);
-            this.agent.sendMessage(prompt, queued.ref);
-            this.publishStatus('running');
+        this.serverOrigin = serverOrigin;
+        this.handoffs = 0;
+        const target = this.addressedAgent(text);
+        const parts = messageParts(this.conversationId, text, attachments);
+        const busy = [...this.sessions.values()].find(session => session.turnActive);
+        if (busy?.agentId === target.id && busy.running && this.pending.length === 0) {
+            const prompt = this.buildPrompt(target, promptWithAttachments(this.conversationId, text, attachments), this.personAuthor(target, sender, busy.lastQueuedSenderId), null);
+            busy.enqueue({ ref: randomUUID(), parts, createdAt: Date.now(), prompt, sender });
+            this.publishStatus();
             return;
         }
-        const agent = this.agent ?? this.startAgent(conversation, serverOrigin);
-        this.addUserMessage(parts, sender);
-        this.beginTurn();
-        agent.sendMessage(prompt);
-        this.publishStatus('running');
+        if (busy || this.pending.length > 0) {
+            this.pending.push({ ref: randomUUID(), parts, createdAt: Date.now(), text, attachments, sender, agentId: target.id });
+            this.publishStatus();
+            return;
+        }
+        this.deliverMessage(target, text, attachments, sender);
     }
 
-    private withSender(prompt: string, sender: UserRow | null): string {
-        const previous = this.queue.length > 0 ? this.queue.at(-1)!.sender?.id ?? null : lastUserSenderId(this.conversationId);
-        return sender && sender.id !== previous ? `<from>${sender.name}</from>\n${prompt}` : prompt;
+    private deliverMessage(agent: AgentRow, text: string, attachments: StoredFile[], sender: UserRow | null): void {
+        const session = this.sessionFor(agent);
+        const prompt = this.buildPrompt(agent, promptWithAttachments(this.conversationId, text, attachments), this.personAuthor(agent, sender, undefined), null);
+        this.startIfIdle(session, agent);
+        this.addUserMessage(messageParts(this.conversationId, text, attachments), sender, session);
+        session.deliver(prompt);
+        this.publishStatus();
     }
 
-    private withMembershipNotice(prompt: string): string {
-        const notice = takeMembershipNotice(this.conversationId);
-        return notice ? `${notice}\n${prompt}` : prompt;
+    private deliverHandoff(agent: AgentRow, author: AgentRow, message: ChatMessage): void {
+        const session = this.sessionFor(agent);
+        const prompt = this.buildPrompt(agent, plainMessageText(message), { name: author.name, changed: true, person: false }, message.id);
+        this.startIfIdle(session, agent);
+        session.deliver(prompt);
+        this.publishStatus();
     }
 
-    private addUserMessage(parts: ChatPart[], sender: UserRow | null): void {
-        const message = appendMessage(this.conversationId, 'user', parts, sender);
+    private afterTurn(session: AgentSession, message: ChatMessage | null, stopped: boolean): void {
+        if (this.pausing || session.turnActive) {
+            return;
+        }
+        const next = this.pending.shift();
+        if (next) {
+            const agent = this.reachableAgents().find(candidate => candidate.id === next.agentId) ?? leadAgent();
+            this.deliverMessage(agent, next.text, next.attachments, next.sender);
+            return;
+        }
+        const author = findAgent(session.agentId);
+        const target = !stopped && message && author ? handoffTarget(plainMessageText(message), this.reachableAgents().filter(agent => agent.id !== author.id)) : null;
+        if (!target || !author) {
+            this.publishStatus();
+            return;
+        }
+        if (this.handoffs >= HANDOFF_LIMIT) {
+            publishConversationEvent(this.conversationId, { type: 'error', message: `Stopped after ${HANDOFF_LIMIT} hand-overs between agents. Reply to continue.` });
+            this.publishStatus();
+            return;
+        }
+        this.handoffs += 1;
+        this.deliverHandoff(target, author, message!);
+    }
+
+    private reachableAgents(): AgentRow[] {
+        return [leadAgent(), ...memberAgents(this.conversationId)];
+    }
+
+    private addressedAgent(text: string): AgentRow {
+        const agents = this.reachableAgents();
+        const lastAnswering = lastAnsweringAgentId(this.conversationId);
+        return mentionedAgent(text, agents) ?? agents.find(agent => agent.id === lastAnswering) ?? agents[0]!;
+    }
+
+    private personAuthor(agent: AgentRow, sender: UserRow | null, queuedSenderId: string | null | undefined): PromptAuthor | null {
+        if (!sender) {
+            return null;
+        }
+        const previous = queuedSenderId === undefined ? lastUserSenderId(this.conversationId, agent.id) : queuedSenderId;
+        return { name: sender.name, changed: sender.id !== previous, person: true };
+    }
+
+    private buildPrompt(agent: AgentRow, body: string, author: PromptAuthor | null, excludedMessageId: string | null): string {
+        const state = agentSessionState(this.conversationId, agent)!;
+        const members = memberAgents(this.conversationId);
+        const others = members.filter(member => member.id !== agent.id).map(({ id, name }) => ({ id, name }));
+        const blocks: string[] = [];
+        if (!state.started) {
+            blocks.push(rosterBlock(agent, leadAgent(), members, this.peopleNames(author?.person ? author.name : null)));
+        }
+        else {
+            const notice = membershipNotice(state.announcedAgents, others);
+            if (notice) {
+                blocks.push(notice);
+            }
+        }
+        saveAgentSessionState(this.conversationId, agent, { announcedAgents: others });
+        const missed = missedMessagesBlock(missedMessages(this.conversationId, agent.id, excludedMessageId, MISSED_MESSAGE_LIMIT).map(message => ({ author: this.authorName(message), text: plainMessageText(message) })));
+        if (missed) {
+            blocks.push(missed);
+        }
+        if (author && (author.changed || missed)) {
+            blocks.push(`<from>${author.name}</from>`);
+        }
+        blocks.push(body);
+        return blocks.join('\n');
+    }
+
+    private peopleNames(currentSender: string | null): string[] {
+        const names = conversationSenderIds(this.conversationId).map(id => findUser(id)?.name).filter((name): name is string => Boolean(name));
+        return currentSender && !names.includes(currentSender) ? [...names, currentSender] : names;
+    }
+
+    private authorName(message: ChatMessage): string {
+        if (message.role === 'assistant') {
+            return findAgent(message.metadata?.agentId)?.name ?? leadAgent().name;
+        }
+        return findUser(message.metadata?.senderId)?.name ?? 'Someone';
+    }
+
+    private sessionFor(agent: AgentRow): AgentSession {
+        const existing = this.sessions.get(agent.id);
+        if (existing) {
+            return existing;
+        }
+        const session = new AgentSession(this.conversationId, agent.id, this.hooks);
+        this.sessions.set(agent.id, session);
+        return session;
+    }
+
+    private startIfIdle(session: AgentSession, agent: AgentRow): void {
+        this.clearIdlePause();
+        if (session.running) {
+            return;
+        }
+        const conversation = findConversation(this.conversationId)!;
+        const state = agentSessionState(this.conversationId, agent)!;
+        const workingDir = agent.lead ? conversation.workingDir : agentDir(agent.id);
+        mkdirSync(workingDir, { recursive: true });
+        session.start({
+            workingDir,
+            sessionRef: state.sessionRef,
+            resume: state.started,
+            model: agent.model || useRuntimeConfig().claudeModel || undefined,
+            effort: agent.effort ?? undefined,
+            appendSystemPrompt: agentSystemPrompt(agent, leadAgent(), conversation.workingDir, workingDir),
+            deniedTools: agent.lead ? [] : projectWriteRules(conversation.workingDir),
+            mcpConfigPath: this.writeMcpConfig(),
+        });
+        if (agent.lead && conversation.titleRenamed) {
+            session.sendControlRequest({ subtype: 'rename_session', title: conversation.title });
+        }
+        saveAgentSessionState(this.conversationId, agent, { started: true });
+    }
+
+    private addUserMessage(parts: ChatPart[], sender: UserRow | null, session: AgentSession): void {
+        const message = appendMessage(this.conversationId, 'user', parts, session.agentId, sender);
         publishConversationEvent(this.conversationId, { type: 'message', message });
-        if (this.agent && !findConversation(this.conversationId)?.titleRenamed) {
-            this.requestTitle(this.agent);
+        if (!findConversation(this.conversationId)?.titleRenamed) {
+            this.requestTitle(this.sessions.get(leadAgent().id)?.running ? this.sessions.get(leadAgent().id)! : session);
         }
     }
 
-    private takeQueued(ref: unknown): void {
-        const index = this.queue.findIndex(queued => queued.ref === ref);
-        if (index === -1) {
+    removeAgent(agentId: string): void {
+        const session = this.sessions.get(agentId);
+        if (!session) {
             return;
         }
-        const [queued] = this.queue.splice(index, 1);
-        this.closeAnswerBlock();
-        this.addUserMessage(queued!.parts, queued!.sender);
-        this.publishStatus('running');
-    }
-
-    private closeAnswerBlock(): void {
-        const turn = this.turn;
-        if (!turn?.message) {
-            return;
-        }
-        this.settleLivePart();
-        turn.message = null;
-        turn.parts = [];
-        turn.liveIndex = null;
-    }
-
-    private deferQueue(): void {
-        for (const queued of this.queue.splice(0)) {
-            this.addUserMessage(queued.parts, queued.sender);
-            this.undelivered.push(queued);
-        }
+        this.sessions.delete(agentId);
+        void session.kill().then(() => this.publishStatus());
     }
 
     rename(title: string): void {
         this.titleRequestRef = null;
         updateConversation(this.conversationId, { title, titleRenamed: true });
-        this.agent?.sendControlRequest({ subtype: 'rename_session', title });
+        this.sessions.get(leadAgent().id)?.sendControlRequest({ subtype: 'rename_session', title });
         this.publishTitle(title);
     }
 
@@ -152,7 +262,7 @@ class ConversationRuntime {
         this.publishSummary();
     }
 
-    private requestTitle(agent: ClaudeCli): void {
+    private requestTitle(session: AgentSession): void {
         const userMessages = listUserMessages(this.conversationId);
         if (userMessages.length !== TITLE_AFTER_USER_MESSAGES) {
             return;
@@ -163,7 +273,7 @@ class ConversationRuntime {
             .map(text => `User: ${text}`)
             .join('\n\n');
         if (description) {
-            this.titleRequestRef = agent.sendControlRequest({ subtype: 'generate_session_title', description, persist: true });
+            this.titleRequestRef = session.sendControlRequest({ subtype: 'generate_session_title', description, persist: true });
         }
     }
 
@@ -181,28 +291,40 @@ class ConversationRuntime {
     }
 
     stop(): void {
-        if (this.turn) {
-            this.turn.stopRequested = true;
+        for (const session of this.sessions.values()) {
+            if (session.answering) {
+                session.stop();
+            }
         }
-        this.agent?.interrupt();
     }
 
     async pause(): Promise<void> {
         this.clearIdlePause();
-        const agent = this.agent;
-        if (agent) {
-            this.agent = null;
-            this.backgroundTasks = [];
-            this.endTurn(outcomeOnlyMetrics('stopped', this.model));
-            this.deferQueue();
-            await agent.kill();
+        this.pausing = true;
+        try {
+            await Promise.all([...this.sessions.values()].map(session => session.kill()));
+            for (const waiting of this.pending.splice(0)) {
+                this.deferPending(waiting);
+            }
         }
-        this.publishStatus('paused');
+        finally {
+            this.pausing = false;
+        }
+        this.publishStatus();
+    }
+
+    private deferPending(waiting: PendingMessage): void {
+        const agent = this.reachableAgents().find(candidate => candidate.id === waiting.agentId) ?? leadAgent();
+        const session = this.sessionFor(agent);
+        const prompt = this.buildPrompt(agent, promptWithAttachments(this.conversationId, waiting.text, waiting.attachments), this.personAuthor(agent, waiting.sender, undefined), null);
+        this.addUserMessage(waiting.parts, waiting.sender, session);
+        session.defer({ ref: waiting.ref, parts: waiting.parts, createdAt: waiting.createdAt, prompt, sender: waiting.sender } satisfies QueuedPrompt);
     }
 
     private scheduleIdlePause(): void {
         this.clearIdlePause();
-        if (!this.agent || this.turn || this.backgroundTasks.length > 0) {
+        const sessions = [...this.sessions.values()];
+        if (!sessions.some(session => session.running) || this.turnActive || this.runningBackgroundTasks.length > 0) {
             return;
         }
         this.idleTimer = setTimeout(() => {
@@ -219,222 +341,21 @@ class ConversationRuntime {
         }
     }
 
-    private writeMcpConfig(serverOrigin: string): string {
+    private writeMcpConfig(): string {
         const dir = join(resolveDataDir(), 'mcp');
         mkdirSync(dir, { recursive: true, mode: 0o700 });
         const path = join(dir, `${this.conversationId}.json`);
-        const url = `${serverOrigin}${useRuntimeConfig().app.baseURL.replace(/\/$/, '')}/api/mcp/${this.conversationId}`;
+        const url = `${this.serverOrigin}${useRuntimeConfig().app.baseURL.replace(/\/$/, '')}/api/mcp/${this.conversationId}`;
         const config = { mcpServers: { chat: { type: 'http', url, headers: { Authorization: `Bearer ${this.mcpToken}` } } } };
         writeFileSync(path, JSON.stringify(config), { mode: 0o600 });
         return path;
     }
 
-    private startAgent(conversation: NonNullable<ReturnType<typeof findConversation>>, serverOrigin: string): ClaudeCli {
-        const lead = leadAgent();
-        const agent = new ClaudeCli({
-            workingDir: conversation.workingDir,
-            sessionId: conversation.agentSessionRef,
-            resume: conversation.agentSessionStarted,
-            model: lead.model || useRuntimeConfig().claudeModel || undefined,
-            effort: lead.effort ?? undefined,
-            includePartialMessages: true,
-            replayUserMessages: true,
-            thinkingDisplay: 'summarized',
-            disallowedTools: DISALLOWED_TOOLS,
-            mcpConfigPath: this.writeMcpConfig(serverOrigin),
-            // Deliberately no permission prompts so work is never held up; the container is the sandbox.
-            permissionMode: 'bypass',
-        });
-        agent.on('event', event => this.handleEvent(event));
-        agent.on('exit', () => this.handleExit(agent));
-        agent.on('error', error => publishConversationEvent(this.conversationId, { type: 'error', message: error.message }));
-        agent.start();
-        if (conversation.titleRenamed) {
-            agent.sendControlRequest({ subtype: 'rename_session', title: conversation.title });
-        }
-        for (const queued of this.undelivered.splice(0)) {
-            agent.sendMessage(queued.prompt);
-        }
-        updateConversation(this.conversationId, { agentSessionStarted: true });
-        this.agent = agent;
-        return agent;
-    }
-
-    private beginTurn(): void {
-        this.turn = { message: null, parts: [], liveIndex: null, stopRequested: false };
+    private publishStatus(): void {
+        const status = [...this.sessions.values()].some(session => session.running) ? 'running' : 'paused';
         this.scheduleIdlePause();
-    }
-
-    private trackBackgroundTasks(tasks: unknown[]): void {
-        this.backgroundTasks = tasks.map((task) => {
-            const { task_id: taskId, description } = task as { task_id?: unknown; description?: unknown };
-            const id = String(taskId);
-            return this.backgroundTasks.find(known => known.id === id) ?? {
-                id,
-                description: typeof description === 'string' && description.trim() ? description.trim() : 'Background task',
-                startedAt: Date.now(),
-            };
-        });
-        this.publishStatus('running');
-    }
-
-    private handleEvent(event: ClaudeEvent): void {
-        if (event.type === 'control_response') {
-            this.applyTitle(event);
-            return;
-        }
-        if (event.type === 'system' && event.subtype === 'background_tasks_changed' && Array.isArray(event.tasks)) {
-            this.trackBackgroundTasks(event.tasks);
-        }
-        if (!this.turn && this.agent && TURN_EVENT_TYPES.has(event.type)) {
-            this.beginTurn();
-            this.publishStatus('running');
-        }
-        this.scheduleIdlePause();
-        if (event.type === 'system' && event.subtype === 'init' && typeof event.model === 'string') {
-            this.model = event.model;
-        }
-        if (event.type === 'rate_limit_event') {
-            recordRateLimit(event.rate_limit_info);
-        }
-        if (event.type === 'user' && event.isReplay) {
-            this.takeQueued(event.uuid);
-            return;
-        }
-        if (!this.turn) {
-            return;
-        }
-        if (event.type === 'result') {
-            this.endTurn(metricsFromResult(event, this.model, this.turn.stopRequested));
-            this.publishStatus('running');
-            return;
-        }
-        if (event.type === 'stream_event') {
-            this.handleStreamEvent(event);
-            return;
-        }
-        const replacesLivePart = event.type === 'assistant' && this.dropLivePart();
-        const changed = applyClaudeEvent(this.turn.parts, event);
-        if (replacesLivePart) {
-            this.saveAndPublishMessage();
-            return;
-        }
-        if (changed.length > 0) {
-            this.recordParts(changed);
-        }
-    }
-
-    private handleStreamEvent(event: ClaudeEvent): void {
-        const turn = this.turn!;
-        const startPart = streamStartPart(event);
-        if (startPart) {
-            turn.liveIndex = turn.parts.push(startPart) - 1;
-            this.recordParts([turn.liveIndex]);
-            return;
-        }
-        const text = streamDeltaText(event);
-        const live = turn.liveIndex === null ? undefined : turn.parts[turn.liveIndex];
-        if (!text || !turn.message || !live || (live.type !== 'text' && live.type !== 'reasoning')) {
-            return;
-        }
-        live.text += text;
-        publishConversationEvent(this.conversationId, { type: 'delta', messageId: turn.message.id, index: turn.liveIndex!, text });
-    }
-
-    private dropLivePart(): boolean {
-        const turn = this.turn!;
-        if (turn.liveIndex === null) {
-            return false;
-        }
-        turn.parts.splice(turn.liveIndex, 1);
-        turn.liveIndex = null;
-        return true;
-    }
-
-    private settleLivePart(): void {
-        const turn = this.turn!;
-        const live = turn.liveIndex === null ? undefined : turn.parts[turn.liveIndex];
-        if (!live) {
-            return;
-        }
-        if ((live.type === 'text' || live.type === 'reasoning') && live.text.trim()) {
-            turn.parts[turn.liveIndex!] = { ...live, state: 'done' };
-            turn.liveIndex = null;
-        }
-        else {
-            this.dropLivePart();
-        }
-        this.saveAndPublishMessage();
-    }
-
-    private persistedParts(): ChatPart[] {
-        const turn = this.turn!;
-        return turn.parts.filter((_, index) => index !== turn.liveIndex);
-    }
-
-    private createMessage(): void {
-        const turn = this.turn!;
-        turn.message = appendMessage(this.conversationId, 'assistant', this.persistedParts());
-        this.publishMessage();
-    }
-
-    private publishMessage(): void {
-        const turn = this.turn!;
-        publishConversationEvent(this.conversationId, { type: 'message', message: { ...turn.message!, parts: [...turn.parts] } });
-    }
-
-    private saveAndPublishMessage(): void {
-        const turn = this.turn!;
-        if (!turn.message) {
-            if (turn.parts.length > 0) {
-                this.createMessage();
-            }
-            return;
-        }
-        saveMessageParts(this.conversationId, turn.message.id, this.persistedParts());
-        this.publishMessage();
-    }
-
-    private recordParts(changed: number[]): void {
-        const turn = this.turn!;
-        if (!turn.message) {
-            this.createMessage();
-            return;
-        }
-        saveMessageParts(this.conversationId, turn.message.id, this.persistedParts());
-        for (const index of changed) {
-            publishConversationEvent(this.conversationId, { type: 'part', messageId: turn.message.id, index, part: turn.parts[index]! });
-        }
-    }
-
-    private endTurn(metrics: TurnMetrics): void {
-        const turn = this.turn;
-        if (!turn) {
-            return;
-        }
-        this.settleLivePart();
-        this.turn = null;
-        this.scheduleIdlePause();
-        const message = turn.message ?? appendMessage(this.conversationId, 'assistant', []);
-        saveTurnMetrics(this.conversationId, message.id, metrics);
-        const metadata = { ...message.metadata!, outcome: metrics.outcome, error: metrics.errorMessage ?? undefined };
-        publishConversationEvent(this.conversationId, { type: 'message', message: { ...message, parts: [...turn.parts], metadata } });
-    }
-
-    private handleExit(agent: ClaudeCli): void {
-        if (this.agent !== agent) {
-            return;
-        }
-        this.agent = null;
-        this.backgroundTasks = [];
-        this.endTurn(outcomeOnlyMetrics('failed', this.model, 'Claude exited unexpectedly.'));
-        this.deferQueue();
-        this.publishStatus('paused');
-    }
-
-    private publishStatus(status: ConversationStatus): void {
         setConversationStatus(this.conversationId, status);
-        publishConversationEvent(this.conversationId, { type: 'status', status, turnActive: this.turnActive, backgroundTasks: this.backgroundTasks, queuedMessages: this.queuedMessages });
+        publishConversationEvent(this.conversationId, { type: 'status', status, turnActive: this.turnActive, backgroundTasks: this.runningBackgroundTasks, queuedMessages: this.queuedMessages });
         this.publishSummary();
     }
 
@@ -444,6 +365,18 @@ class ConversationRuntime {
             publishConversationListEvent({ type: 'conversation', conversation: summarize(conversation) });
         }
     }
+}
+
+function messageParts(conversationId: string, text: string, attachments: StoredFile[]): ChatPart[] {
+    const parts: ChatPart[] = attachments.map(file => fileUIPart(conversationId, file));
+    if (text.trim()) {
+        parts.push({ type: 'text', text });
+    }
+    return parts;
+}
+
+function projectWriteRules(projectDir: string): string[] {
+    return ['Edit', 'Write', 'NotebookEdit'].map(tool => `${tool}(/${projectDir}/**)`);
 }
 
 const runtimes = new Map<string, ConversationRuntime>();
