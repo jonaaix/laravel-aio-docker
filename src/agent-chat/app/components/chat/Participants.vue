@@ -41,40 +41,49 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
 </script>
 
 <template>
-    <UModal title="Participants">
-        <button type="button" class="flex items-center -space-x-2" aria-label="Participants">
-            <ParticipantAvatar
-                v-for="participant in participants"
-                :key="`${participant.kind}:${participant.name}`"
-                :participant="participant"
-                :class="isVoxelBot(participant) ? 'size-9' : 'size-7'"
-            />
-        </button>
-        <template #body>
-            <ChatParticipantList :participants="participants">
-                <template #trailing="{ participant }">
-                    <UTooltip v-if="editable && memberOption(participant)" text="Remove">
-                        <UButton
-                            icon="i-heroicons-x-mark"
-                            color="neutral"
-                            variant="ghost"
-                            size="xs"
-                            aria-label="Remove"
-                            class="text-dimmed"
-                            @click="emit('toggle', memberOption(participant)!.id, false)"
-                        />
-                    </UTooltip>
-                </template>
-            </ChatParticipantList>
-            <UDropdownMenu v-if="editable" :items="menuItems" :content="{ align: 'start' }">
-                <UButton label="Add agent" icon="i-heroicons-plus" color="neutral" variant="ghost" class="mt-2 -ms-2" />
-                <template #item-leading="{ item }">
-                    <span v-if="item.participant" class="flex size-6 shrink-0 items-center justify-center">
-                        <ParticipantAvatar :participant="item.participant" :class="isVoxelBot(item.participant) ? 'size-6' : 'size-5'" />
-                    </span>
-                    <UIcon v-else-if="item.icon" :name="item.icon" class="size-5 shrink-0 text-dimmed" />
-                </template>
-            </UDropdownMenu>
-        </template>
-    </UModal>
+    <div class="me-2 flex items-center">
+        <UModal title="Participants">
+            <button type="button" class="flex items-center -space-x-2.5" aria-label="Participants">
+                <ParticipantAvatar
+                    v-for="participant in participants"
+                    :key="`${participant.kind}:${participant.name}`"
+                    :participant="participant"
+                    class="size-9 rounded-full ring ring-accented"
+                    :class="isVoxelBot(participant) ? 'bg-elevated' : ''"
+                />
+            </button>
+            <template #body>
+                <ChatParticipantList :participants="participants">
+                    <template #trailing="{ participant }">
+                        <UTooltip v-if="editable && memberOption(participant)" text="Remove">
+                            <UButton
+                                icon="i-heroicons-x-mark"
+                                color="neutral"
+                                variant="ghost"
+                                size="xs"
+                                aria-label="Remove"
+                                class="text-dimmed"
+                                @click="emit('toggle', memberOption(participant)!.id, false)"
+                            />
+                        </UTooltip>
+                    </template>
+                </ChatParticipantList>
+            </template>
+        </UModal>
+        <UDropdownMenu v-if="editable" :items="menuItems" :content="{ align: 'end' }">
+            <UTooltip text="Agents">
+                <button
+                    type="button"
+                    aria-label="Agents"
+                    class="-ms-2 flex size-9 items-center justify-center rounded-full bg-default text-muted ring ring-accented transition-colors hover:text-default"
+                >
+                    <UIcon name="i-heroicons-plus" class="size-5" />
+                </button>
+            </UTooltip>
+            <template #item-leading="{ item }">
+                <ParticipantAvatar v-if="item.participant" :participant="item.participant" class="size-5 shrink-0" />
+                <UIcon v-else-if="item.icon" :name="item.icon" class="size-5 shrink-0 text-dimmed" />
+            </template>
+        </UDropdownMenu>
+    </div>
 </template>
