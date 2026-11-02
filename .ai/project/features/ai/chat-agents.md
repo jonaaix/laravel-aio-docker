@@ -41,8 +41,7 @@ above the message input names the agent it waits for. An agent hands the turn to
 `@Name` is just a mention and never passes the turn. It writes its handover so it can be understood
 on its own; after 25 handovers without a message from a person, the agents stop and wait for one. An
 agent that takes over first catches up on the messages it missed, each labelled with its author.
-Every answer shows the chat head of the agent that wrote it, and while an agent answers, a line above
-the message input names it ("Tarek LSA is typing…"), as in Mattermost.
+Every answer shows the chat head of the agent that wrote it.
 
 ### What agents may change
 

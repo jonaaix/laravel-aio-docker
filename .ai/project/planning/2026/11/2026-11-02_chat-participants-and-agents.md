@@ -88,6 +88,8 @@ and the peer cannot touch the project.
   container, where no other sessions run; blocking would also cost follow-ups to running subagents.
 - One working folder per agent, shared by all conversations (they all work on the same app), so notes and
   Claude's memory carry over between chats.
+- The "… is typing" line above the input is switched off (`SHOW_TYPING_LINE`): the streaming answer already
+  shows that an agent works. Kept for when several agents might work at once.
 - Every agent can run its own model (advisors on Sonnet, for example).
 - Peers may read and search the project but write only in their own folder: Claude's deny rules
   block the file-writing tools for the project path (they hold even without permission prompts). Peers
