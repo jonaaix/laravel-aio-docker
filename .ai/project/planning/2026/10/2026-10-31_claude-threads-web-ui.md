@@ -124,7 +124,7 @@ container restart with its full history and attachments, and no Mattermost/Slack
   (`parseQuestionSection`) and renders as `ChatQuestionCard`; "🔑" and "🚀" sections render as
   cards (`ChatSectionCard`, the frame all cards share; `ChatNextStepCard` adds "Accept" → "ok"). The page provides which message is answerable
   (last one, finished, not archived) and the composer hook (`useQuestionAnswers`); picks write
-  one line per question ("44 a", remark may follow) at the top of the composer; the leading answer
+  one line per question ("44a", remark may follow) at the top of the composer; the leading answer
   block is read back by `readAnswerBlock` (also the old "14a, 15: b" list form), so the input is the
   only state and remarks survive later picks. Once a later user message exists, the card collapses to the options that message chose ("ok" = recommendations).
 - User attachments: picked, dropped or pasted files upload at once (`PUT /api/uploads`, streamed to

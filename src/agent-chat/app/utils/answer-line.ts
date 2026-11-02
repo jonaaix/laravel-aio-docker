@@ -51,6 +51,6 @@ export function readAnswerBlock(text: string): AnswerBlock {
 export function writeAnswerBlock(selection: Record<string, string>, comments: Record<string, string>): string {
     return Object.entries(selection)
         .sort(([a], [b]) => Number(a) - Number(b))
-        .map(([number, letter]) => `${number} ${letter}${comments[number] ?? ''}`)
+        .map(([number, letter]) => `${number}${letter}${comments[number] ?? ''}`)
         .join('\n');
 }
