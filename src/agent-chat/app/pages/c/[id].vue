@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui';
+import type { ChatMessage } from '#shared/types/conversation';
+import type { Participant } from '~/utils/avatars';
 
 const EARLIER_THRESHOLD_PX = 200;
 const AT_BOTTOM_THRESHOLD_PX = 120;
@@ -50,6 +52,17 @@ const timeline = ref<HTMLElement | null>(null);
 const visibleMessages = computed(() => messages.value.filter(message => message.parts.length > 0
     || message.metadata?.outcome === 'stopped'
     || message.metadata?.outcome === 'failed'));
+
+const leadAgent: Participant = { kind: 'agent', name: LEAD_AGENT_NAME };
+
+function messageAuthor(message: ChatMessage): Participant {
+    return message.role === 'user' ? { kind: 'person', name: message.metadata?.senderName ?? '' } : leadAgent;
+}
+
+const participants = computed<Participant[]>(() => {
+    const people = [...new Set(visibleMessages.value.flatMap(message => message.role === 'user' && message.metadata?.senderName ? [message.metadata.senderName] : []))];
+    return [leadAgent, ...people.map(name => ({ kind: 'person' as const, name }))];
+});
 
 const answerableMessageId = computed(() => {
     const last = visibleMessages.value.at(-1);
@@ -270,6 +283,7 @@ const conversationActions = computed<DropdownMenuItem[]>(() => [
     <UDashboardPanel :id="`conversation-${conversationId}`" :ui="{ body: 'px-0 sm:px-0' }">
         <template #header>
             <div ref="header" class="sticky top-0 z-30 bg-default">
+                <ChatParticipants v-if="loaded" :participants="participants" class="absolute start-6 top-full mt-2 hidden lg:flex" />
                 <UDashboardNavbar :title="title">
                     <template #title>
                         <UTooltip :text="session.label">
@@ -292,7 +306,8 @@ const conversationActions = computed<DropdownMenuItem[]>(() => [
                                 @click="restoreConversation"
                             />
                         </template>
-                        <template v-else-if="loaded">
+                        <ChatParticipants v-if="loaded" :participants="participants" class="lg:hidden" />
+                        <template v-if="archivedAt === null && loaded">
                             <UButton
                                 v-if="status === 'running'"
                                 label="Pause session"
@@ -344,9 +359,12 @@ const conversationActions = computed<DropdownMenuItem[]>(() => [
                         :style="{ '--last-message-height': `${answerSpace}px`, '--message-scroll-margin': `${messageScrollMargin}px` }"
                         :ui="{ root: 'px-0 [&>article]:scroll-mt-(--message-scroll-margin)' }"
                         :should-scroll-to-bottom="false"
-                        :assistant="{ side: 'left', variant: 'naked', ui: { container: 'pb-7', content: 'text-base/6.5', actions: 'h-6 gap-1' } }"
-                        :user="{ side: 'right', variant: 'soft', ui: { container: 'pb-7', actions: 'h-6 gap-1', content: 'min-h-0 rounded-[1.125rem] bg-accented px-4 py-2.5 text-base/6.5' } }"
+                        :assistant="{ side: 'left', variant: 'naked', ui: { container: 'pb-7', leading: 'mt-0 self-start lg:-ms-[5.25rem]', content: 'text-base/6.5', actions: 'h-6 gap-1' } }"
+                        :user="{ side: 'right', variant: 'soft', ui: { container: 'flex-row-reverse justify-start pb-7', leading: 'mt-0 self-start lg:-me-[5.25rem]', actions: 'h-6 gap-1', content: 'min-h-0 rounded-[1.125rem] bg-accented px-4 py-2.5 text-base/6.5' } }"
                     >
+                        <template #leading="{ message }">
+                            <ChatHead :participant="messageAuthor(message)" />
+                        </template>
                         <template #content="{ message }">
                             <div v-if="message.role === 'assistant'" class="mb-4 flex flex-col gap-2 empty:hidden">
                                 <ChatThinkingBlock :message="message" :streaming="isStreaming(message.id)" />

@@ -12,6 +12,8 @@
     },
     "dependencies": {
         "@comark/nuxt": "^0.8.1",
+        "@dicebear/core": "10.7.0",
+        "@dicebear/styles": "10.6.0",
         "@iconify-json/heroicons": "^1.2.3",
         "@nuxt/ui": "^4.12.0",
         "ai": "^7.0.159",

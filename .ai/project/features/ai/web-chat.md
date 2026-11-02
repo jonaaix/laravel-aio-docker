@@ -136,10 +136,28 @@ consist of attachments only. Attached files are stored with the conversation and
 message the same way as the agent's. The agent never receives their content inline: it gets the
 list of saved paths ahead of the message text and reads the files itself.
 
-### Several bots in one conversation
+### People and agents in one conversation
 
-Several bots can take part in one conversation. One of them answers at a time; addressing
-another bot hands the turn over to it, and a bot that joins catches up on what it missed.
+Everyone taking part in a conversation — people and agents — appears with a chat head: a picture
+derived from their name with the name beneath it, next to each of their messages. People and agents
+are drawn in clearly different styles. A small list of the participants floats at the top left of
+the conversation.
+
+Every conversation starts with the lead coding agent, "Karim SA" unless renamed. The lead works in
+the project with the project's own instructions, sees the whole conversation and gives it its
+title. Further agents are defined once in the settings — each with a name, a role, a model, a
+description that becomes its own instructions, and files it may use as resources — and can be
+switched into any conversation at any time from the participant list. An agent in the
+conversation can be addressed with `@Name`, and so can every person who has written in it.
+
+Each agent keeps its own session per conversation. The first message an agent receives in a
+conversation tells it who takes part and what role each agent has. One agent answers at a time:
+the one addressed, otherwise the one that answered last. An agent hands the turn to another by
+naming it, writing its handover so it can be understood on its own. An agent that takes over first
+catches up on the messages it missed.
+
+Agents other than the lead work in their own folder. They may read and search the project but not
+change it: changes to the project are handed to the lead, with the file and what to write.
 
 ### Not part of the chat
 

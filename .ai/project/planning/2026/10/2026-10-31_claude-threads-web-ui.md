@@ -42,7 +42,7 @@ container restart with its full history and attachments, and no Mattermost/Slack
   sender change (compared by user id with the last queued or stored user message)
 - [x] Denser sidebar: two-line entries (title; Working/Active/Paused from `sessionState` · relative
   last activity), account card at the bottom with one line per usage meter
-- [ ] Multi-bot conversations (bots table, mention handoff, catch-up) on top of the new runtime
+- [ ] Multi-bot conversations → own plan `2026/11/2026-11-02_chat-participants-and-agents.md`
 - [ ] opencode backend selectable per conversation
 - [ ] Extract lean core: drop Mattermost/Slack, onboarding, auto-update, commands, bug report,
       sticky message; worktree disabled
@@ -160,6 +160,7 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - The thinking and working boxes (`ChatThinkingBlock`, `ChatWorkingBlock`) are final in look and
   behaviour; UI polish works around them.
 - "Pause session" stays a button with its label in the header.
+- Agents and avatars: see `2026/11/2026-11-02_chat-participants-and-agents.md`.
 - The UI is grayscale with black as the accent (white in dark mode): `primary` is `neutral` and
   `--ui-primary` is pinned to neutral-900 / neutral-50 in `main.css`.
 - Nuxt UI scales radii from `--ui-radius` (0.5rem), so `rounded-xl` is 24 px here, not Tailwind's 12 px;
