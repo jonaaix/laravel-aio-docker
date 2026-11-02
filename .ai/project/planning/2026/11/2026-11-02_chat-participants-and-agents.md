@@ -20,7 +20,7 @@ and the peer cannot touch the project.
       Voxel Bot from 8 random ones, or upload.
       Files in `<data dir>/avatars/` (`user-<id>`/`agent-<id>`, ≤ 5 MB), served by `GET /api/avatars/<file>`
 - [x] Participant list: stacked heads at the top right of the title bar (36 px like the buttons beside
-      them, all circled with a mid-grey ring, Voxel Bots on a yellow disc (`bg-yellow-200`, dark `bg-yellow-300`), overlapping below `lg`, name as
+      them, all circled with a mid-grey ring, Voxel Bots on a soft yellow disc (`bg-amber-100`, dark `bg-amber-700/40`), overlapping below `lg`, name as
       tooltip); a + after them opens a checkbox menu to switch agents in and out, without making the header taller: the lead plus people who have written; agents follow with
       membership
 - [x] Agent registry: Settings → "Agents" modal; lead "Tarek LSA" always present (name, role, model
