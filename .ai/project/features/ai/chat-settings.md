@@ -22,8 +22,10 @@ a conversation opens the same window at Agents.
   and cannot be dismissed.
 - **Appearance** sets the theme — light, dark or the system's — and the font of the whole chat:
   System UI (the default), Geist, Inter, Source Sans 3 or IBM Plex Sans, each shown in its own
-  typeface. A choice applies at once and belongs to the person, so it follows them to every device
-  and browser.
+  typeface. It also holds "Move sent message to top", off by default: when off, the conversation
+  stays at the bottom after sending and follows the answer; when on, the sent message moves to the
+  top with room below for the answer. Every choice applies at once and belongs to the person, so it
+  follows them to every device and browser.
 - **Agents** defines the agents, as described in [Agents in the chat](chat-agents.md).
 
 ## Examples

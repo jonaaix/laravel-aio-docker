@@ -73,7 +73,8 @@ container restart with its full history and attachments, and no Mattermost/Slack
   `description`, else its command/path) with ✓/✗/spinner, the last 5 visible and earlier ones behind
   "Show N earlier steps"; each line expands to its command (Bash `command`, else
   path/pattern/url) and output; while Claude works the newest call shows that command box already.
-  The sent message moves to the top and the answer grows below; once that pin is over, a reader at the bottom
+  After sending, the page stays at the bottom; with the person's "Move sent message to top" setting the sent
+  message moves to the top instead and the answer grows below. Once that pin is over, a reader at the bottom
   is carried along as new content arrives (several agents answer in a row), one who scrolled up is left alone.
   An agent answer directly after another one gets extra space above (`mt-6`) so authors stay apart.
   Because the window scrolls, `UChatMessages`' own scroll features are off (they assume an inner

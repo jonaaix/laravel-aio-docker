@@ -59,6 +59,7 @@ const { conversations } = useConversations();
 const leadAgent = computed<Participant>(() => ({ kind: 'agent', name: lead.value?.name ?? LEAD_AGENT_NAME, seed: lead.value ? lead.value.avatarSeed : LEAD_AGENT_AVATAR_SEED, image: lead.value?.avatarUrl }));
 
 const { participant: userParticipant } = useUsers();
+const { pinSentMessage } = useAppearance();
 const mentionNames = useMentionNames();
 const mentionKey = computed(() => mentionNames.value.join('|'));
 
@@ -145,7 +146,7 @@ function updateAtBottom(): void {
 function updateAnswerSpace(): void {
     messageScrollMargin.value = headerHeight() + ANSWER_GAP_PX / 2;
     const lastUserMessage = [...(timeline.value?.parentElement?.querySelectorAll<HTMLElement>('[data-role="user"]') ?? [])].at(-1);
-    if (!sentThisVisit || !lastUserMessage) {
+    if (!sentThisVisit || !pinSentMessage.value || !lastUserMessage) {
         answerSpace.value = 0;
         return;
     }
@@ -212,9 +213,15 @@ async function alignLatestUserMessage(): Promise<void> {
     }
 }
 
+async function showLatestAtBottom(): Promise<void> {
+    await nextTick();
+    scroller().scrollTop = scroller().scrollHeight;
+    atBottom.value = true;
+}
+
 watch(() => visibleMessages.value.at(-1), (message, previous) => {
     if (sentThisVisit && message?.role === 'user' && message.id !== previous?.id) {
-        alignLatestUserMessage();
+        void (pinSentMessage.value ? alignLatestUserMessage() : showLatestAtBottom());
     }
 });
 

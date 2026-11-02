@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `pin_sent_message` integer DEFAULT false NOT NULL;

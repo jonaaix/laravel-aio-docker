@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { font, mode, setColorMode, setFont } = useAppearance();
+const { font, mode, pinSentMessage, setColorMode, setFont, setPinSentMessage } = useAppearance();
 
 const modes: { value: ColorModeChoice; label: string; icon: string }[] = [
     { value: 'light', label: 'Light', icon: 'i-heroicons-sun' },
@@ -40,6 +40,13 @@ const modes: { value: ColorModeChoice; label: string; icon: string }[] = [
                     <span class="text-sm text-muted">The quick brown fox jumps over the lazy dog</span>
                 </button>
             </div>
+        </UFormField>
+        <UFormField label="Conversation">
+            <USwitch
+                :model-value="pinSentMessage"
+                label="Move sent message to top"
+                @update:model-value="value => setPinSentMessage(value === true)"
+            />
         </UFormField>
     </div>
 </template>

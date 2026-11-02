@@ -127,6 +127,13 @@
       "when": 1793658781576,
       "tag": "0017_user_appearance",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1793659223650,
+      "tag": "0018_user_pin_sent_message",
+      "breakpoints": true
     }
   ]
 }

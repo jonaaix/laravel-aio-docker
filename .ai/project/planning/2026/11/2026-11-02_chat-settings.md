@@ -26,6 +26,9 @@ settings path lives in it, and a font change applies at once and survives a relo
   sets `--font-sans` on `<html>` from `FONT_CHOICES` (`shared/utils/fonts.ts`) and caches the font in
   localStorage (`plugins/font.client.ts` applies it before the user loads). The layout adopts the
   person's choice on sign-in; another device's change shows after a reload.
+- `users.pin_sent_message` (Appearance → Conversation) switches the page between staying at the
+  bottom after sending (default) and moving the sent message to the top.
+- Sidebar state is a tinted pill from `sessionState().pillClass`: Working blue, Active green, Paused grey.
 - Fonts are self-hosted by `@nuxt/fonts` (`global: true`, so unused ones still get `@font-face`).
 - All milestones done.
 

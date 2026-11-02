@@ -27,6 +27,7 @@ export function useAppearance() {
     const { upsert } = useUsers();
     const font = computed(() => user.value?.font ?? DEFAULT_FONT);
     const mode = computed(() => colorMode.preference as ColorModeChoice);
+    const pinSentMessage = computed(() => user.value?.pinSentMessage ?? false);
 
     function adopt(chatUser: ChatUser): void {
         if (chatUser.colorMode) {
@@ -35,7 +36,7 @@ export function useAppearance() {
         applyFont(chatUser.font ?? DEFAULT_FONT);
     }
 
-    async function save(changes: { colorMode?: ColorModeChoice; font?: string }): Promise<void> {
+    async function save(changes: { colorMode?: ColorModeChoice; font?: string; pinSentMessage?: boolean }): Promise<void> {
         if (!user.value) {
             return;
         }
@@ -53,5 +54,9 @@ export function useAppearance() {
         return save({ font: value });
     }
 
-    return { font, mode, adopt, setColorMode, setFont };
+    function setPinSentMessage(value: boolean): Promise<void> {
+        return save({ pinSentMessage: value });
+    }
+
+    return { font, mode, pinSentMessage, adopt, setColorMode, setFont, setPinSentMessage };
 }
