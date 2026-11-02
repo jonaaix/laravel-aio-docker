@@ -9,3 +9,4 @@
 - 2026-11-02 [agent]: Edit or remove a queued message before Claude picks it up (Claude Code lets you pull it back into the input)
 - 2026-11-02 [user]: Show the sender's name above other people's messages in shared conversations (the name is already stored per message)
 - 2026-11-02 [user]: Unread pings for people addressed with @ in a conversation
+- 2026-11-02 [user]: Agent avatar built from the surprised face plus accessory layers, face colour chosen separately (user designs the accessories)
