@@ -80,6 +80,10 @@ function agentParticipant(agent: Agent): Participant {
     return { kind: 'agent', name: agent.name, seed: agent.avatarSeed, image: agent.avatarUrl };
 }
 
+function agentName(agentId: string): string {
+    return agents.value.find(agent => agent.id === agentId)?.name ?? leadAgent.value.name;
+}
+
 const typingAgent = computed<Participant | null>(() => {
     if (!answeringAgentId.value) {
         return null;
@@ -459,7 +463,7 @@ const conversationActions = computed<DropdownMenuItem[]>(() => [
                 </Transition>
                 <UContainer class="pb-4 sm:pb-6">
                     <ChatBackgroundTasks v-if="backgroundTasks.length > 0" :tasks="backgroundTasks" class="mb-2" />
-                    <ChatQueuedMessages v-if="queuedMessages.length > 0" :messages="queuedMessages" class="mb-2" />
+                    <ChatQueuedMessages v-if="queuedMessages.length > 0" :messages="queuedMessages" :recipient-name="agentName" class="mb-2" />
                     <div class="flex h-6 items-center px-3.5">
                         <Transition enter-active-class="transition-opacity duration-150 ease-out" enter-from-class="opacity-0" leave-active-class="transition-opacity duration-150 ease-in" leave-to-class="opacity-0">
                             <div v-if="typingAgent" class="min-w-0 truncate text-xs text-muted">

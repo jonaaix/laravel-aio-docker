@@ -21,6 +21,7 @@ export interface QueuedMessage {
     ref: string;
     parts: ChatPart[];
     createdAt: number;
+    agentId: string;
 }
 
 export interface ConversationSummary {

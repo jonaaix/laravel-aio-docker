@@ -53,7 +53,7 @@ class ConversationRuntime {
     get queuedMessages(): QueuedMessage[] {
         return [
             ...[...this.sessions.values()].flatMap(session => session.queuedMessages),
-            ...this.pending.map(({ ref, parts, createdAt }) => ({ ref, parts, createdAt })),
+            ...this.pending.map(({ ref, parts, createdAt, agentId }) => ({ ref, parts, createdAt, agentId })),
         ];
     }
 
@@ -92,7 +92,7 @@ class ConversationRuntime {
         const busy = [...this.sessions.values()].find(session => session.turnActive);
         if (busy?.agentId === target.id && busy.running && this.pending.length === 0) {
             const prompt = this.buildPrompt(target, promptWithAttachments(this.conversationId, text, attachments), this.personAuthor(target, sender, busy.lastQueuedSenderId), null);
-            busy.enqueue({ ref: randomUUID(), parts, createdAt: Date.now(), prompt, sender });
+            busy.enqueue({ ref: randomUUID(), parts, createdAt: Date.now(), agentId: target.id, prompt, sender });
             this.publishStatus();
             return;
         }
@@ -322,7 +322,7 @@ class ConversationRuntime {
         const session = this.sessionFor(agent);
         const prompt = this.buildPrompt(agent, promptWithAttachments(this.conversationId, waiting.text, waiting.attachments), this.personAuthor(agent, waiting.sender, undefined), null);
         this.addUserMessage(waiting.parts, waiting.sender, session);
-        session.defer({ ref: waiting.ref, parts: waiting.parts, createdAt: waiting.createdAt, prompt, sender: waiting.sender } satisfies QueuedPrompt);
+        session.defer({ ref: waiting.ref, parts: waiting.parts, createdAt: waiting.createdAt, agentId: agent.id, prompt, sender: waiting.sender } satisfies QueuedPrompt);
     }
 
     private scheduleIdlePause(): void {

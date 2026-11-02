@@ -66,7 +66,7 @@ export class AgentSession {
     }
 
     get queuedMessages(): QueuedMessage[] {
-        return this.queue.map(({ ref, parts, createdAt }) => ({ ref, parts, createdAt }));
+        return this.queue.map(({ ref, parts, createdAt, agentId }) => ({ ref, parts, createdAt, agentId }));
     }
 
     get backgroundTasks(): BackgroundTask[] {
