@@ -172,7 +172,7 @@ function keepPinnedMessageInPlace(): void {
 }
 
 function onContentResize(): void {
-    if (stickToBottom) {
+    if (stickToBottom || (atBottom.value && !pinnedMessage)) {
         scroller().scrollTop = scroller().scrollHeight;
     }
     keepPinnedMessageInPlace();
@@ -397,7 +397,7 @@ const conversationActions = computed<DropdownMenuItem[]>(() => [
                         :status="chatStatus"
                         :auto-scroll="false"
                         :style="{ '--last-message-height': `${answerSpace}px`, '--message-scroll-margin': `${messageScrollMargin}px` }"
-                        :ui="{ root: 'px-0 [&>article]:scroll-mt-(--message-scroll-margin)' }"
+                        :ui="{ root: 'px-0 [&>article]:scroll-mt-(--message-scroll-margin) [&>article[data-role=assistant]+article[data-role=assistant]]:mt-6' }"
                         :should-scroll-to-bottom="false"
                         :assistant="{ side: 'left', variant: 'naked', ui: { container: 'flex-col gap-1.5 pb-7 sm:flex-row sm:gap-3', leading: 'mt-0 self-start xl:-ms-[6.75rem]', content: 'text-base/6.5', actions: 'h-6 gap-1' } }"
                         :user="{ side: 'right', variant: 'soft', ui: { container: 'max-w-[90%] flex-col items-end gap-1.5 pb-7 sm:max-w-[75%] sm:flex-row-reverse sm:items-start sm:justify-start sm:gap-3', leading: 'mt-0 self-end sm:self-start xl:-me-[6.75rem]', body: 'max-w-full', actions: 'h-6 gap-1', content: 'min-h-0 rounded-[1.125rem] bg-accented/50 px-3.5 py-2 text-base/6.5' } }"

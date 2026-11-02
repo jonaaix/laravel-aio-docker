@@ -73,7 +73,9 @@ container restart with its full history and attachments, and no Mattermost/Slack
   `description`, else its command/path) with ✓/✗/spinner, the last 5 visible and earlier ones behind
   "Show N earlier steps"; each line expands to its command (Bash `command`, else
   path/pattern/url) and output; while Claude works the newest call shows that command box already.
-  The chat does not follow the answer: the sent message moves to the top and the answer grows below.
+  The sent message moves to the top and the answer grows below; once that pin is over, a reader at the bottom
+  is carried along as new content arrives (several agents answer in a row), one who scrolled up is left alone.
+  An agent answer directly after another one gets extra space above (`mt-6`) so authors stay apart.
   Because the window scrolls, `UChatMessages`' own scroll features are off (they assume an inner
   scroll container): the page keeps a chat pinned to the bottom while it renders, aligns a sent
   message under the header, sizes the answer spacer (`--last-message-height`) from the viewport, and
