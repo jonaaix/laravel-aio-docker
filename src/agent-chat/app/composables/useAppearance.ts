@@ -3,7 +3,9 @@ import type { ChatUser } from '#shared/types/user';
 const FONT_CACHE_KEY = 'chat-font';
 
 export function applyFont(value: string): void {
-    document.documentElement.style.setProperty('--font-sans', fontStack(value));
+    const choice = fontChoice(value);
+    document.documentElement.style.setProperty('--font-sans', choice.stack);
+    document.documentElement.style.setProperty('--font-scale', String(choice.scale ?? 1));
     try {
         localStorage.setItem(FONT_CACHE_KEY, value);
     }

@@ -3,10 +3,17 @@
 
 @theme {
     --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --text-xs: calc(0.75rem * var(--font-scale));
+    --text-sm: calc(0.875rem * var(--font-scale));
+    --text-base: calc(1rem * var(--font-scale));
+    --text-lg: calc(1.125rem * var(--font-scale));
+    --text-xl: calc(1.25rem * var(--font-scale));
+    --text-2xl: calc(1.5rem * var(--font-scale));
     --font-mono: 'JetBrains Mono', Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
 }
 
 :root {
+    --font-scale: 1;
     --ui-radius: 0.5rem;
     --ui-container: 52rem;
 }
@@ -34,6 +41,10 @@
 }
 
 @layer base {
+    body {
+        font-size: var(--text-base);
+    }
+
     button:not(:disabled),
     [role='button']:not(:disabled),
     [role^='menuitem']:not([data-disabled]),

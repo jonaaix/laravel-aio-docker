@@ -14,7 +14,7 @@ take further categories as the chat grows.
 ## How does it work?
 
 Settings at the foot of the sidebar, below Archived, opens one Settings window with its categories on the left (on
-phones as tabs along the top): Profile, Appearance and Agents. "Manage agents" in the agents menu of
+phones as tabs along the top): Appearance, Agents and Profile, opening at Appearance. "Manage agents" in the agents menu of
 a conversation opens the same window at Agents.
 
 - **Profile** holds the person's name and picture, as described in
@@ -22,7 +22,8 @@ a conversation opens the same window at Agents.
   and cannot be dismissed.
 - **Appearance** sets the theme — light, dark or the system's — and the font of the whole chat:
   System UI (the default), Geist, Inter, Source Sans 3, IBM Plex Sans or, for those who prefer
-  monospaced text throughout, JetBrains Mono, each shown in its own
+  monospaced text throughout, JetBrains Mono, set a size smaller so it reads as large as the
+  others, each shown in its own
   typeface. It also holds "Move sent message to top", off by default: when off, the conversation
   stays at the bottom after sending and follows the answer; when on, the sent message moves to the
   top with room below for the answer. Every choice applies at once and belongs to the person, so it

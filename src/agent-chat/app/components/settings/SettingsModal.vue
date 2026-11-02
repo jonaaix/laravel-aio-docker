@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import type { SettingsCategory } from '~/composables/useSettingsWindow';
 
-const props = withDefaults(defineProps<{ category?: SettingsCategory }>(), { category: 'profile' });
+const props = withDefaults(defineProps<{ category?: SettingsCategory }>(), { category: 'appearance' });
 const open = defineModel<boolean>('open', { default: false });
 const emit = defineEmits<{ 'after:leave': []; 'close': [] }>();
 
 const categories: { value: SettingsCategory; label: string; icon: string }[] = [
-    { value: 'profile', label: 'Profile', icon: 'i-heroicons-user' },
     { value: 'appearance', label: 'Appearance', icon: 'i-heroicons-swatch' },
     { value: 'agents', label: 'Agents', icon: 'i-heroicons-cpu-chip' },
+    { value: 'profile', label: 'Profile', icon: 'i-heroicons-user' },
 ];
 
 const active = ref<SettingsCategory>(props.category);
@@ -38,9 +38,9 @@ const hasActions = computed(() => active.value === 'agents');
                     </button>
                 </nav>
                 <div class="min-w-0 flex-1 p-4 sm:p-5">
-                    <SettingsProfile v-if="active === 'profile'" />
-                    <SettingsAppearance v-else-if="active === 'appearance'" />
-                    <SettingsAgents v-else actions-target="#settings-actions" />
+                    <SettingsAppearance v-if="active === 'appearance'" />
+                    <SettingsAgents v-else-if="active === 'agents'" actions-target="#settings-actions" />
+                    <SettingsProfile v-else />
                 </div>
             </div>
         </template>
