@@ -292,14 +292,14 @@ async function confirmDelete(): Promise<void> {
                     <UInput v-model="role" :maxlength="AGENT_ROLE_MAX_LENGTH" class="w-full" @blur="roleTouched = true" />
                 </UFormField>
             </div>
-            <div class="flex flex-col gap-2">
-                <div class="flex items-center gap-3">
-                    <span class="flex size-12 shrink-0 items-center justify-center">
-                        <ParticipantAvatar :participant="avatarParticipant" :class="isVoxelBot(avatarParticipant) ? 'size-12' : 'size-10'" />
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-start">
+                <div class="flex shrink-0 items-center gap-3 sm:w-28 sm:flex-col sm:gap-2">
+                    <span class="flex size-20 shrink-0 items-center justify-center">
+                        <ParticipantAvatar :participant="avatarParticipant" :class="isVoxelBot(avatarParticipant) ? 'size-20' : 'size-16'" />
                     </span>
-                    <div class="flex flex-wrap gap-2">
-                        <UButton label="Upload picture" icon="i-heroicons-arrow-up-tray" color="neutral" variant="outline" :loading="avatarBusy" @click="avatarInput?.click()" />
-                        <UButton v-if="avatarPreview || storedPicture" label="Remove picture" color="neutral" variant="ghost" @click="clearPicture" />
+                    <div class="flex gap-2 sm:w-full sm:flex-col">
+                        <UButton label="Upload" icon="i-heroicons-arrow-up-tray" color="neutral" variant="outline" class="sm:w-full sm:justify-center" :loading="avatarBusy" @click="avatarInput?.click()" />
+                        <UButton v-if="avatarPreview || storedPicture" label="Remove" color="neutral" variant="ghost" class="sm:w-full sm:justify-center" @click="clearPicture" />
                     </div>
                     <input ref="avatarInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="hidden" @change="onAvatarPicked">
                 </div>
@@ -309,6 +309,7 @@ async function confirmDelete(): Promise<void> {
                     :current="avatarPreview || storedPicture ? null : avatarSeed"
                     :presets="AGENT_PRESET_ROWS"
                     compact
+                    class="min-w-0 flex-1"
                     @select="chooseAvatar"
                 />
             </div>
