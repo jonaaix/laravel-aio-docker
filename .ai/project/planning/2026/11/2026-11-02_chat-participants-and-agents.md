@@ -57,6 +57,8 @@ and the peer cannot touch the project.
 - People and agents are one participant concept; chat heads for people come first, agents build on it.
 - Handover is the fork's: missed messages plus self-contained handoff messages, no summary step.
 - A message without `@` goes to the agent that answered last (baton), as in the fork.
+- Below `sm` the head sits above the message, small, with the name beside it, so text uses the full
+  width; message text is 15 px / 24 px there (16 / 26 from `sm`, composer always 16 against iOS zoom).
 - Chat heads sit in the gutter beside the reading column on wide screens (`lg:-ms-[6.75rem]`, a 6rem name column where names wrap between words, never truncated), so
   the text column stays aligned with the composer.
 - Every agent can run its own model (advisors on Sonnet, for example).
