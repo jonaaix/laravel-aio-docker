@@ -166,6 +166,9 @@ export function readAgentChanges(body: Record<string, unknown>): AgentChanges {
         throw createError({ statusCode: 422, statusMessage: 'A name is required' });
     }
     const role = typeof body.role === 'string' ? body.role.trim().slice(0, AGENT_ROLE_MAX_LENGTH) : '';
+    if (!role) {
+        throw createError({ statusCode: 422, statusMessage: 'A role is required' });
+    }
     const removed = Array.isArray(body.removedResources) ? body.removedResources.filter((item): item is string => typeof item === 'string') : [];
     return {
         name,

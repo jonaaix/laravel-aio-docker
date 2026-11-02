@@ -50,7 +50,8 @@ watch(effortLevels, (levels) => {
     }
 });
 
-const valid = computed(() => normalizeUserName(name.value) !== null && !uploading.value && !avatarBusy.value);
+const roleMissing = computed(() => normalizeUserName(name.value) !== null && !role.value.trim());
+const valid = computed(() => normalizeUserName(name.value) !== null && !roleMissing.value && !uploading.value && !avatarBusy.value);
 const fieldsKey = computed(() => JSON.stringify([name.value, role.value, model.value, effort.value, instructions.value]));
 let savedKey = '';
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
@@ -269,10 +270,10 @@ async function confirmDelete(): Promise<void> {
         </nav>
 
         <form id="agent-form" class="flex min-w-0 flex-1 flex-col gap-4" @submit.prevent="persist">
-            <UFormField label="Name" :error="error">
+            <UFormField label="Name" required :error="error">
                 <UInput v-model="name" :maxlength="USER_NAME_MAX_LENGTH" class="w-full" />
             </UFormField>
-            <UFormField label="Role">
+            <UFormField label="Role" required :error="roleMissing ? 'Required' : undefined">
                 <UInput v-model="role" :maxlength="AGENT_ROLE_MAX_LENGTH" class="w-full" />
             </UFormField>
             <div class="flex flex-col gap-3">
