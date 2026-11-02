@@ -31,12 +31,12 @@ onMounted(shuffle);
                 v-for="seed in row"
                 :key="seed"
                 type="button"
-                class="rounded-md p-1 transition-colors duration-500 ease-out hover:bg-elevated"
+                class="flex size-14 items-center justify-center rounded-md transition-colors duration-500 ease-out hover:bg-elevated"
                 :class="seed === current ? 'bg-accented/60' : ''"
                 :aria-label="`Use avatar ${seed}`"
                 @click="emit('select', seed)"
             >
-                <ParticipantAvatar :participant="{ kind, name: seed, seed }" class="size-12" />
+                <ParticipantAvatar :participant="{ kind, name: seed, seed }" :class="isVoxelBot({ kind, name: seed, seed }) ? 'size-12' : 'size-9.5'" />
             </button>
             <UTooltip v-if="index === 0" text="Shuffle">
                 <UButton icon="i-heroicons-arrow-path" aria-label="Shuffle" color="neutral" variant="ghost" @click="shuffle" />

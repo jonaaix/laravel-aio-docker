@@ -197,7 +197,9 @@ async function confirmDelete(): Promise<void> {
                         :class="!creating && agent.id === selectedId ? 'bg-elevated' : ''"
                         @click="select(agent)"
                     >
-                        <ParticipantAvatar :participant="{ kind: 'agent', name: agent.name, seed: agent.avatarSeed, image: agent.avatarUrl }" class="size-10" />
+                        <span class="flex size-10 shrink-0 items-center justify-center">
+                            <ParticipantAvatar :participant="{ kind: 'agent', name: agent.name, seed: agent.avatarSeed, image: agent.avatarUrl }" :class="isVoxelBot({ kind: 'agent', name: agent.name, seed: agent.avatarSeed, image: agent.avatarUrl }) ? 'size-10' : 'size-8'" />
+                        </span>
                         <span class="min-w-0">
                             <span class="block truncate text-sm font-medium text-highlighted">{{ agent.name }}</span>
                             <span class="line-clamp-2 text-xs text-muted">{{ agent.role || 'No role' }}</span>
@@ -209,7 +211,9 @@ async function confirmDelete(): Promise<void> {
                 <form id="agent-form" class="flex min-w-0 flex-1 flex-col gap-4" @submit.prevent="submit">
                     <div class="flex flex-col gap-3">
                         <div class="flex items-center gap-4">
-                            <ParticipantAvatar :participant="avatarParticipant" class="size-16" />
+                            <span class="flex size-16 shrink-0 items-center justify-center">
+                                <ParticipantAvatar :participant="avatarParticipant" :class="isVoxelBot(avatarParticipant) ? 'size-16' : 'size-12.5'" />
+                            </span>
                             <div class="flex flex-wrap gap-2">
                                 <UButton label="Upload picture" icon="i-heroicons-arrow-up-tray" color="neutral" variant="outline" :loading="avatarBusy" @click="avatarInput?.click()" />
                                 <UButton v-if="avatarPreview || storedPicture" label="Remove picture" color="neutral" variant="ghost" @click="clearPicture" />
