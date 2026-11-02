@@ -10,12 +10,12 @@ type MessageRow = typeof messages.$inferSelect;
 
 const MESSAGE_PAGE_SIZE = 50;
 
-function toChatMessage(row: Pick<MessageRow, 'id' | 'role' | 'parts' | 'createdAt'> & Partial<Pick<MessageRow, 'outcome' | 'errorMessage'>> & { senderName?: string | null; senderAvatar?: string | null; senderAvatarSeed?: string | null }): ChatMessage {
+function toChatMessage(row: Pick<MessageRow, 'id' | 'role' | 'parts' | 'createdAt'> & Partial<Pick<MessageRow, 'outcome' | 'errorMessage' | 'senderId'>> & { senderName?: string | null; senderAvatar?: string | null; senderAvatarSeed?: string | null }): ChatMessage {
     return {
         id: row.id,
         role: row.role,
         parts: row.parts,
-        metadata: { createdAt: row.createdAt, senderName: row.senderName ?? undefined, senderAvatar: row.senderAvatar ?? undefined, senderAvatarSeed: row.senderAvatarSeed ?? undefined, outcome: row.outcome ?? undefined, error: row.errorMessage ?? undefined },
+        metadata: { createdAt: row.createdAt, senderId: row.senderId ?? undefined, senderName: row.senderName ?? undefined, senderAvatar: row.senderAvatar ?? undefined, senderAvatarSeed: row.senderAvatarSeed ?? undefined, outcome: row.outcome ?? undefined, error: row.errorMessage ?? undefined },
     };
 }
 
