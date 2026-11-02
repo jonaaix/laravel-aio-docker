@@ -148,7 +148,7 @@ derived from their name with the name beneath it, next to each of their messages
 are drawn in clearly different styles. A small list of the participants floats at the top left of
 the conversation.
 
-A person without a picture of their own gets a friendly drawn face; they can upload a picture in
+A person without a picture of their own gets a drawn one derived from their name; they can upload one in
 their profile or remove it again. When the Laravel app opens the chat, it can pass the address of
 the person's picture along with the name; the chat fetches it, fetches it again whenever the address
 changes, and the person cannot replace it in the chat. An agent shows a robot — derived from its
