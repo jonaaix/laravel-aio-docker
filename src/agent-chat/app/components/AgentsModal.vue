@@ -2,7 +2,6 @@
 import type { Agent } from '#shared/types/agent';
 import type { ClaudeModel } from '#shared/types/model';
 
-const DEFAULT_EFFORT = 'default';
 
 const { agents, managing, load, save, remove } = useAgents();
 const { attachments, uploading, ready, add: attach, remove: removeAttachment, take: takeAttachments } = useAttachments();
@@ -12,7 +11,7 @@ const creating = ref(false);
 const name = ref('');
 const role = ref('');
 const model = ref('default');
-const effort = ref(DEFAULT_EFFORT);
+const effort = ref<string>(DEFAULT_EFFORT);
 const models = ref<ClaudeModel[]>([]);
 const instructions = ref('');
 const removedResources = ref<string[]>([]);
@@ -29,14 +28,14 @@ const modelItems = computed(() => {
     return items.some(item => item.value === model.value) ? items : [...items, { label: model.value, description: undefined, value: model.value }];
 });
 const effortLevels = computed(() => models.value.find(entry => entry.value === model.value)?.effortLevels ?? []);
-const effortItems = computed(() => [
-    { label: 'Default (usually high)', value: DEFAULT_EFFORT },
-    ...effortLevels.value.map(level => ({ label: level === 'xhigh' ? 'Extra high' : level.charAt(0).toUpperCase() + level.slice(1), value: level })),
-]);
+const effortItems = computed(() => effortLevels.value.map(level => ({
+    label: level === 'xhigh' ? 'Extra high' : level.charAt(0).toUpperCase() + level.slice(1),
+    value: level,
+})));
 
 watch(effortLevels, (levels) => {
-    if (effort.value !== DEFAULT_EFFORT && !levels.includes(effort.value)) {
-        effort.value = DEFAULT_EFFORT;
+    if (levels.length > 0 && !levels.includes(effort.value)) {
+        effort.value = levels.includes(DEFAULT_EFFORT) ? DEFAULT_EFFORT : levels.at(-1)!;
     }
 });
 
@@ -96,7 +95,7 @@ async function submit(): Promise<void> {
             name: name.value,
             role: role.value,
             model: model.value === 'default' ? null : model.value,
-            effort: effort.value === DEFAULT_EFFORT ? null : effort.value,
+            effort: effortLevels.value.length > 0 ? effort.value : null,
             instructions: instructions.value,
             uploads: ready.value.map(upload => ({ id: upload.id, filename: upload.filename })),
             removedResources: removedResources.value,

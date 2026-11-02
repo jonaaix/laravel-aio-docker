@@ -23,7 +23,8 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - [ ] Auth: short-lived signed iframe link from the Laravel app carrying the user, password for
       standalone access — blocks image integration (separate from the name below)
 - [ ] Image integration: supervisor program, nginx sub-path proxy for the iframe, optional own
-      port/domain, env (`NUXT_WORKING_DIR=/app`, data dir in the persisted home)
+      port/domain, env (`NUXT_WORKING_DIR=/app`, `NUXT_DATA_DIR=/home/laravel/.config/agent-chat`);
+      app code under `/opt`, never `/home/laravel` (the home volume is seeded once, then frozen)
 - [x] In-process HTTP MCP for Claude with `send_file` → attachment stored with the conversation
 - [x] Token-level streaming (`--include-partial-messages` + `stream_event` deltas)
 - [x] Turn markers: show "stopped" on interrupted turns, errors inline

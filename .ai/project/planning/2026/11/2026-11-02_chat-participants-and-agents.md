@@ -34,6 +34,7 @@ and the peer cannot touch the project.
 - Agents live in `agents` (unique name, `lead` flag, `model` + `effort` or null = default, `instructions`).
   The model list is Claude's own: the CLI's `initialize` control response (`GET /api/models`, fetched
   once per server start, aliases as fallback) with each model's effort levels; `--effort` starts the session.
+  Effort defaults to high (Claude's own default drifts to medium); no "default" choice is offered.
   The lead row is created on first use (`leadAgent()`), its model and effort already drive the conversation's
   Claude session. Peer folders: `<data dir>/agents/<id>/` with `CLAUDE.md` + resource files
   (uploads moved in on save, removed on delete).

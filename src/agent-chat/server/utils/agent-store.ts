@@ -44,7 +44,7 @@ export function leadAgent(): AgentRow {
     if (existing) {
         return existing;
     }
-    const row: AgentRow = { id: randomUUID(), name: LEAD_AGENT_NAME, role: LEAD_AGENT_ROLE, model: null, effort: null, lead: true, instructions: '', createdAt: Date.now() };
+    const row: AgentRow = { id: randomUUID(), name: LEAD_AGENT_NAME, role: LEAD_AGENT_ROLE, model: null, effort: DEFAULT_EFFORT, lead: true, instructions: '', createdAt: Date.now() };
     useDatabase().insert(agents).values(row).run();
     return row;
 }
