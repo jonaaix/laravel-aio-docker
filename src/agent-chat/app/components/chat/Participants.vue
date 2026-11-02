@@ -17,7 +17,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ toggle: [agentId: string, member: boolean] }>();
 
-const agentsWindow = useAgentsWindow();
+const settingsWindow = useSettingsWindow();
 
 const menuItems = computed<DropdownMenuItem[][]>(() => [
     props.agentOptions.map(option => ({
@@ -31,7 +31,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
     [{
         label: 'Manage agents',
         icon: 'i-heroicons-cog-6-tooth',
-        onSelect: agentsWindow.open,
+        onSelect: () => settingsWindow.open('agents'),
     }],
 ].filter(group => group.length > 0));
 </script>

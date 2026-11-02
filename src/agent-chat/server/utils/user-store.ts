@@ -17,7 +17,7 @@ export function findOrCreateUser(name: string): UserRow {
     if (existing) {
         return existing;
     }
-    const row: UserRow = { id: randomUUID(), name, avatarSeed: null, avatarFile: null, avatarSource: null, avatarUpdatedAt: null, createdAt: Date.now() };
+    const row: UserRow = { id: randomUUID(), name, avatarSeed: null, avatarFile: null, avatarSource: null, avatarUpdatedAt: null, colorMode: null, font: null, createdAt: Date.now() };
     useDatabase().insert(users).values(row).run();
     return announce(row);
 }
@@ -31,6 +31,11 @@ export function renameUser(id: string, name: string): UserRow {
     return announce(findUser(id)!);
 }
 
+export function setUserAppearance(row: UserRow, changes: Partial<Pick<UserRow, 'colorMode' | 'font'>>): UserRow {
+    useDatabase().update(users).set(changes).where(eq(users.id, row.id)).run();
+    return announce({ ...row, ...changes });
+}
+
 export function listUsers(): ChatUser[] {
     return useDatabase().select().from(users).all().map(toChatUser);
 }
@@ -41,7 +46,7 @@ function announce(row: UserRow): UserRow {
 }
 
 export function toChatUser(row: UserRow): ChatUser {
-    return { id: row.id, name: row.name, avatarSeed: row.avatarSeed, avatarUrl: avatarUrl(row.avatarFile, row.avatarUpdatedAt), avatarLocked: row.avatarSource !== null };
+    return { id: row.id, name: row.name, avatarSeed: row.avatarSeed, avatarUrl: avatarUrl(row.avatarFile, row.avatarUpdatedAt), avatarLocked: row.avatarSource !== null, colorMode: row.colorMode, font: row.font };
 }
 
 function userAvatarBase(row: UserRow): string {

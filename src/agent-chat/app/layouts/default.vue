@@ -14,7 +14,13 @@ const AVATAR_PARAM = 'a';
 
 const route = useRoute();
 const router = useRouter();
-const { adopt: adoptUserName, restore: restoreUser } = useUserName();
+const { user, adopt: adoptUserName, restore: restoreUser } = useUserName();
+const { adopt: adoptAppearance } = useAppearance();
+watch(() => user.value?.id, () => {
+    if (user.value) {
+        adoptAppearance(user.value);
+    }
+}, { immediate: true });
 const encodedName = route.query[NAME_PARAM];
 const encodedAvatar = route.query[AVATAR_PARAM];
 if (typeof encodedName === 'string') {
@@ -141,7 +147,7 @@ onBeforeUnmount(() => {
 
             <template #footer="{ collapsed }">
                 <div class="flex w-full flex-col gap-2">
-                    <SettingsMenu :collapsed="collapsed" />
+                    <SettingsButton :collapsed="collapsed" />
                     <AccountCard v-if="!collapsed" />
                 </div>
             </template>

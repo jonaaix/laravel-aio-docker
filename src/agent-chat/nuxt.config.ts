@@ -19,7 +19,10 @@ export default defineNuxtConfig({
 
     fonts: {
         families: [
-            { name: 'Geist', provider: 'google', weights: [400, 500, 600, 700] },
+            { name: 'Geist', provider: 'google', weights: [400, 500, 600, 700], global: true },
+            { name: 'Inter', provider: 'google', weights: [400, 500, 600, 700], global: true },
+            { name: 'Source Sans 3', provider: 'google', weights: [400, 500, 600, 700], global: true },
+            { name: 'IBM Plex Sans', provider: 'google', weights: [400, 500, 600, 700], global: true },
             { name: 'JetBrains Mono', provider: 'google', weights: [400, 500] },
         ],
     },

@@ -120,6 +120,13 @@
       "when": 1793652842095,
       "tag": "0016_backfill_message_agents",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1793658781576,
+      "tag": "0017_user_appearance",
+      "breakpoints": true
     }
   ]
 }

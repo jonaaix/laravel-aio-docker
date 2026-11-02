@@ -30,7 +30,6 @@ export function useUserName() {
     const user = useState<ChatUser | null>('chat-user', () => null);
     const ready = useState<boolean>('chat-user-ready', () => false);
     const locked = useState<boolean>('chat-user-locked', () => lockedCookie.value === 'true');
-    const editing = useState<boolean>('chat-user-editing', () => false);
     const { upsert } = useUsers();
     const userId = computed(() => user.value?.id ?? null);
     const name = computed(() => user.value?.name ?? null);
@@ -85,7 +84,6 @@ export function useUserName() {
         else {
             await signIn(rawName, false);
         }
-        editing.value = false;
     }
 
     async function adopt(encodedName: string, encodedAvatar?: string): Promise<void> {
@@ -110,5 +108,5 @@ export function useUserName() {
         }
     }
 
-    return { user, userId, name, ready, locked, editing, restore, save, adopt, setAvatar, setAvatarSeed };
+    return { user, userId, name, ready, locked, restore, save, adopt, setAvatar, setAvatarSeed };
 }

@@ -4,4 +4,6 @@ export interface ChatUser {
     avatarSeed: string | null;
     avatarUrl: string | null;
     avatarLocked: boolean;
+    colorMode: 'light' | 'dark' | 'system' | null;
+    font: string | null;
 }

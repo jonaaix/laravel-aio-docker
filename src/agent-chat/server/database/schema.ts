@@ -13,6 +13,8 @@ export const users = sqliteTable('users', {
     avatarFile: text('avatar_file'),
     avatarSource: text('avatar_source'),
     avatarUpdatedAt: integer('avatar_updated_at'),
+    colorMode: text('color_mode', { enum: ['light', 'dark', 'system'] }),
+    font: text('font'),
     createdAt: integer('created_at').notNull(),
 }, table => [uniqueIndex('users_name_unique').on(table.name)]);
 
