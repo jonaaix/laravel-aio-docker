@@ -19,10 +19,6 @@ const emit = defineEmits<{ toggle: [agentId: string, member: boolean] }>();
 
 const agentsWindow = useAgentsWindow();
 
-function memberOption(participant: Participant): AgentOption | null {
-    return participant.kind === 'agent' ? props.agentOptions.find(option => option.member && option.name === participant.name) ?? null : null;
-}
-
 const menuItems = computed<DropdownMenuItem[][]>(() => [
     props.agentOptions.map(option => ({
         label: option.name,
@@ -42,35 +38,21 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
 
 <template>
     <div class="me-2 flex items-center">
-        <UModal title="Participants">
-            <button type="button" class="flex items-center -space-x-2.5 lg:space-x-1" aria-label="Participants">
+        <div class="flex items-center -space-x-2.5 lg:space-x-1">
+            <UTooltip
+                v-for="(participant, index) in participants"
+                :key="`${participant.kind}:${participant.name}`"
+                :text="participant.name"
+            >
                 <ParticipantAvatar
-                    v-for="(participant, index) in participants"
-                    :key="`${participant.kind}:${participant.name}`"
                     :participant="participant"
+                    :label="participant.name"
                     :style="{ zIndex: participants.length - index }"
                     class="relative size-9 rounded-full ring ring-accented"
                     :class="isVoxelBot(participant) ? 'bg-elevated' : ''"
                 />
-            </button>
-            <template #body>
-                <ChatParticipantList :participants="participants">
-                    <template #trailing="{ participant }">
-                        <UTooltip v-if="editable && memberOption(participant)" text="Remove">
-                            <UButton
-                                icon="i-heroicons-x-mark"
-                                color="neutral"
-                                variant="ghost"
-                                size="xs"
-                                aria-label="Remove"
-                                class="text-dimmed"
-                                @click="emit('toggle', memberOption(participant)!.id, false)"
-                            />
-                        </UTooltip>
-                    </template>
-                </ChatParticipantList>
-            </template>
-        </UModal>
+            </UTooltip>
+        </div>
         <UDropdownMenu v-if="editable" :items="menuItems" :content="{ align: 'end' }">
             <UTooltip text="Agents">
                 <button
