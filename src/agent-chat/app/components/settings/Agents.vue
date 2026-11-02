@@ -5,6 +5,8 @@ import type { UploadedFile } from '#shared/types/conversation';
 
 defineProps<{ actionsTarget: string }>();
 
+const SAVE_DELAY_MS = 700;
+
 const { agents, load, save, remove } = useAgents();
 const { attachments, uploading, ready, add: attach, remove: removeAttachment, take: takeAttachments } = useAttachments();
 
@@ -48,6 +50,10 @@ watch(effortLevels, (levels) => {
 });
 
 const valid = computed(() => normalizeUserName(name.value) !== null && !uploading.value && !avatarBusy.value);
+const fieldsKey = computed(() => JSON.stringify([name.value, role.value, model.value, effort.value, instructions.value]));
+let savedKey = '';
+let saveTimer: ReturnType<typeof setTimeout> | undefined;
+let saveAgain = false;
 const storedPicture = computed(() => removeAvatar.value ? null : selected.value?.avatarUrl ?? null);
 const avatarParticipant = computed(() => ({ kind: 'agent' as const, name: name.value || 'agent', seed: avatarSeed.value, image: avatarPreview.value ?? storedPicture.value }));
 
@@ -63,6 +69,7 @@ function chooseAvatar(seed: string): void {
     avatarUpload.value = null;
     releasePreview();
     removeAvatar.value = true;
+    void persist();
 }
 
 async function onAvatarPicked(): Promise<void> {
@@ -86,12 +93,19 @@ async function onAvatarPicked(): Promise<void> {
     finally {
         avatarBusy.value = false;
     }
+    void persist();
 }
 
 function clearPicture(): void {
     avatarUpload.value = null;
     releasePreview();
     removeAvatar.value = true;
+    void persist();
+}
+
+function removeResource(resourceName: string): void {
+    removedResources.value.push(resourceName);
+    void persist();
 }
 
 function fill(agent: Agent | null): void {
@@ -107,15 +121,24 @@ function fill(agent: Agent | null): void {
     releasePreview();
     removeAvatar.value = false;
     takeAttachments();
+    savedKey = fieldsKey.value;
 }
 
-function select(agent: Agent): void {
+async function flushPending(): Promise<void> {
+    if (fieldsKey.value !== savedKey) {
+        await persist();
+    }
+}
+
+async function select(agent: Agent): Promise<void> {
+    await flushPending();
     creating.value = false;
     selectedId.value = agent.id;
     fill(agent);
 }
 
-function startNew(): void {
+async function startNew(): Promise<void> {
+    await flushPending();
     creating.value = true;
     selectedId.value = null;
     fill(null);
@@ -139,14 +162,21 @@ function onPicked(): void {
     fileInput.value!.value = '';
 }
 
-async function submit(): Promise<void> {
-    if (!valid.value || saving.value) {
+async function persist(): Promise<void> {
+    clearTimeout(saveTimer);
+    if (!valid.value) {
         return;
     }
+    if (saving.value) {
+        saveAgain = true;
+        return;
+    }
+    const key = fieldsKey.value;
+    const sentUploads = ready.value.length > 0;
     saving.value = true;
     error.value = undefined;
     try {
-        const saved = await save(selected.value?.id ?? null, {
+        const saved = await save(creating.value ? null : selectedId.value, {
             name: name.value,
             role: role.value,
             model: model.value === 'default' ? null : model.value,
@@ -158,7 +188,16 @@ async function submit(): Promise<void> {
             avatarUpload: avatarUpload.value ? { id: avatarUpload.value.id, filename: avatarUpload.value.filename } : null,
             removeAvatar: removeAvatar.value,
         });
-        select(agents.value.find(agent => agent.id === saved.id) ?? saved);
+        creating.value = false;
+        selectedId.value = saved.id;
+        savedKey = key;
+        removedResources.value = [];
+        avatarUpload.value = null;
+        removeAvatar.value = false;
+        releasePreview();
+        if (sentUploads) {
+            takeAttachments();
+        }
     }
     catch (failure) {
         error.value = (failure as { statusMessage?: string }).statusMessage ?? 'Could not save the agent';
@@ -166,10 +205,32 @@ async function submit(): Promise<void> {
     finally {
         saving.value = false;
     }
+    if (saveAgain) {
+        saveAgain = false;
+        void persist();
+    }
 }
+
+watch(fieldsKey, (key) => {
+    clearTimeout(saveTimer);
+    if (key !== savedKey) {
+        saveTimer = setTimeout(() => void persist(), SAVE_DELAY_MS);
+    }
+});
+
+watch(() => ready.value.length, (count) => {
+    if (count > 0) {
+        void persist();
+    }
+});
+
+onBeforeUnmount(() => {
+    void flushPending();
+});
 
 async function confirmDelete(): Promise<void> {
     const agent = selected.value;
+    clearTimeout(saveTimer);
     confirmingDelete.value = false;
     if (!agent) {
         return;
@@ -204,7 +265,13 @@ async function confirmDelete(): Promise<void> {
             <UButton label="New agent" icon="i-heroicons-plus" color="neutral" variant="ghost" class="justify-start" :class="creating ? 'bg-elevated' : ''" @click="startNew" />
         </nav>
 
-        <form id="agent-form" class="flex min-w-0 flex-1 flex-col gap-4" @submit.prevent="submit">
+        <form id="agent-form" class="flex min-w-0 flex-1 flex-col gap-4" @submit.prevent="persist">
+            <UFormField label="Name" :error="error">
+                <UInput v-model="name" :maxlength="USER_NAME_MAX_LENGTH" class="w-full" />
+            </UFormField>
+            <UFormField label="Role">
+                <UInput v-model="role" :maxlength="AGENT_ROLE_MAX_LENGTH" class="w-full" />
+            </UFormField>
             <div class="flex flex-col gap-3">
                 <div class="flex items-center gap-4">
                     <span class="flex size-16 shrink-0 items-center justify-center">
@@ -224,12 +291,6 @@ async function confirmDelete(): Promise<void> {
                     @select="chooseAvatar"
                 />
             </div>
-            <UFormField label="Name" :error="error">
-                <UInput v-model="name" :maxlength="USER_NAME_MAX_LENGTH" class="w-full" />
-            </UFormField>
-            <UFormField label="Role">
-                <UInput v-model="role" :maxlength="AGENT_ROLE_MAX_LENGTH" class="w-full" />
-            </UFormField>
             <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_13rem]">
                 <UFormField label="Model">
                     <USelect v-model="model" :items="modelItems" class="w-full" :ui="{ content: 'min-w-72' }" />
@@ -250,7 +311,7 @@ async function confirmDelete(): Promise<void> {
                                 <span class="min-w-0 flex-1 truncate">{{ resource.name }}</span>
                                 <span class="shrink-0 text-xs text-muted tabular-nums">{{ formatBytes(resource.size) }}</span>
                                 <UTooltip text="Remove">
-                                    <UButton icon="i-heroicons-x-mark" aria-label="Remove" color="neutral" variant="ghost" size="sm" @click="removedResources.push(resource.name)" />
+                                    <UButton icon="i-heroicons-x-mark" aria-label="Remove" color="neutral" variant="ghost" size="sm" @click="removeResource(resource.name)" />
                                 </UTooltip>
                             </li>
                         </ul>
@@ -272,9 +333,7 @@ async function confirmDelete(): Promise<void> {
             @click="confirmingDelete = true"
         />
         <span v-else />
-        <div class="flex gap-2">
-            <UButton type="submit" form="agent-form" :label="creating ? 'Create' : 'Save'" :loading="saving" :disabled="!valid" />
-        </div>
+        <span class="text-sm text-muted">{{ saving ? 'Saving…' : '' }}</span>
     </Teleport>
 
     <UModal v-model:open="confirmingDelete" title="Delete agent" :ui="{ footer: 'justify-end' }">

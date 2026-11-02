@@ -12,7 +12,7 @@ const categories: { value: SettingsCategory; label: string; icon: string }[] = [
 ];
 
 const active = ref<SettingsCategory>(props.category);
-const hasActions = computed(() => active.value !== 'appearance');
+const hasActions = computed(() => active.value === 'agents');
 </script>
 
 <template>
@@ -38,7 +38,7 @@ const hasActions = computed(() => active.value !== 'appearance');
                     </button>
                 </nav>
                 <div class="min-w-0 flex-1 p-4 sm:p-5">
-                    <SettingsProfile v-if="active === 'profile'" actions-target="#settings-actions" />
+                    <SettingsProfile v-if="active === 'profile'" />
                     <SettingsAppearance v-else-if="active === 'appearance'" />
                     <SettingsAgents v-else actions-target="#settings-actions" />
                 </div>

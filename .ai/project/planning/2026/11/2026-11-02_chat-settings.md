@@ -34,8 +34,9 @@ settings path lives in it, and a font change applies at once and survives a relo
 
 ## Decisions
 
-- Categories on the left, the active category's actions in the modal footer; Appearance applies
-  immediately and has no footer.
+- Categories on the left; everything saves as it changes (text debounced 700 ms or Enter, choices and
+  files at once), so only Agents has a footer (Delete, "Saving…"). The first-visit name prompt keeps a
+  "Continue" button, since autosave would close it mid-typing.
 - Appearance is the person's, not the browser's (UX rule: server owns view choices, the browser caches).
 
 ## Open

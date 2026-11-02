@@ -13,7 +13,7 @@ take further categories as the chat grows.
 
 ## How does it work?
 
-Settings at the foot of the sidebar opens one Settings window with its categories on the left (on
+Settings at the foot of the sidebar, below Archived, opens one Settings window with its categories on the left (on
 phones as tabs along the top): Profile, Appearance and Agents. "Manage agents" in the agents menu of
 a conversation opens the same window at Agents.
 
@@ -27,6 +27,11 @@ a conversation opens the same window at Agents.
   top with room below for the answer. Every choice applies at once and belongs to the person, so it
   follows them to every device and browser.
 - **Agents** defines the agents, as described in [Agents in the chat](chat-agents.md).
+
+There is no save button: every change is stored as it is made — text a moment after typing stops or
+on Enter, choices, pictures and files at once — and errors show at the field concerned. A new agent
+is created as soon as it has a valid name. Only deleting an agent asks first. In Profile and Agents
+the name comes before the picture.
 
 ## Examples
 

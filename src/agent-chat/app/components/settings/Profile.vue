@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import type { UploadedFile } from '#shared/types/conversation';
 
-defineProps<{ actionsTarget: string }>();
+const props = defineProps<{ actionsTarget?: string }>();
 const emit = defineEmits<{ saved: [] }>();
+
+const SAVE_DELAY_MS = 700;
 
 const { user, name, locked, save, setAvatar, setAvatarSeed } = useUserName();
 
@@ -20,7 +22,10 @@ function failureMessage(failure: unknown, fallback: string): string {
     return data.data?.statusMessage ?? data.statusMessage ?? fallback;
 }
 
+let saveTimer: ReturnType<typeof setTimeout> | undefined;
+
 async function submit(): Promise<void> {
+    clearTimeout(saveTimer);
     if (locked.value || !changed.value || saving.value) {
         return;
     }
@@ -28,7 +33,6 @@ async function submit(): Promise<void> {
     error.value = undefined;
     try {
         await save(draft.value);
-        draft.value = name.value ?? '';
         emit('saved');
     }
     catch (failure) {
@@ -56,6 +60,19 @@ async function changePicture(upload: Promise<UploadedFile | null | undefined>): 
     }
 }
 
+watch(draft, () => {
+    clearTimeout(saveTimer);
+    if (!props.actionsTarget) {
+        saveTimer = setTimeout(() => void submit(), SAVE_DELAY_MS);
+    }
+});
+
+onBeforeUnmount(() => {
+    if (!props.actionsTarget) {
+        void submit();
+    }
+});
+
 function pickAvatar(seed: string): void {
     void changePicture(setAvatarSeed(seed).then(() => undefined));
 }
@@ -80,6 +97,17 @@ function onPicked(): void {
 
 <template>
     <form id="profile-form" class="flex flex-col gap-4" @submit.prevent="submit">
+        <UFormField :label="required ? undefined : 'Name'" :error="error">
+            <UInput
+                v-model="draft"
+                :maxlength="USER_NAME_MAX_LENGTH"
+                :disabled="locked"
+                placeholder="Name"
+                aria-label="Your name"
+                autofocus
+                class="w-full"
+            />
+        </UFormField>
         <div v-if="user" class="flex items-center gap-4">
             <ParticipantAvatar :participant="{ kind: 'person', name: user.name, seed: user.avatarSeed, image: user.avatarUrl }" class="size-16" />
             <div v-if="!user.avatarLocked" class="flex flex-col items-start gap-1.5">
@@ -97,21 +125,10 @@ function onPicked(): void {
             :current="user.avatarUrl ? null : user.avatarSeed"
             @select="pickAvatar"
         />
-        <UFormField :label="required ? undefined : 'Name'" :error="error">
-            <UInput
-                v-model="draft"
-                :maxlength="USER_NAME_MAX_LENGTH"
-                :disabled="locked"
-                placeholder="Name"
-                aria-label="Your name"
-                autofocus
-                class="w-full"
-            />
-        </UFormField>
         <p class="text-xs text-muted">Drawn avatars: “Glyphs” by Matt Houser, CC BY 4.0</p>
     </form>
-    <Teleport defer :to="actionsTarget">
+    <Teleport v-if="actionsTarget" defer :to="actionsTarget">
         <span />
-        <UButton type="submit" form="profile-form" label="Save" :loading="saving" :disabled="locked || !changed" />
+        <UButton type="submit" form="profile-form" label="Continue" :loading="saving" :disabled="!changed" />
     </Teleport>
 </template>

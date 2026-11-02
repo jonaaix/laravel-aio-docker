@@ -111,19 +111,6 @@ onBeforeUnmount(() => {
             </template>
 
             <template #default="{ collapsed }">
-                <UTooltip text="Archived" :disabled="!collapsed">
-                    <UButton
-                        to="/archived"
-                        icon="i-heroicons-archive-box"
-                        :label="collapsed ? undefined : 'Archived'"
-                        aria-label="Archived"
-                        color="neutral"
-                        variant="ghost"
-                        :square="collapsed"
-                        :block="!collapsed"
-                        class="justify-start hover:bg-accented/60"
-                    />
-                </UTooltip>
                 <UNavigationMenu
                     :items="items"
                     :collapsed="collapsed"
@@ -150,7 +137,22 @@ onBeforeUnmount(() => {
 
             <template #footer="{ collapsed }">
                 <div class="flex w-full flex-col gap-2">
-                    <SettingsButton :collapsed="collapsed" />
+                    <div class="flex flex-col">
+                        <UTooltip text="Archived" :disabled="!collapsed">
+                            <UButton
+                                to="/archived"
+                                icon="i-heroicons-archive-box"
+                                :label="collapsed ? undefined : 'Archived'"
+                                aria-label="Archived"
+                                color="neutral"
+                                variant="ghost"
+                                :square="collapsed"
+                                :block="!collapsed"
+                                class="justify-start hover:bg-accented/60"
+                            />
+                        </UTooltip>
+                        <SettingsButton :collapsed="collapsed" />
+                    </div>
                     <AccountCard v-if="!collapsed" />
                 </div>
             </template>
