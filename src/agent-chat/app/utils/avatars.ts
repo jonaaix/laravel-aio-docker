@@ -1,6 +1,6 @@
 import { Avatar, Style } from '@dicebear/core';
 import pixelArt from '@dicebear/styles/pixel-art.json';
-import pixelbot from '@dicebear/styles/pixelbot.json';
+import voxelBot from '@dicebear/styles/voxel-bot.json';
 
 export type ParticipantKind = 'person' | 'agent';
 
@@ -14,7 +14,7 @@ const ANIMATION_SPEEDS = ['fastest', 'fast', 'medium', 'slow', 'slowest'];
 
 const STYLES: Record<ParticipantKind, { style: Style<unknown>; options: Record<string, unknown> }> = {
     person: { style: new Style(pixelArt), options: { mouthVariant: HAPPY_MOUTHS } },
-    agent: { style: new Style(pixelbot), options: { flip: 'horizontal', animationVariant: ANIMATION_SPEEDS } },
+    agent: { style: new Style(voxelBot), options: { flip: 'horizontal', animationVariant: ANIMATION_SPEEDS } },
 };
 
 const cache = new Map<string, string>();
