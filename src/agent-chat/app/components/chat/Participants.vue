@@ -49,7 +49,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
                     :label="participant.name"
                     :style="{ zIndex: participants.length - index }"
                     class="relative size-9 rounded-full ring ring-accented"
-                    :class="isVoxelBot(participant) ? 'bg-elevated' : ''"
+                    :class="isVoxelBot(participant) ? 'bg-info/15' : ''"
                 />
             </UTooltip>
         </div>
