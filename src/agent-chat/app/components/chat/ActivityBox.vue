@@ -7,7 +7,8 @@ const props = withDefaults(defineProps<{
     iconClass?: string;
     expandable?: boolean;
     alwaysOpen?: boolean;
-}>(), { expandable: true, alwaysOpen: false });
+    plain?: boolean;
+}>(), { expandable: true, alwaysOpen: false, plain: false });
 
 const toggled = ref<boolean | null>(null);
 watch(() => props.autoOpen, () => {
@@ -23,8 +24,8 @@ const open = computed({
 </script>
 
 <template>
-    <UCollapsible v-model:open="open" :disabled="!expandable || alwaysOpen" class="scrollbar-slim rounded-md bg-elevated/40 ring ring-default">
-        <button type="button" class="group flex h-9 w-full items-center gap-2 px-3 text-start text-sm">
+    <UCollapsible v-model:open="open" :disabled="!expandable || alwaysOpen" class="scrollbar-slim" :class="plain ? '' : 'rounded-md bg-elevated/40 ring ring-default'">
+        <button type="button" class="group flex items-center gap-2 text-start text-sm" :class="plain ? 'h-7 max-w-full' : 'h-9 w-full px-3'">
             <UIcon v-if="active" name="i-heroicons-arrow-path" class="size-4 shrink-0 animate-spin text-muted" />
             <UIcon v-else :name="icon" class="size-4 shrink-0" :class="iconClass || 'text-muted'" />
             <UChatShimmer v-if="active" :text="title" class="font-medium" />
@@ -32,12 +33,13 @@ const open = computed({
             <UIcon
                 v-if="expandable && !alwaysOpen"
                 name="i-heroicons-chevron-down"
-                class="ms-auto size-4 shrink-0 text-muted transition-transform duration-200 group-data-[state=open]:rotate-180"
+                class="size-4 shrink-0 text-muted transition-transform duration-200 group-data-[state=open]:rotate-180"
+                :class="plain ? '' : 'ms-auto'"
             />
         </button>
 
         <template #content>
-            <div class="px-3 pb-2.5">
+            <div class="pb-2.5" :class="plain ? '' : 'px-3'">
                 <slot />
             </div>
         </template>

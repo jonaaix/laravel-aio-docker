@@ -162,14 +162,15 @@ container restart with its full history and attachments, and no Mattermost/Slack
 
 ## Decisions
 
-- The thinking and working boxes (`ChatThinkingBlock`, `ChatWorkingBlock`) are final in look and
-  behaviour; UI polish works around them.
+- Thought and Worked (`ChatThinkingBlock`, `ChatWorkingBlock`) are plain lines without frame or
+  background (`ChatActivityBox` `plain`, 28 px rows, no gap), aligned with the answer text; background
+  tasks and waiting messages keep the framed box.
 - "Pause session" stays a button with its label in the header.
 - Agents and avatars: see `2026/11/2026-11-02_chat-participants-and-agents.md`.
 - The UI is grayscale with black as the accent (white in dark mode): `primary` is `neutral` and
   `--ui-primary` is pinned to neutral-900 / neutral-50 in `main.css`.
 - Nuxt UI scales radii from `--ui-radius` (0.5rem), so `rounded-xl` is 24 px here, not Tailwind's 12 px;
-  every card-like surface (cards, thinking/working boxes, attachments) uses `rounded-md` (12 px); the
+  every card-like surface (cards, framed activity boxes, attachments) uses `rounded-md` (12 px); the
   composer stays a pill, and the user bubble is filled `bg-accented/50` (a very light grey, as in ChatGPT)
   with 18 px, `py-2` and no ring so it never reads as a card.
 - All relevant code lives in this repo; the fork is copied, not referenced. Only `fpm-claude-beta`

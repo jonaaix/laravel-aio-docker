@@ -49,6 +49,7 @@ watch(() => thoughts.value.join('\n').length, async () => {
         :auto-open="streaming"
         icon="i-heroicons-light-bulb"
         :expandable="thoughts.length > 0"
+        plain
     >
         <ul
             v-if="thoughts.length > 0"

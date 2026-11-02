@@ -406,7 +406,7 @@ const conversationActions = computed<DropdownMenuItem[]>(() => [
                             <ChatHead :participant="messageAuthor(message)" :reverse="message.role === 'user'" />
                         </template>
                         <template #content="{ message }">
-                            <div v-if="message.role === 'assistant'" class="mb-4 flex flex-col gap-2 empty:hidden">
+                            <div v-if="message.role === 'assistant'" class="mb-3 flex flex-col empty:hidden">
                                 <ChatThinkingBlock :message="message" :streaming="isStreaming(message.id)" />
                                 <ChatWorkingBlock :message="message" :streaming="isStreaming(message.id)" />
                             </div>

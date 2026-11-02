@@ -35,6 +35,7 @@ const commandTool = computed(() => working.value ? listedTools.value.findLast(pa
         :expandable="listedTools.length > 0"
         :icon="failed ? 'i-heroicons-exclamation-triangle' : 'i-heroicons-wrench-screwdriver'"
         :icon-class="failed ? 'text-error' : ''"
+        plain
     >
         <div v-if="listedTools.length > 0" class="flex flex-col gap-0.5">
             <UButton
