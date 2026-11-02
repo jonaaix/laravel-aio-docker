@@ -16,7 +16,7 @@ and the peer cannot touch the project.
 - [x] Participant list floating top left of the conversation (in the header row below `lg`),
       without making the header taller: the lead plus people who have written; agents follow with
       membership
-- [x] Agent registry: Settings → "Agents" modal; lead "Karim SA" always present (name, role, model
+- [x] Agent registry: Settings → "Agents" modal; lead "Tarek LSA" always present (name, role, model
       editable; role default "Lead Senior Software Architect"); peers with name, role, model, a
       description saved as their `CLAUDE.md` and uploaded resource files, all in the peer's own
       empty working folder under the data dir

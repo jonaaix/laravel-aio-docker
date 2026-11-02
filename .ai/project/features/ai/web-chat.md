@@ -146,7 +146,7 @@ derived from their name with the name beneath it, next to each of their messages
 are drawn in clearly different styles. A small list of the participants floats at the top left of
 the conversation.
 
-Every conversation starts with the lead coding agent, "Karim SA" unless renamed. The lead works in
+Every conversation starts with the lead coding agent, "Tarek LSA" unless renamed. The lead works in
 the project with the project's own instructions, sees the whole conversation and gives it its
 title. Further agents are defined once in the settings — each with a name, a role, a model, a
 description that becomes its own instructions, and files it may use as resources — and can be

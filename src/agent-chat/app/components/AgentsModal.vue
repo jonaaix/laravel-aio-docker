@@ -30,7 +30,7 @@ const modelItems = computed(() => {
 });
 const effortLevels = computed(() => models.value.find(entry => entry.value === model.value)?.effortLevels ?? []);
 const effortItems = computed(() => [
-    { label: 'Default', value: DEFAULT_EFFORT },
+    { label: 'Default (usually high)', value: DEFAULT_EFFORT },
     ...effortLevels.value.map(level => ({ label: level === 'xhigh' ? 'Extra high' : level.charAt(0).toUpperCase() + level.slice(1), value: level })),
 ]);
 
@@ -126,22 +126,22 @@ async function confirmDelete(): Promise<void> {
 </script>
 
 <template>
-    <UModal v-model:open="managing" title="Agents" :ui="{ content: 'sm:max-w-3xl', footer: 'justify-between' }">
+    <UModal v-model:open="managing" title="Agents" :ui="{ content: 'sm:max-w-4xl', footer: 'justify-between' }">
         <template #body>
             <div class="flex flex-col gap-5 sm:flex-row">
-                <nav class="flex shrink-0 flex-col gap-1 sm:w-52">
+                <nav class="flex shrink-0 flex-col gap-1 sm:w-64">
                     <button
                         v-for="agent in agents"
                         :key="agent.id"
                         type="button"
-                        class="flex h-12 items-center gap-2.5 rounded-md px-2 text-start transition-colors duration-500 ease-out hover:bg-elevated"
+                        class="flex min-h-12 items-center gap-2.5 rounded-md px-2 py-1.5 text-start transition-colors duration-500 ease-out hover:bg-elevated"
                         :class="!creating && agent.id === selectedId ? 'bg-elevated' : ''"
                         @click="select(agent)"
                     >
                         <img :src="avatarUri({ kind: 'agent', name: agent.name })" alt="" class="size-8 shrink-0 rounded-full bg-elevated ring ring-default">
                         <span class="min-w-0">
                             <span class="block truncate text-sm font-medium text-highlighted">{{ agent.name }}</span>
-                            <span class="block truncate text-xs text-muted">{{ agent.role || 'No role' }}</span>
+                            <span class="line-clamp-2 text-xs text-muted">{{ agent.role || 'No role' }}</span>
                         </span>
                     </button>
                     <UButton label="New agent" icon="i-heroicons-plus" color="neutral" variant="ghost" class="justify-start" :class="creating ? 'bg-elevated' : ''" @click="startNew" />
@@ -154,7 +154,7 @@ async function confirmDelete(): Promise<void> {
                     <UFormField label="Role">
                         <UInput v-model="role" :maxlength="AGENT_ROLE_MAX_LENGTH" class="w-full" />
                     </UFormField>
-                    <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
+                    <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_13rem]">
                         <UFormField label="Model">
                             <USelect v-model="model" :items="modelItems" class="w-full" :ui="{ content: 'min-w-72' }" />
                         </UFormField>
