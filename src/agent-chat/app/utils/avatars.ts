@@ -29,7 +29,9 @@ const STYLES: Record<ParticipantKind, { style: Style<unknown>; options: Record<s
 const PRESET_PREFIX = 'preset:';
 const SMILEY_COLORS = ['red', 'orange', 'yellow', 'green', 'teal', 'blue', 'purple', 'pink'];
 
-export const AGENT_PRESET_SEEDS = SMILEY_COLORS.map(color => `${PRESET_PREFIX}smiley-${color}`);
+const PRESET_DESIGNS = ['smiley', 'wow'];
+
+export const AGENT_PRESET_ROWS = PRESET_DESIGNS.map(design => SMILEY_COLORS.map(color => `${PRESET_PREFIX}${design}-${color}`));
 
 const cache = new Map<string, string>();
 

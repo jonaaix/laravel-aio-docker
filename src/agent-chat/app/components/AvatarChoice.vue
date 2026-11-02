@@ -6,7 +6,7 @@ const CHOICES = 8;
 const props = defineProps<{
     kind: ParticipantKind;
     current: string | null;
-    presets?: string[];
+    presets?: string[][];
 }>();
 
 const emit = defineEmits<{ select: [seed: string] }>();
@@ -14,11 +14,11 @@ const emit = defineEmits<{ select: [seed: string] }>();
 const seeds = ref<string[]>([]);
 
 function shuffle(): void {
-    const kept = props.current && !props.presets?.includes(props.current) ? [props.current] : [];
+    const kept = props.current && !props.presets?.some(row => row.includes(props.current!)) ? [props.current] : [];
     seeds.value = [...kept, ...randomAvatarSeeds(CHOICES - kept.length)];
 }
 
-const rows = computed(() => props.presets?.length ? [seeds.value, props.presets] : [seeds.value]);
+const rows = computed(() => [seeds.value, ...(props.presets ?? [])]);
 
 onMounted(shuffle);
 </script>

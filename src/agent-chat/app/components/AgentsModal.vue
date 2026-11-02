@@ -224,7 +224,7 @@ async function confirmDelete(): Promise<void> {
                             :key="creating ? 'new' : selectedId ?? ''"
                             kind="agent"
                             :current="avatarPreview || storedPicture ? null : avatarSeed"
-                            :presets="AGENT_PRESET_SEEDS"
+                            :presets="AGENT_PRESET_ROWS"
                             @select="chooseAvatar"
                         />
                     </div>
