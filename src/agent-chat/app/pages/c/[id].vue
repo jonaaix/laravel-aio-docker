@@ -67,7 +67,7 @@ const memberAgentIds = computed(() => conversations.value.find(conversation => c
 const memberAgents = computed(() => memberAgentIds.value.flatMap(id => agents.value.filter(agent => agent.id === id)));
 const peerAgents = computed(() => agents.value.filter(agent => !agent.lead));
 
-const agentOptions = computed(() => peerAgents.value.map(agent => ({ id: agent.id, name: agent.name, member: memberAgentIds.value.includes(agent.id) })));
+const agentOptions = computed(() => peerAgents.value.map(agent => ({ id: agent.id, name: agent.name, member: memberAgentIds.value.includes(agent.id), participant: agentParticipant(agent) })));
 
 function agentParticipant(agent: Agent): Participant {
     return { kind: 'agent', name: agent.name, seed: agent.avatarSeed, image: agent.avatarUrl };

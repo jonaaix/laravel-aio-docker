@@ -6,6 +6,7 @@ export interface AgentOption {
     id: string;
     name: string;
     member: boolean;
+    participant: Participant;
 }
 
 const props = defineProps<{
@@ -21,6 +22,7 @@ const agentsWindow = useAgentsWindow();
 const menuItems = computed<DropdownMenuItem[][]>(() => [
     props.agentOptions.map(option => ({
         label: option.name,
+        participant: option.participant,
         type: 'checkbox' as const,
         checked: option.member,
         onUpdateChecked: (checked: boolean) => emit('toggle', option.id, checked),
@@ -48,6 +50,12 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
             <ChatParticipantList :participants="participants" />
             <UDropdownMenu v-if="editable" :items="menuItems" :content="{ align: 'start' }">
                 <UButton label="Add agent" icon="i-heroicons-plus" color="neutral" variant="ghost" class="mt-2 -ms-2" />
+                <template #item-leading="{ item }">
+                    <span v-if="item.participant" class="flex size-6 shrink-0 items-center justify-center">
+                        <ParticipantAvatar :participant="item.participant" :class="isVoxelBot(item.participant) ? 'size-6' : 'size-5'" />
+                    </span>
+                    <UIcon v-else-if="item.icon" :name="item.icon" class="size-5 shrink-0 text-dimmed" />
+                </template>
             </UDropdownMenu>
         </template>
     </UModal>
