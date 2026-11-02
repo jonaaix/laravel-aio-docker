@@ -30,10 +30,11 @@ const STYLES: Record<ParticipantKind, { style: Style<unknown>; options: Record<s
 };
 
 const PASTEL_BACKGROUNDS = ['#b6e3f4', '#c0aede', '#d1d4f9', '#ffd5dc', '#ffdfbf', '#c7f0d8'];
+const BOLD_POP_BACKGROUNDS = ['#ff5d8f', '#ffb703', '#43aa8b', '#4d96ff', '#b57bff'];
 
-const PERSON_STYLES: Record<string, Style<unknown>> = {
-    'notionists:': new Style(notionists),
-    'dylan:': new Style(dylan),
+const PERSON_STYLES: Record<string, { style: Style<unknown>; options: Record<string, unknown> }> = {
+    'notionists:': { style: new Style(notionists), options: { flip: 'horizontal', backgroundColor: BOLD_POP_BACKGROUNDS } },
+    'dylan:': { style: new Style(dylan), options: { backgroundColor: PASTEL_BACKGROUNDS } },
 };
 
 export const PERSON_STYLE_PREFIXES = ['', ...Object.keys(PERSON_STYLES)];
@@ -53,7 +54,7 @@ export function generatedAvatarUri(kind: ParticipantKind, seed: string): string 
     if (!uri) {
         const prefix = kind === 'person' ? Object.keys(PERSON_STYLES).find(candidate => seed.startsWith(candidate)) : undefined;
         uri = prefix
-            ? new Avatar(PERSON_STYLES[prefix]!, { seed: seed.slice(prefix.length), backgroundColor: PASTEL_BACKGROUNDS }).toDataUri()
+            ? new Avatar(PERSON_STYLES[prefix]!.style, { ...PERSON_STYLES[prefix]!.options, seed: seed.slice(prefix.length) }).toDataUri()
             : new Avatar(STYLES[kind].style, { ...STYLES[kind].options, seed }).toDataUri();
         cache.set(key, uri);
     }
