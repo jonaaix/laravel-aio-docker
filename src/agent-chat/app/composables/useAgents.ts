@@ -2,7 +2,6 @@ import type { Agent, AgentInput } from '#shared/types/agent';
 
 export function useAgents() {
     const agents = useState<Agent[]>('agents', () => []);
-    const managing = useState<boolean>('agents-managing', () => false);
     const lead = computed(() => agents.value.find(agent => agent.lead) ?? null);
 
     async function load(): Promise<void> {
@@ -22,5 +21,5 @@ export function useAgents() {
         await load();
     }
 
-    return { agents, lead, managing, load, save, remove };
+    return { agents, lead, load, save, remove };
 }

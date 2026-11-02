@@ -5,7 +5,7 @@ defineProps<{ collapsed: boolean }>();
 
 const colorMode = useColorMode();
 const { user, locked: nameLocked, editing: editingName } = useUserName();
-const { managing: managingAgents } = useAgents();
+const agentsWindow = useAgentsWindow();
 
 const appearances = [
     { label: 'Light', value: 'light', icon: 'i-heroicons-sun' },
@@ -24,9 +24,7 @@ const nameItems = computed<DropdownMenuItem[]>(() => [
     {
         label: 'Agents',
         icon: 'i-heroicons-cpu-chip',
-        onSelect: () => {
-            managingAgents.value = true;
-        },
+        onSelect: agentsWindow.open,
     },
 ]);
 

@@ -149,6 +149,5 @@ onBeforeUnmount(() => {
 
         <slot />
         <UserNameModal />
-        <AgentsModal />
     </UDashboardGroup>
 </template>

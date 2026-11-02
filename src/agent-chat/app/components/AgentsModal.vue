@@ -5,7 +5,9 @@ import type { UploadedFile } from '#shared/types/conversation';
 
 
 
-const { agents, managing, load, save, remove } = useAgents();
+const open = defineModel<boolean>('open', { default: false });
+const emit = defineEmits<{ 'after:leave': [] }>();
+const { agents, load, save, remove } = useAgents();
 const { attachments, uploading, ready, add: attach, remove: removeAttachment, take: takeAttachments } = useAttachments();
 
 const selectedId = ref<string | null>(null);
@@ -121,14 +123,12 @@ function startNew(): void {
     fill(null);
 }
 
-watch(managing, async (open) => {
-    if (open) {
-        const [, available] = await Promise.all([load(), apiFetch<ClaudeModel[]>('models')]);
-        models.value = available;
-        const first = agents.value[0];
-        if (first) {
-            select(first);
-        }
+onMounted(async () => {
+    const [, available] = await Promise.all([load(), apiFetch<ClaudeModel[]>('models')]);
+    models.value = available;
+    const first = agents.value[0];
+    if (first) {
+        select(first);
     }
 });
 
@@ -160,7 +160,7 @@ async function submit(): Promise<void> {
             avatarUpload: avatarUpload.value ? { id: avatarUpload.value.id, filename: avatarUpload.value.filename } : null,
             removeAvatar: removeAvatar.value,
         });
-        managing.value = false;
+        open.value = false;
     }
     catch (failure) {
         error.value = (failure as { statusMessage?: string }).statusMessage ?? 'Could not save the agent';
@@ -185,7 +185,7 @@ async function confirmDelete(): Promise<void> {
 </script>
 
 <template>
-    <UModal v-model:open="managing" title="Agents" :ui="{ content: 'sm:max-w-4xl', footer: 'justify-between' }">
+    <UModal v-model:open="open" title="Agents" :ui="{ content: 'sm:max-w-4xl', footer: 'justify-between' }" @after:leave="emit('after:leave')">
         <template #body>
             <div class="flex flex-col gap-5 sm:flex-row">
                 <nav class="flex shrink-0 flex-col gap-1 sm:w-64">
@@ -278,7 +278,7 @@ async function confirmDelete(): Promise<void> {
             />
             <span v-else />
             <div class="flex gap-2">
-                <UButton label="Close" color="neutral" variant="outline" @click="managing = false" />
+                <UButton label="Close" color="neutral" variant="outline" @click="open = false" />
                 <UButton type="submit" form="agent-form" :label="creating ? 'Create' : 'Save'" :loading="saving" :disabled="!valid" />
             </div>
         </template>
