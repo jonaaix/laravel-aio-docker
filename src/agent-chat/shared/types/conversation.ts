@@ -25,6 +25,7 @@ export interface QueuedMessage {
 export interface ConversationSummary {
     id: string;
     title: string;
+    creatorName: string | null;
     status: ConversationStatus;
     turnActive: boolean;
     backgroundTasks: BackgroundTask[];

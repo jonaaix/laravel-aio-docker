@@ -4,6 +4,7 @@ import type { DropdownMenuItem } from '@nuxt/ui';
 defineProps<{ collapsed: boolean }>();
 
 const colorMode = useColorMode();
+const { locked: nameLocked, editing: editingName } = useUserName();
 
 const appearances = [
     { label: 'Light', value: 'light', icon: 'i-heroicons-sun' },
@@ -11,7 +12,15 @@ const appearances = [
     { label: 'System', value: 'system', icon: 'i-heroicons-computer-desktop' },
 ] as const;
 
-const items = computed<DropdownMenuItem[][]>(() => [[
+const nameItems = computed<DropdownMenuItem[]>(() => nameLocked.value ? [] : [{
+    label: 'Your name',
+    icon: 'i-heroicons-user',
+    onSelect: () => {
+        editingName.value = true;
+    },
+}]);
+
+const appearanceItems = computed<DropdownMenuItem[]>(() => [
     { label: 'Appearance', type: 'label' },
     ...appearances.map(appearance => ({
         label: appearance.label,
@@ -22,7 +31,9 @@ const items = computed<DropdownMenuItem[][]>(() => [[
             colorMode.preference = appearance.value;
         },
     })),
-]]);
+]);
+
+const items = computed(() => [nameItems.value, appearanceItems.value].filter(group => group.length > 0));
 </script>
 
 <template>

@@ -7,6 +7,19 @@ const { usage, load: loadAccount } = useAccount();
 const { baseURL } = useRuntimeConfig().app;
 
 const CLOCK_TICK_MS = 60_000;
+const NAME_PARAM = 'n';
+
+const route = useRoute();
+const router = useRouter();
+const { adopt: adoptUserName } = useUserName();
+const encodedName = route.query[NAME_PARAM];
+if (typeof encodedName === 'string') {
+    adoptUserName(encodedName);
+    const query = { ...route.query };
+    delete query[NAME_PARAM];
+    void router.replace({ query });
+}
+
 const now = ref(Date.now());
 let clock: ReturnType<typeof setInterval> | undefined;
 
@@ -16,6 +29,7 @@ const items = computed<NavigationMenuItem[][]>(() => groupByRecency(conversation
         label: conversation.title,
         to: `/c/${conversation.id}`,
         session: sessionState(conversation.status, conversation.turnActive),
+        creatorName: conversation.creatorName,
         lastActivityAt: conversation.lastActivityAt,
     })),
 ]));
@@ -98,6 +112,10 @@ onBeforeUnmount(() => {
                             <span class="mt-0.5 flex items-center gap-1.5 text-xs font-normal text-muted">
                                 <span class="size-1.5 shrink-0 rounded-full" :class="item.session.dotClass" />
                                 <span>{{ item.session.label }}</span>
+                                <template v-if="item.creatorName">
+                                    <span aria-hidden="true">·</span>
+                                    <span class="truncate">{{ item.creatorName }}</span>
+                                </template>
                                 <span aria-hidden="true">·</span>
                                 <span class="truncate tabular-nums">{{ formatRelativeTime(item.lastActivityAt, now) }}</span>
                             </span>
@@ -116,5 +134,6 @@ onBeforeUnmount(() => {
         </UDashboardSidebar>
 
         <slot />
+        <UserNameModal />
     </UDashboardGroup>
 </template>

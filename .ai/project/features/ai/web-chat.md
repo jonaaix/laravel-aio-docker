@@ -28,6 +28,12 @@ itself is broken.
 Inside the Laravel app, the app opens the chat through a short-lived signed link that tells the
 chat who the user is. Access through the chat's own domain or port is protected by a password.
 
+The chat needs the user's name before anything else: whoever opens it without a name first has to
+enter one, and cannot continue until they have. The browser remembers the name, and the user can
+change it later in the settings. When the Laravel app opens the chat, it passes the name along in
+the address (`n`, the name base64url-encoded); that name is taken over as it is and cannot be
+changed in the chat. Each new conversation keeps the name of the person who started it.
+
 ### Conversations
 
 A sidebar lists the conversations. Everyone working in the same container sees all of them, each

@@ -5,6 +5,7 @@ export const conversations = sqliteTable('conversations', {
     id: text('id').primaryKey(),
     title: text('title').notNull(),
     titleRenamed: integer('title_renamed', { mode: 'boolean' }).notNull().default(false),
+    creatorName: text('creator_name'),
     status: text('status', { enum: ['running', 'paused'] }).notNull().default('paused'),
     workingDir: text('working_dir').notNull(),
     agentSessionRef: text('agent_session_ref').notNull(),

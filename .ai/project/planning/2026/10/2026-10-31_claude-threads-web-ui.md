@@ -21,7 +21,7 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - [x] History store for evaluation: tool output cut to its first 2,000 characters, per-turn metrics
       (model, tokens, cost, duration, outcome), archive instead of delete, paged message loading
 - [ ] Auth: short-lived signed iframe link from the Laravel app carrying the user, password for
-      standalone access — blocks image integration
+      standalone access — blocks image integration (separate from the name below)
 - [ ] Image integration: supervisor program, nginx sub-path proxy for the iframe, optional own
       port/domain, env (`NUXT_WORKING_DIR=/app`, data dir in the persisted home)
 - [x] In-process HTTP MCP for Claude with `send_file` → attachment stored with the conversation
@@ -32,6 +32,9 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - [x] Quiet header (status dot beside the title, archive in a "More actions" menu) and a hover
   footer per message (copy + clock time)
 - [x] Flatter composer (pill shape kept, light shadow, less padding)
+- [x] User name: enforced "Your name" modal (cookie `chat-user-name`), `?n=<base64url>` adopts and
+  locks it (`chat-user-name-locked`), "Your name" in Settings, `conversations.creator_name` shown in
+  the sidebar. Laravel side: `rtrim(strtr(base64_encode($name), '+/', '-_'), '=')`
 - [x] Denser sidebar: two-line entries (title; Working/Active/Paused from `sessionState` · relative
   last activity), account card at the bottom with one line per usage meter
 - [ ] Multi-bot conversations (bots table, mention handoff, catch-up) on top of the new runtime

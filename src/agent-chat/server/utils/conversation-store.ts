@@ -63,12 +63,13 @@ function messagePage(conversationId: string, beforeSeq: number | null): MessageP
     };
 }
 
-export function createConversation(title: string, workingDir: string): ConversationRow {
+export function createConversation(title: string, workingDir: string, creatorName: string | null): ConversationRow {
     const now = Date.now();
     const row: ConversationRow = {
         id: randomUUID(),
         title,
         titleRenamed: false,
+        creatorName,
         status: 'paused',
         workingDir,
         agentSessionRef: randomUUID(),

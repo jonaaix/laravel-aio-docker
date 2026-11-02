@@ -29,6 +29,13 @@
       "when": 1793575525674,
       "tag": "0003_rename_conversation_title",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1793616562825,
+      "tag": "0004_conversation_creator",
+      "breakpoints": true
     }
   ]
 }

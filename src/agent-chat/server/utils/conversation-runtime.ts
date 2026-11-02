@@ -476,6 +476,7 @@ export function summarize(row: Omit<ConversationSummary, 'turnActive' | 'backgro
     return {
         id: row.id,
         title: row.title,
+        creatorName: row.creatorName,
         status: row.status,
         turnActive: isTurnActive(row.id),
         backgroundTasks: runningBackgroundTasks(row.id),
