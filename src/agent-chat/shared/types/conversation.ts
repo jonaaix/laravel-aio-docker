@@ -1,4 +1,5 @@
 import type { UsageSnapshot } from './account';
+import type { ChatUser } from './user';
 import type { UIMessage } from 'ai';
 
 export type ConversationStatus = 'running' | 'paused';
@@ -25,7 +26,7 @@ export interface QueuedMessage {
 export interface ConversationSummary {
     id: string;
     title: string;
-    creatorName: string | null;
+    creatorId: string | null;
     status: ConversationStatus;
     turnActive: boolean;
     backgroundTasks: BackgroundTask[];
@@ -39,9 +40,6 @@ export type TurnOutcome = 'completed' | 'stopped' | 'failed';
 export interface ChatMessageMetadata {
     createdAt: number;
     senderId?: string;
-    senderName?: string;
-    senderAvatar?: string;
-    senderAvatarSeed?: string;
     outcome?: TurnOutcome;
     error?: string;
 }
@@ -69,4 +67,6 @@ export type ConversationEvent =
 
 export type ConversationListEvent =
     | { type: 'conversation'; conversation: ConversationSummary }
-    | { type: 'usage'; usage: UsageSnapshot };
+    | { type: 'usage'; usage: UsageSnapshot }
+    | { type: 'user'; user: ChatUser }
+    | { type: 'agents' };

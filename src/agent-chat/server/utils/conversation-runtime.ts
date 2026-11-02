@@ -485,7 +485,7 @@ export function summarize(row: NonNullable<ReturnType<typeof findConversation>>)
     return {
         id: row.id,
         title: row.title,
-        creatorName: findUser(row.creatorId)?.name ?? null,
+        creatorId: row.creatorId,
         status: row.status,
         turnActive: isTurnActive(row.id),
         backgroundTasks: runningBackgroundTasks(row.id),

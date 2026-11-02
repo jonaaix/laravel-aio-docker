@@ -5,6 +5,7 @@ import type { ConversationListEvent } from '#shared/types/conversation';
 const { conversations, upsert, load } = useConversations();
 const { usage, load: loadAccount } = useAccount();
 const { load: loadAgents } = useAgents();
+const { users, load: loadUsers, upsert: upsertUser } = useUsers();
 const { baseURL } = useRuntimeConfig().app;
 
 const CLOCK_TICK_MS = 60_000;
@@ -36,7 +37,7 @@ const items = computed<NavigationMenuItem[][]>(() => groupByRecency(conversation
         label: conversation.title,
         to: `/c/${conversation.id}`,
         session: sessionState(conversation.status, conversation.turnActive),
-        creatorName: conversation.creatorName,
+        creatorName: conversation.creatorId ? users.value[conversation.creatorId]?.name ?? null : null,
         lastActivityAt: conversation.lastActivityAt,
     })),
 ]));
@@ -48,13 +49,19 @@ onMounted(async () => {
         if (event.type === 'conversation') {
             upsert(event.conversation);
         }
+        else if (event.type === 'user') {
+            upsertUser(event.user);
+        }
+        else if (event.type === 'agents') {
+            void loadAgents();
+        }
         else {
             usage.value = event.usage;
         }
     }, () => {
-        void Promise.all([load(), loadAccount()]);
+        void Promise.all([load(), loadAccount(), loadUsers(), loadAgents()]);
     });
-    await Promise.all([load(), loadAccount(), loadAgents()]);
+    await Promise.all([load(), loadAccount(), loadAgents(), loadUsers()]);
     clock = setInterval(() => {
         now.value = Date.now();
     }, CLOCK_TICK_MS);

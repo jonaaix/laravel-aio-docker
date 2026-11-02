@@ -31,11 +31,13 @@ export function useUserName() {
     const ready = useState<boolean>('chat-user-ready', () => false);
     const locked = useState<boolean>('chat-user-locked', () => lockedCookie.value === 'true');
     const editing = useState<boolean>('chat-user-editing', () => false);
+    const { upsert } = useUsers();
     const userId = computed(() => user.value?.id ?? null);
     const name = computed(() => user.value?.name ?? null);
 
     function remember(value: ChatUser, lock: boolean): void {
         user.value = value;
+        upsert(value);
         userCookie.value = value.id;
         legacyNameCookie.value = null;
         locked.value = lock;
@@ -97,12 +99,14 @@ export function useUserName() {
     async function setAvatar(upload: UploadedFile | null): Promise<void> {
         if (user.value) {
             user.value = await apiFetch<ChatUser>(`users/${user.value.id}/avatar`, { method: 'POST', body: { upload } });
+            upsert(user.value);
         }
     }
 
     async function setAvatarSeed(seed: string): Promise<void> {
         if (user.value) {
             user.value = await apiFetch<ChatUser>(`users/${user.value.id}/avatar-seed`, { method: 'POST', body: { seed } });
+            upsert(user.value);
         }
     }
 

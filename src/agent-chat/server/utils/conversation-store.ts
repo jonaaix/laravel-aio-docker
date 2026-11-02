@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { and, desc, eq, getTableColumns, isNotNull, isNull, lt, max } from 'drizzle-orm';
-import { conversations, messages, users } from '../database/schema';
+import { and, desc, eq, isNotNull, isNull, lt, max } from 'drizzle-orm';
+import { conversations, messages } from '../database/schema';
 import type { ChatMessage, ConversationDetail, ConversationStatus, ConversationSummary, MessagePage } from '../../shared/types/conversation';
 import type { TurnMetrics } from './turn-metrics';
 import type { UserRow } from './user-store';
@@ -10,12 +10,12 @@ type MessageRow = typeof messages.$inferSelect;
 
 const MESSAGE_PAGE_SIZE = 50;
 
-function toChatMessage(row: Pick<MessageRow, 'id' | 'role' | 'parts' | 'createdAt'> & Partial<Pick<MessageRow, 'outcome' | 'errorMessage' | 'senderId'>> & { senderName?: string | null; senderAvatar?: string | null; senderAvatarSeed?: string | null }): ChatMessage {
+function toChatMessage(row: Pick<MessageRow, 'id' | 'role' | 'parts' | 'createdAt'> & Partial<Pick<MessageRow, 'outcome' | 'errorMessage' | 'senderId'>>): ChatMessage {
     return {
         id: row.id,
         role: row.role,
         parts: row.parts,
-        metadata: { createdAt: row.createdAt, senderId: row.senderId ?? undefined, senderName: row.senderName ?? undefined, senderAvatar: row.senderAvatar ?? undefined, senderAvatarSeed: row.senderAvatarSeed ?? undefined, outcome: row.outcome ?? undefined, error: row.errorMessage ?? undefined },
+        metadata: { createdAt: row.createdAt, senderId: row.senderId ?? undefined, outcome: row.outcome ?? undefined, error: row.errorMessage ?? undefined },
     };
 }
 
@@ -52,15 +52,14 @@ export function getMessagesBefore(conversationId: string, beforeMessageId: strin
 
 function messagePage(conversationId: string, beforeSeq: number | null): MessagePage {
     const rows = useDatabase()
-        .select({ ...getTableColumns(messages), senderName: users.name, senderAvatarSeed: users.avatarSeed, senderAvatarFile: users.avatarFile, senderAvatarUpdatedAt: users.avatarUpdatedAt })
+        .select()
         .from(messages)
-        .leftJoin(users, eq(messages.senderId, users.id))
         .where(and(eq(messages.conversationId, conversationId), beforeSeq === null ? undefined : lt(messages.seq, beforeSeq)))
         .orderBy(desc(messages.seq))
         .limit(MESSAGE_PAGE_SIZE + 1)
         .all();
     return {
-        messages: rows.slice(0, MESSAGE_PAGE_SIZE).reverse().map(row => toChatMessage({ ...row, senderAvatar: avatarUrl(row.senderAvatarFile, row.senderAvatarUpdatedAt) })),
+        messages: rows.slice(0, MESSAGE_PAGE_SIZE).reverse().map(toChatMessage),
         hasEarlier: rows.length > MESSAGE_PAGE_SIZE,
     };
 }
@@ -117,7 +116,7 @@ export function appendMessage(conversationId: string, role: ChatMessage['role'],
     } satisfies typeof messages.$inferInsert;
     db.insert(messages).values(row).run();
     updateConversation(conversationId, { lastActivityAt: row.createdAt });
-    return toChatMessage({ ...row, senderName: sender?.name, senderAvatar: sender ? avatarUrl(sender.avatarFile, sender.avatarUpdatedAt) : null, senderAvatarSeed: sender?.avatarSeed });
+    return toChatMessage(row);
 }
 
 export function listUserMessages(conversationId: string): ChatMessage[] {

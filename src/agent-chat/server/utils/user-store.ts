@@ -19,7 +19,7 @@ export function findOrCreateUser(name: string): UserRow {
     }
     const row: UserRow = { id: randomUUID(), name, avatarSeed: null, avatarFile: null, avatarSource: null, avatarUpdatedAt: null, createdAt: Date.now() };
     useDatabase().insert(users).values(row).run();
-    return row;
+    return announce(row);
 }
 
 export function renameUser(id: string, name: string): UserRow {
@@ -28,7 +28,16 @@ export function renameUser(id: string, name: string): UserRow {
         throw createError({ statusCode: 409, statusMessage: 'This name is already taken' });
     }
     useDatabase().update(users).set({ name }).where(eq(users.id, id)).run();
-    return findUser(id)!;
+    return announce(findUser(id)!);
+}
+
+export function listUsers(): ChatUser[] {
+    return useDatabase().select().from(users).all().map(toChatUser);
+}
+
+function announce(row: UserRow): UserRow {
+    publishConversationListEvent({ type: 'user', user: toChatUser(row) });
+    return row;
 }
 
 export function toChatUser(row: UserRow): ChatUser {
@@ -42,7 +51,7 @@ function userAvatarBase(row: UserRow): string {
 function saveAvatar(row: UserRow, avatarFile: string | null, avatarSource: string | null): UserRow {
     const changes = { avatarFile, avatarSource, avatarUpdatedAt: Date.now() };
     useDatabase().update(users).set(changes).where(eq(users.id, row.id)).run();
-    return { ...row, ...changes };
+    return announce({ ...row, ...changes });
 }
 
 export async function syncLinkedAvatar(row: UserRow, source: string): Promise<UserRow> {
@@ -64,7 +73,7 @@ export function setAvatarSeed(row: UserRow, seed: string): UserRow {
     removeAvatar(userAvatarBase(row));
     const changes = { avatarSeed: seed, avatarFile: null, avatarUpdatedAt: Date.now() };
     useDatabase().update(users).set(changes).where(eq(users.id, row.id)).run();
-    return { ...row, ...changes };
+    return announce({ ...row, ...changes });
 }
 
 export function setUploadedAvatar(row: UserRow, upload: AttachmentReference | null): UserRow {

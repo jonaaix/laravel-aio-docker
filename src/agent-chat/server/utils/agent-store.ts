@@ -42,6 +42,11 @@ function toAgent(row: AgentRow): Agent {
     return { id: row.id, name: row.name, role: row.role, model: row.model, effort: row.effort, lead: row.lead, instructions: row.instructions, avatarSeed: row.avatarSeed, avatarUrl: avatarUrl(row.avatarFile, row.avatarUpdatedAt), resources: resources(row) };
 }
 
+function announce(agent: Agent): Agent {
+    publishConversationListEvent({ type: 'agents' });
+    return agent;
+}
+
 export function leadAgent(): AgentRow {
     const existing = useDatabase().select().from(agents).where(eq(agents.lead, true)).get();
     if (existing) {
@@ -105,7 +110,7 @@ export function createAgent(changes: AgentChanges): Agent {
     };
     useDatabase().insert(agents).values(row).run();
     writeWorkspace(row, changes);
-    return toAgent(applyAvatar(row, changes));
+    return announce(toAgent(applyAvatar(row, changes)));
 }
 
 export function updateAgent(row: AgentRow, changes: AgentChanges): Agent {
@@ -123,7 +128,7 @@ export function updateAgent(row: AgentRow, changes: AgentChanges): Agent {
     if (!row.lead) {
         writeWorkspace(updated, changes);
     }
-    return toAgent(applyAvatar(updated, changes));
+    return announce(toAgent(applyAvatar(updated, changes)));
 }
 
 function applyAvatar(row: AgentRow, changes: AgentChanges): AgentRow {
@@ -151,6 +156,7 @@ export function deleteAgent(row: AgentRow): void {
     useDatabase().delete(agents).where(eq(agents.id, row.id)).run();
     rmSync(agentDir(row.id), { recursive: true, force: true });
     removeAvatar(`agent-${row.id}`);
+    publishConversationListEvent({ type: 'agents' });
 }
 
 export function readAgentChanges(body: Record<string, unknown>): AgentChanges {

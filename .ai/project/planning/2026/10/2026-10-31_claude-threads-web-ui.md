@@ -41,6 +41,8 @@ container restart with its full history and attachments, and no Mattermost/Slack
   renaming refuses a taken name (409). Migration 0006 backfilled users from the old name columns, 0007
   dropped them. Claude's prompt starts with `<from>Name</from>` on the first message and on every
   sender change (compared by user id with the last queued or stored user message)
+- [x] One user directory: messages carry only `senderId`, summaries only `creatorId`; the client keeps
+  `useUsers` (`GET /api/users`) and the list event stream pushes `user` / `agents` changes live
 - [x] Denser sidebar: two-line entries (title; Working/Active/Paused from `sessionState` · relative
   last activity), account card at the bottom with one line per usage meter
 - [ ] Multi-bot conversations → own plan `2026/11/2026-11-02_chat-participants-and-agents.md`
