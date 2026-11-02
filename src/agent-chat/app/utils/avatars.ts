@@ -19,7 +19,7 @@ const TRANSPARENT = '#00000000';
 const STYLES: Record<ParticipantKind, { style: Style<unknown>; options: Record<string, unknown> }> = {
     person: {
         style: new Style(critters),
-        options: { flip: 'horizontal', mouthVariant: FRIENDLY_MOUTHS, eyesVariant: FRIENDLY_EYES },
+        options: { flip: 'horizontal', mouthVariant: FRIENDLY_MOUTHS, eyesVariant: FRIENDLY_EYES, animationVariant: 'none' },
     },
     agent: {
         style: new Style(voxelBot),

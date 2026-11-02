@@ -13,7 +13,7 @@ and the peer cannot touch the project.
 - [x] Chat heads: DiceBear as local npm packages (`@dicebear/core`, `@dicebear/styles`), "Critters" (friendly faces)
       for people, "Voxel Bot" (animated, larger, no circle or background) for agents, seeded by name; head with the name below it beside every
       message, own messages included
-- [x] Pictures: people default to Critters (friendly mouths and eyes, mirrored), may
+- [x] Pictures: people default to Critters (friendly mouths and eyes, mirrored, not animated), may
       upload one in Profile; `?a=<base64url image URL>` from Laravel is downloaded (re-fetched when the
       URL changes) and locks the picture; agents pick a Voxel Bot seed from 8 random ones or upload.
       Files in `<data dir>/avatars/` (`user-<id>`/`agent-<id>`, ≤ 5 MB), served by `GET /api/avatars/<file>`
