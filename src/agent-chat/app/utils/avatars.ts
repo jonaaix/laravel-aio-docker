@@ -1,6 +1,6 @@
 import { Avatar, Style } from '@dicebear/core';
-import cameo from '@dicebear/styles/cameo.json';
-import voxelBot from '@dicebear/styles/voxel-bot.json';
+import pixelArt from '@dicebear/styles/pixel-art.json';
+import pixelbot from '@dicebear/styles/pixelbot.json';
 
 export type ParticipantKind = 'person' | 'agent';
 
@@ -9,9 +9,11 @@ export interface Participant {
     name: string;
 }
 
-const STYLES: Record<ParticipantKind, Style<unknown>> = {
-    person: new Style(cameo),
-    agent: new Style(voxelBot),
+const HAPPY_MOUTHS = Array.from({ length: 13 }, (_, index) => `happy${String(index + 1).padStart(2, '0')}`);
+
+const STYLES: Record<ParticipantKind, { style: Style<unknown>; options: Record<string, unknown> }> = {
+    person: { style: new Style(pixelArt), options: { mouthVariant: HAPPY_MOUTHS } },
+    agent: { style: new Style(pixelbot), options: { flip: 'horizontal' } },
 };
 
 const cache = new Map<string, string>();
@@ -20,7 +22,8 @@ export function avatarUri(participant: Participant): string {
     const key = `${participant.kind}:${participant.name}`;
     let uri = cache.get(key);
     if (!uri) {
-        uri = new Avatar(STYLES[participant.kind], { seed: participant.name, flip: participant.kind === 'agent' ? 'horizontal' : 'none' }).toDataUri();
+        const { style, options } = STYLES[participant.kind];
+        uri = new Avatar(style, { ...options, seed: participant.name }).toDataUri();
         cache.set(key, uri);
     }
     return uri;
