@@ -14,7 +14,7 @@ settings path lives in it, and a font change applies at once and survives a relo
 - [x] Fonts: System UI (default), Geist, Inter, Source Sans 3, IBM Plex Sans via `@nuxt/fonts`
 - [x] Settings window with categories; Profile and Agents moved in from their own windows; sidebar
       button and "Manage agents" open it; the first-visit name prompt stays its own window
-- [ ] Feature Book split into four chapters (web chat, people and profile, agents, settings)
+- [x] Feature Book split into four chapters (web chat, people and profile, agents, settings; [`ai-chat-settings`](../../../features/ai/chat-settings.md))
 
 ## State
 
@@ -27,7 +27,7 @@ settings path lives in it, and a font change applies at once and survives a relo
   localStorage (`plugins/font.client.ts` applies it before the user loads). The layout adopts the
   person's choice on sign-in; another device's change shows after a reload.
 - Fonts are self-hosted by `@nuxt/fonts` (`global: true`, so unused ones still get `@font-face`).
-- Remaining: Feature Book split.
+- All milestones done.
 
 ## Decisions
 

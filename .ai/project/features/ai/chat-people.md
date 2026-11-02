@@ -1,0 +1,56 @@
+---
+id: ai-chat-people
+created: 2026-11-02
+tags: [chat, profile, avatars, mentions]
+---
+
+# People in the chat
+
+## What is it for?
+
+Several people from one team work in the same chat. Every message has to say who wrote it, both
+for the people reading along and for the agents, which answer differently depending on who asks.
+Names and pictures make a shared conversation readable at a glance.
+
+## How does it work?
+
+### Names
+
+The chat needs the user's name before anything else: whoever opens it without a name first has to
+enter one, and cannot continue until they have. Entering a name that is already known makes the
+browser that person — there are no passwords yet. The browser remembers who it is, and the person
+can change their name later in their profile, as long as nobody else uses it; a new name or picture
+shows on all their earlier messages too, for everyone, right away. When the Laravel app opens the
+chat, it passes the name along in the address (`n`, the name base64url-encoded); that name is taken
+over as it is and cannot be changed in the chat. Each new conversation keeps the name of the person
+who started it, and every message keeps the name of the person who sent it. The agent learns who is
+writing: the first message of a conversation, and every message from someone other than the previous
+sender, tells it the sender's name. The conversation itself shows the message exactly as it was
+written.
+
+### Pictures and chat heads
+
+Everyone taking part in a conversation — people and agents — appears with a chat head: a picture
+derived from their name with the name beneath it, next to each of their messages. People and agents
+are drawn in clearly different styles. The title bar shows the participants' pictures at the top
+right, all the same size and each in a circle, with the name on hover.
+
+A person without a picture of their own gets a drawn one derived from their name; in their profile
+they can pick another from a random selection, upload a picture of their own or remove it again.
+When the Laravel app opens the chat, it can pass the address of the person's picture along with the
+name; the chat fetches it, fetches it again whenever the address changes, and the person cannot
+replace it in the chat. Agent pictures are described in [Agents in the chat](chat-agents.md).
+
+### Mentions
+
+An agent in the conversation can be addressed with `@Name`, and so can every person who has written
+in it; typing `@` suggests them, and mentions stand out in the conversation.
+
+## Examples
+
+- The Laravel app opens the chat for Jonas with his name and profile photo in the address. The chat
+  shows his photo next to his messages; the profile shows name and photo but does not let him change
+  them.
+- Someone opens the chat directly for the first time and is asked for a name before anything else.
+  They type "Mira" and pick one of the drawn pictures; from then on Mira's messages carry that
+  picture, and the agent is told that Mira is writing.

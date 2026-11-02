@@ -34,7 +34,7 @@ and the peer cannot touch the project.
       agent carries the roster (name + role of everyone); baton routing, `👉 @Name`
       handoff (cap 25), catch-up of missed messages (40, `<from>` labels) as in the fork
 - [x] Peer confinement: peers read and search the project, write only in their own folder
-- [x] Feature Book chapter: agreed behaviour written
+- [x] Feature Book chapters: agreed behaviour written ([`ai-chat-agents`](../../../features/ai/chat-agents.md), [`ai-chat-people`](../../../features/ai/chat-people.md))
 
 ## State
 

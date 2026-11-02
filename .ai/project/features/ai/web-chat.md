@@ -28,20 +28,12 @@ itself is broken.
 Inside the Laravel app, the app opens the chat through a short-lived signed link that tells the
 chat who the user is. Access through the chat's own domain or port is protected by a password.
 
-The chat needs the user's name before anything else: whoever opens it without a name first has to
-enter one, and cannot continue until they have. Entering a name that is already known makes the
-browser that person — there are no passwords yet. The browser remembers who it is, and the person
-can change their name later in the settings, as long as nobody else uses it; a new name or picture shows on
-all their earlier messages too, for everyone, right away. When the Laravel app opens the chat, it passes the name along in
-the address (`n`, the name base64url-encoded); that name is taken over as it is and cannot be
-changed in the chat. Each new conversation keeps the name of the person who started it, and every
-message keeps the name of the person who sent it. The agent learns who is writing: the first message
-of a conversation, and every message from someone other than the previous sender, tells it the
-sender's name. The conversation itself shows the message exactly as it was written.
+Everyone in the chat has a name, and the agents always know who is writing; how people are named
+and shown is described in [People in the chat](chat-people.md).
 
 ### Conversations
 
-A sidebar lists the conversations. Everyone working in the same container sees all of them, each
+A sidebar lists the conversations, with Settings at its foot. Everyone working in the same container sees all of them, each
 with the name of the person who started it: a development conversation is long-lived, and a team
 works on the same app. Each entry shows the title and, below it, whether the session is working
 (the agent is answering), active (running and waiting) or paused, and when something last
@@ -143,44 +135,11 @@ consist of attachments only. Attached files are stored with the conversation and
 message the same way as the agent's. The agent never receives their content inline: it gets the
 list of saved paths ahead of the message text and reads the files itself.
 
-### People and agents in one conversation
+### People, agents and settings
 
-Everyone taking part in a conversation — people and agents — appears with a chat head: a picture
-derived from their name with the name beneath it, next to each of their messages. People and agents
-are drawn in clearly different styles. The title bar shows the participants' pictures at the top
-right, all the same size and each in a circle, with the name on hover. A + at the end of the pictures
-opens a menu where agents are switched in and out with one click.
-
-A person without a picture of their own gets a drawn one derived from their name; in their profile
-they can pick another from a random selection, upload a picture of their own or remove it again. When the Laravel app opens the chat, it can pass the address of
-the person's picture along with the name; the chat fetches it, fetches it again whenever the address
-changes, and the person cannot replace it in the chat. An agent shows a robot — derived from its
-name until one is picked from a random selection — or an uploaded picture. Uploaded pictures appear
-in a circle, robots stand free.
-
-Every conversation starts with the lead coding agent, "Tarek LSA" unless renamed. The lead works in
-the project with the project's own instructions, sees the whole conversation and gives it its
-title. Further agents are defined once in the settings — each with a name, a role, a model, a
-description that becomes its own instructions, and files it may use as resources — and can be
-switched into or out of any conversation at any time from the participant list. The agents in the
-conversation learn about it with the next message: it starts with a short note such as "Peter
-Peer joined the chat." or "Peter Peer left the chat.". An agent in the conversation can be
-addressed with `@Name`, and so can every person who has written in it; typing `@` suggests them, and
-mentions stand out in the conversation.
-
-Each agent keeps its own session per conversation, with its own model. The first message an agent
-receives in a conversation tells it who takes part and what role each agent has. One agent answers
-at a time: the first one addressed with `@Name`, otherwise the one that answered last. A message for
-an agent other than the one currently answering waits until that answer is finished. An agent hands
-the turn to another only with "👉 @Name", ideally as the last line of its answer; it counts wherever it
-stands, while a plain `@Name` is just a mention and never passes the turn. It writes its handover so it can
-be understood on its own; after 25 handovers without a message from a person, the agents stop and
-wait for one. An agent that takes over first catches up on the messages it missed, each labelled with
-its author. Every answer shows the chat head of the agent that wrote it, and while an agent answers, a
-line above the message input names it ("Tarek LSA is typing…"), as in Mattermost.
-
-Agents other than the lead work in their own folder. They may read and search the project but not
-change it: changes to the project are handed to the lead, with the file and what to write.
+Several people and several agents can share a conversation. How people appear is described in
+[People in the chat](chat-people.md), how agents are added and take turns in
+[Agents in the chat](chat-agents.md), and the Settings window in [Chat settings](chat-settings.md).
 
 ### Not part of the chat
 
