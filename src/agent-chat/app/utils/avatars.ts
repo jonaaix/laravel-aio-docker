@@ -14,6 +14,7 @@ export interface Participant {
 
 const ANIMATION_SPEEDS = ['fastest', 'fast', 'medium', 'slow', 'slowest'];
 const TRANSPARENT = '#00000000';
+const VIVID_BODIES = ['#ef4444', '#f97316', '#facc15', '#22c55e', '#14b8a6', '#0ea5e9', '#3b82f6', '#8b5cf6', '#d946ef', '#ec4899'];
 
 const STYLES: Record<ParticipantKind, { style: Style<unknown>; options: Record<string, unknown> }> = {
     person: {
@@ -22,7 +23,7 @@ const STYLES: Record<ParticipantKind, { style: Style<unknown>; options: Record<s
     },
     agent: {
         style: new Style(voxelBot),
-        options: { flip: 'horizontal', animationVariant: ANIMATION_SPEEDS, backgroundColor: TRANSPARENT },
+        options: { flip: 'horizontal', animationVariant: ANIMATION_SPEEDS, backgroundColor: TRANSPARENT, bodyColor: VIVID_BODIES },
     },
 };
 

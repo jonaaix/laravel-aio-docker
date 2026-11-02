@@ -11,7 +11,7 @@ and the peer cannot touch the project.
 ## Milestones
 
 - [x] Chat heads: DiceBear as local npm packages (`@dicebear/core`, `@dicebear/styles`), "Glyphs" (abstract)
-      for people, "Voxel Bot" (animated, larger, no circle or background) for agents, seeded by name; head with the name below it beside every
+      for people, "Voxel Bot" (animated, vivid body colours, larger, no circle or background) for agents, seeded by name; head with the name below it beside every
       message, own messages included
 - [x] Pictures: people default to Glyphs (abstract shapes), may
       upload one or pick a Glyph from 8 random ones in Profile (`AvatarChoice`, shared with agents); `?a=<base64url image URL>` from Laravel is downloaded (re-fetched when the
