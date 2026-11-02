@@ -76,7 +76,7 @@ function isSelected(question: OfferedQuestion, letter: string): boolean {
                         type="button"
                         :disabled="!active"
                         :aria-pressed="isSelected(question, option.letter)"
-                        class="flex w-full items-start gap-2 rounded-sm px-2 py-0.5 text-start transition-colors duration-500 ease-out disabled:cursor-default"
+                        class="flex w-full items-start gap-2 rounded-sm px-2 py-1 text-start transition-colors duration-500 ease-out disabled:cursor-default"
                         :class="isSelected(question, option.letter)
                             ? 'bg-accented/50 text-highlighted'
                             : 'text-default enabled:hover:bg-elevated/60'"
