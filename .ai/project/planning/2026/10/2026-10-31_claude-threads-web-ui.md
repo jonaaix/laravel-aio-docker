@@ -144,6 +144,8 @@ container restart with its full history and attachments, and no Mattermost/Slack
   `ChatQueuedMessages`). Its replay echo marks the moment Claude took it up: the current assistant
   block is closed, the user message is appended, and the turn continues in a new block. Pause/exit
   moves the queue into the timeline and resends it on the next agent start (memory only).
+- Database startup (`useDatabase`): pending migrations → `VACUUM INTO <data dir>/backups/chat-<time>.sqlite`
+  first (newest 5 kept); a database whose last migration is newer than this build's → refuse to start.
 - Runtime config via env: `NUXT_WORKING_DIR` (default `<data dir>/workspace`, created on demand),
   `NUXT_DATA_DIR`, `NUXT_CLAUDE_MODEL`, `NUXT_APP_BASE_URL` (sub-path for the iframe). Paths are
   resolved in `server/utils/paths.ts`.

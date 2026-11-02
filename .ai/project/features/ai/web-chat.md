@@ -69,7 +69,9 @@ message is shown collapsed to its beginning and can be expanded and collapsed ag
 collapsed whenever the conversation is opened. Copying always takes the whole message.
 
 Every conversation keeps its full history — messages, tool activity, and the files and images
-exchanged — and comes back complete after a page reload or a container restart.
+exchanged — and comes back complete after a page reload or a container restart. A newer version
+of the chat takes over the stored data on its own, keeping a copy of it first; an older version
+refuses to start on data a newer one has already converted, instead of damaging it.
 
 The history is kept permanently and never cleaned up automatically, so the whole development
 process behind an app can be evaluated once the app is finished. For each tool call the history
