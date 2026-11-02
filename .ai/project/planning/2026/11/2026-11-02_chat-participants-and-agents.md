@@ -87,7 +87,7 @@ and the peer cannot touch the project.
   sessions on the same machine: rejected blocking them, an edge case that vanishes inside the Docker
   container, where no other sessions run; blocking would also cost follow-ups to running subagents.
 - Header heads are fixed at 36 px (`size-9`) with a 1 px outer mid-grey ring, 38 px as seen. This size
-  must not change: controls beside them are sized to match (the archive button is `size-9.5`), never the heads.
+  must not change: controls beside them are sized to match (archive `size-9.5`, "Pause session" `h-9.5`), never the heads.
 - One working folder per agent, shared by all conversations (they all work on the same app), so notes and
   Claude's memory carry over between chats.
 - The "… is typing" line above the input is switched off (`SHOW_TYPING_LINE`): the streaming answer already

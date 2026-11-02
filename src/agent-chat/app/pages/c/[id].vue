@@ -372,7 +372,7 @@ const session = computed(() => sessionState(status.value, turnActive.value));
                                 icon="i-heroicons-pause"
                                 color="neutral"
                                 variant="outline"
-                                class="bg-white dark:bg-transparent"
+                                class="h-9.5 bg-white dark:bg-transparent"
                                 :loading="pausing"
                                 @click="pauseConversation"
                             />
