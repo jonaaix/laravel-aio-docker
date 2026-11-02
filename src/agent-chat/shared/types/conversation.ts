@@ -30,6 +30,7 @@ export interface ConversationSummary {
     agentIds: string[];
     status: ConversationStatus;
     turnActive: boolean;
+    answeringAgentId: string | null;
     backgroundTasks: BackgroundTask[];
     queuedMessages: QueuedMessage[];
     lastActivityAt: number;
@@ -63,7 +64,7 @@ export type ConversationEvent =
     | { type: 'message'; message: ChatMessage }
     | { type: 'part'; messageId: string; index: number; part: ChatPart }
     | { type: 'delta'; messageId: string; index: number; text: string }
-    | { type: 'status'; status: ConversationStatus; turnActive: boolean; backgroundTasks: BackgroundTask[]; queuedMessages: QueuedMessage[] }
+    | { type: 'status'; status: ConversationStatus; turnActive: boolean; answeringAgentId: string | null; backgroundTasks: BackgroundTask[]; queuedMessages: QueuedMessage[] }
     | { type: 'title'; title: string }
     | { type: 'error'; message: string };
 

@@ -57,6 +57,10 @@ class ConversationRuntime {
         ];
     }
 
+    get answeringAgentId(): string | null {
+        return [...this.sessions.values()].find(session => session.answering)?.agentId ?? null;
+    }
+
     get runningBackgroundTasks(): BackgroundTask[] {
         return [...this.sessions.values()].flatMap(session => session.backgroundTasks);
     }
@@ -355,7 +359,7 @@ class ConversationRuntime {
         const status = [...this.sessions.values()].some(session => session.running) ? 'running' : 'paused';
         this.scheduleIdlePause();
         setConversationStatus(this.conversationId, status);
-        publishConversationEvent(this.conversationId, { type: 'status', status, turnActive: this.turnActive, backgroundTasks: this.runningBackgroundTasks, queuedMessages: this.queuedMessages });
+        publishConversationEvent(this.conversationId, { type: 'status', status, turnActive: this.turnActive, answeringAgentId: this.answeringAgentId, backgroundTasks: this.runningBackgroundTasks, queuedMessages: this.queuedMessages });
         this.publishSummary();
     }
 
@@ -427,6 +431,7 @@ export function summarize(row: NonNullable<ReturnType<typeof findConversation>>)
         agentIds: conversationAgentIds(row.id),
         status: row.status,
         turnActive: isTurnActive(row.id),
+        answeringAgentId: runtimes.get(row.id)?.answeringAgentId ?? null,
         backgroundTasks: runningBackgroundTasks(row.id),
         queuedMessages: queuedMessages(row.id),
         lastActivityAt: row.lastActivityAt,

@@ -11,6 +11,7 @@ export function useConversation(conversationId: string) {
     const backgroundTasks = ref<BackgroundTask[]>([]);
     const queuedMessages = ref<QueuedMessage[]>([]);
     const agentIds = ref<string[]>([]);
+    const answeringAgentId = ref<string | null>(null);
     const archivedAt = ref<number | null>(null);
     const loaded = ref(false);
     const hasEarlier = ref(false);
@@ -46,6 +47,7 @@ export function useConversation(conversationId: string) {
         if (event.type === 'status') {
             status.value = event.status;
             turnActive.value = event.turnActive;
+            answeringAgentId.value = event.answeringAgentId;
             backgroundTasks.value = event.backgroundTasks;
             queuedMessages.value = event.queuedMessages;
         }
@@ -70,6 +72,7 @@ export function useConversation(conversationId: string) {
     function applySummary(summary: ConversationSummary): void {
         status.value = summary.status;
         turnActive.value = summary.turnActive;
+        answeringAgentId.value = summary.answeringAgentId;
         backgroundTasks.value = summary.backgroundTasks;
         queuedMessages.value = summary.queuedMessages;
         agentIds.value = summary.agentIds;
@@ -135,6 +138,7 @@ export function useConversation(conversationId: string) {
         messages,
         status,
         turnActive,
+        answeringAgentId,
         backgroundTasks,
         queuedMessages,
         agentIds,

@@ -20,6 +20,7 @@ const {
     messages,
     status,
     turnActive,
+    answeringAgentId,
     backgroundTasks,
     queuedMessages,
     agentIds,
@@ -78,6 +79,14 @@ const agentOptions = computed(() => peerAgents.value.map(agent => ({ id: agent.i
 function agentParticipant(agent: Agent): Participant {
     return { kind: 'agent', name: agent.name, seed: agent.avatarSeed, image: agent.avatarUrl };
 }
+
+const typingAgent = computed<Participant | null>(() => {
+    if (!answeringAgentId.value) {
+        return null;
+    }
+    const agent = agents.value.find(candidate => candidate.id === answeringAgentId.value);
+    return agent && !agent.lead ? agentParticipant(agent) : leadAgent.value;
+});
 
 const participants = computed<Participant[]>(() => {
     const senders = new Set(visibleMessages.value.flatMap(message => message.role === 'user' && message.metadata?.senderId ? [message.metadata.senderId] : []));
@@ -451,6 +460,14 @@ const conversationActions = computed<DropdownMenuItem[]>(() => [
                 <UContainer class="pb-4 sm:pb-6">
                     <ChatBackgroundTasks v-if="backgroundTasks.length > 0" :tasks="backgroundTasks" class="mb-2" />
                     <ChatQueuedMessages v-if="queuedMessages.length > 0" :messages="queuedMessages" class="mb-2" />
+                    <div class="flex h-6 items-center px-3.5">
+                        <Transition enter-active-class="transition-opacity duration-150 ease-out" enter-from-class="opacity-0" leave-active-class="transition-opacity duration-150 ease-in" leave-to-class="opacity-0">
+                            <div v-if="typingAgent" class="flex min-w-0 items-center gap-1.5 text-xs text-muted">
+                                <ParticipantAvatar :participant="typingAgent" class="size-4 shrink-0" />
+                                <span class="truncate"><span class="font-medium text-toned">{{ typingAgent.name }}</span> is typing…</span>
+                            </div>
+                        </Transition>
+                    </div>
                     <ChatComposer
                         v-model="input"
                         placeholder="Send a message…"
