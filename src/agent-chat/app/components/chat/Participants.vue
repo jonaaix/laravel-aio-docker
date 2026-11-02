@@ -43,7 +43,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
 <template>
     <div class="me-2 flex items-center">
         <UModal title="Participants">
-            <button type="button" class="flex items-center -space-x-2.5" aria-label="Participants">
+            <button type="button" class="flex items-center -space-x-2.5 lg:space-x-1" aria-label="Participants">
                 <ParticipantAvatar
                     v-for="(participant, index) in participants"
                     :key="`${participant.kind}:${participant.name}`"
@@ -76,7 +76,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
                 <button
                     type="button"
                     aria-label="Agents"
-                    class="relative z-0 -ms-2 flex size-9 items-center justify-center rounded-full bg-default text-muted ring ring-accented transition-colors hover:text-default"
+                    class="relative z-0 -ms-2 flex size-9 lg:ms-1 items-center justify-center rounded-full bg-default text-muted ring ring-accented transition-colors hover:text-default"
                 >
                     <UIcon name="i-heroicons-plus" class="size-5" />
                 </button>
