@@ -6,7 +6,7 @@ import type { UploadedFile } from '#shared/types/conversation';
 
 
 const open = defineModel<boolean>('open', { default: false });
-const emit = defineEmits<{ 'after:leave': [] }>();
+const emit = defineEmits<{ 'after:leave': []; 'close': [] }>();
 const { agents, load, save, remove } = useAgents();
 const { attachments, uploading, ready, add: attach, remove: removeAttachment, take: takeAttachments } = useAttachments();
 
