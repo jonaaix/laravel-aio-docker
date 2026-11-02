@@ -1,6 +1,4 @@
 <script setup lang="ts">
-const ACCEPT_REPLY = 'ok';
-
 const props = defineProps<{
     title: string;
     text: string;
@@ -8,7 +6,7 @@ const props = defineProps<{
     streaming: boolean;
 }>();
 
-const { messageId: answerableMessageId, answer } = useQuestionAnswers();
+const { messageId: answerableMessageId, accept } = useQuestionAnswers();
 
 const active = computed(() => answerableMessageId.value === props.messageId);
 </script>
@@ -23,7 +21,7 @@ const active = computed(() => answerableMessageId.value === props.messageId);
                 color="neutral"
                 variant="outline"
                 class="bg-white dark:bg-transparent"
-                @click="answer(ACCEPT_REPLY)"
+                @click="accept"
             />
         </div>
     </ChatSectionCard>

@@ -237,9 +237,8 @@ function quote(text: string): void {
     focusComposerAtEnd();
 }
 
-const draftAnswer = computed(() => readAnswerLine(input.value.split('\n')[0]!));
-const answerLine = computed(() => draftAnswer.value ? input.value.split('\n')[0]! : '');
-const chosenOptions = computed(() => draftAnswer.value?.chosen ?? {});
+const draftAnswer = computed(() => readAnswerBlock(input.value));
+const chosenOptions = computed(() => draftAnswer.value.chosen);
 
 const NOT_ANSWERED: AnswerLine = { accepted: false, chosen: {} };
 
@@ -251,20 +250,28 @@ const sentAnswers = computed(() => {
             pending.push(message.id);
             continue;
         }
-        const reply = readAnswerLine(messageText(message).split('\n')[0] ?? '') ?? NOT_ANSWERED;
-        pending.forEach(id => answers.set(id, reply));
+        const reply = readAnswerBlock(messageText(message));
+        pending.forEach(id => answers.set(id, reply.lineCount > 0 ? reply : NOT_ANSWERED));
         pending = [];
     }
     return answers;
 });
 
-function answer(line: string): void {
-    const rest = (answerLine.value ? input.value.split('\n').slice(1).join('\n') : input.value).trimStart();
-    input.value = rest && line ? `${line}\n\n${rest}` : line || rest;
+function replaceAnswerBlock(block: string): void {
+    const rest = input.value.split('\n').slice(draftAnswer.value.lineCount).join('\n').trimStart();
+    input.value = rest && block ? `${block}\n\n${rest}` : block || rest;
     focusComposerAtEnd();
 }
 
-provide(questionAnswersKey, { messageId: answerableMessageId, chosen: chosenOptions, sent: messageId => sentAnswers.value.get(messageId), answer });
+function choose(selection: Record<string, string>): void {
+    replaceAnswerBlock(writeAnswerBlock(selection, draftAnswer.value.comments));
+}
+
+function accept(): void {
+    replaceAnswerBlock('ok');
+}
+
+provide(questionAnswersKey, { messageId: answerableMessageId, chosen: chosenOptions, sent: messageId => sentAnswers.value.get(messageId), choose, accept });
 
 async function withFlag(flag: Ref<boolean>, action: () => Promise<void>): Promise<void> {
     flag.value = true;

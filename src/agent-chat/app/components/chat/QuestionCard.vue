@@ -6,7 +6,7 @@ const props = defineProps<{
     messageId: string;
 }>();
 
-const { messageId: answerableMessageId, chosen, sent, answer } = useQuestionAnswers();
+const { messageId: answerableMessageId, chosen, sent, choose } = useQuestionAnswers();
 
 const active = computed(() => answerableMessageId.value === props.messageId);
 const sentAnswer = computed(() => active.value ? undefined : sent(props.messageId));
@@ -15,11 +15,11 @@ const collapsed = computed(() => sentAnswer.value !== undefined && !expanded.val
 const unanswered = computed(() => sentAnswer.value !== undefined && props.section.questions.every(question => !sentLetter(question)));
 
 function sentLetter(question: OfferedQuestion): string | undefined {
-    const answer = sentAnswer.value;
-    if (!answer) {
+    const reply = sentAnswer.value;
+    if (!reply) {
         return undefined;
     }
-    return answer.chosen[question.number] ?? (answer.accepted ? question.options.find(option => option.recommended)?.letter : undefined);
+    return reply.chosen[question.number] ?? (reply.accepted ? question.options.find(option => option.recommended)?.letter : undefined);
 }
 
 function shownOptions(question: OfferedQuestion): OfferedOption[] {
@@ -29,10 +29,8 @@ function shownOptions(question: OfferedQuestion): OfferedOption[] {
 const recommendable = computed(() => props.section.questions.filter(question => question.options.some(option => option.recommended)));
 
 function publish(selection: Record<string, string>): void {
-    answer(props.section.questions
-        .filter(question => selection[question.number])
-        .map(question => `${question.number} ${selection[question.number]}`)
-        .join(', '));
+    const own = new Set(props.section.questions.map(question => question.number));
+    choose(Object.fromEntries(Object.entries(selection).filter(([number]) => own.has(number))));
 }
 
 function pick(question: OfferedQuestion, letter: string): void {
