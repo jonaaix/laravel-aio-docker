@@ -366,16 +366,19 @@ const session = computed(() => sessionState(status.value, turnActive.value));
                         </template>
                         <ChatParticipants v-if="loaded" :participants="participants" :agent-options="agentOptions" :editable="archivedAt === null" @toggle="setAgent" />
                         <template v-if="archivedAt === null && loaded">
-                            <UButton
-                                v-if="status === 'running'"
-                                label="Pause session"
-                                icon="i-heroicons-pause"
-                                color="neutral"
-                                variant="outline"
-                                class="h-9.5 bg-white dark:bg-transparent"
-                                :loading="pausing"
-                                @click="pauseConversation"
-                            />
+                            <UTooltip v-if="status === 'running'" text="Pause session">
+                                <UButton
+                                    aria-label="Pause session"
+                                    icon="i-heroicons-pause"
+                                    color="neutral"
+                                    variant="outline"
+                                    class="h-9.5 bg-white max-sm:w-9.5 max-sm:justify-center max-sm:px-0 dark:bg-transparent"
+                                    :loading="pausing"
+                                    @click="pauseConversation"
+                                >
+                                    <span class="max-sm:hidden">Pause session</span>
+                                </UButton>
+                            </UTooltip>
                             <UTooltip text="Archive">
                                 <UButton
                                     icon="i-heroicons-archive-box"

@@ -30,8 +30,8 @@ a conversation opens the same window at Agents.
 - **Agents** defines the agents, as described in [Agents in the chat](chat-agents.md).
 
 There is no save button: every change is stored as it is made — text a moment after typing stops or
-on Enter, choices, pictures and files at once — and errors show at the field concerned. A new agent
-is created as soon as it has a valid name. Only deleting an agent asks first. In Profile and Agents
+on Enter, choices, pictures and files at once — and errors show at the field concerned. "New agent" adds an entry to the list at once; the agent
+is created as soon as it has a name and a role, both required. Only deleting an agent asks first. In Profile and Agents
 the name comes before the picture.
 
 ## Examples

@@ -50,6 +50,7 @@ watch(effortLevels, (levels) => {
     }
 });
 
+const roleTouched = ref(false);
 const roleMissing = computed(() => normalizeUserName(name.value) !== null && !role.value.trim());
 const valid = computed(() => normalizeUserName(name.value) !== null && !roleMissing.value && !uploading.value && !avatarBusy.value);
 const fieldsKey = computed(() => JSON.stringify([name.value, role.value, model.value, effort.value, instructions.value]));
@@ -118,6 +119,7 @@ function fill(agent: Agent | null): void {
     instructions.value = agent?.instructions ?? '';
     removedResources.value = [];
     error.value = undefined;
+    roleTouched.value = false;
     avatarSeed.value = agent?.avatarSeed ?? null;
     avatarUpload.value = null;
     releasePreview();
@@ -263,18 +265,27 @@ async function confirmDelete(): Promise<void> {
                 </span>
                 <span class="min-w-0">
                     <span class="block truncate text-sm font-medium text-highlighted">{{ agent.name }}</span>
-                    <span class="line-clamp-2 text-xs text-muted">{{ agent.role || 'No role' }}</span>
+                    <span class="line-clamp-2 text-xs text-muted">{{ agent.role }}</span>
                 </span>
             </button>
-            <UButton label="New agent" icon="i-heroicons-plus" color="neutral" variant="ghost" class="justify-start" :class="creating ? 'bg-elevated' : ''" @click="startNew" />
+            <div v-if="creating" class="flex min-h-12 items-center gap-2.5 rounded-md bg-elevated px-2 py-1.5">
+                <span class="flex size-10 shrink-0 items-center justify-center">
+                    <ParticipantAvatar :participant="avatarParticipant" :class="isVoxelBot(avatarParticipant) ? 'size-10' : 'size-8'" />
+                </span>
+                <span class="min-w-0">
+                    <span class="block truncate text-sm font-medium text-highlighted">{{ name.trim() || 'New agent' }}</span>
+                    <span class="line-clamp-2 text-xs text-muted">{{ role }}</span>
+                </span>
+            </div>
+            <UButton label="New agent" icon="i-heroicons-plus" color="neutral" variant="ghost" class="justify-start" @click="startNew" />
         </nav>
 
-        <form id="agent-form" class="flex min-w-0 flex-1 flex-col gap-4" @submit.prevent="persist">
+        <form id="agent-form" class="flex min-w-0 flex-1 flex-col gap-4" @submit.prevent="roleTouched = true; persist()">
             <UFormField label="Name" required :error="error">
                 <UInput v-model="name" :maxlength="USER_NAME_MAX_LENGTH" class="w-full" />
             </UFormField>
-            <UFormField label="Role" required :error="roleMissing ? 'Required' : undefined">
-                <UInput v-model="role" :maxlength="AGENT_ROLE_MAX_LENGTH" class="w-full" />
+            <UFormField label="Role" required :error="roleMissing && roleTouched ? 'Required' : undefined">
+                <UInput v-model="role" :maxlength="AGENT_ROLE_MAX_LENGTH" class="w-full" @blur="roleTouched = true" />
             </UFormField>
             <div class="flex flex-col gap-3">
                 <div class="flex items-center gap-4">
