@@ -3,7 +3,6 @@ import type { Agent } from '#shared/types/agent';
 import type { ClaudeModel } from '#shared/types/model';
 import type { UploadedFile } from '#shared/types/conversation';
 
-const AVATAR_CHOICES = 8;
 
 
 const { agents, managing, load, save, remove } = useAgents();
@@ -28,7 +27,6 @@ const avatarUpload = ref<UploadedFile | null>(null);
 const avatarPreview = ref<string | null>(null);
 const removeAvatar = ref(false);
 const avatarBusy = ref(false);
-const avatarSeeds = ref<string[]>([]);
 
 const selected = computed(() => creating.value ? null : agents.value.find(agent => agent.id === selectedId.value) ?? null);
 const isLead = computed(() => selected.value?.lead ?? false);
@@ -58,11 +56,6 @@ function releasePreview(): void {
         URL.revokeObjectURL(avatarPreview.value);
     }
     avatarPreview.value = null;
-}
-
-function shuffleAvatars(): void {
-    const kept = avatarSeed.value && !avatarPreview.value && !storedPicture.value ? [avatarSeed.value] : [];
-    avatarSeeds.value = [...kept, ...randomAvatarSeeds(AVATAR_CHOICES - kept.length)];
 }
 
 function chooseAvatar(seed: string): void {
@@ -113,7 +106,6 @@ function fill(agent: Agent | null): void {
     avatarUpload.value = null;
     releasePreview();
     removeAvatar.value = false;
-    shuffleAvatars();
     takeAttachments();
 }
 
@@ -224,22 +216,12 @@ async function confirmDelete(): Promise<void> {
                             </div>
                             <input ref="avatarInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="hidden" @change="onAvatarPicked">
                         </div>
-                        <div class="flex flex-wrap items-center gap-2 rounded-md p-2 ring ring-default">
-                            <button
-                                v-for="seed in avatarSeeds"
-                                :key="seed"
-                                type="button"
-                                class="rounded-md p-1 transition-colors duration-500 ease-out hover:bg-elevated"
-                                :class="seed === avatarSeed && !avatarPreview && !storedPicture ? 'bg-accented/60' : ''"
-                                :aria-label="`Use bot ${seed}`"
-                                @click="chooseAvatar(seed)"
-                            >
-                                <ParticipantAvatar :participant="{ kind: 'agent', name: seed, seed }" class="size-12" />
-                            </button>
-                            <UTooltip text="Shuffle">
-                                <UButton icon="i-heroicons-arrow-path" aria-label="Shuffle" color="neutral" variant="ghost" @click="shuffleAvatars" />
-                            </UTooltip>
-                        </div>
+                        <AvatarChoice
+                            :key="creating ? 'new' : selectedId ?? ''"
+                            kind="agent"
+                            :current="avatarPreview || storedPicture ? null : avatarSeed"
+                            @select="chooseAvatar"
+                        />
                     </div>
                     <UFormField label="Name" :error="error">
                         <UInput v-model="name" :maxlength="USER_NAME_MAX_LENGTH" class="w-full" />

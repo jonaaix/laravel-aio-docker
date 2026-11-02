@@ -85,6 +85,13 @@
       "when": 1793640861635,
       "tag": "0011_avatars",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1793642178888,
+      "tag": "0012_user_avatar_seed",
+      "breakpoints": true
     }
   ]
 }

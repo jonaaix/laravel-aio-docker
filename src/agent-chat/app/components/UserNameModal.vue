@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { UploadedFile } from '#shared/types/conversation';
 
-const { user, name, ready, locked, editing, save, setAvatar } = useUserName();
+const { user, name, ready, locked, editing, save, setAvatar, setAvatarSeed } = useUserName();
 
 const open = computed(() => ready.value && (!name.value || editing.value));
 const required = computed(() => !name.value);
@@ -51,11 +51,14 @@ async function submit(): Promise<void> {
     }
 }
 
-async function changePicture(upload: Promise<UploadedFile | null>): Promise<void> {
+async function changePicture(upload: Promise<UploadedFile | null | undefined>): Promise<void> {
     pictureBusy.value = true;
     pictureError.value = undefined;
     try {
-        await setAvatar(await upload);
+        const picked = await upload;
+        if (picked !== undefined) {
+            await setAvatar(picked);
+        }
     }
     catch (failure) {
         pictureError.value = failureMessage(failure, 'Could not change the picture');
@@ -63,6 +66,10 @@ async function changePicture(upload: Promise<UploadedFile | null>): Promise<void
     finally {
         pictureBusy.value = false;
     }
+}
+
+function pickAvatar(seed: string): void {
+    void changePicture(setAvatarSeed(seed).then(() => undefined));
 }
 
 function removePicture(): void {
@@ -90,13 +97,13 @@ function onPicked(): void {
         :title="required ? 'Your name' : 'Profile'"
         :dismissible="!required"
         :close="!required"
-        :ui="{ footer: 'justify-end' }"
+        :ui="{ content: 'sm:max-w-2xl', footer: 'justify-end' }"
         @update:open="value => value || close()"
     >
         <template #body>
             <form id="user-name-form" class="flex flex-col gap-4" @submit.prevent="submit">
                 <div v-if="user" class="flex items-center gap-4">
-                    <ParticipantAvatar :participant="{ kind: 'person', name: user.name, image: user.avatarUrl }" class="size-16" />
+                    <ParticipantAvatar :participant="{ kind: 'person', name: user.name, seed: user.avatarSeed, image: user.avatarUrl }" class="size-16" />
                     <div v-if="!user.avatarLocked" class="flex flex-col items-start gap-1.5">
                         <div class="flex gap-2">
                             <UButton label="Upload picture" icon="i-heroicons-arrow-up-tray" color="neutral" variant="outline" :loading="pictureBusy" @click="fileInput?.click()" />
@@ -106,6 +113,12 @@ function onPicked(): void {
                     </div>
                     <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="hidden" @change="onPicked">
                 </div>
+                <AvatarChoice
+                    v-if="user && !user.avatarLocked"
+                    kind="person"
+                    :current="user.avatarUrl ? null : user.avatarSeed"
+                    @select="pickAvatar"
+                />
                 <UFormField :label="required ? undefined : 'Name'" :error="error">
                     <UInput
                         v-model="draft"

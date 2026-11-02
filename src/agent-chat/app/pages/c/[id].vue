@@ -54,7 +54,7 @@ const { lead } = useAgents();
 const leadAgent = computed<Participant>(() => ({ kind: 'agent', name: lead.value?.name ?? LEAD_AGENT_NAME, seed: lead.value?.avatarSeed, image: lead.value?.avatarUrl }));
 
 function messageAuthor(message: ChatMessage): Participant {
-    return message.role === 'user' ? { kind: 'person', name: message.metadata?.senderName ?? '', image: message.metadata?.senderAvatar } : leadAgent.value;
+    return message.role === 'user' ? { kind: 'person', name: message.metadata?.senderName ?? '', seed: message.metadata?.senderAvatarSeed, image: message.metadata?.senderAvatar } : leadAgent.value;
 }
 
 const participants = computed<Participant[]>(() => {

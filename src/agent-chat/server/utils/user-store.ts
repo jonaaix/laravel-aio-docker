@@ -17,7 +17,7 @@ export function findOrCreateUser(name: string): UserRow {
     if (existing) {
         return existing;
     }
-    const row: UserRow = { id: randomUUID(), name, avatarFile: null, avatarSource: null, avatarUpdatedAt: null, createdAt: Date.now() };
+    const row: UserRow = { id: randomUUID(), name, avatarSeed: null, avatarFile: null, avatarSource: null, avatarUpdatedAt: null, createdAt: Date.now() };
     useDatabase().insert(users).values(row).run();
     return row;
 }
@@ -32,7 +32,7 @@ export function renameUser(id: string, name: string): UserRow {
 }
 
 export function toChatUser(row: UserRow): ChatUser {
-    return { id: row.id, name: row.name, avatarUrl: avatarUrl(row.avatarFile, row.avatarUpdatedAt), avatarLocked: row.avatarSource !== null };
+    return { id: row.id, name: row.name, avatarSeed: row.avatarSeed, avatarUrl: avatarUrl(row.avatarFile, row.avatarUpdatedAt), avatarLocked: row.avatarSource !== null };
 }
 
 function userAvatarBase(row: UserRow): string {
@@ -53,10 +53,22 @@ export async function syncLinkedAvatar(row: UserRow, source: string): Promise<Us
     return file ? saveAvatar(row, file, source) : row;
 }
 
-export function setUploadedAvatar(row: UserRow, upload: AttachmentReference | null): UserRow {
+function assertAvatarEditable(row: UserRow): void {
     if (row.avatarSource !== null) {
         throw createError({ statusCode: 409, statusMessage: 'This picture is set by the app that opened the chat' });
     }
+}
+
+export function setAvatarSeed(row: UserRow, seed: string): UserRow {
+    assertAvatarEditable(row);
+    removeAvatar(userAvatarBase(row));
+    const changes = { avatarSeed: seed, avatarFile: null, avatarUpdatedAt: Date.now() };
+    useDatabase().update(users).set(changes).where(eq(users.id, row.id)).run();
+    return { ...row, ...changes };
+}
+
+export function setUploadedAvatar(row: UserRow, upload: AttachmentReference | null): UserRow {
+    assertAvatarEditable(row);
     if (!upload) {
         removeAvatar(userAvatarBase(row));
         return saveAvatar(row, null, null);

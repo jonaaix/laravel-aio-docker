@@ -4,6 +4,7 @@ import type { ChatMessage } from '../../shared/types/conversation';
 export const users = sqliteTable('users', {
     id: text('id').primaryKey(),
     name: text('name').notNull(),
+    avatarSeed: text('avatar_seed'),
     avatarFile: text('avatar_file'),
     avatarSource: text('avatar_source'),
     avatarUpdatedAt: integer('avatar_updated_at'),

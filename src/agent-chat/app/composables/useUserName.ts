@@ -100,5 +100,11 @@ export function useUserName() {
         }
     }
 
-    return { user, userId, name, ready, locked, editing, restore, save, adopt, setAvatar };
+    async function setAvatarSeed(seed: string): Promise<void> {
+        if (user.value) {
+            user.value = await apiFetch<ChatUser>(`users/${user.value.id}/avatar-seed`, { method: 'POST', body: { seed } });
+        }
+    }
+
+    return { user, userId, name, ready, locked, editing, restore, save, adopt, setAvatar, setAvatarSeed };
 }

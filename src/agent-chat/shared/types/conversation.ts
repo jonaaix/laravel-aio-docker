@@ -40,6 +40,7 @@ export interface ChatMessageMetadata {
     createdAt: number;
     senderName?: string;
     senderAvatar?: string;
+    senderAvatarSeed?: string;
     outcome?: TurnOutcome;
     error?: string;
 }
