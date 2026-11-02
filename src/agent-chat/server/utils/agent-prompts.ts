@@ -27,6 +27,7 @@ function turnRules(agent: AgentRow): string {
 ## Taking turns
 - A message reaches you when it addresses you as @${agent.name}, or when it has no @ and you answered last.
 - To pass the turn to another agent, end your message with a line of its own: 👉 @Name. Only 👉 passes the turn; mention anyone with a bare @Name freely otherwise. A message without 👉 goes back to the people.
+- Only the people add or remove agents; you cannot. If another agent would help, ask them to add it.
 - Hand over only when another agent's role fits the task better. Write the hand-over so it stands on its own: the question, the facts, file paths and values it needs, and how much you want back.`;
 }
 
