@@ -151,12 +151,15 @@ async function startNew(): Promise<void> {
 }
 
 onMounted(async () => {
-    const [, available] = await Promise.all([load(), apiFetch<ClaudeModel[]>('models')]);
-    models.value = available;
+    const modelsLoaded = apiFetch<ClaudeModel[]>('models').then((available) => {
+        models.value = available;
+    });
+    await load();
     const first = agents.value[0];
     if (first) {
-        select(first);
+        await select(first);
     }
+    await modelsLoaded;
 });
 
 function pickFiles(): void {
@@ -280,7 +283,7 @@ async function confirmDelete(): Promise<void> {
             <UButton label="New agent" icon="i-heroicons-plus" color="neutral" variant="ghost" class="justify-start" @click="startNew" />
         </nav>
 
-        <form id="agent-form" class="flex min-w-0 flex-1 flex-col gap-4" @submit.prevent="roleTouched = true; persist()">
+        <form v-if="selected || creating" id="agent-form" class="flex min-w-0 flex-1 flex-col gap-4" @submit.prevent="roleTouched = true; persist()">
             <UFormField label="Name" required :error="error">
                 <UInput v-model="name" :maxlength="USER_NAME_MAX_LENGTH" class="w-full" />
             </UFormField>
@@ -337,6 +340,11 @@ async function confirmDelete(): Promise<void> {
                 </UFormField>
             </template>
         </form>
+        <div v-else class="flex min-w-0 flex-1 flex-col gap-4">
+            <USkeleton class="h-14 w-full rounded-md" />
+            <USkeleton class="h-14 w-full rounded-md" />
+            <USkeleton class="h-40 w-full rounded-md" />
+        </div>
     </div>
     <Teleport defer :to="actionsTarget">
         <UButton
