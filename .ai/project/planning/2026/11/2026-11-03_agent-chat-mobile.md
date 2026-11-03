@@ -40,6 +40,8 @@ handover runs and the user has reviewed the result.
 - [x] Round 21 (Tarek): Mine/Everyone removed, tab bar with Chats and Connections; screenshots of every screen
 - [ ] Round 22 (Tarek): unread count per server, Peter's design findings (radius scale, grey inactive tabs,
       active-tab tap, "Started by", scanner and offline notice), the person's language from the chat
+- [ ] Round 23 (Tarek): chat list rows like the web sidebar (status pill, starter, relative time, recency groups)
+- [ ] Push to everyone who wrote in a chat, with mute; unread follows the push (chat side mine, app side Tarek)
 - [ ] Review with the user: setup by the README and the on-device checklist
 
 ## State
@@ -74,6 +76,9 @@ handover runs and the user has reviewed the result.
 - No push while the app is visible on screen.
 - Copy and share take the whole answer as written, like copying in the web chat.
 - Two fixed tabs, Chats and Connections (user's call); the server list shows each server's unread count.
+- Peter left the conversation for good: he slowed the work down (user's call). I review from Tarek's screenshots.
+- The web chat's sidebar is the template for the app's chat list rows (user's call).
+- New user-facing behaviour needs the user's approval; I only decide Tarek's technical questions (user's call).
 - I review every round from Tarek's before/after screenshots in the chat, not by opening the app myself
   (user's call).
 - The muddy light mode came from our own choices (long answers in iMessage bubbles, cards and pills nested
