@@ -122,32 +122,34 @@ class ConversationRuntime {
     }
 
     private afterTurn(session: AgentSession, message: ChatMessage | null, stopped: boolean): void {
-        if (this.pausing || session.turnActive) {
-            return;
-        }
-        const next = this.pending.shift();
-        if (next) {
+        const author = findAgent(session.agentId);
+        const step = afterTurnStep({
+            pausing: this.pausing,
+            sessionBusy: session.turnActive,
+            hasQueued: this.pending.length > 0,
+            stopped,
+            handoffs: this.handoffs,
+            handoffLimit: HANDOFF_LIMIT,
+            findTarget: () => author && message ? handoffTarget(plainMessageText(message), this.reachableAgents().filter(agent => agent.id !== author.id)) : null,
+        });
+        if (step.action === 'next-queued') {
+            const next = this.pending.shift()!;
             const agent = this.reachableAgents().find(candidate => candidate.id === next.agentId) ?? leadAgent();
             this.deliverMessage(agent, next.text, next.attachments, next.sender);
-            return;
         }
-        const author = findAgent(session.agentId);
-        const target = !stopped && message && author ? handoffTarget(plainMessageText(message), this.reachableAgents().filter(agent => agent.id !== author.id)) : null;
-        if (!target || !author) {
+        else if (step.action === 'handoff') {
+            this.handoffs += 1;
+            this.deliverHandoff(step.target, author!, message!);
+        }
+        else if (step.action === 'finish' || step.action === 'limit') {
+            if (step.action === 'limit') {
+                publishConversationEvent(this.conversationId, { type: 'error', message: `Stopped after ${HANDOFF_LIMIT} hand-overs between agents. Reply to continue.` });
+            }
             this.publishStatus();
-            if (!stopped) {
+            if (step.notify) {
                 notifyAnswerFinished(this.conversationId, session.agentId, message);
             }
-            return;
         }
-        if (this.handoffs >= HANDOFF_LIMIT) {
-            publishConversationEvent(this.conversationId, { type: 'error', message: `Stopped after ${HANDOFF_LIMIT} hand-overs between agents. Reply to continue.` });
-            this.publishStatus();
-            notifyAnswerFinished(this.conversationId, session.agentId, message);
-            return;
-        }
-        this.handoffs += 1;
-        this.deliverHandoff(target, author, message!);
     }
 
     private reachableAgents(): AgentRow[] {
