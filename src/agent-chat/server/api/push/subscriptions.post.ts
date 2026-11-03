@@ -12,8 +12,11 @@ export default defineEventHandler(async (event) => {
     const endpoint = subscription?.endpoint;
     const p256dh = subscription?.keys?.p256dh;
     const auth = subscription?.keys?.auth;
-    if (typeof endpoint !== 'string' || !endpoint.startsWith('https://') || typeof p256dh !== 'string' || typeof auth !== 'string') {
+    if (!isPushEndpoint(endpoint, import.meta.dev) || !isShortToken(p256dh) || !isShortToken(auth)) {
         throw createError({ statusCode: 422, statusMessage: 'A valid push subscription is required' });
+    }
+    if (!hasPushSubscription(endpoint, user.id) && countPushSubscriptions(user.id) >= MAX_SUBSCRIPTIONS_PER_USER) {
+        throw createError({ statusCode: 422, statusMessage: 'Too many devices are registered for this person' });
     }
     savePushSubscription({ endpoint, userId: user.id, p256dh, auth });
     return { ok: true };

@@ -27,3 +27,11 @@ test('a new heartbeat extends the presence', () => {
     setAppVisible('e4', 'u1', true, NOW + 40_000);
     assert.equal(isAppVisible('e4', 'u1', NOW + 80_000), true);
 });
+
+test('the number of remembered devices is capped and the oldest are dropped first', () => {
+    for (let index = 0; index < 2100; index += 1) {
+        setAppVisible(`cap-${index}`, 'u1', true, NOW);
+    }
+    assert.equal(isAppVisible('cap-0', 'u1', NOW), false);
+    assert.equal(isAppVisible('cap-2099', 'u1', NOW), true);
+});

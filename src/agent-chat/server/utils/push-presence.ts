@@ -1,4 +1,5 @@
 const PRESENCE_TTL_MS = 50_000;
+const MAX_ENTRIES = 2000;
 
 const visibleUntil = new Map<string, number>();
 
@@ -8,6 +9,7 @@ function key(endpoint: string, userId: string): string {
 
 export function setAppVisible(endpoint: string, userId: string, visible: boolean, now = Date.now()): void {
     if (visible) {
+        visibleUntil.delete(key(endpoint, userId));
         visibleUntil.set(key(endpoint, userId), now + PRESENCE_TTL_MS);
     }
     else {
@@ -17,6 +19,12 @@ export function setAppVisible(endpoint: string, userId: string, visible: boolean
         if (until <= now) {
             visibleUntil.delete(entry);
         }
+    }
+    for (const oldest of visibleUntil.keys()) {
+        if (visibleUntil.size <= MAX_ENTRIES) {
+            break;
+        }
+        visibleUntil.delete(oldest);
     }
 }
 

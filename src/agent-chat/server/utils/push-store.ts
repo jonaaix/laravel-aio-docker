@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNotNull } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, isNotNull } from 'drizzle-orm';
 import { messages, pushSubscriptions } from '../database/schema';
 import type { StoredSubscription } from './push-notifier';
 
@@ -11,6 +11,18 @@ export function savePushSubscription(subscription: StoredSubscription): void {
             set: { p256dh: subscription.p256dh, auth: subscription.auth },
         })
         .run();
+}
+
+export function hasPushSubscription(endpoint: string, userId: string): boolean {
+    return !!useDatabase()
+        .select({ endpoint: pushSubscriptions.endpoint })
+        .from(pushSubscriptions)
+        .where(and(eq(pushSubscriptions.endpoint, endpoint), eq(pushSubscriptions.userId, userId)))
+        .get();
+}
+
+export function countPushSubscriptions(userId: string): number {
+    return useDatabase().select({ total: count() }).from(pushSubscriptions).where(eq(pushSubscriptions.userId, userId)).get()?.total ?? 0;
 }
 
 export function removePushSubscription(endpoint: string, userId: string): void {
