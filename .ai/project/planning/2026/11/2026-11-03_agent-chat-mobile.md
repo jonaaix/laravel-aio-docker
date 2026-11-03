@@ -35,12 +35,13 @@ handover runs and the user has reviewed the result.
 - [x] Round 16 (Tarek, his choice): copy a finished agent answer with one tap
 - [x] Round 17 (Tarek): share an answer through the share sheet; copy and share reviewed by Peter and fixed
 - [x] Round 18 (Tarek, his choice): earlier messages load by themselves when scrolling up
-- [ ] Round 19 (Tarek): Peter reviews the auto loading, then his own topic (no search inside a chat)
+- [x] Round 19 (Tarek): auto loading reviewed by Peter and fixed (history kept through reloads, anchored reading place)
+- [ ] Round 20 (Tarek): setup guide in the app's README with an on-device checklist; whole-app pass by Peter
 - [ ] Review with the user
 
 ## State
 
-- The app is built and committed in its own repo (316 tests via `npm test`, Pages workflow runs them
+- The app is built and committed in its own repo (326 tests via `npm test`, Pages workflow runs them
   before deploying); its own plan and Feature Book live in `src/agent-chat-mobile/.ai/`. The chat's
   tests count 38 via `npm test` in `src/agent-chat`.
 - Tarek is paused. QR scan verified with a fake camera at iPhone size (scan, confirm, connected); push
