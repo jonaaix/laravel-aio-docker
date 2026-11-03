@@ -98,8 +98,8 @@ and the peer cannot touch the project.
   keep the shell (a Python scratchpad, search commands); shell writes are held back only by the fork's
   write-scope instruction, which tells them to hand project changes to the lead with path and content.
 - People pick from Glyphs (unprefixed seeds), Notionists (`notionists:` seeds, CC0) and Dylan (`dylan:` seeds,
-  CC BY 4.0, credited); Notionists flipped horizontally on DiceBear's "Bold Pop" preset backgrounds,
-  Dylan on pastel backgrounds, so both read in dark mode.
+  CC BY 4.0, credited); both on DiceBear's "Bold Pop" preset backgrounds (Notionists flipped
+  horizontally), so they read in dark mode.
 - DiceBear never through its HTTP API. "Voxel Bot" is CC0; "Glyphs" (Matt Houser) is CC BY 4.0 and is credited in the Profile window.
 
 ## Open

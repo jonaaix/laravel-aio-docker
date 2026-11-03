@@ -29,12 +29,11 @@ const STYLES: Record<ParticipantKind, { style: Style<unknown>; options: Record<s
     },
 };
 
-const PASTEL_BACKGROUNDS = ['#b6e3f4', '#c0aede', '#d1d4f9', '#ffd5dc', '#ffdfbf', '#c7f0d8'];
 const BOLD_POP_BACKGROUNDS = ['#ff5d8f', '#ffb703', '#43aa8b', '#4d96ff', '#b57bff'];
 
 const PERSON_STYLES: Record<string, { style: Style<unknown>; options: Record<string, unknown> }> = {
     'notionists:': { style: new Style(notionists), options: { flip: 'horizontal', backgroundColor: BOLD_POP_BACKGROUNDS } },
-    'dylan:': { style: new Style(dylan), options: { backgroundColor: PASTEL_BACKGROUNDS } },
+    'dylan:': { style: new Style(dylan), options: { backgroundColor: BOLD_POP_BACKGROUNDS } },
 };
 
 export const PERSON_STYLE_PREFIXES = ['', ...Object.keys(PERSON_STYLES)];
