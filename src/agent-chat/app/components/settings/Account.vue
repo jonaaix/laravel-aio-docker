@@ -85,6 +85,7 @@ onBeforeUnmount(() => {
             <div class="rounded-md p-4 ring ring-default">
                 <p class="truncate font-medium text-highlighted">{{ profile.email }}</p>
                 <p v-if="details" class="truncate text-sm text-muted">{{ details }}</p>
+                <UsageMeters class="mt-3" />
             </div>
             <div class="flex flex-wrap gap-2">
                 <UButton label="Switch account" icon="i-heroicons-arrows-right-left" color="neutral" variant="outline" :loading="step === 'starting'" @click="startSignIn" />
