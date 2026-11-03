@@ -1,0 +1,1 @@
+ALTER TABLE `push_subscriptions` ADD `language` text;

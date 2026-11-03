@@ -148,6 +148,13 @@
       "when": 1793711745203,
       "tag": "0020_user_language",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1793713924665,
+      "tag": "0021_push_subscription_language",
+      "breakpoints": true
     }
   ]
 }
