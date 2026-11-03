@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { OfferedOption, OfferedQuestion, QuestionSection } from '~/utils/offered-questions';
+import { recommendableQuestions, withPick, withRecommendations } from '~/utils/question-selection';
 
 const props = defineProps<{
     section: QuestionSection;
@@ -26,23 +27,14 @@ function shownOptions(question: OfferedQuestion): OfferedOption[] {
     return collapsed.value ? question.options.filter(option => option.letter === sentLetter(question)) : question.options;
 }
 
-const recommendable = computed(() => props.section.questions.filter(question => question.options.some(option => option.recommended)));
-
-function publish(selection: Record<string, string>): void {
-    const own = new Set(props.section.questions.map(question => question.number));
-    choose(Object.fromEntries(Object.entries(selection).filter(([number]) => own.has(number))));
-}
+const recommendable = computed(() => recommendableQuestions(props.section));
 
 function pick(question: OfferedQuestion, letter: string): void {
-    const { [question.number]: current, ...others } = chosen.value;
-    publish(current === letter ? others : { ...others, [question.number]: letter });
+    choose(withPick(chosen.value, question, letter));
 }
 
 function acceptRecommendations(): void {
-    publish(Object.fromEntries(recommendable.value.map(question => [
-        question.number,
-        question.options.find(option => option.recommended)!.letter,
-    ])));
+    choose(withRecommendations(chosen.value, props.section));
 }
 
 function isSelected(question: OfferedQuestion, letter: string): boolean {
