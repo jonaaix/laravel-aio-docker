@@ -296,7 +296,7 @@ const sentAnswers = computed(() => {
             pending.push(message.id);
             continue;
         }
-        const reply = readAnswerBlock(messageText(message));
+        const reply = readAnswers(messageText(message));
         pending.forEach(id => answers.set(id, reply.lineCount > 0 ? reply : NOT_ANSWERED));
         pending = [];
     }

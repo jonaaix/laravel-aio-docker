@@ -27,24 +27,41 @@ export function readAnswerLine(line: string): AnswerLine | null {
     };
 }
 
+function addAnswerLine(block: AnswerBlock, line: string): boolean {
+    const listed = readAnswerLine(line);
+    const annotated = listed ? null : ANNOTATED_ANSWER.exec(line);
+    if (listed) {
+        block.accepted ||= listed.accepted;
+        Object.assign(block.chosen, listed.chosen);
+    }
+    else if (annotated) {
+        block.chosen[annotated[1]!] = annotated[2]!.toLowerCase();
+        block.comments[annotated[1]!] = annotated[3]!;
+    }
+    else {
+        return false;
+    }
+    block.lineCount++;
+    return true;
+}
+
+function emptyAnswerBlock(): AnswerBlock {
+    return { accepted: false, chosen: {}, comments: {}, lineCount: 0 };
+}
+
 export function readAnswerBlock(text: string): AnswerBlock {
-    const block: AnswerBlock = { accepted: false, chosen: {}, comments: {}, lineCount: 0 };
+    const block = emptyAnswerBlock();
     for (const line of text.split('\n')) {
-        const listed = readAnswerLine(line);
-        const annotated = listed ? null : ANNOTATED_ANSWER.exec(line);
-        if (listed) {
-            block.accepted ||= listed.accepted;
-            Object.assign(block.chosen, listed.chosen);
-        }
-        else if (annotated) {
-            block.chosen[annotated[1]!] = annotated[2]!.toLowerCase();
-            block.comments[annotated[1]!] = annotated[3]!;
-        }
-        else {
+        if (!addAnswerLine(block, line)) {
             break;
         }
-        block.lineCount++;
     }
+    return block;
+}
+
+export function readAnswers(text: string): AnswerBlock {
+    const block = emptyAnswerBlock();
+    text.split('\n').forEach(line => addAnswerLine(block, line));
     return block;
 }
 

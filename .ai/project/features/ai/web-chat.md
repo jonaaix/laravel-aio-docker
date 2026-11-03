@@ -122,8 +122,8 @@ options too. One control
 picks every recommended option at once. Nothing is sent until the user sends the message, and the
 agent learns nothing about the card: it only reads the answer the agent already wrote. Cards in
 earlier answers stay visible but can no longer be chosen from. Once the user has replied, the card
-shrinks to the questions and the option chosen for each — taken from the start of the reply, where
-"ok" means every recommended option; options not chosen fold away and can be shown again. When the
+shrinks to the questions and the option chosen for each — taken from every answer line in the reply,
+wherever it stands, where "ok" means every recommended option; options not chosen fold away and can be shown again. When the
 reply answered none of the questions, the card says so once below them.
 
 ### Files and images
