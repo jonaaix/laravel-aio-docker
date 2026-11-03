@@ -75,7 +75,7 @@ const chatPlugins = useChatMarkdownPlugins();
                             : 'text-default enabled:hover:bg-elevated/60'"
                         @click="pick(question, option.letter)"
                     >
-                        <span class="shrink-0 font-medium" :class="isSelected(question, option.letter) ? '' : 'text-muted'">{{ option.letter }})</span>
+                        <span class="shrink-0 font-semibold" :class="isSelected(question, option.letter) ? '' : 'text-muted'">{{ option.letter }})</span>
                         <Markdown :value="option.text" :plugins="chatPlugins" class="min-w-0 flex-1 *:my-0" />
                         <UIcon
                             v-if="isSelected(question, option.letter)"
