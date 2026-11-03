@@ -49,7 +49,8 @@ handover runs and the user has reviewed the result.
 - The app is built and committed in its own repo (326 tests via `npm test`, Pages workflow runs them
   before deploying); its own plan and Feature Book live in `src/agent-chat-mobile/.ai/`. The chat's
   tests count 38 via `npm test` in `src/agent-chat`.
-- Tarek works on round 22; the app is otherwise ready for the iPhone test. The README holds the setup steps
+- The experiment with Tarek has ended (user's call); the Framework7 app is frozen as it is. Its features are
+  to move into the web chat as a PWA with several servers, built by me. The README holds the setup steps
   and the on-device checklist. QR scan verified with a fake camera at iPhone size (scan, confirm, connected); push
   verified up to the send attempt, real delivery untested. Untested on a real iPhone: install, icon,
   startup image, flight mode, text size, VoiceOver, camera, push.
