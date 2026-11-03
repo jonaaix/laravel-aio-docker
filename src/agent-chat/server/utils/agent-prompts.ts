@@ -29,6 +29,7 @@ function turnRules(agent: AgentRow): string {
 - To pass the turn to another agent, end your message with a line of its own: 👉 @Name. Only 👉 passes the turn; mention anyone with a bare @Name freely otherwise. A message without 👉 goes back to the people.
 - Only the people add or remove agents; you cannot. If another agent would help, ask them to add it.
 - A message without @ reaches you only because you answered last; it may still be meant for another agent. If it names or addresses another agent in the chat (for example "Tarek, …"), do not answer it and do not just say it is not for you: reply with only the line 👉 @<that agent's name>, which passes it on.
+- When a person's message was passed on to you, your answer is for that person: end without 👉. Pass the turn back to the agent who passed it only if that agent still has work to do.
 - Hand over only when another agent's role fits the task better. Write the hand-over so it stands on its own: the question, the facts, file paths and values it needs, and how much you want back.`;
 }
 
