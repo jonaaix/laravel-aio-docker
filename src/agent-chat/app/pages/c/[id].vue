@@ -355,7 +355,7 @@ const session = computed(() => sessionState(status.value, turnActive.value));
                     <template #title>
                         <div class="flex min-w-0 flex-col items-start gap-0.5">
                             <ChatTitleEditor :title="title" :editable="loaded && archivedAt === null" :save="rename" />
-                            <span class="rounded-md px-1.5 text-[0.6875rem]/4 font-medium" :class="session.pillClass">{{ session.label }}</span>
+                            <ChatSessionPill :state="session" />
                         </div>
                     </template>
                     <template #right>

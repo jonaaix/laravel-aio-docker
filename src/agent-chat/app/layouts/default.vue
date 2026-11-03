@@ -118,7 +118,7 @@ onBeforeUnmount(() => {
                         <template v-if="item.session">
                             <span class="block truncate">{{ item.label }}</span>
                             <span class="mt-0.5 flex items-center gap-1.5 text-xs font-normal text-muted">
-                                <span class="shrink-0 rounded-md px-1.5 text-[0.6875rem]/4 font-medium" :class="item.session.pillClass">{{ item.session.label }}</span>
+                                <ChatSessionPill :state="item.session" />
                                 <template v-if="item.creatorName">
                                     <span aria-hidden="true">·</span>
                                     <span class="truncate">{{ item.creatorName }}</span>
