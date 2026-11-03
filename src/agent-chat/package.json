@@ -20,12 +20,14 @@
         "better-sqlite3": "^13.0.3",
         "drizzle-orm": "^0.45.4",
         "nuxt": "^4.6.3",
+        "qrcode": "^1.5.4",
         "shiki": "^4.5.0",
         "tailwindcss": "^4.3.3"
     },
     "devDependencies": {
         "@types/better-sqlite3": "^9.6.0",
         "@types/node": "^26.0.1",
+        "@types/qrcode": "^1.5.6",
         "drizzle-kit": "^0.31.11",
         "typescript": "^6.0.2",
         "vue-tsc": "^3.3.14"
