@@ -143,6 +143,7 @@ class ConversationRuntime {
         if (this.handoffs >= HANDOFF_LIMIT) {
             publishConversationEvent(this.conversationId, { type: 'error', message: `Stopped after ${HANDOFF_LIMIT} hand-overs between agents. Reply to continue.` });
             this.publishStatus();
+            notifyAnswerFinished(this.conversationId, session.agentId, message);
             return;
         }
         this.handoffs += 1;

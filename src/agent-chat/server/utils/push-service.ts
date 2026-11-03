@@ -39,7 +39,7 @@ const notify = createAnswerNotifier(delivery);
 export function notifyAnswerFinished(conversationId: string, agentId: string, message: ChatMessage | null): void {
     const conversation = findConversation(conversationId);
     const agent = findAgent(agentId);
-    if (!conversation || !agent || !message) {
+    if (!conversation || !agent) {
         return;
     }
     void notify({
@@ -48,7 +48,7 @@ export function notifyAnswerFinished(conversationId: string, agentId: string, me
         creatorId: conversation.creatorId,
         lastSenderId: latestSenderId(conversationId),
         agentName: agent.name,
-        text: plainMessageText(message),
-        failed: message.metadata?.outcome === 'failed',
+        text: message ? plainMessageText(message) : '',
+        failed: !message || message.metadata?.outcome === 'failed',
     });
 }
