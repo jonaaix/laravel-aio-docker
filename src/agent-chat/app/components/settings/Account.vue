@@ -93,7 +93,7 @@ onBeforeUnmount(() => {
         </template>
 
         <template v-else-if="step === 'code' || step === 'verifying'">
-            <p class="text-sm text-toned">Sign in on Claude's page, then paste the code it shows.</p>
+            <p class="text-sm text-toned">Sign in on Claude's page, approve access, then paste the code it shows.</p>
             <div>
                 <UButton label="Open sign-in page" icon="i-heroicons-arrow-top-right-on-square" color="neutral" variant="outline" :to="signInUrl" target="_blank" />
             </div>
