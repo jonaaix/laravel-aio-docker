@@ -35,7 +35,8 @@ a conversation opens the same window at Agents.
   and a field for the code that page shows; a wrong code or a failed sign-in says so, and a sign-in in
   progress can be cancelled. Anyone who can open the chat may do this. The account card at the foot of
   the sidebar shows "Not signed in" while no account is signed in and opens this category; it follows
-  sign-ins and sign-outs in every open browser.
+  sign-ins and sign-outs in every open browser. While signed out, a notice above every message input
+  says "Claude is not signed in" and its "Sign in" opens this category.
 
 There is no save button: every change is stored as it is made — text a moment after typing stops or
 on Enter, choices, pictures and files at once — and errors show at the field concerned. "New agent" adds an entry to the list at once; the agent
