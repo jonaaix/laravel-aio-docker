@@ -135,6 +135,9 @@ class ConversationRuntime {
         const target = !stopped && message && author ? handoffTarget(plainMessageText(message), this.reachableAgents().filter(agent => agent.id !== author.id)) : null;
         if (!target || !author) {
             this.publishStatus();
+            if (!stopped) {
+                notifyAnswerFinished(this.conversationId, session.agentId, message);
+            }
             return;
         }
         if (this.handoffs >= HANDOFF_LIMIT) {

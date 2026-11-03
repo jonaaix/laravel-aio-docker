@@ -42,6 +42,9 @@ export default defineNuxtConfig({
         workingDir: '',
         dataDir: '',
         claudeModel: '',
+        vapidSubject: '',
+        vapidPublicKey: '',
+        vapidPrivateKey: '',
     },
 
     compatibilityDate: '2026-06-30',

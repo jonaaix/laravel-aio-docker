@@ -79,3 +79,11 @@ export const messages = sqliteTable('messages', {
 }, table => [
     index('messages_conversation_seq_idx').on(table.conversationId, table.seq),
 ]);
+
+export const pushSubscriptions = sqliteTable('push_subscriptions', {
+    endpoint: text('endpoint').notNull(),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    p256dh: text('p256dh').notNull(),
+    auth: text('auth').notNull(),
+    createdAt: integer('created_at').notNull(),
+}, table => [primaryKey({ columns: [table.endpoint, table.userId] })]);
