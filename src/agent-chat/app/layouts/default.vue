@@ -98,7 +98,7 @@ onBeforeUnmount(() => {
                         variant="soft"
                         block
                         :square="collapsed"
-                        class="bg-default ring ring-primary/60 hover:bg-elevated dark:bg-elevated/50 dark:hover:bg-elevated"
+                        class="bg-default text-primary ring ring-primary/40 hover:bg-elevated dark:bg-elevated/50 dark:hover:bg-elevated"
                     />
                 </UTooltip>
                 <template v-if="hub && !collapsed">
