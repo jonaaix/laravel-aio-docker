@@ -7,6 +7,8 @@ const props = defineProps<{
     save: (title: string) => Promise<void>;
 }>();
 
+const { t } = useI18n();
+
 const editing = ref(false);
 const draft = ref('');
 const saving = ref(false);
@@ -57,13 +59,13 @@ async function commit(): Promise<void> {
             :loading="saving"
             :color="failed ? 'error' : 'neutral'"
             :highlight="failed"
-            aria-label="Conversation title"
+            :aria-label="t('Conversation title')"
             class="w-full"
             @keydown.esc.prevent="cancel"
             @blur="failed || cancel()"
         />
     </form>
-    <UTooltip v-else-if="editable" text="Rename">
+    <UTooltip v-else-if="editable" :text="t('Rename')">
         <button
             type="button"
             class="h-9 min-w-0 truncate rounded-md px-2 text-start transition-colors duration-500 ease-out hover:bg-elevated/60"

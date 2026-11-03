@@ -7,7 +7,9 @@ const props = defineProps<{
     tasks: BackgroundTask[];
 }>();
 
-const title = computed(() => props.tasks.length === 1 ? '1 background task running' : `${props.tasks.length} background tasks running`);
+const { t } = useI18n();
+
+const title = computed(() => t('1 background task running | {count} background tasks running', { count: props.tasks.length }, props.tasks.length));
 
 const now = ref(Date.now());
 let timer: ReturnType<typeof setInterval> | undefined;

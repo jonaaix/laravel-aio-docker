@@ -2,12 +2,14 @@
 import type { ChatMessage } from '#shared/types/conversation';
 
 defineProps<{ message: ChatMessage }>();
+
+const { t } = useI18n();
 </script>
 
 <template>
     <p v-if="message.metadata?.outcome === 'stopped'" class="mt-3 flex items-center gap-1.5 text-sm text-muted">
         <UIcon name="i-heroicons-stop-circle" class="size-4 shrink-0" />
-        Stopped
+        {{ t('Stopped') }}
     </p>
     <div
         v-else-if="message.metadata?.outcome === 'failed'"
@@ -15,7 +17,7 @@ defineProps<{ message: ChatMessage }>();
     >
         <UIcon name="i-heroicons-exclamation-triangle" class="mt-0.5 size-4 shrink-0" />
         <div class="min-w-0">
-            <p class="font-medium">Failed</p>
+            <p class="font-medium">{{ t('Failed') }}</p>
             <p v-if="message.metadata.error" class="whitespace-pre-wrap [overflow-wrap:anywhere]">{{ message.metadata.error }}</p>
         </div>
     </div>

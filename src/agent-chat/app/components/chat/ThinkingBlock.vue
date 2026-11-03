@@ -9,6 +9,8 @@ const props = defineProps<{
     streaming: boolean;
 }>();
 
+const { t } = useI18n();
+
 const reasoning = computed(() => props.message.parts.filter((part): part is ReasoningUIPart => part.type === 'reasoning'));
 const thoughts = computed(() => reasoning.value.map(part => part.text.trim().replace(/\n{2,}/g, '\n')).filter(Boolean));
 const thinking = computed(() => {
@@ -44,7 +46,7 @@ watch(() => thoughts.value.join('\n').length, async () => {
 <template>
     <ChatActivityBox
         v-if="visible"
-        :title="thinking ? 'Thinking…' : 'Thought'"
+        :title="thinking ? t('Thinking…') : t('Thought')"
         :active="thinking"
         :auto-open="streaming"
         icon="i-heroicons-light-bulb"

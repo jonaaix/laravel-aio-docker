@@ -1,6 +1,8 @@
 <script setup lang="ts">
 const emit = defineEmits<{ drop: [files: File[]] }>();
 
+const { t } = useI18n();
+
 const active = ref(false);
 let depth = 0;
 
@@ -73,7 +75,7 @@ onBeforeUnmount(() => {
             >
                 <span class="flex items-center gap-2 text-base font-medium text-highlighted">
                     <UIcon name="i-heroicons-paper-clip" class="size-5" />
-                    Drop files to attach
+                    {{ t('Drop files to attach') }}
                 </span>
             </div>
         </Transition>

@@ -9,14 +9,16 @@ const props = defineProps<{
     streaming: boolean;
 }>();
 
+const { t } = useI18n();
+
 const tools = computed(() => props.message.parts.filter((part): part is DynamicToolUIPart => part.type === 'dynamic-tool'));
 const working = computed(() => props.streaming && props.message.parts.at(-1)?.type !== 'text');
 const failed = computed(() => tools.value.some(part => part.state === 'output-error'));
 const title = computed(() => {
     if (working.value) {
-        return 'Working…';
+        return t('Working…');
     }
-    return tools.value.length === 1 ? 'Worked · 1 step' : `Worked · ${tools.value.length} steps`;
+    return t('Worked · 1 step | Worked · {count} steps', { count: tools.value.length }, tools.value.length);
 });
 
 const listedTools = computed(() => tools.value.filter(part => part.input !== undefined));
@@ -40,7 +42,7 @@ const commandTool = computed(() => working.value ? listedTools.value.findLast(pa
         <div v-if="listedTools.length > 0" class="flex flex-col gap-0.5">
             <UButton
                 v-if="listedTools.length > VISIBLE_STEPS"
-                :label="showAll ? 'Show fewer steps' : hiddenCount === 1 ? 'Show 1 earlier step' : `Show ${hiddenCount} earlier steps`"
+                :label="showAll ? t('Show fewer steps') : t('Show 1 earlier step | Show {count} earlier steps', { count: hiddenCount }, hiddenCount)"
                 :icon="showAll ? 'i-heroicons-chevron-down' : 'i-heroicons-chevron-up'"
                 color="neutral"
                 variant="link"
