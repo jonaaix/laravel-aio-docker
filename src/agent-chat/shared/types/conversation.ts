@@ -29,6 +29,7 @@ export interface ConversationSummary {
     title: string;
     creatorId: string | null;
     lastSenderId: string | null;
+    lastAnswerAt: number | null;
     agentIds: string[];
     status: ConversationStatus;
     turnActive: boolean;
