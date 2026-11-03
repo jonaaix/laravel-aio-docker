@@ -159,8 +159,6 @@ function onLightboxChange(index) {
                 </div>
             </div>
 
-            <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100" />
-
             <template v-if="images.length > 1">
                 <div v-if="slider.prevIndex.value !== null" class="absolute left-2 top-1/2 -translate-y-1/2">
                     <IconButton :label="text.previous" tone="plain" size="md" class="ilg-inline-arrow" @pointerdown.stop @click="slider.step(-1)">
