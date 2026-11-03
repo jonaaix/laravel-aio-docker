@@ -13,6 +13,7 @@ const { t } = useI18n();
 const position = ref<{ top: number; left: number } | null>(null);
 let selectedText = '';
 let settle: ReturnType<typeof setTimeout> | undefined;
+let pointerDown = false;
 
 function selectedRange(): Range | null {
     const selection = window.getSelection();
@@ -44,7 +45,22 @@ function onSelectionChange(): void {
         position.value = null;
         return;
     }
-    settle = setTimeout(update, SETTLE_MS);
+    if (!pointerDown) {
+        settle = setTimeout(update, SETTLE_MS);
+    }
+}
+
+function onPointerDown(event: PointerEvent): void {
+    if (event.button === 0) {
+        pointerDown = true;
+    }
+}
+
+function onPointerUp(): void {
+    if (pointerDown) {
+        pointerDown = false;
+        onSelectionChange();
+    }
 }
 
 function onScroll(): void {
@@ -61,12 +77,18 @@ function quote(): void {
 
 onMounted(() => {
     document.addEventListener('selectionchange', onSelectionChange);
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('pointerup', onPointerUp);
+    document.addEventListener('pointercancel', onPointerUp);
     window.addEventListener('scroll', onScroll, { passive: true });
 });
 
 onBeforeUnmount(() => {
     clearTimeout(settle);
     document.removeEventListener('selectionchange', onSelectionChange);
+    document.removeEventListener('pointerdown', onPointerDown);
+    document.removeEventListener('pointerup', onPointerUp);
+    document.removeEventListener('pointercancel', onPointerUp);
     window.removeEventListener('scroll', onScroll);
 });
 </script>
