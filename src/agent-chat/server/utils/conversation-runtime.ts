@@ -434,6 +434,7 @@ export function summarize(row: NonNullable<ReturnType<typeof findConversation>>)
         id: row.id,
         title: row.title,
         creatorId: row.creatorId,
+        lastSenderId: latestSenderId(row.id),
         agentIds: conversationAgentIds(row.id),
         status: row.status,
         turnActive: isTurnActive(row.id),
