@@ -98,7 +98,7 @@ onBeforeUnmount(() => {
                         variant="soft"
                         block
                         :square="collapsed"
-                        class="bg-default ring ring-black/5 hover:bg-elevated dark:bg-elevated/50 dark:ring-0 dark:hover:bg-elevated"
+                        class="bg-default ring ring-primary/60 hover:bg-elevated dark:bg-elevated/50 dark:hover:bg-elevated"
                     />
                 </UTooltip>
                 <template v-if="hub && !collapsed">
@@ -120,7 +120,7 @@ onBeforeUnmount(() => {
                     :items="items"
                     :collapsed="collapsed"
                     orientation="vertical"
-                    :ui="{ link: 'overflow-hidden py-1.5 before:transition-colors before:duration-500 before:ease-out hover:before:bg-accented/60 aria-[current=page]:before:bg-accented/80 aria-[current=page]:text-highlighted', linkLabel: 'min-w-0 flex-1' }"
+                    :ui="{ link: 'overflow-hidden py-1.5 before:transition-colors before:duration-500 before:ease-out hover:before:bg-accented/60 aria-[current=page]:before:bg-primary/12 aria-[current=page]:text-primary', linkLabel: 'min-w-0 flex-1' }"
                 >
                     <template #item-label="{ item }">
                         <template v-if="item.session">

@@ -31,7 +31,8 @@ a conversation opens the same window at Agents.
   typeface. It also sets the colour of the whole chat, picked from thirteen unnamed colour circles, each shown in
   the button colour it gives (the name appears only as a hint on hover): Black, the default — plain greys with
   black and white accents, as the chat always looked — and twelve hues around the colour wheel. A hue colours the
-  accents in the spirit of Material 3 — main buttons, chosen options, switches and focus rings take it, and the
+  accents in the spirit of Material 3 — main buttons, chosen options, switches, focus rings and the open conversation in the sidebar take it,
+  "New Code Session" carries a thin line of it, and the
   people's message bubbles a light container tone of it — while background, sidebar, surfaces, text and borders
   stay the plain greys of Black, in light and dark alike. It also holds "Move sent message to top", off by default: when off, the conversation
   stays at the bottom after sending and follows the answer; when on, the sent message moves to the
