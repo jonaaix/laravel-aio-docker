@@ -22,15 +22,15 @@ function loginCommand(): string {
     return `cat | ${terminal} & wait $!`;
 }
 
-function stopGroup(process_: ChildProcess): void {
-    if (!process_.pid) {
+function stopGroup(target: ChildProcess): void {
+    if (!target.pid) {
         return;
     }
     try {
-        process.kill(-process_.pid, 'SIGTERM');
+        process.kill(-target.pid, 'SIGTERM');
     }
     catch {
-        process_.kill();
+        target.kill();
     }
 }
 
