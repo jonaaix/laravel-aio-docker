@@ -31,6 +31,7 @@ class ConversationRuntime {
     private readonly sessions = new Map<string, AgentSession>();
     private pending: PendingMessage[] = [];
     private handoffs = 0;
+    private readonly sectionReminders = new Set<string>();
     private pausing = false;
     private serverOrigin = '';
     private idleTimer: ReturnType<typeof setTimeout> | null = null;
@@ -122,6 +123,9 @@ class ConversationRuntime {
     }
 
     private afterTurn(session: AgentSession, message: ChatMessage | null, outcome: TurnOutcome): void {
+        if (message && hasUnbarredSection(plainMessageText(message))) {
+            this.sectionReminders.add(session.agentId);
+        }
         const author = findAgent(session.agentId);
         const step = afterTurnStep({
             pausing: this.pausing,
@@ -193,6 +197,9 @@ class ConversationRuntime {
             if (notice) {
                 blocks.push(notice);
             }
+        }
+        if (this.sectionReminders.delete(agent.id)) {
+            blocks.push(SECTION_BARS_REMINDER);
         }
         saveAgentSessionState(this.conversationId, agent, { announcedAgents: others });
         const missed = missedMessagesBlock(missedMessages(this.conversationId, agent.id, excludedMessageId, MISSED_MESSAGE_LIMIT).map(message => ({ author: this.authorName(message), text: plainMessageText(message) })));

@@ -142,3 +142,5 @@ export function handoffTarget<T extends NamedAgent>(text: string, agents: T[]): 
     }
     return winner;
 }
+
+export const SECTION_BARS_REMINDER = '<status>In your last answer a section title such as "🔑 TL;DR" stood without its bars. Put a bar line (╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌) above and below every section title.</status>';

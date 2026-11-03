@@ -125,7 +125,8 @@ its reply, and the user answers with the next message.
 Sections the agent marks off with bars — a bar, a title such as "🎯 Plan", another bar — appear
 as plain headings with a fine line above them; the bars themselves are not shown. The plan ("🎯"), summary ("🔑"), next-step ("🚀") and questions ("❓") sections are also
 recognised when the agent forgets the bars: their mark and a short title on a line of their own, after a blank
-line, open the section, which then runs to the next bar or section. A summary section
+line, open the section, which then runs to the next bar or section. The agent that forgot them gets a short reminder
+with its next message to put the bars around every section title. A summary section
 ("🔑") and a next-step section ("🚀") stand out as cards in the same look as the question card. In
 the latest answer the next-step card offers to accept the suggestion: it writes "ok" at the start of
 the message input, the same way choosing an option does, and nothing is sent until the user sends.
