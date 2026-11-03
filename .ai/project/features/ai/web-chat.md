@@ -46,8 +46,8 @@ conversation at any time by editing its title in place. A name the user gave is 
 generated for that conversation anymore, and the name also reaches Claude Code's session history —
 right away while the session runs, otherwise when it resumes. Someone can start a new
 conversation, open an earlier one and continue it. A conversation that is no longer needed can be
-archived: its agent session is paused first, it leaves the sidebar, and the user lands on a new
-conversation. It stays stored and can be brought back. Each conversation is its own agent session. The agent's answer appears while it is
+archived: its agent session is paused first, it leaves the sidebar, and the user lands on the
+conversation below it in the sidebar — the one above when it was the last, a new conversation when none is left. It stays stored and can be brought back. Each conversation is its own agent session. The agent's answer appears while it is
 being written; its tool use and reasoning are visible as separate, quieter blocks next to the
 answer rather than mixed into it. An opened step shows its command, file changes and output with
 code highlighting in the language they are written in — a command's output in the language of the

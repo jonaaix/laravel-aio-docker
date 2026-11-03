@@ -339,9 +339,16 @@ async function withFlag(flag: Ref<boolean>, action: () => Promise<void>): Promis
 }
 
 const pauseConversation = () => withFlag(pausing, pause);
+function neighbourConversationPath(): string {
+    const index = conversations.value.findIndex(conversation => conversation.id === conversationId);
+    const neighbour = index === -1 ? undefined : conversations.value[index + 1] ?? conversations.value[index - 1];
+    return neighbour ? `/c/${neighbour.id}` : '/';
+}
+
 const archiveConversation = () => withFlag(archiving, async () => {
+    const next = neighbourConversationPath();
     await archive();
-    await navigateTo('/');
+    await navigateTo(next);
 });
 const restoreConversation = () => withFlag(archiving, restore);
 
