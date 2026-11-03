@@ -4,7 +4,10 @@ const FONT_CACHE_KEY = 'chat-font';
 const TINT_CACHE_KEY = 'chat-tint';
 
 export function applyTint(value: number): void {
-    document.documentElement.style.setProperty('--tint', String(value));
+    const choice = tintChoice(value);
+    document.documentElement.style.setProperty('--tint', String(choice.value));
+    document.documentElement.style.setProperty('--tint-chroma', String(choice.chroma));
+    document.documentElement.toggleAttribute('data-tint-neutral', choice.value === DEFAULT_TINT);
     try {
         localStorage.setItem(TINT_CACHE_KEY, String(value));
     }
