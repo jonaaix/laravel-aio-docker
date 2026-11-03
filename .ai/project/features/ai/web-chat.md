@@ -21,12 +21,23 @@ conversation remain part of the feature; Claude comes first.
 ### Reaching the chat
 
 The chat can be embedded as an iframe inside the Laravel app the container hosts, so the app's
-users talk to the agent without leaving the app. Optionally the chat can also be given its own
-domain or port, which makes it reachable independently of that app — including when the app
-itself is broken.
+users talk to the agent without leaving the app, or be given its own domain or port.
 
-Inside the Laravel app, the app opens the chat through a short-lived signed link that tells the
-chat who the user is. Access through the chat's own domain or port is protected by a password.
+Only a signed link lets someone in. The Laravel app creates it for its signed-in user with a key
+stored centrally in the image; the link carries the person's name and picture and its signature as
+query parameters, works once and only for about a minute. Opening it signs the person in to that
+browser for good — until the key on the server is changed. Anyone reaching the chat without a valid
+link or an earlier sign-in sees only "Unauthorized". There is no other way in: no password, no
+emergency link.
+
+Besides the chat itself there is a hub: the same chat as an installable app on its own address (GitHub
+Pages), which connects to the chats of several containers at once — on the phone, and on the desktop
+for developers looking after several projects in parallel. A chat served from the container never
+connects to other containers. A device is paired with a container once, from Remote control in that
+chat's settings: by pasting its pairing link or scanning its QR code. Pairing hands the container the
+device's own public key; from then on the device proves itself with the private key, which never
+leaves it. A pairing link works once and only for a few minutes. The chat accepts requests from other
+addresses only from the hub.
 
 Everyone in the chat has a name, and the agents always know who is writing; how people are named
 and shown is described in [People in the chat](chat-people.md).
