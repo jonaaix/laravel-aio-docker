@@ -345,12 +345,10 @@ const session = computed(() => sessionState(status.value, turnActive.value));
             <div ref="header" class="sticky top-0 z-30 bg-default">
                 <UDashboardNavbar :title="title">
                     <template #title>
-                        <UTooltip :text="session.label">
-                            <span class="size-2 shrink-0 rounded-full" :class="session.dotClass">
-                                <span class="sr-only">{{ session.label }}</span>
-                            </span>
-                        </UTooltip>
-                        <ChatTitleEditor :title="title" :editable="loaded && archivedAt === null" :save="rename" />
+                        <div class="flex min-w-0 flex-col items-start gap-0.5">
+                            <ChatTitleEditor :title="title" :editable="loaded && archivedAt === null" :save="rename" />
+                            <span class="rounded-md px-1.5 text-[0.6875rem]/4 font-medium" :class="session.pillClass">{{ session.label }}</span>
+                        </div>
                     </template>
                     <template #right>
                         <template v-if="archivedAt !== null">
