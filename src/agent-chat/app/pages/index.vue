@@ -3,6 +3,7 @@ const input = ref('');
 const sending = ref(false);
 const { start } = useConversations();
 const { attachments, uploading, ready, add: attach, remove: removeAttachment, take: takeAttachments } = useAttachments();
+const { profile: account, loaded: accountLoaded } = useAccount();
 
 async function submit(): Promise<void> {
     const text = input.value.trim();
@@ -32,6 +33,7 @@ async function submit(): Promise<void> {
                 <h1 class="text-center text-2xl font-bold tracking-tight text-highlighted lg:text-3xl">
                     What should we work on?
                 </h1>
+                <ChatSignInNotice v-if="accountLoaded && !account" />
                 <ChatComposer
                     v-model="input"
                     placeholder="Ask anything…"

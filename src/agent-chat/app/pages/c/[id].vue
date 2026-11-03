@@ -61,6 +61,7 @@ const leadAgent = computed<Participant>(() => ({ kind: 'agent', name: lead.value
 
 const { participant: userParticipant } = useUsers();
 const { pinSentMessage } = useAppearance();
+const { profile: account, loaded: accountLoaded } = useAccount();
 const mentionNames = useMentionNames();
 const mentionKey = computed(() => mentionNames.value.join('|'));
 
@@ -469,6 +470,7 @@ const session = computed(() => sessionState(status.value, turnActive.value));
                     </div>
                 </Transition>
                 <UContainer class="pb-4 sm:pb-6">
+                    <ChatSignInNotice v-if="accountLoaded && !account" class="mb-2" />
                     <ChatBackgroundTasks v-if="backgroundTasks.length > 0" :tasks="backgroundTasks" class="mb-2" />
                     <ChatQueuedMessages v-if="queuedMessages.length > 0" :messages="queuedMessages" :recipient-name="agentName" class="mb-2" />
                     <div v-if="SHOW_TYPING_LINE" class="mb-1.5 flex h-6 items-center px-3.5">
