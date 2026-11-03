@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { MAX_ENDPOINT_LENGTH, isPushEndpoint, isShortToken } from '../server/utils/push-validation.ts';
+import { MAX_ENDPOINT_LENGTH, isHubRef, isPushEndpoint, isShortToken, isVapidKeyPair } from '../server/utils/push-validation.ts';
 
 test('the endpoints of the real push services are accepted', () => {
     for (const endpoint of [
@@ -49,4 +49,22 @@ test('keys are short non-empty texts', () => {
     assert.equal(isShortToken(''), false);
     assert.equal(isShortToken('a'.repeat(300)), false);
     assert.equal(isShortToken(5), false);
+});
+
+test('a device key pair needs an uncompressed P-256 point and a 32-byte secret', () => {
+    const point = Buffer.concat([Buffer.from([4]), Buffer.alloc(64, 1)]).toString('base64url');
+    const secret = Buffer.alloc(32, 2).toString('base64url');
+    assert.equal(isVapidKeyPair({ publicKey: point, privateKey: secret }), true);
+    assert.equal(isVapidKeyPair({ publicKey: Buffer.alloc(65, 1).toString('base64url'), privateKey: secret }), false);
+    assert.equal(isVapidKeyPair({ publicKey: point, privateKey: Buffer.alloc(31, 2).toString('base64url') }), false);
+    assert.equal(isVapidKeyPair({ publicKey: `${point}=`, privateKey: secret }), false);
+    assert.equal(isVapidKeyPair(undefined), false);
+});
+
+test('a hub reference is a short plain id', () => {
+    assert.equal(isHubRef('6f1c2b8e-1a2b-4c3d-9e8f-0a1b2c3d4e5f'), true);
+    assert.equal(isHubRef(''), false);
+    assert.equal(isHubRef('x'.repeat(65)), false);
+    assert.equal(isHubRef('../evil'), false);
+    assert.equal(isHubRef(7), false);
 });

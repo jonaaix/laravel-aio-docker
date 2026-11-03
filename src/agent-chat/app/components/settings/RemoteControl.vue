@@ -16,7 +16,7 @@ const removing = ref<PairedDevice | null>(null);
 const removeBusy = ref(false);
 
 const serverUrl = `${window.location.origin}${app.baseURL}`;
-const link = computed(() => pairing.value ? `${hubUrl}#pair=${encodeURIComponent(serverUrl)}&code=${pairing.value.code}` : '');
+const link = computed(() => pairing.value ? `${hubUrl}?${new URLSearchParams({ pair: serverUrl, code: pairing.value.code })}` : '');
 const expired = computed(() => pairing.value !== null && pairing.value.expiresAt <= now.value);
 
 async function createLink(): Promise<void> {

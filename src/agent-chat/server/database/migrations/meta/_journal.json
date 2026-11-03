@@ -176,6 +176,13 @@
       "when": 1793718674176,
       "tag": "0024_devices",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1793719566399,
+      "tag": "0025_device_push_keys",
+      "breakpoints": true
     }
   ]
 }

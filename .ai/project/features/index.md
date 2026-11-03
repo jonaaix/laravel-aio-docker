@@ -6,3 +6,4 @@
 | ai-chat-people | [ai/chat-people.md](ai/chat-people.md) | Names, pictures, chat heads and mentions of the people in the chat |
 | ai-chat-agents | [ai/chat-agents.md](ai/chat-agents.md) | Several agents in one conversation: switching in, taking turns, handovers, write limits |
 | ai-chat-settings | [ai/chat-settings.md](ai/chat-settings.md) | Settings window with profile, appearance (theme, font) and agents |
+| ai-chat-hub | [ai/chat-hub.md](ai/chat-hub.md) | Orbit: the chat as an installable app that pairs with several containers' chats, with unread, notifications and offline reading |

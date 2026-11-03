@@ -6,7 +6,7 @@ import type { AnswerFinished, PushDelivery, StoredSubscription } from '../server
 const event: AnswerFinished = { conversationId: 'c1', conversationTitle: 'Plan the trip', participantIds: ['u1', 'u2'], mutedUserIds: [], agentName: 'Tarek', text: 'Done.', failed: false };
 
 function subscription(endpoint: string, userId: string): StoredSubscription {
-    return { endpoint, userId, p256dh: 'p', auth: 'a', language: null };
+    return { endpoint, userId, p256dh: 'p', auth: 'a', language: null, vapidPublicKey: 'pk', vapidPrivateKey: 'sk', hubRef: 'h1' };
 }
 
 function fakeDelivery(stored: StoredSubscription[], overrides: Partial<PushDelivery> = {}) {

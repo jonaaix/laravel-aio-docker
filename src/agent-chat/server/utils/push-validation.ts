@@ -29,3 +29,23 @@ export function isPushEndpoint(endpoint: unknown, allowLoopback = false): endpoi
 export function isShortToken(value: unknown): value is string {
     return typeof value === 'string' && value.length > 0 && value.length <= MAX_KEY_LENGTH;
 }
+
+const VAPID_PUBLIC_KEY_BYTES = 65;
+const VAPID_PRIVATE_KEY_BYTES = 32;
+const UNCOMPRESSED_POINT = 0x04;
+const HUB_REF = /^[A-Za-z0-9-]{1,64}$/;
+
+function base64UrlBytes(value: unknown): Buffer | null {
+    return typeof value === 'string' && /^[A-Za-z0-9_-]+$/.test(value) ? Buffer.from(value, 'base64url') : null;
+}
+
+export function isVapidKeyPair(value: unknown): value is { publicKey: string; privateKey: string } {
+    const pair = value as { publicKey?: unknown; privateKey?: unknown } | null | undefined;
+    const point = base64UrlBytes(pair?.publicKey);
+    const secret = base64UrlBytes(pair?.privateKey);
+    return point?.length === VAPID_PUBLIC_KEY_BYTES && point[0] === UNCOMPRESSED_POINT && secret?.length === VAPID_PRIVATE_KEY_BYTES;
+}
+
+export function isHubRef(value: unknown): value is string {
+    return typeof value === 'string' && HUB_REF.test(value);
+}

@@ -166,15 +166,15 @@ Several people and several agents can share a conversation. How people appear is
 
 ### Push notifications
 
-When an agent has finished an answer, the chat can notify the person on their phone through the mobile app, but only for
-devices where that person switched notifications on in the app. The notification goes to everyone who has written in
-the conversation, except people who muted the conversation in the mobile app; muting is per person and stops
+When an agent has finished an answer, the chat can notify the person on their devices through Orbit, the chat hub
+([Orbit](chat-hub.md)), but only on devices where that person switched notifications on for this chat. The notification goes to everyone who has written in
+the conversation, except people who muted the conversation in Orbit; muting is per person and stops
 only the notifications. It is sent once the whole answer is finished, so a hand-over from one
 agent to the next does not notify in between, and never when the answer was stopped. It shows the conversation title and
 the agent's name with the start of the answer. When the answer failed, a short sentence says it could not be completed instead, in the
-person's language — the one they chose in the chat, else their device's. A device whose app is open on screen for that person is skipped. The chat
-keeps a key pair for this in its data folder (or takes `NUXT_VAPID_PUBLIC_KEY`, `NUXT_VAPID_PRIVATE_KEY` and
-`NUXT_VAPID_SUBJECT`); servers that should notify the same phone share one key pair.
+person's language — the one they chose in the chat, else their device's. A device that shows this chat on screen for that person is skipped. Each device
+brings its own key for sending to it and hands it to every chat it switches notifications on for, so several
+chats notify the same device without any service in between.
 
 ### Not part of the chat
 

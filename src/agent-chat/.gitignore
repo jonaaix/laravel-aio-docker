@@ -2,3 +2,5 @@ node_modules/
 .nuxt/
 .output/
 .data/
+.nuxt-hub/
+.output-hub/

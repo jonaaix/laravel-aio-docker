@@ -7,7 +7,6 @@ import { createAnswerNotifier, type PushDelivery } from './push-notifier';
 import { isAppVisible } from './push-presence';
 import { findUser } from './user-store';
 import { serverText } from './push-texts';
-import { vapidDetails } from './push-keys';
 import { removePushSubscription, subscriptionsForUsers } from './push-store';
 
 const TTL_SECONDS = 60 * 60;
@@ -23,7 +22,7 @@ const delivery: PushDelivery = {
             await webpush.sendNotification(
                 { endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } },
                 JSON.stringify(payload),
-                { vapidDetails: vapidDetails(), TTL: TTL_SECONDS, urgency: 'normal', topic: payload.conversationId.replace(/-/g, '') },
+                { vapidDetails: { subject: useRuntimeConfig().public.hubUrl, publicKey: subscription.vapidPublicKey, privateKey: subscription.vapidPrivateKey }, TTL: TTL_SECONDS, urgency: 'normal', topic: payload.conversationId.replace(/-/g, '') },
             );
             return 'sent';
         }

@@ -6,6 +6,9 @@ export interface StoredSubscription {
     p256dh: string;
     auth: string;
     language: string | null;
+    vapidPublicKey: string;
+    vapidPrivateKey: string;
+    hubRef: string | null;
 }
 
 export interface PushPayload {
@@ -13,6 +16,7 @@ export interface PushPayload {
     body: string;
     conversationId: string;
     userId: string;
+    hubRef?: string | null;
 }
 
 export interface AnswerFinished {
@@ -73,7 +77,7 @@ export function createAnswerNotifier(delivery: PushDelivery): (event: AnswerFini
                 .filter(subscription => !delivery.isAppVisible(subscription));
             await Promise.all(targets.map(async (subscription) => {
                 try {
-                    if (await delivery.send(subscription, buildPayload(event, subscription.userId, delivery.translate(FAILED_ANSWER, delivery.languageOf(subscription)))) === 'gone') {
+                    if (await delivery.send(subscription, { ...buildPayload(event, subscription.userId, delivery.translate(FAILED_ANSWER, delivery.languageOf(subscription))), hubRef: subscription.hubRef }) === 'gone') {
                         delivery.forget(subscription);
                     }
                 }

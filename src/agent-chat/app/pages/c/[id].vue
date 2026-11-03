@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Agent } from '#shared/types/agent';
-import type { ChatMessage } from '#shared/types/conversation';
+import type { ChatMessage, ConversationSummary } from '#shared/types/conversation';
 import type { AnswerLine } from '~/utils/answer-line';
 import type { Participant } from '~/utils/avatars';
 
@@ -57,7 +57,21 @@ const visibleMessages = computed(() => messages.value.filter(message => message.
     || message.metadata?.outcome === 'failed'));
 
 const { agents, lead } = useAgents();
-const { conversations } = useConversations();
+const { conversations, upsert: upsertConversation } = useConversations();
+const { public: { hub } } = useRuntimeConfig();
+const { userId } = useUserName();
+const muting = ref(false);
+const muted = computed(() => !!userId.value && !!conversations.value.find(conversation => conversation.id === conversationId)?.mutedUserIds.includes(userId.value));
+
+async function toggleMute(): Promise<void> {
+    muting.value = true;
+    try {
+        upsertConversation(await apiFetch<ConversationSummary>(`conversations/${conversationId}/mute`, { method: 'POST', body: { muted: !muted.value } }));
+    }
+    finally {
+        muting.value = false;
+    }
+}
 const leadAgent = computed<Participant>(() => ({ kind: 'agent', name: lead.value?.name ?? LEAD_AGENT_NAME, seed: lead.value ? lead.value.avatarSeed : LEAD_AGENT_AVATAR_SEED, image: lead.value?.avatarUrl }));
 
 const { participant: userParticipant } = useUsers();
@@ -393,6 +407,17 @@ const session = computed(() => sessionState(status.value, turnActive.value));
                                 >
                                     <span class="max-sm:hidden">{{ t('Pause session') }}</span>
                                 </UButton>
+                            </UTooltip>
+                            <UTooltip v-if="hub" :text="muted ? t('Unmute') : t('Mute')">
+                                <UButton
+                                    :icon="muted ? 'i-heroicons-bell-slash' : 'i-heroicons-bell'"
+                                    :aria-label="muted ? t('Unmute') : t('Mute')"
+                                    color="neutral"
+                                    variant="outline"
+                                    class="size-9.5 justify-center bg-white dark:bg-transparent"
+                                    :loading="muting"
+                                    @click="toggleMute"
+                                />
                             </UTooltip>
                             <UTooltip :text="t('Archive')">
                                 <UButton

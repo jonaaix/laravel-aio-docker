@@ -11,6 +11,9 @@ const { baseURL } = useRuntimeConfig().app;
 
 const { user } = useUserName();
 const devicesVersion = useState('devices-version', () => 0);
+const { public: { hub } } = useRuntimeConfig();
+const hubUnread = hub ? useHubUnread() : null;
+hubUnread?.track();
 const { adopt: adoptAppearance } = useAppearance();
 watch(() => user.value?.id, () => {
     if (user.value) {
@@ -24,6 +27,7 @@ const items = computed<NavigationMenuItem[][]>(() => groupByRecency(conversation
     { label: t(group.label), type: 'label' },
     ...group.conversations.map(conversation => ({
         label: conversation.title,
+        id: conversation.id,
         to: `/c/${conversation.id}`,
         session: sessionState(conversation.status, conversation.turnActive),
         creatorName: conversation.creatorId ? users.value[conversation.creatorId]?.name ?? null : null,
@@ -79,9 +83,11 @@ onBeforeUnmount(() => {
             :min-size="14"
             :default-size="18"
             :max-size="28"
-            :ui="{ root: 'bg-elevated/50', footer: 'pb-4' }"
+            :ui="{ root: 'bg-elevated/50', footer: 'pb-4', header: hub ? 'h-auto py-3' : undefined }"
         >
             <template #header="{ collapsed }">
+                <div class="flex w-full flex-col gap-2">
+                <HubServerSwitcher v-if="hub" :collapsed="collapsed" />
                 <UTooltip :text="t('New Code Session')" :disabled="!collapsed">
                     <UButton
                         to="/"
@@ -95,6 +101,18 @@ onBeforeUnmount(() => {
                         class="bg-white ring ring-black/5 hover:bg-neutral-100 dark:bg-elevated/50 dark:ring-0 dark:hover:bg-elevated"
                     />
                 </UTooltip>
+                <template v-if="hub && !collapsed">
+                    <UAlert v-if="hubOffline" :title="t('Offline')" :description="t('Showing saved chats.')" icon="i-heroicons-signal-slash" color="neutral" variant="subtle" />
+                    <UAlert
+                        v-if="updateReady"
+                        :title="t('Update available')"
+                        icon="i-heroicons-arrow-path"
+                        color="neutral"
+                        variant="subtle"
+                        :actions="[{ label: t('Reload'), color: 'neutral', variant: 'outline', onClick: applyUpdate }]"
+                    />
+                </template>
+                </div>
             </template>
 
             <template #default="{ collapsed }">
@@ -106,7 +124,10 @@ onBeforeUnmount(() => {
                 >
                     <template #item-label="{ item }">
                         <template v-if="item.session">
-                            <span class="block truncate">{{ item.label }}</span>
+                            <span class="flex items-center gap-1.5">
+                                <span class="block truncate">{{ item.label }}</span>
+                                <span v-if="hubUnread?.isUnread(item.id)" class="size-2 shrink-0 rounded-full bg-primary" :aria-label="t('Unread')" />
+                            </span>
                             <span class="mt-0.5 flex items-center gap-1.5 text-xs font-normal text-muted">
                                 <ChatSessionPill :state="item.session" />
                                 <template v-if="item.creatorName">

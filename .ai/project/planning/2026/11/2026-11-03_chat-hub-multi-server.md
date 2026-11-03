@@ -15,29 +15,36 @@ iPhone and desktop, and the Framework7 app is retired.
 - [x] Device pairing: one-time pairing code (QR and link in Remote control), device key pair (WebCrypto,
       non-extractable), challenge → short-lived access token for API, live stream and files; device list
       with remove; CORS only for the hub origin
-- [ ] Hub build: static PWA build mode, connections to several servers, all state per connection, server
-      switcher with unread counts
-- [ ] Push from several servers without a gateway: device-made VAPID key handed to each paired server
-- [ ] Offline reading, update flow, app badge, QR scanner, language per connection (taken from the
-      Framework7 app)
+- [x] Hub build mode: `generate:hub` (NUXT_PUBLIC_HUB=true, base `/orbit/`, hash routing, own build and output
+      dirs so it never clobbers the dev server); icons bundled client-side; manifest and Orbit icons
+- [x] Hub connections: servers in IndexedDB (url, deviceId, non-extractable private key), pairing from
+      `?pair=&code=` with a confirm step, paste-link form, access tokens refreshed by challenge, `useApi` sends
+      Bearer / `access_token`, live stream reconnects with a fresh token, switching reloads into the other server
+- [x] Hub server switcher in the sidebar (add, switch, remove) and the screen for a removed device
+- [x] Unread in the hub: per server from `participantIds` + `lastAnswerAt` against a local seen map, dots in the
+      sidebar, counts in the switcher, other servers polled while visible, app badge with the total
+- [x] Push from several servers: device-made VAPID pair (IndexedDB) given to each server with the subscription,
+      `hub_ref` echoed in the payload, service worker shows and opens `?server=<ref>#/c/<id>`; server-wide VAPID
+      keys removed; presence from the hub; Notifications category in the hub's settings
+- [x] Offline reading (cached GETs of lists and conversations per server, offline notice), update notice from the
+      service worker, QR scanner (jsqr) in the connect screen
 - [ ] Ionic spike on the iPhone: shell with two real chat views; decide Ionic or own gestures
 - [ ] Mobile shell (tabs, swipe back, transitions, pull to refresh, swipe actions, keyboard, safe areas)
 - [ ] Retire the Framework7 app
 
 ## State
 
-- Sign-in works: `POST /api/auth/links` (Bearer `NUXT_CHAT_KEY`) issues a one-time link, `/api/auth/session`
-  redeems it into a `chat-session` cookie, every other API route needs that session (except `/api/mcp/`), and
-  routes act as the signed-in person instead of trusting ids in the body. The name prompt and renaming are gone.
-- Development: the dev server runs with a key in `~/.config/agent-chat/dev/chat-key`; a link is requested
-  the way Laravel would. The Framework7 app no longer connects (its permanent link is refused).
-- Pairing works on the chat side: Remote control shows a one-time pairing link
-  (`<hubUrl>#pair=<server>&code=<code>`) and QR, lists the person's devices with remove. A device pairs with
-  `POST /api/devices` (code, P-256 public JWK, label), gets a challenge, signs it and receives a 15-minute access
-  token (Bearer header or `access_token` query for live stream and files). A removed device is refused at once.
-  CORS allows only the hub origin (`public.hubUrl`, default `https://jonaaix.github.io/orbit/`), in dev also localhost.
-- Pairing codes and challenges live in memory: a server restart drops open pairing links (a new one is shown).
-- The hub itself does not exist yet; pairing was checked with a script that plays a browser device.
+- Sign-in and pairing work on the chat side (see the Feature Book chapters `ai/web-chat.md`, `ai/chat-hub.md`).
+- Orbit is built with `bun run generate:hub` into `src/agent-chat/.output-hub/public` (base `/orbit/`, hash
+  routes, no server code: `serverDir` points at the empty `hub-server/`). Checked in Chrome against the dev chat
+  served from `localhost:3100/orbit/`: welcome, pairing confirm, two servers, switching, unread dot and counts,
+  offline with saved lists, notifications settings, removing a server, iPhone size in dark mode.
+- Push: each device makes its own VAPID pair (IndexedDB) and gives it with `hubRef` to each chat; server-wide
+  VAPID keys and `/api/push/key` are gone, old subscriptions without keys are skipped. Registration and a
+  signed web-push request were checked; real delivery needs a real device (headless Chrome has no push service).
+- Not published yet: the GitHub repo `orbit` with Pages does not exist. `.nojekyll` is in `public/` so Pages
+  serves `_nuxt/`.
+- Open: Ionic decision, mobile shell, retiring the Framework7 app.
 
 ## Decisions
 
@@ -48,7 +55,9 @@ iPhone and desktop, and the Framework7 app is retired.
 - Asymmetric device keys for the hub rather than a shared device secret (user's call).
 - Push without a gateway: the device creates its own VAPID key pair and gives it to every server it pairs
   with, so several servers can notify one device (user's call).
-- Ionic only after a spike on a real iPhone (user's call).
+- Ionic and the mobile shell wait; the plan may change there (user's call). Everything else is built in full.
+- Hub-only behaviour (unread, notifications, offline, server switcher) stays out of the chat served from the
+  container, which keeps its approved behaviour.
 - The hub is called orbit and lives at `https://jonaaix.github.io/orbit/` (user's call).
 - I build everything; the Tarek experiment has ended and the Framework7 app is frozen (user's call).
 

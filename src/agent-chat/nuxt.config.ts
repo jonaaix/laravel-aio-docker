@@ -3,10 +3,23 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DEFAULT_LANGUAGE, LANGUAGES } from './shared/utils/languages';
 
+const hub = process.env.NUXT_PUBLIC_HUB === 'true';
+
 export default defineNuxtConfig({
     modules: ['@nuxt/ui', '@comark/nuxt', '@nuxtjs/i18n'],
 
     ssr: false,
+
+    // The hub is built next to a running dev server, so it gets its own build and output folders.
+    buildDir: hub ? '.nuxt-hub' : '.nuxt',
+    // The hub is a static app that talks to chat servers; it carries none of their server code.
+    serverDir: hub ? 'hub-server' : 'server',
+
+    router: {
+        options: {
+            hashMode: hub,
+        },
+    },
 
     alias: {
         '#claude-threads': fileURLToPath(new URL('../claude-threads/src', import.meta.url)),
@@ -40,7 +53,7 @@ export default defineNuxtConfig({
     },
 
     icon: {
-        provider: 'server',
+        provider: hub ? 'none' : 'server',
         fallbackToApi: false,
         serverBundle: {
             collections: ['heroicons'],
@@ -55,10 +68,8 @@ export default defineNuxtConfig({
         workingDir: '',
         dataDir: '',
         claudeModel: '',
-        vapidSubject: '',
-        vapidPublicKey: '',
-        vapidPrivateKey: '',
         public: {
+            hub,
             hubUrl: 'https://jonaaix.github.io/orbit/',
         },
     },
@@ -82,6 +93,7 @@ export default defineNuxtConfig({
     },
 
     nitro: {
+        output: hub ? { dir: '.output-hub' } : undefined,
         typescript: {
             tsConfig: {
                 compilerOptions: {
@@ -89,7 +101,7 @@ export default defineNuxtConfig({
                 },
             },
         },
-        hooks: {
+        hooks: hub ? {} : {
             compiled(nitro) {
                 cpSync(
                     join(nitro.options.rootDir, 'server/database/migrations'),

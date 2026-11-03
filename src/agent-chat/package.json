@@ -5,6 +5,7 @@
     "scripts": {
         "dev": "nuxt dev",
         "build": "nuxt build",
+        "generate:hub": "NUXT_PUBLIC_HUB=true NUXT_APP_BASE_URL=/orbit/ nuxt generate",
         "preview": "nuxt preview",
         "typecheck": "nuxt typecheck",
         "test": "node --test tests/*.test.ts",
@@ -21,6 +22,7 @@
         "ai": "^7.0.159",
         "better-sqlite3": "^13.0.3",
         "drizzle-orm": "^0.45.4",
+        "jsqr": "1.4.0",
         "nuxt": "^4.6.3",
         "qrcode": "^1.5.4",
         "shiki": "^4.5.0",

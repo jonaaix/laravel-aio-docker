@@ -17,12 +17,17 @@ function takeSignInParams(): Record<string, string> | null {
 export function useUserName() {
     const user = useState<ChatUser | null>('chat-user', () => null);
     const ready = useState<boolean>('chat-user-ready', () => false);
+    const removed = useState<boolean>('chat-device-removed', () => false);
     const { upsert } = useUsers();
     const userId = computed(() => user.value?.id ?? null);
     const name = computed(() => user.value?.name ?? null);
 
     async function signIn(): Promise<void> {
         if (ready.value) {
+            return;
+        }
+        if (hubMode.value) {
+            await signInToHubServer();
             return;
         }
         const params = takeSignInParams();
@@ -34,6 +39,23 @@ export function useUserName() {
         }
         catch {
             user.value = params ? await apiFetch<ChatUser>('auth/me').catch(() => null) : null;
+        }
+        finally {
+            ready.value = true;
+        }
+    }
+
+    async function signInToHubServer(): Promise<void> {
+        try {
+            await loadHubServers(takeRequestedServer());
+            user.value = activeServer.value ? await apiFetch<ChatUser>('auth/me') : null;
+            if (user.value) {
+                upsert(user.value);
+            }
+        }
+        catch (failure) {
+            user.value = null;
+            removed.value = failure instanceof DeviceRemovedError;
         }
         finally {
             ready.value = true;
@@ -54,5 +76,5 @@ export function useUserName() {
         }
     }
 
-    return { user, userId, name, ready, signIn, setAvatar, setAvatarSeed };
+    return { user, userId, name, ready, removed, signIn, setAvatar, setAvatarSeed };
 }
