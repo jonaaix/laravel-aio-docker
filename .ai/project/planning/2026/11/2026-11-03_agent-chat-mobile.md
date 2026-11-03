@@ -27,8 +27,9 @@ handover runs and the user has reviewed the result.
 - [x] Round 10 (Tarek, his choice): add and remove agents in a chat from the app, reviewed by Peter and fixed
 - [x] Round 11 (Tarek): agent switch checked in the browser, list follows changes on every page; the chat
       accepts only true/false for `member`
-- [ ] Round 12 (Tarek): clean light mode (agent answers without bubbles, flat cards in one grey, quiet tool
+- [x] Round 12 (Tarek): clean light mode (agent answers without bubbles, flat cards in one grey, quiet tool
       rows, glass composer); Peter reviews it and the app-wide listening
+- [ ] Round 13 (Tarek): pause the live connection in the background, then his own topic
 - [ ] Review with the user
 
 ## State
