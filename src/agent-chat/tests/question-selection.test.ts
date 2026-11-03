@@ -25,9 +25,15 @@ test('accepting the recommendations of one card keeps the choices of another', (
     assert.deepEqual(withRecommendations({ 3: 'b' }, first), { 1: 'a', 2: 'b', 3: 'b' });
 });
 
-test('accepting replaces earlier choices in the same card and skips questions without a recommendation', () => {
+test('accepting replaces earlier choices for questions that have a recommendation', () => {
     assert.deepEqual(withRecommendations({ 1: 'b', 2: 'a' }, first), { 1: 'a', 2: 'b' });
-    assert.deepEqual(withRecommendations({ 3: 'a' }, second), {});
+    assert.deepEqual(withRecommendations({}, second), {});
+});
+
+test('a question without a recommendation keeps the choice already made', () => {
+    const mixed = section(first.questions[0]!, question('9', [option('a'), option('b')]));
+    assert.deepEqual(withRecommendations({ 1: 'b', 9: 'b' }, mixed), { 9: 'b', 1: 'a' });
+    assert.deepEqual(withRecommendations({ 3: 'a' }, second), { 3: 'a' });
 });
 
 test('only questions with a recommended option count as recommendable', () => {

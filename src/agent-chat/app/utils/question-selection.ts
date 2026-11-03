@@ -16,8 +16,9 @@ export function recommendableQuestions(section: QuestionSection): OfferedQuestio
 }
 
 export function withRecommendations(chosen: Selection, section: QuestionSection): Selection {
-    const own = new Set(section.questions.map(question => question.number));
-    const kept = Object.fromEntries(Object.entries(chosen).filter(([number]) => !own.has(number)));
-    const recommended = recommendableQuestions(section).map(question => [question.number, recommendedLetter(question)!]);
+    const recommendable = recommendableQuestions(section);
+    const replaced = new Set(recommendable.map(question => question.number));
+    const kept = Object.fromEntries(Object.entries(chosen).filter(([number]) => !replaced.has(number)));
+    const recommended = recommendable.map(question => [question.number, recommendedLetter(question)!]);
     return { ...kept, ...Object.fromEntries(recommended) };
 }
