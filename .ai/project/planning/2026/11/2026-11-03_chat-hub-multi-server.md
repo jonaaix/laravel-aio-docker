@@ -9,8 +9,9 @@ iPhone and desktop, and the Framework7 app is retired.
 
 ## Milestones
 
-- [ ] Sign-in by signed link only: verify signature, expiry (~60 s) and single use; lifelong session until the
-      key changes; "Unauthorized" otherwise; name prompt removed; dev helper to create a link
+- [ ] Sign-in by signed link only: the chat issues one-time links (~60 s) on request of the Laravel app, which
+      proves itself with `CHAT_KEY`; lifelong session until the key changes; "Unauthorized" otherwise; name
+      prompt removed
 - [ ] Device pairing: one-time pairing code (QR and link in Remote control), device key pair (WebCrypto,
       non-extractable), challenge → short-lived access token for API, live stream and files; device list
       with remove; CORS only for the hub origin
@@ -32,6 +33,8 @@ iPhone and desktop, and the Framework7 app is retired.
 
 ## Decisions
 
+- The chat signs links itself; Laravel only requests them with the shared `CHAT_KEY`. Development and my
+  browser checks request links the same way (user's call).
 - No emergency access: without the Laravel app and without an earlier sign-in there is no way in (user's call).
 - A sign-in lasts until the signing key on the server changes (user's call).
 - Asymmetric device keys for the hub rather than a shared device secret (user's call).
@@ -43,4 +46,3 @@ iPhone and desktop, and the Framework7 app is retired.
 ## Open
 
 - The hub's GitHub Pages address (needed for the CORS allowlist and the pairing link).
-- How I sign in during development and for browser checks, since there is no other way in.

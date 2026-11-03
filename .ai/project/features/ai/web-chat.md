@@ -23,8 +23,9 @@ conversation remain part of the feature; Claude comes first.
 The chat can be embedded as an iframe inside the Laravel app the container hosts, so the app's
 users talk to the agent without leaving the app, or be given its own domain or port.
 
-Only a signed link lets someone in. The Laravel app creates it for its signed-in user with a key
-stored centrally in the image; the link carries the person's name and picture and its signature as
+Only a signed link lets someone in. The chat signs these links itself; the Laravel app is only the
+door: for its signed-in user it asks the chat for a link, proving itself with a key stored centrally in
+the image, and passes on the person's name and picture. The link carries them and its signature as
 query parameters, works once and only for about a minute. Opening it signs the person in to that
 browser for good — until the key on the server is changed. Anyone reaching the chat without a valid
 link or an earlier sign-in sees only "Unauthorized". There is no other way in: no password, no
