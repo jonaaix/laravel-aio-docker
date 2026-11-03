@@ -5,6 +5,7 @@ import { findAgent } from './agent-store';
 import { findConversation } from './conversation-store';
 import { createAnswerNotifier, type PushDelivery } from './push-notifier';
 import { isAppVisible } from './push-presence';
+import { findUser } from './user-store';
 import { vapidDetails } from './push-keys';
 import { latestSenderId, removePushSubscription, subscriptionsForUsers } from './push-store';
 
@@ -13,6 +14,7 @@ const GONE_STATUS_CODES = new Set([404, 410]);
 
 const delivery: PushDelivery = {
     subscriptionsFor: subscriptionsForUsers,
+    languageOf: userId => findUser(userId)?.language ?? null,
     isAppVisible: subscription => isAppVisible(subscription.endpoint, subscription.userId),
     send: async (subscription, payload) => {
         try {

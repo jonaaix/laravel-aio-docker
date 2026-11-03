@@ -16,6 +16,7 @@ function fakeDelivery(stored: StoredSubscription[], overrides: Partial<PushDeliv
             log.asked.push(ids);
             return stored.filter(item => ids.includes(item.userId));
         },
+        languageOf: () => null,
         isAppVisible: () => false,
         send: async (item, payload) => {
             log.sent.push({ endpoint: item.endpoint, userId: payload.userId, body: payload.body });
@@ -95,4 +96,19 @@ test('nobody is asked when the conversation has no person', async () => {
     await createAnswerNotifier(delivery)({ ...event, creatorId: null, lastSenderId: null });
     assert.deepEqual(log.asked, [[]]);
     assert.equal(log.sent.length, 0);
+});
+
+test('the plain sentence of a failed answer comes in the language of the person it is for', () => {
+    const failed = { ...event, failed: true };
+    assert.equal(buildPayload(failed, 'u1', 'de').body, 'Tarek: Die Antwort konnte nicht abgeschlossen werden');
+    assert.equal(buildPayload(failed, 'u1', 'fr').body, "Tarek: La réponse n'a pas pu être terminée");
+    assert.equal(buildPayload(failed, 'u1', 'xx').body, 'Tarek: The answer could not be completed');
+    assert.equal(buildPayload(failed, 'u1', null).body, 'Tarek: The answer could not be completed');
+});
+
+test('every person gets the sentence in their own language', async () => {
+    const languages: Record<string, string> = { u1: 'it', u2: 'nl' };
+    const { delivery, log } = fakeDelivery([subscription('e1', 'u1'), subscription('e2', 'u2')], { languageOf: userId => languages[userId] ?? null });
+    await createAnswerNotifier(delivery)({ ...event, failed: true });
+    assert.deepEqual(log.sent.map(item => item.body).sort(), ['Tarek: Het antwoord kon niet worden voltooid', 'Tarek: Non è stato possibile completare la risposta']);
 });
