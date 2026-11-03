@@ -342,8 +342,8 @@ const session = computed(() => sessionState(status.value, turnActive.value));
 <template>
     <UDashboardPanel :id="`conversation-${conversationId}`" :ui="{ body: 'px-0 sm:px-0' }">
         <template #header>
-            <div ref="header" class="sticky top-0 z-30 bg-default">
-                <UDashboardNavbar :title="title">
+            <div ref="header" class="sticky top-0 z-30">
+                <UDashboardNavbar :title="title" class="bg-transparent">
                     <template #title>
                         <div class="flex min-w-0 flex-col items-start gap-0.5">
                             <ChatTitleEditor :title="title" :editable="loaded && archivedAt === null" :save="rename" />
