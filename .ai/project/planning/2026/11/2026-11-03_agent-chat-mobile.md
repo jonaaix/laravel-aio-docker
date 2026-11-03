@@ -16,13 +16,16 @@ handover runs and the user has reviewed the result.
       user Claude with a brief, Peter added
 - [x] Overnight: four rounds with Tarek and Peter (connections, list, live thread, offline and unsent
       messages, attachments, install polish, load time, accessibility, tests, update flow, Pages deploy)
+- [ ] Round 5 (Tarek): connect by QR code (code in Remote control, scanner in the app), push notifications
+      when an agent finishes an answer
 - [ ] Review with the user
 
 ## State
 
 - The app is built and committed in its own repo (77 tests via `npm test`, Pages workflow runs them
   before deploying); its own plan and Feature Book live in `src/agent-chat-mobile/.ai/`.
-- Tarek is paused, waiting for the next topics. Untested: real iPhone (install, icon, startup image,
+- Tarek works on round 5 and may change `src/agent-chat` for it; he writes no migrations and reports a
+  needed table instead. Untested: real iPhone (install, icon, startup image,
   flight mode, text size, VoiceOver) and a real Pages update.
 - The outer repo ignores `/src/agent-chat-mobile`.
 - While the dev server runs with `NUXT_WORKING_DIR`, every new conversation's lead works in the app folder.
@@ -35,7 +38,7 @@ handover runs and the user has reviewed the result.
 - Only CLAUDE.md and `.claude/settings.json` are copied, no skills.
 - No SPEC/PLAN files up front: the requirements come through the chat, like a normal user (user's call).
 - Tarek and Peter both on Sonnet / medium (user's call).
-
-## Open
-
-- Connect by QR code from Settings → Remote control (needs the app's address in the chat).
+- I lead and decide Tarek's open questions myself; the user does not decide them (user's call).
+- QR scanning sits in the app, because the iPhone camera opens links in Safari, whose storage the
+  installed app does not share. Libraries `qrcode`, `jsqr` and `web-push` approved by me.
+- No push while the app is visible on screen.
