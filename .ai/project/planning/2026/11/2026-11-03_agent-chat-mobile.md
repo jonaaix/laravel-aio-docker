@@ -27,7 +27,8 @@ handover runs and the user has reviewed the result.
 - [x] Round 10 (Tarek, his choice): add and remove agents in a chat from the app, reviewed by Peter and fixed
 - [x] Round 11 (Tarek): agent switch checked in the browser, list follows changes on every page; the chat
       accepts only true/false for `member`
-- [ ] Round 12 (Tarek): Peter reviews the app-wide listening, "Always in" alignment, then his own topic
+- [ ] Round 12 (Tarek): clean light mode (agent answers without bubbles, flat cards in one grey, quiet tool
+      rows, glass composer); Peter reviews it and the app-wide listening
 - [ ] Review with the user
 
 ## State
@@ -59,3 +60,5 @@ handover runs and the user has reviewed the result.
 - QR scanning sits in the app, because the iPhone camera opens links in Safari, whose storage the
   installed app does not share. Libraries `qrcode`, `jsqr` and `web-push` approved by me.
 - No push while the app is visible on screen.
+- The muddy light mode came from our own choices (long answers in iMessage bubbles, cards and pills nested
+  in them, grey composer band), not from Framework7, whose defaults look clean in the starter.
