@@ -69,9 +69,9 @@ const chatPlugins = useChatMarkdownPlugins();
                         type="button"
                         :disabled="!active"
                         :aria-pressed="isSelected(question, option.letter)"
-                        class="flex w-full items-start gap-2 rounded-sm px-2 py-0.5 text-start transition-colors duration-500 ease-out disabled:cursor-default"
+                        class="flex w-full items-start gap-2 rounded-sm px-2 py-0.5 text-start text-[calc(var(--text-base)-1px)] transition-colors duration-500 ease-out disabled:cursor-default"
                         :class="isSelected(question, option.letter)
-                            ? 'bg-accented/50 text-highlighted'
+                            ? 'bg-primary/10 text-primary ring ring-inset ring-primary/40'
                             : 'text-default enabled:hover:bg-elevated/60'"
                         @click="pick(question, option.letter)"
                     >
@@ -101,9 +101,8 @@ const chatPlugins = useChatMarkdownPlugins();
                 <UButton
                     :label="t('Accept recommendations')"
                     icon="i-heroicons-star"
-                    color="neutral"
-                    variant="outline"
-                    class="bg-default dark:bg-transparent"
+                    color="primary"
+                    variant="subtle"
                     @click="acceptRecommendations"
                 />
             </div>

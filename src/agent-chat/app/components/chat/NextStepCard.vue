@@ -21,9 +21,8 @@ const chatPlugins = useChatMarkdownPlugins();
             <UButton
                 :label="t('Accept')"
                 icon="i-heroicons-check"
-                color="neutral"
-                variant="outline"
-                class="bg-default dark:bg-transparent"
+                color="primary"
+                variant="subtle"
                 @click="accept"
             />
         </div>
