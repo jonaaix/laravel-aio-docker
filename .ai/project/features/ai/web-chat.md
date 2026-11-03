@@ -137,7 +137,9 @@ reply answered none of the questions, the card says so once below them.
 Files and images the agent sends — screenshots, reports, exports — appear inline in the
 conversation and are stored with it. When an agent finishes something substantial that
 can be seen, such as a new page, screen or feature, it shows the result without being asked: screenshots
-of the key views, sent together so they form a gallery, with its comment after them. Small tweaks such as
+of the key views, sent together so they form a gallery, each with a short caption naming what it
+shows. A caption appears under the picture — in a gallery under the one being shown — and in the image
+viewer in place of the file name. Small tweaks such as
 a colour or a label get no screenshot. People can attach files of any type to their own messages as
 well — by picking them, dropping them onto the chat or pasting them — up to 2 GB each; a message may
 consist of attachments only. Attached files are stored with the conversation and shown in the sent

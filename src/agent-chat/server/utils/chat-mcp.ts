@@ -21,6 +21,7 @@ const TOOLS = [
             type: 'object',
             properties: {
                 path: { type: 'string', description: 'Absolute path, or a path relative to the working directory.' },
+                caption: { type: 'string', description: 'Optional short caption shown under the image, such as "Start page, desktop".' },
             },
             required: ['path'],
         },
@@ -39,7 +40,8 @@ function callTool(conversationId: string, name: unknown, args: Record<string, un
         return textResult('The path is required.', true);
     }
     try {
-        const filename = useConversationRuntime(conversationId).attachFile(args.path);
+        const caption = typeof args.caption === 'string' && args.caption.trim() ? args.caption.trim() : undefined;
+        const filename = useConversationRuntime(conversationId).attachFile(args.path, caption);
         return textResult(`Sent ${filename} to the chat.`);
     }
     catch (error) {

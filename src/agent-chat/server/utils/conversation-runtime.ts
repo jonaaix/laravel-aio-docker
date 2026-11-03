@@ -69,12 +69,12 @@ class ConversationRuntime {
         return token === this.mcpToken;
     }
 
-    attachFile(path: string): string {
+    attachFile(path: string, caption?: string): string {
         const session = [...this.sessions.values()].find(candidate => candidate.answering);
         if (!session) {
             throw new Error('Files can only be sent while answering.');
         }
-        return session.attachFile(path);
+        return session.attachFile(path, caption);
     }
 
     send(text: string, attachments: StoredFile[], serverOrigin: string, sender: UserRow | null): void {
@@ -435,6 +435,7 @@ export function summarize(row: NonNullable<ReturnType<typeof findConversation>>)
         title: row.title,
         creatorId: row.creatorId,
         lastSenderId: latestSenderId(row.id),
+        lastAnswerAt: latestAnswerAt(row.id),
         agentIds: conversationAgentIds(row.id),
         status: row.status,
         turnActive: isTurnActive(row.id),

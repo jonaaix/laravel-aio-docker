@@ -17,6 +17,7 @@ const props = defineProps({
     loop: { type: Boolean, default: true },
     thumbnails: { type: Boolean, default: true },
     lightbox: { type: Boolean, default: true },
+    captions: { type: Boolean, default: false },
     labels: { type: Object, default: () => ({}) },
 });
 
@@ -186,6 +187,8 @@ function onLightboxChange(index) {
                 </IconButton>
             </div>
         </div>
+
+        <p v-if="captions && images[slider.target.value]?.caption" class="text-sm text-muted">{{ images[slider.target.value].caption }}</p>
 
         <Thumbnails
             v-if="thumbnails && images.length > 1"

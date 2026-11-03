@@ -41,13 +41,13 @@ export function storedNameFor(id: string, filename: string): string {
     return `${id}${extname(filename).toLowerCase().replace(/[^\w.]/g, '')}`;
 }
 
-export function fileUIPart(conversationId: string, stored: StoredFile): ChatPart {
+export function fileUIPart(conversationId: string, stored: StoredFile, caption?: string): ChatPart {
     return {
         type: 'file',
         mediaType: stored.mediaType,
         filename: stored.filename,
         url: `conversations/${conversationId}/files/${stored.storedName}`,
-        providerMetadata: { agentChat: { size: stored.size } },
+        providerMetadata: { agentChat: caption ? { size: stored.size, caption } : { size: stored.size } },
     };
 }
 

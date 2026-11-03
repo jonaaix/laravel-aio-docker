@@ -7,7 +7,7 @@ const MISSED_MESSAGE_LENGTH = 10_000;
 const MISSED_TOTAL_LENGTH = 30_000;
 const NAME_END = '(?![\\p{L}\\p{N}_-])';
 const SHOW_RESULT = `## Show the result
-When you finish something substantial that people can see, such as a new page, screen or feature, and you can run it, show the result without being asked: send screenshots of the key views with \`send_file\`. Send them one after another with no text in between, so they appear together as a gallery, and comment on them afterwards; put text between them only when each picture needs its own explanation. Small tweaks, such as a colour or a label, need no screenshot.`;
+When you finish something substantial that people can see, such as a new page, screen or feature, and you can run it, show the result without being asked: send screenshots of the key views with \`send_file\`, one after another with no text in between so they form a gallery, each with a short caption naming what it shows. Small tweaks, such as a colour or a label, need no screenshot.`;
 
 interface NamedAgent {
     id: string;

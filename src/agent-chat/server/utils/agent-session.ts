@@ -122,12 +122,12 @@ export class AgentSession {
         return this.cli?.sendControlRequest(request) ?? null;
     }
 
-    attachFile(path: string): string {
+    attachFile(path: string, caption?: string): string {
         if (!this.turn || !this.workingDir) {
             throw new Error('Files can only be sent while answering.');
         }
         const stored = storeConversationFile(this.conversationId, this.workingDir, path);
-        const index = this.turn.parts.push(fileUIPart(this.conversationId, stored)) - 1;
+        const index = this.turn.parts.push(fileUIPart(this.conversationId, stored, caption)) - 1;
         this.recordParts([index]);
         return stored.filename;
     }

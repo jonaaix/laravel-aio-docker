@@ -23,6 +23,8 @@ export interface PushPayload {
     body: string;
     conversationId: string;
     userId: string;
+    agentName: string;
+    failed: boolean;
 }
 
 export interface AnswerFinished {
@@ -71,6 +73,8 @@ export function buildPayload(event: AnswerFinished, userId: string, language: st
         body: event.failed || !snippet ? `${event.agentName}: ${failedAnswerText(language)}` : `${event.agentName}: ${snippet}`,
         conversationId: event.conversationId,
         userId,
+        agentName: event.agentName,
+        failed: event.failed || !snippet,
     };
 }
 
