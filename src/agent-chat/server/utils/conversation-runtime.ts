@@ -224,7 +224,7 @@ class ConversationRuntime {
         session.start({
             workingDir,
             sessionRef: state.sessionRef,
-            resume: state.started,
+            resume: state.started && claudeSessionExists(workingDir, state.sessionRef),
             model: agent.model || useRuntimeConfig().claudeModel || undefined,
             effort: agent.effort ?? undefined,
             appendSystemPrompt: agentSystemPrompt(agent, leadAgent(), conversation.workingDir, workingDir),
