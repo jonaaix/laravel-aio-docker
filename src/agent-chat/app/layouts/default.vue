@@ -65,6 +65,9 @@ onMounted(async () => {
         else if (event.type === 'agents') {
             void loadAgents();
         }
+        else if (event.type === 'account') {
+            void loadAccount();
+        }
         else {
             usage.value = event.usage;
         }

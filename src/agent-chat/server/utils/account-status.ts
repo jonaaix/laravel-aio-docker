@@ -22,7 +22,7 @@ function usageFile(): string {
     return join(resolveDataDir(), 'usage.json');
 }
 
-async function readProfile(): Promise<AccountProfile | null> {
+export async function readProfile(): Promise<AccountProfile | null> {
     try {
         const { stdout } = await promisify(execFile)(getClaudePath(), ['auth', 'status']);
         const status = JSON.parse(stdout) as { loggedIn?: boolean; email?: string; orgName?: string; subscriptionType?: string };
@@ -48,6 +48,11 @@ function toUsageWindow(limit: RateLimitWindow | undefined): UsageWindow | null {
         return null;
     }
     return { utilization: limit.utilization, resetsAt: limit.resetsAt * 1000, limited: limit.status !== 'allowed' };
+}
+
+export function refreshAccountProfile(): void {
+    profile = null;
+    publishConversationListEvent({ type: 'account' });
 }
 
 export async function getAccountStatus(): Promise<AccountStatus> {

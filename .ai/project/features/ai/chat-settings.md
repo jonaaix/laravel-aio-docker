@@ -14,7 +14,7 @@ take further categories as the chat grows.
 ## How does it work?
 
 Settings at the foot of the sidebar, below Archived, opens one Settings window with its categories on the left (on
-phones as tabs along the top): Appearance, Agents and Profile, opening at Appearance. "Manage agents" in the agents menu of
+phones as tabs along the top): Appearance, Agents, Profile and Claude account, opening at Appearance. "Manage agents" in the agents menu of
 a conversation opens the same window at Agents.
 
 - **Profile** holds the person's name and picture, as described in
@@ -29,6 +29,13 @@ a conversation opens the same window at Agents.
   top with room below for the answer. Every choice applies at once and belongs to the person, so it
   follows them to every device and browser.
 - **Agents** defines the agents, as described in [Agents in the chat](chat-agents.md).
+- **Claude account** signs the container's Claude Code in to a Claude subscription and out again, the
+  same login a terminal `/login` creates. Signed in, it shows the account's e-mail, organisation and
+  plan with "Sign out". Signed out, "Sign in with Claude" offers Claude's own sign-in page in a new tab
+  and a field for the code that page shows; a wrong code or a failed sign-in says so, and a sign-in in
+  progress can be cancelled. Anyone who can open the chat may do this. The account card at the foot of
+  the sidebar shows "Not signed in" while no account is signed in and opens this category; it follows
+  sign-ins and sign-outs in every open browser.
 
 There is no save button: every change is stored as it is made — text a moment after typing stops or
 on Enter, choices, pictures and files at once — and errors show at the field concerned. "New agent" adds an entry to the list at once; the agent

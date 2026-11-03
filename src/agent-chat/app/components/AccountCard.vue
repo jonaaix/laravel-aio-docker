@@ -4,6 +4,7 @@ import type { UsageWindow } from '#shared/types/account';
 const CLOCK_TICK_MS = 60_000;
 
 const { profile, usage } = useAccount();
+const settingsWindow = useSettingsWindow();
 
 const now = ref(Date.now());
 let clock: ReturnType<typeof setInterval> | undefined;
@@ -55,4 +56,13 @@ function meterColor(limit: UsageWindow): 'error' | 'warning' | 'neutral' {
         </div>
         <p v-else class="mt-2.5 text-xs text-muted">No usage data yet</p>
     </div>
+    <button
+        v-else
+        type="button"
+        class="flex w-full items-center gap-2 rounded-md bg-white p-3 text-start ring ring-default transition-colors duration-500 ease-out hover:bg-elevated dark:bg-default/60 dark:hover:bg-elevated"
+        @click="settingsWindow.open('account')"
+    >
+        <UIcon name="i-heroicons-key" class="size-4 shrink-0 text-muted" />
+        <span class="text-sm font-medium text-highlighted">Not signed in</span>
+    </button>
 </template>
