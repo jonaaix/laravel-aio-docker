@@ -67,7 +67,8 @@ handover runs and the user has reviewed the result.
 - No SPEC/PLAN files up front: the requirements come through the chat, like a normal user (user's call).
 - Tarek and Peter both on Sonnet / medium (user's call).
 - Tarek may change `src/agent-chat` for features that need the chat; he writes no migrations, I generate
-  them with the server stopped.
+  them with the server stopped. He reports every `schema.ts` change and ends his turn before committing it,
+  because a schema change without its migration broke the chat once (500 on every conversation).
 - I lead and decide Tarek's open questions myself; the user does not decide them (user's call).
 - QR scanning sits in the app, because the iPhone camera opens links in Safari, whose storage the
   installed app does not share. Libraries `qrcode`, `jsqr` and `web-push` approved by me.
