@@ -17,16 +17,18 @@ handover runs and the user has reviewed the result.
 - [x] Overnight: four rounds with Tarek and Peter (connections, list, live thread, offline and unsent
       messages, attachments, install polish, load time, accessibility, tests, update flow, Pages deploy)
 - [x] Round 5 (Tarek): connect by QR code (code in Remote control, scanner in the app), push notifications
-      when an agent finishes an answer; chat side committed in `Chat:` commits, needs the `push_subscriptions` migration
+            when an agent finishes an answer, reviewed by Peter and fixed; `push_subscriptions` migration 0019
 - [ ] Review with the user
 
 ## State
 
-- The app is built and committed in its own repo (77 tests via `npm test`, Pages workflow runs them
-  before deploying); its own plan and Feature Book live in `src/agent-chat-mobile/.ai/`.
-- Tarek works on round 5 and may change `src/agent-chat` for it; he writes no migrations and reports a
-  needed table instead. Untested: real iPhone (install, icon, startup image,
-  flight mode, text size, VoiceOver) and a real Pages update.
+- The app is built and committed in its own repo (133 tests via `npm test`, Pages workflow runs them
+  before deploying); its own plan and Feature Book live in `src/agent-chat-mobile/.ai/`. The chat's
+  push part has 20 tests via `npm test` in `src/agent-chat`.
+- Tarek is paused. QR scan verified with a fake camera at iPhone size (scan, confirm, connected); push
+  verified up to the send attempt, real delivery untested. Untested on a real iPhone: install, icon,
+  startup image, flight mode, text size, VoiceOver, camera, push.
+- Push works for one chat server per device at a time (one push subscription per app).
 - The outer repo ignores `/src/agent-chat-mobile`.
 - While the dev server runs with `NUXT_WORKING_DIR`, every new conversation's lead works in the app folder.
 
@@ -38,6 +40,8 @@ handover runs and the user has reviewed the result.
 - Only CLAUDE.md and `.claude/settings.json` are copied, no skills.
 - No SPEC/PLAN files up front: the requirements come through the chat, like a normal user (user's call).
 - Tarek and Peter both on Sonnet / medium (user's call).
+- Tarek may change `src/agent-chat` for features that need the chat; he writes no migrations, I generate
+  them with the server stopped.
 - I lead and decide Tarek's open questions myself; the user does not decide them (user's call).
 - QR scanning sits in the app, because the iPhone camera opens links in Safari, whose storage the
   installed app does not share. Libraries `qrcode`, `jsqr` and `web-push` approved by me.
