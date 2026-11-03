@@ -36,15 +36,16 @@ handover runs and the user has reviewed the result.
 - [x] Round 17 (Tarek): share an answer through the share sheet; copy and share reviewed by Peter and fixed
 - [x] Round 18 (Tarek, his choice): earlier messages load by themselves when scrolling up
 - [x] Round 19 (Tarek): auto loading reviewed by Peter and fixed (history kept through reloads, anchored reading place)
-- [ ] Round 20 (Tarek): setup guide in the app's README with an on-device checklist; whole-app pass by Peter
-- [ ] Review with the user
+- [x] Round 20 (Tarek): setup guide in the app's README with an on-device checklist; whole-app pass by Peter
+- [ ] Review with the user: setup by the README and the on-device checklist
 
 ## State
 
 - The app is built and committed in its own repo (326 tests via `npm test`, Pages workflow runs them
   before deploying); its own plan and Feature Book live in `src/agent-chat-mobile/.ai/`. The chat's
   tests count 38 via `npm test` in `src/agent-chat`.
-- Tarek is paused. QR scan verified with a fake camera at iPhone size (scan, confirm, connected); push
+- Tarek is paused after round 20; the app is ready for the iPhone test. The README holds the setup steps
+  and the on-device checklist. QR scan verified with a fake camera at iPhone size (scan, confirm, connected); push
   verified up to the send attempt, real delivery untested. Untested on a real iPhone: install, icon,
   startup image, flight mode, text size, VoiceOver, camera, push.
 - Push works for one chat server per device at a time (one push subscription per app), unless the
