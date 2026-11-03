@@ -155,8 +155,9 @@ Several people and several agents can share a conversation. How people appear is
 ### Push notifications
 
 When an agent has finished an answer, the chat can notify the person on their phone through the mobile app, but only for
-devices where that person switched notifications on in the app. The notification goes to the person who started the
-conversation and to the person who wrote last. It is sent once the whole answer is finished, so a hand-over from one
+devices where that person switched notifications on in the app. The notification goes to everyone who has written in
+the conversation, except people who muted the conversation in the mobile app; muting is per person and stops
+only the notifications. It is sent once the whole answer is finished, so a hand-over from one
 agent to the next does not notify in between, and never when the answer was stopped. It shows the conversation title and
 the agent's name with the start of the answer. When the answer failed, a short sentence says it could not be completed instead, in the
 person's language — the one they chose in the chat, else their device's. A device whose app is open on screen for that person is skipped. The chat

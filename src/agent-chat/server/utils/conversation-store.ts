@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { and, desc, eq, gt, inArray, isNotNull, isNull, lt, max, ne, or } from 'drizzle-orm';
-import { conversations, messages } from '../database/schema';
+import { conversationMutes, conversations, messages } from '../database/schema';
 import type { ChatMessage, ConversationDetail, ConversationStatus, ConversationSummary, MessagePage } from '../../shared/types/conversation';
 import type { TurnMetrics } from './turn-metrics';
 import type { UserRow } from './user-store';
@@ -177,15 +177,25 @@ export function missedMessages(conversationId: string, agentId: string, excluded
         .map(toChatMessage);
 }
 
-export function latestSenderId(conversationId: string): string | null {
-    const last = useDatabase()
-        .select({ senderId: messages.senderId })
-        .from(messages)
-        .where(and(eq(messages.conversationId, conversationId), eq(messages.role, 'user'), isNotNull(messages.senderId)))
-        .orderBy(desc(messages.seq))
-        .limit(1)
-        .get();
-    return last?.senderId ?? null;
+export function conversationParticipantIds(conversationId: string, creatorId: string | null): string[] {
+    return [...new Set([creatorId, ...conversationSenderIds(conversationId)].filter((id): id is string => !!id))];
+}
+
+export function conversationMutedUserIds(conversationId: string): string[] {
+    return useDatabase()
+        .select({ userId: conversationMutes.userId })
+        .from(conversationMutes)
+        .where(eq(conversationMutes.conversationId, conversationId))
+        .all()
+        .map(row => row.userId);
+}
+
+export function setConversationMuted(conversationId: string, userId: string, muted: boolean): void {
+    if (muted) {
+        useDatabase().insert(conversationMutes).values({ conversationId, userId, mutedAt: Date.now() }).onConflictDoNothing().run();
+        return;
+    }
+    useDatabase().delete(conversationMutes).where(and(eq(conversationMutes.conversationId, conversationId), eq(conversationMutes.userId, userId))).run();
 }
 
 export function conversationSenderIds(conversationId: string): string[] {

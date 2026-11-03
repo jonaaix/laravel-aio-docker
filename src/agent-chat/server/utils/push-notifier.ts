@@ -18,8 +18,8 @@ export interface PushPayload {
 export interface AnswerFinished {
     conversationId: string;
     conversationTitle: string;
-    creatorId: string | null;
-    lastSenderId: string | null;
+    participantIds: string[];
+    mutedUserIds: string[];
     agentName: string;
     text: string;
     failed: boolean;
@@ -51,8 +51,8 @@ export function answerSnippet(text: string, limit = SNIPPET_LENGTH): string {
     return plain.length > limit ? `${plain.slice(0, limit - 1).trimEnd()}…` : plain;
 }
 
-export function recipientIds(creatorId: string | null, lastSenderId: string | null): string[] {
-    return [...new Set([creatorId, lastSenderId].filter((id): id is string => !!id))];
+export function recipientIds(participantIds: string[], mutedUserIds: string[]): string[] {
+    return participantIds.filter(id => !mutedUserIds.includes(id));
 }
 
 export function buildPayload(event: AnswerFinished, userId: string, failedSentence: string = FAILED_ANSWER): PushPayload {
@@ -69,7 +69,7 @@ export function createAnswerNotifier(delivery: PushDelivery): (event: AnswerFini
     return async (event) => {
         try {
             const targets = delivery
-                .subscriptionsFor(recipientIds(event.creatorId, event.lastSenderId))
+                .subscriptionsFor(recipientIds(event.participantIds, event.mutedUserIds))
                 .filter(subscription => !delivery.isAppVisible(subscription));
             await Promise.all(targets.map(async (subscription) => {
                 try {

@@ -2,7 +2,7 @@ import webpush from 'web-push';
 import type { ChatMessage } from '../../shared/types/conversation';
 import { plainMessageText } from './agent-prompts';
 import { findAgent } from './agent-store';
-import { findConversation, latestSenderId } from './conversation-store';
+import { conversationMutedUserIds, conversationParticipantIds, findConversation } from './conversation-store';
 import { createAnswerNotifier, type PushDelivery } from './push-notifier';
 import { isAppVisible } from './push-presence';
 import { findUser } from './user-store';
@@ -49,8 +49,8 @@ export function notifyAnswerFinished(conversationId: string, agentId: string, me
     void notify({
         conversationId,
         conversationTitle: conversation.title,
-        creatorId: conversation.creatorId,
-        lastSenderId: latestSenderId(conversationId),
+        participantIds: conversationParticipantIds(conversationId, conversation.creatorId),
+        mutedUserIds: conversationMutedUserIds(conversationId),
         agentName: agent.name,
         text: message ? plainMessageText(message) : '',
         failed,

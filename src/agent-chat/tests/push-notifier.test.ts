@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { answerSnippet, buildPayload, createAnswerNotifier, recipientIds } from '../server/utils/push-notifier.ts';
 import type { AnswerFinished, PushDelivery, StoredSubscription } from '../server/utils/push-notifier.ts';
 
-const event: AnswerFinished = { conversationId: 'c1', conversationTitle: 'Plan the trip', creatorId: 'u1', lastSenderId: 'u2', agentName: 'Tarek', text: 'Done.', failed: false };
+const event: AnswerFinished = { conversationId: 'c1', conversationTitle: 'Plan the trip', participantIds: ['u1', 'u2'], mutedUserIds: [], agentName: 'Tarek', text: 'Done.', failed: false };
 
 function subscription(endpoint: string, userId: string): StoredSubscription {
     return { endpoint, userId, p256dh: 'p', auth: 'a', language: null };
@@ -38,11 +38,11 @@ test('the snippet drops markdown, code blocks and section bars and is cut with a
     assert.ok(cut.length <= 140 && cut.endsWith('…'));
 });
 
-test('recipients are the creator and the last sender once each, without empty ids', () => {
-    assert.deepEqual(recipientIds('u1', 'u2'), ['u1', 'u2']);
-    assert.deepEqual(recipientIds('u1', 'u1'), ['u1']);
-    assert.deepEqual(recipientIds(null, 'u2'), ['u2']);
-    assert.deepEqual(recipientIds(null, null), []);
+test('recipients are everyone who took part except those who muted the conversation', () => {
+    assert.deepEqual(recipientIds(['u1', 'u2', 'u3'], []), ['u1', 'u2', 'u3']);
+    assert.deepEqual(recipientIds(['u1', 'u2', 'u3'], ['u2']), ['u1', 'u3']);
+    assert.deepEqual(recipientIds(['u1'], ['u1']), []);
+    assert.deepEqual(recipientIds([], []), []);
 });
 
 test('the payload names the conversation, the agent and the person it is for', () => {
@@ -98,7 +98,7 @@ test('a broken store is reported instead of breaking the turn', async () => {
 
 test('nobody is asked when the conversation has no person', async () => {
     const { delivery, log } = fakeDelivery([subscription('e1', 'u1')]);
-    await createAnswerNotifier(delivery)({ ...event, creatorId: null, lastSenderId: null });
+    await createAnswerNotifier(delivery)({ ...event, participantIds: [] });
     assert.deepEqual(log.asked, [[]]);
     assert.equal(log.sent.length, 0);
 });

@@ -28,7 +28,8 @@ export interface ConversationSummary {
     id: string;
     title: string;
     creatorId: string | null;
-    lastSenderId: string | null;
+    participantIds: string[];
+    mutedUserIds: string[];
     lastAnswerAt: number | null;
     agentIds: string[];
     status: ConversationStatus;
