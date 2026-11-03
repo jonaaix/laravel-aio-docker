@@ -39,6 +39,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{ submit: []; stop: []; attach: [files: File[]]; remove: [key: string] }>();
 
+const { t } = useI18n();
+
 const empty = computed(() => text.value.trim() === '' && !props.attachments.some(attachment => attachment.upload));
 const fileInput = ref<HTMLInputElement | null>(null);
 
@@ -204,7 +206,7 @@ function onKeydown(event: KeyboardEvent): void {
             v-if="suggestions.length > 0"
             class="absolute bottom-full start-0 z-20 mb-2 w-64 rounded-md bg-default p-1 shadow-lg ring ring-default"
             role="listbox"
-            aria-label="Mention"
+            :aria-label="t('Mention')"
         >
             <li
                 v-for="(participant, index) in suggestions"
@@ -242,10 +244,10 @@ function onKeydown(event: KeyboardEvent): void {
                 <ChatAttachmentChips :attachments="attachments" @remove="key => emit('remove', key)" />
             </template>
             <template #leading>
-                <UTooltip text="Attach files">
+                <UTooltip :text="t('Attach files')">
                     <UButton
                         icon="i-heroicons-paper-clip"
-                        aria-label="Attach files"
+                        :aria-label="t('Attach files')"
                         color="neutral"
                         variant="ghost"
                         :disabled="disabled"
@@ -254,11 +256,11 @@ function onKeydown(event: KeyboardEvent): void {
                 </UTooltip>
                 <input ref="fileInput" type="file" multiple class="hidden" @change="onPicked">
             </template>
-            <UTooltip :text="stoppable ? 'Stop' : 'Send'">
+            <UTooltip :text="stoppable ? t('Stop') : t('Send')">
                 <UChatPromptSubmit
                     :status="stoppable ? props.status : 'ready'"
                     :disabled="!stoppable && (empty || uploading)"
-                    :aria-label="stoppable ? 'Stop' : 'Send'"
+                    :aria-label="stoppable ? t('Stop') : t('Send')"
                     color="neutral"
                     class="shrink-0 disabled:opacity-40"
                     @stop="emit('stop')"

@@ -6,7 +6,9 @@ const props = defineProps<{
     recipientName: (agentId: string) => string;
 }>();
 
-const title = computed(() => props.messages.length === 1 ? '1 message queued' : `${props.messages.length} messages queued`);
+const { t } = useI18n();
+
+const title = computed(() => t('1 message queued | {count} messages queued', { count: props.messages.length }, props.messages.length));
 
 const rows = computed(() => props.messages.map((message) => {
     const files = message.parts.filter(part => part.type === 'file').length;
@@ -14,7 +16,7 @@ const rows = computed(() => props.messages.map((message) => {
         ref: message.ref,
         recipient: props.recipientName(message.agentId),
         text: message.parts.flatMap(part => part.type === 'text' ? [part.text] : []).join(' ').replace(/\s+/g, ' ').trim(),
-        files: files === 0 ? '' : files === 1 ? '1 file' : `${files} files`,
+        files: files === 0 ? '' : t('1 file | {count} files', { count: files }, files),
     };
 }));
 </script>

@@ -8,6 +8,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{ quote: [text: string] }>();
 
+const { t } = useI18n();
+
 const position = ref<{ top: number; left: number } | null>(null);
 let selectedText = '';
 let settle: ReturnType<typeof setTimeout> | undefined;
@@ -83,7 +85,7 @@ onBeforeUnmount(() => {
                 :style="{ top: `${position.top}px`, left: `${position.left}px` }"
             >
                 <UButton
-                    label="Quote"
+                    :label="t('Quote')"
                     icon="i-heroicons-chat-bubble-bottom-center-text"
                     color="neutral"
                     variant="solid"

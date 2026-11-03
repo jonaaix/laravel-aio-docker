@@ -13,6 +13,8 @@ const props = defineProps<{
     size: number | null;
 }>();
 
+const { t } = useI18n();
+
 const content = ref<string | null>(null);
 const failed = ref(false);
 const tooLarge = computed(() => props.size !== null && props.size > MAX_PREVIEW_BYTES);
@@ -46,19 +48,19 @@ watch(open, (value) => {
         <template #body>
             <UAlert
                 v-if="tooLarge"
-                title="Too large to preview"
-                description="Download the file to open it."
+                :title="t('Too large to preview')"
+                :description="t('Download the file to open it.')"
                 icon="i-heroicons-information-circle"
                 color="neutral"
                 variant="subtle"
             />
             <UAlert
                 v-else-if="failed"
-                title="The file could not be loaded"
+                :title="t('The file could not be loaded')"
                 icon="i-heroicons-exclamation-triangle"
                 color="error"
                 variant="subtle"
-                :actions="[{ label: 'Retry', color: 'neutral', variant: 'outline', onClick: load }]"
+                :actions="[{ label: t('Retry'), color: 'neutral', variant: 'outline', onClick: load }]"
             />
             <div v-else-if="content === null" class="flex flex-col gap-2">
                 <USkeleton v-for="line in 12" :key="line" class="h-4 rounded-md" :class="line % 3 === 0 ? 'w-2/3' : 'w-full'" />
@@ -67,7 +69,7 @@ watch(open, (value) => {
         </template>
 
         <template #footer>
-            <UButton :to="url" :download="filename" external icon="i-heroicons-arrow-down-tray" label="Download" color="neutral" variant="outline" />
+            <UButton :to="url" :download="filename" external icon="i-heroicons-arrow-down-tray" :label="t('Download')" color="neutral" variant="outline" />
         </template>
     </USlideover>
 </template>

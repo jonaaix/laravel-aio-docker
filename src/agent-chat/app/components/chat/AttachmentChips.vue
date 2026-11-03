@@ -6,6 +6,8 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{ remove: [key: string] }>();
+
+const { t } = useI18n();
 </script>
 
 <template>
@@ -23,14 +25,14 @@ const emit = defineEmits<{ remove: [key: string] }>();
             <span class="flex min-w-0 flex-col">
                 <span class="truncate text-sm text-highlighted">{{ attachment.filename }}</span>
                 <span class="truncate text-xs tabular-nums" :class="attachment.error ? 'text-error' : 'text-muted'">
-                    {{ attachment.error ?? (attachment.upload ? formatBytes(attachment.size) : 'Uploading…') }}
+                    {{ attachment.error ?? (attachment.upload ? formatBytes(attachment.size) : t('Uploading…')) }}
                 </span>
             </span>
             <UIcon v-if="!attachment.upload && !attachment.error" name="i-heroicons-arrow-path" class="size-4 shrink-0 animate-spin text-muted" />
-            <UTooltip text="Remove">
+            <UTooltip :text="t('Remove')">
                 <UButton
                     icon="i-heroicons-x-mark"
-                    aria-label="Remove"
+                    :aria-label="t('Remove')"
                     color="neutral"
                     variant="ghost"
                     size="xs"

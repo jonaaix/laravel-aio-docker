@@ -9,6 +9,7 @@ const props = defineProps<{
     label: string;
 }>();
 
+const { t } = useI18n();
 const workingDir = useWorkingDir();
 
 const record = computed(() => props.input && typeof props.input === 'object' ? props.input as Record<string, unknown> : {});
@@ -82,6 +83,6 @@ const linePrefix: Record<DiffLine['kind'], string> = { added: '+ ', removed: '- 
     <div v-if="diff.length > 0" class="max-h-64 overflow-auto rounded-md bg-elevated py-2 font-mono text-xs/5">
         <div v-for="(line, index) in diff" :key="index" class="px-3 whitespace-pre-wrap [overflow-wrap:anywhere]" :class="lineClass[line.kind]">{{ linePrefix[line.kind] }}<ChatCodeLine :text="line.text" :tokens="tokens?.[index]" /></div>
     </div>
-    <pre v-else-if="preview" class="max-h-64 overflow-auto rounded-md bg-elevated p-3 text-xs/5 text-default whitespace-pre-wrap [overflow-wrap:anywhere]"><ChatCodeLines :lines="sourceLines" :tokens="tokens" /><span v-if="preview.hidden > 0" class="block pt-1 text-dimmed">… {{ preview.hidden === 1 ? '1 more line' : `${preview.hidden} more lines` }}</span></pre>
+    <pre v-else-if="preview" class="max-h-64 overflow-auto rounded-md bg-elevated p-3 text-xs/5 text-default whitespace-pre-wrap [overflow-wrap:anywhere]"><ChatCodeLines :lines="sourceLines" :tokens="tokens" /><span v-if="preview.hidden > 0" class="block pt-1 text-dimmed">… {{ t('1 more line | {count} more lines', { count: preview.hidden }, preview.hidden) }}</span></pre>
     <pre v-else-if="command" class="max-h-64 overflow-auto rounded-md bg-elevated p-3 text-xs/5 text-default whitespace-pre-wrap [overflow-wrap:anywhere]"><ChatCodeLines :lines="sourceLines" :tokens="tokens" /></pre>
 </template>

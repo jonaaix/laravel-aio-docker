@@ -7,6 +7,8 @@ const lineHeight = ref(0);
 const fullHeight = ref(0);
 const expanded = ref(false);
 
+const { t } = useI18n();
+
 const collapsible = computed(() => lineHeight.value > 0 && fullHeight.value > lineHeight.value * COLLAPSE_FROM_LINES);
 const collapsed = computed(() => collapsible.value && !expanded.value);
 
@@ -42,7 +44,7 @@ onBeforeUnmount(() => observer?.disconnect());
         </div>
         <UButton
             v-if="collapsible"
-            :label="expanded ? 'Show less' : 'Show more'"
+            :label="expanded ? t('Show less') : t('Show more')"
             :trailing-icon="expanded ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
             color="neutral"
             variant="link"

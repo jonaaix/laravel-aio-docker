@@ -7,6 +7,7 @@ const props = defineProps<{
     messageId: string;
 }>();
 
+const { t } = useI18n();
 const { messageId: answerableMessageId, chosen, sent, choose } = useQuestionAnswers();
 
 const active = computed(() => answerableMessageId.value === props.messageId);
@@ -84,11 +85,11 @@ const chatPlugins = useChatMarkdownPlugins();
                     </button>
                 </div>
             </div>
-            <p v-if="collapsed && unanswered" class="text-sm text-muted">Not answered</p>
+            <p v-if="collapsed && unanswered" class="text-sm text-muted">{{ t('Not answered') }}</p>
             <Markdown v-if="section.outro && !collapsed" :value="section.outro" :plugins="chatPlugins" class="*:first:mt-0 *:last:mb-0" />
             <UButton
                 v-if="sentAnswer !== undefined"
-                :label="expanded ? 'Show less' : 'Show all options'"
+                :label="expanded ? t('Show less') : t('Show all options')"
                 :trailing-icon="expanded ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
                 color="neutral"
                 variant="link"
@@ -98,7 +99,7 @@ const chatPlugins = useChatMarkdownPlugins();
             />
             <div v-if="active && recommendable.length > 1" class="flex">
                 <UButton
-                    label="Accept recommendations"
+                    :label="t('Accept recommendations')"
                     icon="i-heroicons-star"
                     color="neutral"
                     variant="outline"

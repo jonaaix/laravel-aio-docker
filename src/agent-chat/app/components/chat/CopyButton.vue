@@ -5,6 +5,8 @@ const props = defineProps<{
     text: string;
 }>();
 
+const { t } = useI18n();
+
 const copied = ref(false);
 let reset: ReturnType<typeof setTimeout> | undefined;
 
@@ -21,10 +23,10 @@ onBeforeUnmount(() => clearTimeout(reset));
 </script>
 
 <template>
-    <UTooltip :text="copied ? 'Copied' : 'Copy'">
+    <UTooltip :text="copied ? t('Copied') : t('Copy')">
         <UButton
             :icon="copied ? 'i-heroicons-check' : 'i-heroicons-square-2-stack'"
-            :aria-label="copied ? 'Copied' : 'Copy'"
+            :aria-label="copied ? t('Copied') : t('Copy')"
             size="xs"
             color="neutral"
             variant="ghost"

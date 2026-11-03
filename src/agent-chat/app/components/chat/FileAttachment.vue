@@ -3,14 +3,16 @@ import type { FileUIPart } from 'ai';
 
 const props = defineProps<{ part: FileUIPart }>();
 
-const filename = computed(() => props.part.filename ?? 'File');
+const { t } = useI18n();
+
+const filename = computed(() => props.part.filename ?? t('File'));
 const url = computed(() => apiUrl(props.part.url));
 const size = computed(() => {
     const value = props.part.providerMetadata?.agentChat?.size;
     return typeof value === 'number' ? value : null;
 });
 const details = computed(() => [
-    fileExtension(filename.value).toUpperCase() || 'File',
+    fileExtension(filename.value).toUpperCase() || t('File'),
     size.value === null ? null : formatBytes(size.value),
 ].filter(Boolean).join(' · '));
 const preview = computed(() => filePreview(filename.value));
@@ -27,7 +29,7 @@ function openPreview(): void {
     <div
         :role="preview ? 'button' : undefined"
         :tabindex="preview ? 0 : undefined"
-        :aria-label="preview ? `Preview ${filename}` : undefined"
+        :aria-label="preview ? t('Preview {name}', { name: filename }) : undefined"
         class="my-3 flex w-full max-w-md items-center gap-3 rounded-md bg-elevated/40 p-3 ring ring-default transition-colors"
         :class="preview ? 'cursor-pointer hover:bg-elevated focus-visible:outline-2 focus-visible:outline-primary' : ''"
         @click="openPreview"
@@ -46,7 +48,7 @@ function openPreview(): void {
             :download="filename"
             external
             icon="i-heroicons-arrow-down-tray"
-            label="Download"
+            :label="t('Download')"
             color="neutral"
             variant="outline"
             class="shrink-0"

@@ -17,6 +17,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ toggle: [agentId: string, member: boolean] }>();
 
+const { t } = useI18n();
 const settingsWindow = useSettingsWindow();
 
 const menuItems = computed<DropdownMenuItem[][]>(() => [
@@ -29,7 +30,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
         onSelect: (event: Event) => event.preventDefault(),
     })),
     [{
-        label: 'Manage agents',
+        label: t('Manage agents'),
         icon: 'i-heroicons-cog-6-tooth',
         onSelect: () => settingsWindow.open('agents'),
     }],
@@ -54,10 +55,10 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
             </UTooltip>
         </div>
         <UDropdownMenu v-if="editable" :items="menuItems" :content="{ align: 'end' }">
-            <UTooltip text="Agents">
+            <UTooltip :text="t('Agents')">
                 <button
                     type="button"
-                    aria-label="Agents"
+                    :aria-label="t('Agents')"
                     class="relative z-0 -ms-2 flex size-9 lg:ms-1 items-center justify-center rounded-full bg-default text-muted ring ring-accented transition-colors hover:text-default"
                 >
                     <UIcon name="i-heroicons-plus" class="size-5" />
