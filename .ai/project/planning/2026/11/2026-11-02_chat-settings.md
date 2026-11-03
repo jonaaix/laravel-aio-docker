@@ -29,6 +29,8 @@ settings path lives in it, and a font change applies at once and survives a relo
 - `users.pin_sent_message` (Appearance → Conversation) switches the page between staying at the
   bottom after sending (default) and moving the sent message to the top.
 - Sidebar state is a tinted pill from `sessionState().pillClass`: Working blue, Active green, Paused grey.
+- Remote control (`SettingsRemoteControl`) shows `<origin><baseURL>#mobile-connect=<userId>`; the
+  `server/middleware/cors.ts` opens `/api/*` to any origin except the agents' `/api/mcp/`.
 - Fonts are self-hosted by `@nuxt/fonts` (`global: true`, so unused ones still get `@font-face`).
 - All milestones done.
 

@@ -14,7 +14,7 @@ take further categories as the chat grows.
 ## How does it work?
 
 Settings at the foot of the sidebar, below Archived, opens one Settings window with its categories on the left (on
-phones as tabs along the top): Appearance, Agents, Profile and Claude account, opening at Appearance. "Manage agents" in the agents menu of
+phones as tabs along the top): Appearance, Agents, Profile, Claude account and Remote control, opening at Appearance. "Manage agents" in the agents menu of
 a conversation opens the same window at Agents.
 
 - **Profile** holds the person's name and picture, as described in
@@ -39,6 +39,9 @@ a conversation opens the same window at Agents.
   says "Claude is not signed in" and its "Sign in" opens this category; while a usage limit is reached,
   it says "Usage limit reached" with the time agents can answer again. Usage figures start over with
   every sign-in and sign-out, so they never show another account's usage.
+- **Remote control** shows the person's "Mobile app link" with a copy button. Pasted into the mobile
+  app, it connects that app to this chat as this person. To make that possible, the chat answers
+  requests from pages on other addresses.
 
 There is no save button: every change is stored as it is made — text a moment after typing stops or
 on Enter, choices, pictures and files at once — and errors show at the field concerned. "New agent" adds an entry to the list at once; the agent

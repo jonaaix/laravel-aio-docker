@@ -10,6 +10,7 @@ const categories: { value: SettingsCategory; label: string; icon: string }[] = [
     { value: 'agents', label: 'Agents', icon: 'i-heroicons-cpu-chip' },
     { value: 'profile', label: 'Profile', icon: 'i-heroicons-user' },
     { value: 'account', label: 'Claude account', icon: 'i-heroicons-key' },
+    { value: 'remote', label: 'Remote control', icon: 'i-heroicons-device-phone-mobile' },
 ];
 
 const active = ref<SettingsCategory>(props.category);
@@ -42,7 +43,8 @@ const hasActions = computed(() => active.value === 'agents');
                     <SettingsAppearance v-if="active === 'appearance'" />
                     <SettingsAgents v-else-if="active === 'agents'" actions-target="#settings-actions" />
                     <SettingsProfile v-else-if="active === 'profile'" />
-                    <SettingsAccount v-else />
+                    <SettingsAccount v-else-if="active === 'account'" />
+                    <SettingsRemoteControl v-else />
                 </div>
             </div>
         </template>
