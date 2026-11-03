@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const { t } = useI18n();
-const { font, mode, language, pinSentMessage, setColorMode, setFont, setLanguage, setPinSentMessage } = useAppearance();
+const { font, mode, language, pinSentMessage, tint, setColorMode, setFont, setLanguage, setPinSentMessage, setTint } = useAppearance();
 
 const languageItems = LANGUAGES.map(choice => ({ value: choice.code, label: choice.name }));
 
@@ -45,6 +45,20 @@ const modes: { value: ColorModeChoice; label: string; icon: string }[] = [
                     <span class="text-base font-medium text-highlighted">{{ choice.label }}</span>
                     <span class="text-sm text-muted">{{ t('The quick brown fox jumps over the lazy dog') }}</span>
                 </button>
+            </div>
+        </UFormField>
+        <UFormField :label="t('Message color')">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <USlider
+                    :model-value="tint"
+                    :min="0"
+                    :max="MAX_TINT"
+                    :step="1"
+                    :aria-label="t('Message color')"
+                    class="w-full sm:max-w-64"
+                    @update:model-value="value => typeof value === 'number' && setTint(value)"
+                />
+                <span class="w-fit rounded-[1.125rem] bg-(--user-message) px-3.5 py-2 text-sm text-default">{{ t('This is how your messages look.') }}</span>
             </div>
         </UFormField>
         <UFormField :label="t('Conversation')">

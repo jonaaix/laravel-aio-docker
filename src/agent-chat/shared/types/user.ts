@@ -8,4 +8,5 @@ export interface ChatUser {
     font: string | null;
     language: string | null;
     pinSentMessage: boolean;
+    tint: number | null;
 }

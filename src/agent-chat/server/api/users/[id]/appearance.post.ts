@@ -1,9 +1,9 @@
-import { COLOR_MODES, FONT_CHOICES, type ColorModeChoice } from '../../../../shared/utils/fonts';
+import { COLOR_MODES, FONT_CHOICES, isTint, type ColorModeChoice } from '../../../../shared/utils/fonts';
 import { isLanguage } from '../../../../shared/utils/languages';
 
 export default defineEventHandler(async (event) => {
     const user = ownUser(event);
-    const { colorMode, font, language, pinSentMessage } = await readBody<{ colorMode?: unknown; font?: unknown; language?: unknown; pinSentMessage?: unknown }>(event);
+    const { colorMode, font, language, pinSentMessage, tint } = await readBody<{ colorMode?: unknown; font?: unknown; language?: unknown; pinSentMessage?: unknown; tint?: unknown }>(event);
     const changes: Parameters<typeof setUserAppearance>[1] = {};
     if (colorMode !== undefined) {
         if (!(COLOR_MODES as readonly unknown[]).includes(colorMode)) {
@@ -22,6 +22,12 @@ export default defineEventHandler(async (event) => {
             throw createError({ statusCode: 422, statusMessage: 'Unknown language' });
         }
         changes.language = language;
+    }
+    if (tint !== undefined) {
+        if (!isTint(tint)) {
+            throw createError({ statusCode: 422, statusMessage: 'The tint must be a hue from 0 to 360' });
+        }
+        changes.tint = tint;
     }
     if (typeof pinSentMessage === 'boolean') {
         changes.pinSentMessage = pinSentMessage;

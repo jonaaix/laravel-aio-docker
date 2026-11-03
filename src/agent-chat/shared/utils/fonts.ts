@@ -23,3 +23,10 @@ export type ColorModeChoice = typeof COLOR_MODES[number];
 export function fontChoice(value: string | null | undefined): FontChoice {
     return FONT_CHOICES.find(choice => choice.value === value) ?? FONT_CHOICES.find(choice => choice.value === DEFAULT_FONT)!;
 }
+
+export const DEFAULT_TINT = 106;
+export const MAX_TINT = 360;
+
+export function isTint(value: unknown): value is number {
+    return Number.isInteger(value) && (value as number) >= 0 && (value as number) <= MAX_TINT;
+}

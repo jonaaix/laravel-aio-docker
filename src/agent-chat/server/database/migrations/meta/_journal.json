@@ -183,6 +183,13 @@
       "when": 1793719566399,
       "tag": "0025_device_push_keys",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1793720303491,
+      "tag": "0026_user_tint",
+      "breakpoints": true
     }
   ]
 }
