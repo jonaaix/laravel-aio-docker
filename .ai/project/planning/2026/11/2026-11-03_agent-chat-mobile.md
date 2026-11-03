@@ -14,13 +14,16 @@ handover runs and the user has reviewed the result.
       icon fonts), CLAUDE.md and `.claude/settings.json` copied from this repo, own git repo
 - [x] Dev server with `NUXT_WORKING_DIR` on the app folder; conversation `ef8a94e7-…` started as test
       user Claude with a brief, Peter added
-- [ ] Overnight: I answer the agents as the user would, vibe-coding style
+- [x] Overnight: four rounds with Tarek and Peter (connections, list, live thread, offline and unsent
+      messages, attachments, install polish, load time, accessibility, tests, update flow, Pages deploy)
 - [ ] Review with the user
 
 ## State
 
-- The generated starter builds (`npm run build` → `www/` with service worker); it is the unchanged
-  Framework7 demo.
+- The app is built and committed in its own repo (77 tests via `npm test`, Pages workflow runs them
+  before deploying); its own plan and Feature Book live in `src/agent-chat-mobile/.ai/`.
+- Tarek is paused, waiting for the next topics. Untested: real iPhone (install, icon, startup image,
+  flight mode, text size, VoiceOver) and a real Pages update.
 - The outer repo ignores `/src/agent-chat-mobile`.
 - While the dev server runs with `NUXT_WORKING_DIR`, every new conversation's lead works in the app folder.
 
@@ -35,4 +38,4 @@ handover runs and the user has reviewed the result.
 
 ## Open
 
-- None.
+- Connect by QR code from Settings → Remote control (needs the app's address in the chat).
