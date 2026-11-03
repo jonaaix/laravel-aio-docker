@@ -77,4 +77,5 @@ export type ConversationListEvent =
     | { type: 'usage'; usage: UsageSnapshot }
     | { type: 'user'; user: ChatUser }
     | { type: 'agents' }
-    | { type: 'account' };
+    | { type: 'account' }
+    | { type: 'devices'; userId: string };

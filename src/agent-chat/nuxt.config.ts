@@ -58,6 +58,9 @@ export default defineNuxtConfig({
         vapidSubject: '',
         vapidPublicKey: '',
         vapidPrivateKey: '',
+        public: {
+            hubUrl: 'https://jonaaix.github.io/orbit/',
+        },
     },
 
     compatibilityDate: '2026-06-30',

@@ -12,7 +12,7 @@ iPhone and desktop, and the Framework7 app is retired.
 - [x] Sign-in by signed link only: the chat issues one-time links (~60 s) on request of the Laravel app, which
       proves itself with `CHAT_KEY`; lifelong session until the key changes; "Unauthorized" otherwise; name
       prompt removed
-- [ ] Device pairing: one-time pairing code (QR and link in Remote control), device key pair (WebCrypto,
+- [x] Device pairing: one-time pairing code (QR and link in Remote control), device key pair (WebCrypto,
       non-extractable), challenge → short-lived access token for API, live stream and files; device list
       with remove; CORS only for the hub origin
 - [ ] Hub build: static PWA build mode, connections to several servers, all state per connection, server
@@ -31,7 +31,13 @@ iPhone and desktop, and the Framework7 app is retired.
   routes act as the signed-in person instead of trusting ids in the body. The name prompt and renaming are gone.
 - Development: the dev server runs with a key in `~/.config/agent-chat/dev/chat-key`; a link is requested
   the way Laravel would. The Framework7 app no longer connects (its permanent link is refused).
-- Not yet: pairing, Remote control still shows the old permanent link, CORS still open to any origin.
+- Pairing works on the chat side: Remote control shows a one-time pairing link
+  (`<hubUrl>#pair=<server>&code=<code>`) and QR, lists the person's devices with remove. A device pairs with
+  `POST /api/devices` (code, P-256 public JWK, label), gets a challenge, signs it and receives a 15-minute access
+  token (Bearer header or `access_token` query for live stream and files). A removed device is refused at once.
+  CORS allows only the hub origin (`public.hubUrl`, default `https://jonaaix.github.io/orbit/`), in dev also localhost.
+- Pairing codes and challenges live in memory: a server restart drops open pairing links (a new one is shown).
+- The hub itself does not exist yet; pairing was checked with a script that plays a browser device.
 
 ## Decisions
 
@@ -43,8 +49,9 @@ iPhone and desktop, and the Framework7 app is retired.
 - Push without a gateway: the device creates its own VAPID key pair and gives it to every server it pairs
   with, so several servers can notify one device (user's call).
 - Ionic only after a spike on a real iPhone (user's call).
+- The hub is called orbit and lives at `https://jonaaix.github.io/orbit/` (user's call).
 - I build everything; the Tarek experiment has ended and the Framework7 app is frozen (user's call).
 
 ## Open
 
-- The hub's GitHub Pages address (needed for the CORS allowlist and the pairing link).
+- Nothing.

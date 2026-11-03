@@ -10,6 +10,7 @@ const { users, load: loadUsers, upsert: upsertUser } = useUsers();
 const { baseURL } = useRuntimeConfig().app;
 
 const { user } = useUserName();
+const devicesVersion = useState('devices-version', () => 0);
 const { adopt: adoptAppearance } = useAppearance();
 watch(() => user.value?.id, () => {
     if (user.value) {
@@ -49,6 +50,11 @@ onMounted(async () => {
         }
         else if (event.type === 'account') {
             void loadAccount();
+        }
+        else if (event.type === 'devices') {
+            if (event.userId === user.value?.id) {
+                devicesVersion.value += 1;
+            }
         }
         else {
             usage.value = event.usage;

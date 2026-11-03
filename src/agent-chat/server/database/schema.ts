@@ -59,6 +59,15 @@ export const conversationAgents = sqliteTable('conversation_agents', {
     announcedAgents: text('announced_agents', { mode: 'json' }).$type<AnnouncedAgent[]>().notNull().default([]),
 }, table => [primaryKey({ columns: [table.conversationId, table.agentId] })]);
 
+export const devices = sqliteTable('devices', {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    label: text('label').notNull(),
+    publicKey: text('public_key').notNull(),
+    createdAt: integer('created_at').notNull(),
+    lastSeenAt: integer('last_seen_at').notNull(),
+}, table => [index('devices_user_idx').on(table.userId)]);
+
 export const conversationMutes = sqliteTable('conversation_mutes', {
     conversationId: text('conversation_id').notNull().references(() => conversations.id, { onDelete: 'cascade' }),
     userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
