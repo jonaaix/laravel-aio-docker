@@ -6,5 +6,6 @@ export interface ChatUser {
     avatarLocked: boolean;
     colorMode: 'light' | 'dark' | 'system' | null;
     font: string | null;
+    language: string | null;
     pinSentMessage: boolean;
 }

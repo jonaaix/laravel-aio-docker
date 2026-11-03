@@ -1,21 +1,27 @@
+const formatLocale = shallowRef<string | undefined>();
+
+export function setFormatLocale(code: string): void {
+    formatLocale.value = code;
+}
+
 export function formatPercent(fraction: number): string {
-    return new Intl.NumberFormat(undefined, { style: 'percent', maximumFractionDigits: 0 }).format(fraction);
+    return new Intl.NumberFormat(formatLocale.value, { style: 'percent', maximumFractionDigits: 0 }).format(fraction);
 }
 
 export function formatClockTime(timestamp: number, now = new Date()): string {
     const moment = new Date(timestamp);
-    const time = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', hour12: false }).format(moment);
+    const time = new Intl.DateTimeFormat(formatLocale.value, { hour: '2-digit', minute: '2-digit', hour12: false }).format(moment);
     if (moment.toDateString() === now.toDateString()) {
         return time;
     }
-    return `${new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(moment)} ${time}`;
+    return `${new Intl.DateTimeFormat(formatLocale.value, { weekday: 'short' }).format(moment)} ${time}`;
 }
 
 const BYTE_UNITS = ['byte', 'kilobyte', 'megabyte', 'gigabyte'] as const;
 
 export function formatBytes(bytes: number): string {
     const exponent = Math.min(BYTE_UNITS.length - 1, Math.floor(Math.log(Math.max(bytes, 1)) / Math.log(1024)));
-    return new Intl.NumberFormat(undefined, {
+    return new Intl.NumberFormat(formatLocale.value, {
         style: 'unit',
         unit: BYTE_UNITS[exponent],
         unitDisplay: 'short',
@@ -34,7 +40,7 @@ const RELATIVE_UNITS = [
 
 export function formatRelativeTime(timestamp: number, now = Date.now()): string {
     const seconds = Math.round((timestamp - now) / 1000);
-    const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto', style: 'short' });
+    const formatter = new Intl.RelativeTimeFormat(formatLocale.value, { numeric: 'auto', style: 'short' });
     const [unit, size] = RELATIVE_UNITS.find(([, unitSeconds]) => Math.abs(seconds) >= unitSeconds) ?? ['minute', 60];
     return formatter.format(Math.round(seconds / size), unit);
 }

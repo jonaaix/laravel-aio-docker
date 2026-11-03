@@ -15,6 +15,7 @@ export const users = sqliteTable('users', {
     avatarUpdatedAt: integer('avatar_updated_at'),
     colorMode: text('color_mode', { enum: ['light', 'dark', 'system'] }),
     font: text('font'),
+    language: text('language'),
     pinSentMessage: integer('pin_sent_message', { mode: 'boolean' }).notNull().default(false),
     createdAt: integer('created_at').notNull(),
 }, table => [uniqueIndex('users_name_unique').on(table.name)]);

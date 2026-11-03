@@ -25,20 +25,25 @@ export function cachedFont(): string | null {
 
 export function useAppearance() {
     const colorMode = useColorMode();
+    const { locale, setLocale } = useI18n();
     const { user } = useUserName();
     const { upsert } = useUsers();
     const font = computed(() => user.value?.font ?? DEFAULT_FONT);
     const mode = computed(() => colorMode.preference as ColorModeChoice);
     const pinSentMessage = computed(() => user.value?.pinSentMessage ?? false);
+    const language = computed(() => locale.value);
 
     function adopt(chatUser: ChatUser): void {
         if (chatUser.colorMode) {
             colorMode.preference = chatUser.colorMode;
         }
         applyFont(chatUser.font ?? DEFAULT_FONT);
+        if (chatUser.language) {
+            void setLocale(chatUser.language as typeof locale.value);
+        }
     }
 
-    async function save(changes: { colorMode?: ColorModeChoice; font?: string; pinSentMessage?: boolean }): Promise<void> {
+    async function save(changes: { colorMode?: ColorModeChoice; font?: string; language?: string; pinSentMessage?: boolean }): Promise<void> {
         if (!user.value) {
             return;
         }
@@ -56,9 +61,14 @@ export function useAppearance() {
         return save({ font: value });
     }
 
+    async function setLanguage(value: string): Promise<void> {
+        await setLocale(value as typeof locale.value);
+        return save({ language: value });
+    }
+
     function setPinSentMessage(value: boolean): Promise<void> {
         return save({ pinSentMessage: value });
     }
 
-    return { font, mode, pinSentMessage, adopt, setColorMode, setFont, setPinSentMessage };
+    return { font, mode, language, pinSentMessage, adopt, setColorMode, setFont, setLanguage, setPinSentMessage };
 }

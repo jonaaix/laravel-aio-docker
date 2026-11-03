@@ -1,5 +1,8 @@
 <script setup lang="ts">
-const { font, mode, pinSentMessage, setColorMode, setFont, setPinSentMessage } = useAppearance();
+const { t } = useI18n();
+const { font, mode, language, pinSentMessage, setColorMode, setFont, setLanguage, setPinSentMessage } = useAppearance();
+
+const languageItems = LANGUAGES.map(choice => ({ value: choice.code, label: choice.name }));
 
 const modes: { value: ColorModeChoice; label: string; icon: string }[] = [
     { value: 'light', label: 'Light', icon: 'i-heroicons-sun' },
@@ -10,12 +13,15 @@ const modes: { value: ColorModeChoice; label: string; icon: string }[] = [
 
 <template>
     <div class="flex flex-col gap-6">
-        <UFormField label="Theme">
+        <UFormField :label="t('Language')">
+            <USelect :model-value="language" :items="languageItems" class="w-full sm:w-64" @update:model-value="value => setLanguage(value)" />
+        </UFormField>
+        <UFormField :label="t('Theme')">
             <div class="flex flex-wrap gap-2">
                 <UButton
                     v-for="choice in modes"
                     :key="choice.value"
-                    :label="choice.label"
+                    :label="t(choice.label)"
                     :icon="choice.icon"
                     color="neutral"
                     :variant="mode === choice.value ? 'solid' : 'outline'"
@@ -23,8 +29,8 @@ const modes: { value: ColorModeChoice; label: string; icon: string }[] = [
                 />
             </div>
         </UFormField>
-        <UFormField label="Font">
-            <div role="radiogroup" aria-label="Font" class="grid gap-2 sm:grid-cols-2">
+        <UFormField :label="t('Font')">
+            <div role="radiogroup" :aria-label="t('Font')" class="grid gap-2 sm:grid-cols-2">
                 <button
                     v-for="choice in FONT_CHOICES"
                     :key="choice.value"
@@ -37,14 +43,14 @@ const modes: { value: ColorModeChoice; label: string; icon: string }[] = [
                     @click="setFont(choice.value)"
                 >
                     <span class="text-base font-medium text-highlighted">{{ choice.label }}</span>
-                    <span class="text-sm text-muted">The quick brown fox jumps over the lazy dog</span>
+                    <span class="text-sm text-muted">{{ t('The quick brown fox jumps over the lazy dog') }}</span>
                 </button>
             </div>
         </UFormField>
-        <UFormField label="Conversation">
+        <UFormField :label="t('Conversation')">
             <USwitch
                 :model-value="pinSentMessage"
-                label="Move sent message to top"
+                :label="t('Move sent message to top')"
                 @update:model-value="value => setPinSentMessage(value === true)"
             />
         </UFormField>
