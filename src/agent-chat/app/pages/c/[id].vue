@@ -87,6 +87,14 @@ function agentName(agentId: string): string {
     return agents.value.find(agent => agent.id === agentId)?.name ?? leadAgent.value.name;
 }
 
+const startingSession = ref(false);
+
+watch([turnActive, status], ([active], [wasActive, wasStatus]) => {
+    if (active && !wasActive) {
+        startingSession.value = wasStatus === 'paused';
+    }
+});
+
 const typingAgent = computed<Participant | null>(() => {
     if (!answeringAgentId.value) {
         return null;
@@ -423,6 +431,16 @@ const session = computed(() => sessionState(status.value, turnActive.value));
                     >
                         <template #leading="{ message }">
                             <ChatHead :participant="messageAuthor(message)" :reverse="message.role === 'user'" />
+                        </template>
+                        <template #indicator="{ ui }">
+                            <div class="flex items-center gap-2.5">
+                                <div data-slot="indicator" :class="ui.indicator()">
+                                    <span />
+                                    <span />
+                                    <span />
+                                </div>
+                                <span v-if="startingSession" class="text-sm text-muted">Starting…</span>
+                            </div>
                         </template>
                         <template #content="{ message }">
                             <div v-if="message.role === 'assistant'" class="mb-3 flex flex-col empty:hidden">
