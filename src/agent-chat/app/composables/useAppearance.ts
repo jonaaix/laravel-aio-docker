@@ -6,7 +6,7 @@ const TINT_CACHE_KEY = 'chat-tint';
 export function applyTint(value: number | null): void {
     const root = document.documentElement;
     root.style.setProperty('--tint', String(value ?? 0));
-    root.style.setProperty('--tint-chroma', value === null ? '0' : '1');
+    root.style.setProperty('--tint-chroma', String(tintChroma(value)));
     root.toggleAttribute('data-tint-neutral', value === null);
     try {
         localStorage.setItem(TINT_CACHE_KEY, String(value));

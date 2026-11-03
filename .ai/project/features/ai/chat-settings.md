@@ -28,9 +28,10 @@ a conversation opens the same window at Agents.
   System UI (the default), Geist, Inter, Source Sans 3, IBM Plex Sans or, for those who prefer
   monospaced text throughout, JetBrains Mono, set a size smaller so it reads as large as the
   others, each shown in its own
-  typeface. It also sets the colour of the whole chat, picked from thirteen unnamed colour circles, each shown in
-  the button colour it gives (the name appears only as a hint on hover): Black, the default — plain greys with
-  black and white accents, as the chat always looked — and twelve hues around the colour wheel. A hue colours the
+  typeface. It also sets the colour of the whole chat, picked from unnamed colour circles in two rows, each shown in
+  the button colour it gives (the name appears only as a hint on hover): first Black, the default — plain greys with
+  black and white accents, as the chat always looked — and fifteen vivid hues around the colour wheel, below them
+  eleven muted tones such as Slate, Sage or Sand, which colour the same places more quietly. A hue colours the
   accents in the spirit of Material 3 — main buttons, chosen options, switches, focus rings, the open conversation in the sidebar, the open settings
   category and the light tint under anything the pointer rests on — buttons, menu items, list entries — take it,
   "New Code Session" shows its label and icon in it with a thin line around, and the

@@ -27,13 +27,18 @@ export function fontChoice(value: string | null | undefined): FontChoice {
 export interface TintChoice {
     value: number | null;
     label: string;
+    muted?: boolean;
 }
+
+const MUTED_CHROMA = 0.4;
 
 export const TINT_CHOICES: TintChoice[] = [
     { value: null, label: 'Black' },
     { value: 15, label: 'Rose' },
+    { value: 28, label: 'Red' },
     { value: 40, label: 'Coral' },
     { value: 70, label: 'Amber' },
+    { value: 95, label: 'Yellow' },
     { value: 125, label: 'Lime' },
     { value: 150, label: 'Green' },
     { value: 180, label: 'Teal' },
@@ -42,11 +47,30 @@ export const TINT_CHOICES: TintChoice[] = [
     { value: 260, label: 'Blue' },
     { value: 280, label: 'Indigo' },
     { value: 300, label: 'Violet' },
+    { value: 320, label: 'Magenta' },
     { value: 340, label: 'Pink' },
+    { value: 10, label: 'Dusty rose', muted: true },
+    { value: 45, label: 'Clay', muted: true },
+    { value: 75, label: 'Sand', muted: true },
+    { value: 120, label: 'Moss', muted: true },
+    { value: 155, label: 'Sage', muted: true },
+    { value: 190, label: 'Sea glass', muted: true },
+    { value: 230, label: 'Steel', muted: true },
+    { value: 255, label: 'Slate', muted: true },
+    { value: 285, label: 'Lavender', muted: true },
+    { value: 315, label: 'Plum', muted: true },
+    { value: 345, label: 'Mauve', muted: true },
 ];
 
 export const DEFAULT_TINT = null;
 
 export function isTint(value: unknown): value is number | null {
     return TINT_CHOICES.some(choice => choice.value === value);
+}
+
+export function tintChroma(value: number | null): number {
+    if (value === null) {
+        return 0;
+    }
+    return TINT_CHOICES.find(choice => choice.value === value)?.muted ? MUTED_CHROMA : 1;
 }
