@@ -43,17 +43,6 @@ export function subscriptionsForUsers(userIds: string[]): StoredSubscription[] {
         .all();
 }
 
-export function latestAnswerAt(conversationId: string): number | null {
-    const last = useDatabase()
-        .select({ createdAt: messages.createdAt })
-        .from(messages)
-        .where(and(eq(messages.conversationId, conversationId), eq(messages.role, 'assistant')))
-        .orderBy(desc(messages.seq))
-        .limit(1)
-        .get();
-    return last?.createdAt ?? null;
-}
-
 export function latestSenderId(conversationId: string): string | null {
     const last = useDatabase()
         .select({ senderId: messages.senderId })

@@ -145,6 +145,9 @@ class ConversationRuntime {
             if (step.action === 'limit') {
                 publishConversationEvent(this.conversationId, { type: 'error', message: `Stopped after ${HANDOFF_LIMIT} hand-overs between agents. Reply to continue.` });
             }
+            if (step.notify) {
+                updateConversation(this.conversationId, { lastAnswerAt: Date.now() });
+            }
             this.publishStatus();
             if (step.notify) {
                 notifyAnswerFinished(this.conversationId, session.agentId, message);
@@ -435,7 +438,7 @@ export function summarize(row: NonNullable<ReturnType<typeof findConversation>>)
         title: row.title,
         creatorId: row.creatorId,
         lastSenderId: latestSenderId(row.id),
-        lastAnswerAt: latestAnswerAt(row.id),
+        lastAnswerAt: row.lastAnswerAt,
         agentIds: conversationAgentIds(row.id),
         status: row.status,
         turnActive: isTurnActive(row.id),

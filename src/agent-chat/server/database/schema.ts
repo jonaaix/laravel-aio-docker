@@ -46,6 +46,7 @@ export const conversations = sqliteTable('conversations', {
     announcedAgents: text('announced_agents', { mode: 'json' }).$type<AnnouncedAgent[]>().notNull().default([]),
     createdAt: integer('created_at').notNull(),
     lastActivityAt: integer('last_activity_at').notNull(),
+    lastAnswerAt: integer('last_answer_at'),
     archivedAt: integer('archived_at'),
 });
 
