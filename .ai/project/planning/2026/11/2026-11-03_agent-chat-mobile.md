@@ -24,12 +24,13 @@ handover runs and the user has reviewed the result.
 - [x] Round 8 (Tarek): summary and next-step cards with "Accept" in the app, code highlighting in opened
       working steps, reviewed by Peter and fixed
 - [x] Round 9 (Tarek, his choice): saved chats show at once and stay readable offline, reviewed by Peter and fixed
-- [ ] Round 10 (Tarek): topic of his own choice
+- [x] Round 10 (Tarek, his choice): add and remove agents in a chat from the app, reviewed by Peter and fixed
+- [ ] Round 11 (Tarek): check the agent switch in the browser; the chat accepts only true/false for `member`
 - [ ] Review with the user
 
 ## State
 
-- The app is built and committed in its own repo (260 tests via `npm test`, Pages workflow runs them
+- The app is built and committed in its own repo (271 tests via `npm test`, Pages workflow runs them
   before deploying); its own plan and Feature Book live in `src/agent-chat-mobile/.ai/`. The chat's
   tests count 33 via `npm test` in `src/agent-chat`.
 - Tarek is paused. QR scan verified with a fake camera at iPhone size (scan, confirm, connected); push
