@@ -388,7 +388,7 @@ const session = computed(() => sessionState(status.value, turnActive.value));
                                 icon="i-heroicons-arrow-uturn-left"
                                 color="neutral"
                                 variant="outline"
-                                class="bg-white dark:bg-transparent"
+                                class="bg-default dark:bg-transparent"
                                 :loading="archiving"
                                 @click="restoreConversation"
                             />
@@ -401,7 +401,7 @@ const session = computed(() => sessionState(status.value, turnActive.value));
                                     icon="i-heroicons-pause"
                                     color="neutral"
                                     variant="outline"
-                                    class="h-9.5 bg-white max-sm:w-9.5 max-sm:justify-center max-sm:px-0 dark:bg-transparent"
+                                    class="h-9.5 bg-default max-sm:w-9.5 max-sm:justify-center max-sm:px-0 dark:bg-transparent"
                                     :loading="pausing"
                                     @click="pauseConversation"
                                 >
@@ -414,7 +414,7 @@ const session = computed(() => sessionState(status.value, turnActive.value));
                                     :aria-label="muted ? t('Unmute') : t('Mute')"
                                     color="neutral"
                                     variant="outline"
-                                    class="size-9.5 justify-center bg-white dark:bg-transparent"
+                                    class="size-9.5 justify-center bg-default dark:bg-transparent"
                                     :loading="muting"
                                     @click="toggleMute"
                                 />
@@ -425,7 +425,7 @@ const session = computed(() => sessionState(status.value, turnActive.value));
                                     :aria-label="t('Archive')"
                                     color="neutral"
                                     variant="outline"
-                                    class="size-9.5 justify-center bg-white dark:bg-transparent"
+                                    class="size-9.5 justify-center bg-default dark:bg-transparent"
                                     :loading="archiving"
                                     @click="archiveConversation"
                                 />

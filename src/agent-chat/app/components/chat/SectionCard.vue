@@ -5,7 +5,7 @@ defineProps<{
 </script>
 
 <template>
-    <div class="my-3 rounded-md bg-white ring ring-default dark:bg-elevated/40">
+    <div class="my-3 rounded-md bg-default ring ring-default dark:bg-elevated/40">
         <div class="flex h-9 items-center border-b border-default px-3 text-sm font-semibold text-highlighted">
             <ChatSectionTitle :title="title" />
         </div>

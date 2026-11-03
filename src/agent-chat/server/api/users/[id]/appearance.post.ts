@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
     }
     if (tint !== undefined) {
         if (!isTint(tint)) {
-            throw createError({ statusCode: 422, statusMessage: 'The tint must be a hue from 0 to 360' });
+            throw createError({ statusCode: 422, statusMessage: 'Unknown colour' });
         }
         changes.tint = tint;
     }

@@ -83,7 +83,7 @@ onBeforeUnmount(() => {
             :min-size="14"
             :default-size="18"
             :max-size="28"
-            :ui="{ root: 'bg-elevated/50', footer: 'pb-4', header: hub ? 'h-auto py-3' : undefined }"
+            :ui="{ root: 'bg-muted', footer: 'pb-4', header: hub ? 'h-auto py-3' : undefined }"
         >
             <template #header="{ collapsed }">
                 <div class="flex w-full flex-col gap-2">
@@ -98,7 +98,7 @@ onBeforeUnmount(() => {
                         variant="soft"
                         block
                         :square="collapsed"
-                        class="bg-white ring ring-black/5 hover:bg-neutral-100 dark:bg-elevated/50 dark:ring-0 dark:hover:bg-elevated"
+                        class="bg-default ring ring-black/5 hover:bg-elevated dark:bg-elevated/50 dark:ring-0 dark:hover:bg-elevated"
                     />
                 </UTooltip>
                 <template v-if="hub && !collapsed">

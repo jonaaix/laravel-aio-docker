@@ -2,7 +2,6 @@ import type { ChatUser } from '#shared/types/user';
 
 const FONT_CACHE_KEY = 'chat-font';
 const TINT_CACHE_KEY = 'chat-tint';
-const TINT_SAVE_DELAY_MS = 400;
 
 export function applyTint(value: number): void {
     document.documentElement.style.setProperty('--tint', String(value));
@@ -54,15 +53,14 @@ export function useAppearance() {
     const mode = computed(() => colorMode.preference as ColorModeChoice);
     const pinSentMessage = computed(() => user.value?.pinSentMessage ?? false);
     const language = computed(() => locale.value);
-    const tint = computed(() => user.value?.tint ?? DEFAULT_TINT);
-    let tintTimer: ReturnType<typeof setTimeout> | undefined;
+    const tint = computed(() => isTint(user.value?.tint) ? user.value.tint : DEFAULT_TINT);
 
     function adopt(chatUser: ChatUser): void {
         if (chatUser.colorMode) {
             colorMode.preference = chatUser.colorMode;
         }
         applyFont(chatUser.font ?? DEFAULT_FONT);
-        applyTint(chatUser.tint ?? DEFAULT_TINT);
+        applyTint(isTint(chatUser.tint) ? chatUser.tint : DEFAULT_TINT);
         if (chatUser.language) {
             void setLocale(chatUser.language as typeof locale.value);
         }
@@ -91,13 +89,9 @@ export function useAppearance() {
         return save({ language: value });
     }
 
-    function setTint(value: number): void {
+    function setTint(value: number): Promise<void> {
         applyTint(value);
-        if (user.value) {
-            user.value = { ...user.value, tint: value };
-        }
-        clearTimeout(tintTimer);
-        tintTimer = setTimeout(() => void save({ tint: value }), TINT_SAVE_DELAY_MS);
+        return save({ tint: value });
     }
 
     function setPinSentMessage(value: boolean): Promise<void> {

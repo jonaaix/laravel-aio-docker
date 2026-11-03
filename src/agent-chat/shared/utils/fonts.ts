@@ -24,9 +24,22 @@ export function fontChoice(value: string | null | undefined): FontChoice {
     return FONT_CHOICES.find(choice => choice.value === value) ?? FONT_CHOICES.find(choice => choice.value === DEFAULT_FONT)!;
 }
 
+export interface TintChoice {
+    value: number;
+    label: string;
+}
+
+export const TINT_CHOICES: TintChoice[] = [
+    { value: 106, label: 'Stone' },
+    { value: 250, label: 'Slate' },
+    { value: 150, label: 'Sage' },
+    { value: 70, label: 'Sand' },
+    { value: 15, label: 'Rose' },
+    { value: 290, label: 'Lavender' },
+];
+
 export const DEFAULT_TINT = 106;
-export const MAX_TINT = 360;
 
 export function isTint(value: unknown): value is number {
-    return Number.isInteger(value) && (value as number) >= 0 && (value as number) <= MAX_TINT;
+    return TINT_CHOICES.some(choice => choice.value === value);
 }

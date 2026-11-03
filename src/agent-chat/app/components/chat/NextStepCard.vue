@@ -23,7 +23,7 @@ const chatPlugins = useChatMarkdownPlugins();
                 icon="i-heroicons-check"
                 color="neutral"
                 variant="outline"
-                class="bg-white dark:bg-transparent"
+                class="bg-default dark:bg-transparent"
                 @click="accept"
             />
         </div>

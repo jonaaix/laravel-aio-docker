@@ -30,7 +30,7 @@ export default defineAppConfig({
             compoundVariants: [{
                 color: 'neutral',
                 variant: 'outline',
-                class: { root: 'bg-white ring-black/5 dark:bg-elevated dark:ring-default has-[textarea:focus-visible]:outline-0 has-[textarea:focus-visible]:ring-black/5 dark:has-[textarea:focus-visible]:ring-default' },
+                class: { root: 'bg-default ring-black/5 dark:bg-elevated dark:ring-default has-[textarea:focus-visible]:outline-0 has-[textarea:focus-visible]:ring-black/5 dark:has-[textarea:focus-visible]:ring-default' },
             }],
         },
         chatMessages: {
@@ -60,7 +60,7 @@ export default defineAppConfig({
             blockquote: { base: 'my-3' },
             table: { slots: { root: 'my-3' } },
             pre: {
-                slots: { root: 'my-3', base: 'bg-white text-xs/5 dark:bg-muted' },
+                slots: { root: 'my-3', base: 'bg-default text-xs/5 dark:bg-muted' },
             },
         },
         dashboardGroup: {

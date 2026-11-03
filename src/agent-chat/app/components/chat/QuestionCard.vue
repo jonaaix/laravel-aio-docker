@@ -103,7 +103,7 @@ const chatPlugins = useChatMarkdownPlugins();
                     icon="i-heroicons-star"
                     color="neutral"
                     variant="outline"
-                    class="bg-white dark:bg-transparent"
+                    class="bg-default dark:bg-transparent"
                     @click="acceptRecommendations"
                 />
             </div>

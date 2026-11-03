@@ -47,18 +47,21 @@ const modes: { value: ColorModeChoice; label: string; icon: string }[] = [
                 </button>
             </div>
         </UFormField>
-        <UFormField :label="t('Message color')">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <USlider
-                    :model-value="tint"
-                    :min="0"
-                    :max="MAX_TINT"
-                    :step="1"
-                    :aria-label="t('Message color')"
-                    class="w-full sm:max-w-64"
-                    @update:model-value="value => typeof value === 'number' && setTint(value)"
-                />
-                <span class="w-fit rounded-[1.125rem] bg-(--user-message) px-3.5 py-2 text-sm text-default">{{ t('This is how your messages look.') }}</span>
+        <UFormField :label="t('Color')">
+            <div role="radiogroup" :aria-label="t('Color')" class="flex flex-wrap gap-2">
+                <button
+                    v-for="choice in TINT_CHOICES"
+                    :key="choice.value"
+                    type="button"
+                    role="radio"
+                    :aria-checked="tint === choice.value"
+                    class="flex h-9 items-center gap-2 rounded-full px-3 text-sm ring transition-colors duration-500 ease-out hover:bg-elevated"
+                    :class="tint === choice.value ? 'bg-elevated text-highlighted ring-inverted' : 'text-toned ring-default'"
+                    @click="setTint(choice.value)"
+                >
+                    <span class="size-4 rounded-full ring ring-black/10 dark:ring-white/15" :style="{ background: `oklch(0.72 0.09 ${choice.value})` }" />
+                    {{ t(choice.label) }}
+                </button>
             </div>
         </UFormField>
         <UFormField :label="t('Conversation')">
