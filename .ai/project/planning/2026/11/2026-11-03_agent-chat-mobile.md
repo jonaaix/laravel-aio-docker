@@ -31,14 +31,15 @@ handover runs and the user has reviewed the result.
       rows, glass composer); Peter reviews it and the app-wide listening
 - [x] Round 13 (Tarek): live connections close in the background; chat list search (his choice)
 - [x] Round 14 (Tarek): Peter reviewed round 13, fixes (quiet background, no cut-off answers, accent-free search)
-- [ ] Round 15 (Tarek): heartbeat so dead live connections renew themselves (app and chat), then his own topic
+- [x] Round 15 (Tarek): heartbeat; a live connection without a sign of life for 45 s is rebuilt (app and chat)
+- [ ] Round 16 (Tarek): his own topic
 - [ ] Review with the user
 
 ## State
 
-- The app is built and committed in its own repo (290 tests via `npm test`, Pages workflow runs them
+- The app is built and committed in its own repo (296 tests via `npm test`, Pages workflow runs them
   before deploying); its own plan and Feature Book live in `src/agent-chat-mobile/.ai/`. The chat's
-  tests count 35 via `npm test` in `src/agent-chat`.
+  tests count 38 via `npm test` in `src/agent-chat`.
 - Tarek is paused. QR scan verified with a fake camera at iPhone size (scan, confirm, connected); push
   verified up to the send attempt, real delivery untested. Untested on a real iPhone: install, icon,
   startup image, flight mode, text size, VoiceOver, camera, push.
