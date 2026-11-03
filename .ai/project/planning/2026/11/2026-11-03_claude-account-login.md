@@ -33,6 +33,8 @@ follows in every open browser.
 
 - The normal subscription login for the whole container, not a chat-only token (user's call).
 - Anyone who can open the chat may sign in and out until access protection exists.
+- Sessions running during an account switch are left alone; whether Claude Code picks up the new login
+  mid-session is unknown and was judged an irrelevant edge case.
 - No real sign-in during development: on macOS a login would replace the user's own keychain login;
   the real flow is tested by the user in the container.
 
