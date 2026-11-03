@@ -14,11 +14,11 @@ export function fileLanguage(path: string): string | null {
 
 const FILE_EXTENSION = /\.([a-z]\w{0,4})(?=$|[\s'"`|;&)<>:,])/gi;
 
-export function commandLanguage(command: string): string | null {
-    return [...command.matchAll(FILE_EXTENSION)].at(-1)?.[1]?.toLowerCase() ?? null;
+export function commandLanguages(command: string): string[] {
+    return [...command.matchAll(FILE_EXTENSION)].map(([, extension]) => extension!.toLowerCase()).reverse();
 }
 
-export function useCodeTokens(code: MaybeRefOrGetter<string>, language: MaybeRefOrGetter<string | null>): Readonly<Ref<ThemedToken[][] | null>> {
+export function useCodeTokens(code: MaybeRefOrGetter<string>, language: MaybeRefOrGetter<string | string[] | null>): Readonly<Ref<ThemedToken[][] | null>> {
     const tokens = shallowRef<ThemedToken[][] | null>(null);
 
     watch([() => toValue(code), () => toValue(language)], async ([text, name], _previous, onCleanup) => {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const props = defineProps<{
     text: string;
-    language: string | null;
+    language: string | string[] | null;
 }>();
 
 const tokens = useCodeTokens(() => props.text, () => props.language);

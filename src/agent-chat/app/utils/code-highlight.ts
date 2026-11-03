@@ -12,8 +12,8 @@ function resolveLanguage(name: string): BundledLanguage | null {
 
 const BASIC_LANGUAGE: BundledLanguage = 'log';
 
-export async function highlightLines(code: string, language: string | null): Promise<ThemedToken[][] | null> {
-    const id = (language ? resolveLanguage(language) : null) ?? BASIC_LANGUAGE;
+export async function highlightLines(code: string, language: string | string[] | null): Promise<ThemedToken[][] | null> {
+    const id = [language ?? []].flat().map(resolveLanguage).find(Boolean) ?? BASIC_LANGUAGE;
     const grammar = (await bundledLanguages[id]()).default;
     const highlighter = await getHighlighter({ themes: codeThemes, languages: [grammar], registerDefaultThemes: false });
     return codeToTokens(highlighter, code, { lang: id, themes: codeThemes }).tokens;

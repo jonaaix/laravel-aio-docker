@@ -51,7 +51,7 @@ conversation. It stays stored and can be brought back. Each conversation is its 
 being written; its tool use and reasoning are visible as separate, quieter blocks next to the
 answer rather than mixed into it. An opened step shows its command, file changes and output with
 code highlighting in the language they are written in — a command's output in the language of the
-last file the command names; where no language can be told, a basic
+last file the command names whose language is known; where no language can be told, a basic
 highlighting still sets strings, numbers, dates, links and words like "error" apart. Errors stay
 plain red.
 
