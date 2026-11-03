@@ -33,12 +33,13 @@ handover runs and the user has reviewed the result.
 - [x] Round 14 (Tarek): Peter reviewed round 13, fixes (quiet background, no cut-off answers, accent-free search)
 - [x] Round 15 (Tarek): heartbeat; a live connection without a sign of life for 45 s is rebuilt (app and chat)
 - [x] Round 16 (Tarek, his choice): copy a finished agent answer with one tap
-- [ ] Round 17 (Tarek): share an answer through the iOS share sheet, Peter reviews copy and share
+- [x] Round 17 (Tarek): share an answer through the share sheet; copy and share reviewed by Peter and fixed
+- [ ] Round 18 (Tarek): his own topic
 - [ ] Review with the user
 
 ## State
 
-- The app is built and committed in its own repo (298 tests via `npm test`, Pages workflow runs them
+- The app is built and committed in its own repo (312 tests via `npm test`, Pages workflow runs them
   before deploying); its own plan and Feature Book live in `src/agent-chat-mobile/.ai/`. The chat's
   tests count 38 via `npm test` in `src/agent-chat`.
 - Tarek is paused. QR scan verified with a fake camera at iPhone size (scan, confirm, connected); push
@@ -65,5 +66,6 @@ handover runs and the user has reviewed the result.
 - QR scanning sits in the app, because the iPhone camera opens links in Safari, whose storage the
   installed app does not share. Libraries `qrcode`, `jsqr` and `web-push` approved by me.
 - No push while the app is visible on screen.
+- Copy and share take the whole answer as written, like copying in the web chat.
 - The muddy light mode came from our own choices (long answers in iMessage bubbles, cards and pills nested
   in them, grey composer band), not from Framework7, whose defaults look clean in the starter.
