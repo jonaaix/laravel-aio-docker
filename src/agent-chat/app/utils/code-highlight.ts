@@ -10,11 +10,10 @@ function resolveLanguage(name: string): BundledLanguage | null {
     return info ? info.id as BundledLanguage : null;
 }
 
-export async function highlightLines(code: string, language: string): Promise<ThemedToken[][] | null> {
-    const id = resolveLanguage(language);
-    if (!id) {
-        return null;
-    }
+const BASIC_LANGUAGE: BundledLanguage = 'log';
+
+export async function highlightLines(code: string, language: string | null): Promise<ThemedToken[][] | null> {
+    const id = (language ? resolveLanguage(language) : null) ?? BASIC_LANGUAGE;
     const grammar = (await bundledLanguages[id]()).default;
     const highlighter = await getHighlighter({ themes: codeThemes, languages: [grammar], registerDefaultThemes: false });
     return codeToTokens(highlighter, code, { lang: id, themes: codeThemes }).tokens;

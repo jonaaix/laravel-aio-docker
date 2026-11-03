@@ -20,7 +20,7 @@ export function useCodeTokens(code: MaybeRefOrGetter<string>, language: MaybeRef
         onCleanup(() => {
             current = false;
         });
-        if (import.meta.server || !text || !name) {
+        if (import.meta.server || !text) {
             tokens.value = null;
             return;
         }

@@ -34,6 +34,17 @@ const toolOutput = computed(() => {
     return props.part.state === 'output-available' ? toolDetail(props.part.output) : '';
 });
 
+const outputLanguage = computed(() => {
+    if (props.part.type !== 'dynamic-tool' || props.part.state !== 'output-available') {
+        return null;
+    }
+    if (typeof props.part.output !== 'string') {
+        return 'json';
+    }
+    const filePath = (props.part.input as Record<string, unknown> | undefined)?.file_path;
+    return props.part.toolName === 'Read' && typeof filePath === 'string' ? fileLanguage(filePath) : null;
+});
+
 const chatPlugins = useChatMarkdownPlugins();
 </script>
 
@@ -49,11 +60,8 @@ const chatPlugins = useChatMarkdownPlugins();
         >
             <div class="space-y-2 text-xs">
                 <ChatToolInput :input="part.input" :label="toolLabel" />
-                <pre
-                    v-if="toolOutput"
-                    class="max-h-96 overflow-auto rounded-md p-3 whitespace-pre-wrap"
-                    :class="part.state === 'output-error' ? 'bg-error/10 text-error' : 'bg-elevated text-default'"
-                >{{ toolOutput }}</pre>
+                <pre v-if="toolOutput && part.state === 'output-error'" class="max-h-96 overflow-auto rounded-md bg-error/10 p-3 whitespace-pre-wrap text-error">{{ toolOutput }}</pre>
+                <ChatToolOutput v-else-if="toolOutput" :text="toolOutput" :language="outputLanguage" />
             </div>
         </UChatTool>
         <ChatToolInput v-if="showCommand && !open" :input="part.input" :label="toolLabel" class="mt-1" />

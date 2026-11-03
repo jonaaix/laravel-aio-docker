@@ -49,7 +49,10 @@ conversation, open an earlier one and continue it. A conversation that is no lon
 archived: its agent session is paused first, it leaves the sidebar, and the user lands on a new
 conversation. It stays stored and can be brought back. Each conversation is its own agent session. The agent's answer appears while it is
 being written; its tool use and reasoning are visible as separate, quieter blocks next to the
-answer rather than mixed into it.
+answer rather than mixed into it. An opened step shows its command, file changes and output with
+code highlighting in the language they are written in; where no language can be told, a basic
+highlighting still sets strings, numbers, dates, links and words like "error" apart. Errors stay
+plain red.
 
 Any message can be copied with one click. To comment on specific passages, the user selects text
 in the conversation and quotes it: the passage lands in the message input as a quote with the
