@@ -30,3 +30,17 @@ test('after stopping no more pings are sent', () => {
     assert.equal(stream.pushed.length, 0);
     mock.timers.reset();
 });
+
+test('a ping that cannot be written is dropped without an unhandled rejection', async () => {
+    mock.timers.enable({ apis: ['setInterval'] });
+    const unhandled: unknown[] = [];
+    const listener = (reason: unknown) => unhandled.push(reason);
+    process.on('unhandledRejection', listener);
+    const stop = startHeartbeat({ push: () => Promise.reject(new Error('socket closed')) }, 1000);
+    mock.timers.tick(3000);
+    await new Promise(resolve => setImmediate(resolve));
+    stop();
+    process.off('unhandledRejection', listener);
+    mock.timers.reset();
+    assert.deepEqual(unhandled, []);
+});
