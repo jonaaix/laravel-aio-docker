@@ -11,4 +11,3 @@
 - 2026-11-02 [user]: Unread pings for people addressed with @ in a conversation
 - 2026-11-02 [user]: Agent avatar built from the surprised face plus accessory layers, face colour chosen separately (user designs the accessories)
 - 2026-11-02 [agent]: Header heads show at most four and fold the rest into a "+N" bubble, as Google Docs does, once many people and agents take part
-- 2026-11-03 [agent]: Mobile app: push option "title only", so answer text never shows on the lock screen

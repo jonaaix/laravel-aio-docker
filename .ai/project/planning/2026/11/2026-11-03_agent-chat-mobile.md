@@ -18,6 +18,8 @@ handover runs and the user has reviewed the result.
       messages, attachments, install polish, load time, accessibility, tests, update flow, Pages deploy)
 - [x] Round 5 (Tarek): connect by QR code (code in Remote control, scanner in the app), push notifications
             when an agent finishes an answer, reviewed by Peter and fixed; `push_subscriptions` migration 0019
+- [ ] Round 6 (Tarek): per-connection switch to show only the title on the lock screen, testable
+      notify decision in `afterTurn`, tappable question cards in the app
 - [ ] Review with the user
 
 ## State
@@ -28,7 +30,10 @@ handover runs and the user has reviewed the result.
 - Tarek is paused. QR scan verified with a fake camera at iPhone size (scan, confirm, connected); push
   verified up to the send attempt, real delivery untested. Untested on a real iPhone: install, icon,
   startup image, flight mode, text size, VoiceOver, camera, push.
-- Push works for one chat server per device at a time (one push subscription per app).
+- Push works for one chat server per device at a time (one push subscription per app), unless the
+  servers share `NUXT_VAPID_PUBLIC_KEY` / `NUXT_VAPID_PRIVATE_KEY`.
+- The default VAPID subject is a placeholder address Apple may reject; a real deployment sets
+  `NUXT_VAPID_SUBJECT` to a real `mailto:` or `https://` address.
 - The outer repo ignores `/src/agent-chat-mobile`.
 - While the dev server runs with `NUXT_WORKING_DIR`, every new conversation's lead works in the app folder.
 
