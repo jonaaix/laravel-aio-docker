@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { SLIDE_DURATION, SLIDE_EASING, useSlider } from '../composables/useSlider.js';
-import { DEFAULT_LABELS, format } from '../labels.js';
+import { defaultLabels, format } from '../labels.js';
 import IconChevronLeft from '../icons/IconChevronLeft.vue';
 import IconChevronRight from '../icons/IconChevronRight.vue';
 import IconFullscreen from '../icons/IconFullscreen.vue';
@@ -22,7 +22,8 @@ const props = defineProps({
 
 const emit = defineEmits(['change']);
 
-const text = computed(() => ({ ...DEFAULT_LABELS, ...props.labels }));
+const { t } = useI18n();
+const text = computed(() => ({ ...defaultLabels(t), ...props.labels }));
 const stage = ref(null);
 const track = ref(null);
 const width = ref(0);
