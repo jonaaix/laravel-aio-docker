@@ -24,8 +24,8 @@ follows in every open browser.
   removes all of it. The authorize URL is read from the output (OSC 8 link); after the code is written,
   success is confirmed by polling `claude auth status` (macOS `script` does not exit while stdin is open),
   failure by an error line or a non-zero exit.
-- Verified against a stand-in CLI and the start step under Linux in the beta image; the real sign-in is
-  still to be tried by the user in the container.
+- Verified on macOS against a stand-in CLI. Under Linux only `script -qfc "claude auth login"` printing the
+  URL is confirmed (beta image); the `cat |` wrapper and the real sign-in are still to be tried in the container.
 
 ## Decisions
 
