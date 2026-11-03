@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { t } = useI18n();
 const input = ref('');
 const sending = ref(false);
 const { start } = useConversations();
@@ -25,19 +26,19 @@ async function submit(): Promise<void> {
 <template>
     <UDashboardPanel id="new-conversation">
         <template #header>
-            <UDashboardNavbar title="New Conversation" />
+            <UDashboardNavbar :title="t('New Conversation')" />
         </template>
 
         <template #body>
             <UContainer class="flex flex-1 flex-col justify-center gap-6 py-8 sm:gap-8">
                 <h1 class="text-center text-2xl font-bold tracking-tight text-highlighted lg:text-3xl">
-                    What should we work on?
+                    {{ t('What should we work on?') }}
                 </h1>
                 <ChatSignInNotice v-if="accountLoaded && !account" />
                 <ChatUsageNotice v-else />
                 <ChatComposer
                     v-model="input"
-                    placeholder="Ask anything…"
+                    :placeholder="t('Ask anything…')"
                     :status="sending ? 'submitted' : 'ready'"
                     :disabled="sending"
                     :attachments="attachments"

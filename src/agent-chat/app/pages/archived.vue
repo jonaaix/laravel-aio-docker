@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ConversationSummary } from '#shared/types/conversation';
 
+const { t } = useI18n();
 const { loadArchived, restore } = useConversations();
 
 const archived = ref<ConversationSummary[]>([]);
@@ -39,7 +40,7 @@ onMounted(load);
 <template>
     <UDashboardPanel id="archived-conversations">
         <template #header>
-            <UDashboardNavbar title="Archived Conversations" />
+            <UDashboardNavbar :title="t('Archived Conversations')" />
         </template>
 
         <template #body>
@@ -50,16 +51,16 @@ onMounted(load);
 
                 <UAlert
                     v-else-if="failed"
-                    title="Archived conversations could not be loaded"
+                    :title="t('Archived conversations could not be loaded')"
                     icon="i-heroicons-exclamation-triangle"
                     color="error"
                     variant="subtle"
-                    :actions="[{ label: 'Retry', color: 'neutral', variant: 'outline', onClick: load }]"
+                    :actions="[{ label: t('Retry'), color: 'neutral', variant: 'outline', onClick: load }]"
                 />
 
                 <div v-else-if="archived.length === 0" class="flex flex-col items-center gap-2 py-16 text-center text-muted">
                     <UIcon name="i-heroicons-archive-box" class="size-8" />
-                    <p class="text-sm">No archived conversations</p>
+                    <p class="text-sm">{{ t('No archived conversations') }}</p>
                 </div>
 
                 <ul v-else class="divide-y divide-default rounded-md ring ring-default">
@@ -68,7 +69,7 @@ onMounted(load);
                             {{ conversation.title }}
                         </ULink>
                         <UButton
-                            label="Restore"
+                            :label="t('Restore')"
                             icon="i-heroicons-arrow-uturn-left"
                             color="neutral"
                             variant="ghost"

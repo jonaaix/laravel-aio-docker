@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { t } = useI18n();
 const { profile } = useAccount();
 const settingsWindow = useSettingsWindow();
 </script>
@@ -16,6 +17,6 @@ const settingsWindow = useSettingsWindow();
         @click="settingsWindow.open('account')"
     >
         <UIcon name="i-heroicons-key" class="size-4 shrink-0 text-muted" />
-        <span class="text-sm font-medium text-highlighted">Not signed in</span>
+        <span class="text-sm font-medium text-highlighted">{{ t('Not signed in') }}</span>
     </button>
 </template>

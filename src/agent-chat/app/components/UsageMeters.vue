@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { UsageWindow } from '#shared/types/account';
 
+const { t } = useI18n();
 const { usage } = useAccount();
 
 const now = useNow();
@@ -29,16 +30,16 @@ function meterColor(limit: UsageWindow): 'error' | 'warning' | 'neutral' {
     <div v-if="meters.length > 0" class="flex flex-col gap-2">
         <div v-for="meter in meters" :key="meter.label" class="flex flex-col gap-1">
             <div class="flex items-baseline gap-2 text-xs">
-                <span :class="expired(meter.limit) ? 'text-muted' : 'text-default'">{{ meter.label }}</span>
+                <span :class="expired(meter.limit) ? 'text-muted' : 'text-default'">{{ t(meter.label) }}</span>
                 <span class="min-w-0 flex-1 truncate text-end text-muted tabular-nums">
-                    {{ expired(meter.limit) ? 'Reset since last update' : `Resets ${formatClockTime(meter.limit.resetsAt)}` }}
+                    {{ expired(meter.limit) ? t('Reset since last update') : t('Resets {time}', { time: formatClockTime(meter.limit.resetsAt) }) }}
                 </span>
                 <span class="text-muted tabular-nums" :class="meter.limit.limited ? 'text-error' : ''">
-                    {{ meter.limit.limited ? 'Limit reached' : formatPercent(meter.limit.utilization) }}
+                    {{ meter.limit.limited ? t('Limit reached') : formatPercent(meter.limit.utilization) }}
                 </span>
             </div>
             <UProgress :model-value="Math.round(meter.limit.utilization * 100)" :color="meterColor(meter.limit)" size="xs" :class="expired(meter.limit) ? 'opacity-50' : ''" />
         </div>
     </div>
-    <p v-else class="text-xs text-muted">No usage data yet</p>
+    <p v-else class="text-xs text-muted">{{ t('No usage data yet') }}</p>
 </template>

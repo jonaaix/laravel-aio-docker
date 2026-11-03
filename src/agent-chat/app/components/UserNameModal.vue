@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { t } = useI18n();
 const { name, ready } = useUserName();
 
 const open = computed(() => ready.value && !name.value);
@@ -8,7 +9,7 @@ const open = computed(() => ready.value && !name.value);
     <!-- Without a name nothing can be attributed, so the first prompt cannot be dismissed. -->
     <UModal
         :open="open"
-        title="Your name"
+        :title="t('Your name')"
         :dismissible="false"
         :close="false"
         :ui="{ content: 'sm:max-w-2xl', footer: 'justify-end' }"

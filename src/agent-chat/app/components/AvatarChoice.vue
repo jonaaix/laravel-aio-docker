@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { ParticipantKind } from '~/utils/avatars';
 
+const { t } = useI18n();
+
 const CHOICES = 8;
 
 const props = defineProps<{
@@ -46,13 +48,13 @@ onMounted(shuffle);
                 type="button"
                 class="flex items-center justify-center rounded-md transition-colors duration-500 ease-out hover:bg-elevated"
                 :class="[CELL[size ?? 'md'], seed === current ? 'bg-accented/60' : '']"
-                :aria-label="`Use avatar ${seed}`"
+                :aria-label="t('Use avatar {seed}', { seed })"
                 @click="emit('select', seed)"
             >
                 <ParticipantAvatar :participant="{ kind, name: seed, seed }" :class="isVoxelBot({ kind, name: seed, seed }) ? FREE[size ?? 'md'] : FRAMED[size ?? 'md']" />
             </button>
-            <UTooltip v-if="index === 0" text="Shuffle">
-                <UButton icon="i-heroicons-arrow-path" aria-label="Shuffle" color="neutral" variant="ghost" @click="shuffle" />
+            <UTooltip v-if="index === 0" :text="t('Shuffle')">
+                <UButton icon="i-heroicons-arrow-path" :aria-label="t('Shuffle')" color="neutral" variant="ghost" @click="shuffle" />
             </UTooltip>
         </template>
     </div>

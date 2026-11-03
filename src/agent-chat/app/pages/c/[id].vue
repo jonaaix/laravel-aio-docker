@@ -13,6 +13,7 @@ const USER_SCROLL_EVENTS = ['wheel', 'touchmove', 'keydown'] as const;
 // Off for now: the streaming answer already shows that an agent is working; kept for multi-agent use.
 const SHOW_TYPING_LINE = false;
 
+const { t } = useI18n();
 const route = useRoute();
 const conversationId = route.params.id as string;
 const {
@@ -360,9 +361,9 @@ const session = computed(() => sessionState(status.value, turnActive.value));
                     </template>
                     <template #right>
                         <template v-if="archivedAt !== null">
-                            <UBadge label="Archived" color="neutral" variant="subtle" size="lg" class="h-9 px-3" />
+                            <UBadge :label="t('Archived')" color="neutral" variant="subtle" size="lg" class="h-9 px-3" />
                             <UButton
-                                label="Restore"
+                                :label="t('Restore')"
                                 icon="i-heroicons-arrow-uturn-left"
                                 color="neutral"
                                 variant="outline"
@@ -373,9 +374,9 @@ const session = computed(() => sessionState(status.value, turnActive.value));
                         </template>
                         <ChatParticipants v-if="loaded" :participants="participants" :agent-options="agentOptions" :editable="archivedAt === null" @toggle="setAgent" />
                         <template v-if="archivedAt === null && loaded">
-                            <UTooltip v-if="status === 'running'" text="Pause session">
+                            <UTooltip v-if="status === 'running'" :text="t('Pause session')">
                                 <UButton
-                                    aria-label="Pause session"
+                                    :aria-label="t('Pause session')"
                                     icon="i-heroicons-pause"
                                     color="neutral"
                                     variant="outline"
@@ -383,13 +384,13 @@ const session = computed(() => sessionState(status.value, turnActive.value));
                                     :loading="pausing"
                                     @click="pauseConversation"
                                 >
-                                    <span class="max-sm:hidden">Pause session</span>
+                                    <span class="max-sm:hidden">{{ t('Pause session') }}</span>
                                 </UButton>
                             </UTooltip>
-                            <UTooltip text="Archive">
+                            <UTooltip :text="t('Archive')">
                                 <UButton
                                     icon="i-heroicons-archive-box"
-                                    aria-label="Archive"
+                                    :aria-label="t('Archive')"
                                     color="neutral"
                                     variant="outline"
                                     class="size-9.5 justify-center bg-white dark:bg-transparent"
@@ -439,7 +440,7 @@ const session = computed(() => sessionState(status.value, turnActive.value));
                                     <span />
                                     <span />
                                 </div>
-                                <span v-if="startingSession" class="text-sm text-muted">Starting…</span>
+                                <span v-if="startingSession" class="text-sm text-muted">{{ t('Starting…') }}</span>
                             </div>
                         </template>
                         <template #content="{ message }">
@@ -473,10 +474,10 @@ const session = computed(() => sessionState(status.value, turnActive.value));
                     leave-to-class="opacity-0"
                 >
                     <div v-if="!atBottom" class="pointer-events-none absolute inset-x-0 -top-14 flex justify-center">
-                        <UTooltip text="Jump to latest">
+                        <UTooltip :text="t('Jump to latest')">
                             <UButton
                                 icon="i-heroicons-arrow-down"
-                                aria-label="Jump to latest"
+                                :aria-label="t('Jump to latest')"
                                 color="neutral"
                                 variant="outline"
                                 class="pointer-events-auto bg-default shadow-lg"
@@ -493,13 +494,17 @@ const session = computed(() => sessionState(status.value, turnActive.value));
                     <div v-if="SHOW_TYPING_LINE" class="mb-1.5 flex h-6 items-center px-3.5">
                         <Transition enter-active-class="transition-opacity duration-150 ease-out" enter-from-class="opacity-0" leave-active-class="transition-opacity duration-150 ease-in" leave-to-class="opacity-0">
                             <div v-if="typingAgent" class="min-w-0 truncate text-xs text-muted">
-                                <span class="font-medium text-toned">{{ typingAgent.name }}</span> is typing…
+                                <i18n-t keypath="{name} is typing…" scope="global">
+                                    <template #name>
+                                        <span class="font-medium text-toned">{{ typingAgent.name }}</span>
+                                    </template>
+                                </i18n-t>
                             </div>
                         </Transition>
                     </div>
                     <ChatComposer
                         v-model="input"
-                        placeholder="Send a message…"
+                        :placeholder="t('Send a message…')"
                         :status="chatStatus"
                         :error="error"
                         :attachments="attachments"

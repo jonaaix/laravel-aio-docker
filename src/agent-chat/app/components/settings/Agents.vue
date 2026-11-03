@@ -7,6 +7,8 @@ defineProps<{ actionsTarget: string }>();
 
 const SAVE_DELAY_MS = 700;
 
+const { t } = useI18n();
+
 const { agents, load, save, remove } = useAgents();
 const { attachments, uploading, ready, add: attach, remove: removeAttachment, take: takeAttachments } = useAttachments();
 
@@ -40,8 +42,8 @@ const modelItems = computed(() => {
 });
 const effortLevels = computed(() => models.value.find(entry => entry.value === model.value)?.effortLevels ?? []);
 const effortItems = computed(() => effortLevels.value.map((level) => {
-    const name = level === 'xhigh' ? 'Extra high' : level.charAt(0).toUpperCase() + level.slice(1);
-    return { label: level === DEFAULT_EFFORT ? `${name} (default)` : name, value: level };
+    const name = level === 'xhigh' ? t('Extra high') : level.charAt(0).toUpperCase() + level.slice(1);
+    return { label: level === DEFAULT_EFFORT ? t('{name} (default)', { name }) : name, value: level };
 }));
 
 watch(effortLevels, (levels) => {
@@ -209,7 +211,7 @@ async function persist(): Promise<void> {
         }
     }
     catch (failure) {
-        error.value = (failure as { statusMessage?: string }).statusMessage ?? 'Could not save the agent';
+        error.value = (failure as { statusMessage?: string }).statusMessage ?? t('Could not save the agent');
     }
     finally {
         saving.value = false;
@@ -276,19 +278,19 @@ async function confirmDelete(): Promise<void> {
                     <ParticipantAvatar :participant="avatarParticipant" :class="isVoxelBot(avatarParticipant) ? 'size-10' : 'size-8'" />
                 </span>
                 <span class="min-w-0">
-                    <span class="block truncate text-sm font-medium text-highlighted">{{ name.trim() || 'New agent' }}</span>
+                    <span class="block truncate text-sm font-medium text-highlighted">{{ name.trim() || t('New agent') }}</span>
                     <span class="line-clamp-2 text-xs text-muted">{{ role }}</span>
                 </span>
             </div>
-            <UButton label="New agent" icon="i-heroicons-plus" color="neutral" variant="ghost" class="justify-start" @click="startNew" />
+            <UButton :label="t('New agent')" icon="i-heroicons-plus" color="neutral" variant="ghost" class="justify-start" @click="startNew" />
         </nav>
 
         <form v-if="selected || creating" id="agent-form" class="flex min-w-0 flex-1 flex-col gap-3.5" @submit.prevent="roleTouched = true; persist()">
             <div class="grid gap-3.5 sm:grid-cols-2">
-                <UFormField label="Name" required :error="error">
+                <UFormField :label="t('Name')" required :error="error">
                     <UInput v-model="name" :maxlength="USER_NAME_MAX_LENGTH" class="w-full" />
                 </UFormField>
-                <UFormField label="Role" required :error="roleMissing && roleTouched ? 'Required' : undefined">
+                <UFormField :label="t('Role')" required :error="roleMissing && roleTouched ? t('Required') : undefined">
                     <UInput v-model="role" :maxlength="AGENT_ROLE_MAX_LENGTH" class="w-full" @blur="roleTouched = true" />
                 </UFormField>
             </div>
@@ -298,8 +300,8 @@ async function confirmDelete(): Promise<void> {
                         <ParticipantAvatar :participant="avatarParticipant" :class="isVoxelBot(avatarParticipant) ? 'size-20' : 'size-16'" />
                     </span>
                     <div class="flex gap-2 sm:w-full sm:flex-col">
-                        <UButton label="Upload" icon="i-heroicons-arrow-up-tray" color="neutral" variant="outline" class="sm:w-full sm:justify-center" :loading="avatarBusy" @click="avatarInput?.click()" />
-                        <UButton v-if="avatarPreview || storedPicture" label="Remove" color="neutral" variant="ghost" class="sm:w-full sm:justify-center" @click="clearPicture" />
+                        <UButton :label="t('Upload')" icon="i-heroicons-arrow-up-tray" color="neutral" variant="outline" class="sm:w-full sm:justify-center" :loading="avatarBusy" @click="avatarInput?.click()" />
+                        <UButton v-if="avatarPreview || storedPicture" :label="t('Remove')" color="neutral" variant="ghost" class="sm:w-full sm:justify-center" @click="clearPicture" />
                     </div>
                     <input ref="avatarInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="hidden" @change="onAvatarPicked">
                 </div>
@@ -314,37 +316,37 @@ async function confirmDelete(): Promise<void> {
                 />
             </div>
             <div class="grid gap-3.5 sm:grid-cols-[minmax(0,1fr)_13rem]">
-                <UFormField label="Model">
+                <UFormField :label="t('Model')">
                     <USelect v-model="model" :items="modelItems" class="w-full" :ui="{ content: 'min-w-72' }" />
                 </UFormField>
-                <UFormField v-if="effortLevels.length > 0" label="Effort">
+                <UFormField v-if="effortLevels.length > 0" :label="t('Effort')">
                     <USelect v-model="effort" :items="effortItems" class="w-full" />
                 </UFormField>
             </div>
-            <UFormField v-if="isLead" label="Instructions">
+            <UFormField v-if="isLead" :label="t('Instructions')">
                 <p class="flex items-center gap-2 rounded-md bg-elevated/60 px-3 py-2 text-sm text-toned">
                     <UIcon name="i-heroicons-information-circle" class="size-4 shrink-0 text-muted" />
-                    Uses the CLAUDE.md of the project it works in.
+                    {{ t('Uses the CLAUDE.md of the project it works in.') }}
                 </p>
             </UFormField>
             <template v-else>
-                <UFormField label="Instructions" hint="CLAUDE.md">
+                <UFormField :label="t('Instructions')" hint="CLAUDE.md">
                     <UTextarea v-model="instructions" :rows="4" autoresize :maxrows="8" class="w-full font-mono text-sm" />
                 </UFormField>
-                <UFormField label="Resources">
+                <UFormField :label="t('Resources')">
                     <div class="flex flex-col gap-2">
                         <ul v-if="keptResources.length > 0" class="divide-y divide-default rounded-md ring ring-default">
                             <li v-for="resource in keptResources" :key="resource.name" class="flex h-9 items-center gap-2 ps-3 pe-1 text-sm">
                                 <UIcon name="i-heroicons-document" class="size-4 shrink-0 text-muted" />
                                 <span class="min-w-0 flex-1 truncate">{{ resource.name }}</span>
                                 <span class="shrink-0 text-xs text-muted tabular-nums">{{ formatBytes(resource.size) }}</span>
-                                <UTooltip text="Remove">
-                                    <UButton icon="i-heroicons-x-mark" aria-label="Remove" color="neutral" variant="ghost" size="sm" @click="removeResource(resource.name)" />
+                                <UTooltip :text="t('Remove')">
+                                    <UButton icon="i-heroicons-x-mark" :aria-label="t('Remove')" color="neutral" variant="ghost" size="sm" @click="removeResource(resource.name)" />
                                 </UTooltip>
                             </li>
                         </ul>
                         <ChatAttachmentChips v-if="attachments.length > 0" :attachments="attachments" @remove="removeAttachment" />
-                        <UButton label="Add files" icon="i-heroicons-paper-clip" color="neutral" variant="outline" class="self-start" @click="pickFiles" />
+                        <UButton :label="t('Add files')" icon="i-heroicons-paper-clip" color="neutral" variant="outline" class="self-start" @click="pickFiles" />
                         <input ref="fileInput" type="file" multiple class="hidden" @change="onPicked">
                     </div>
                 </UFormField>
@@ -359,23 +361,23 @@ async function confirmDelete(): Promise<void> {
     <Teleport defer :to="actionsTarget">
         <UButton
             v-if="selected && !isLead"
-            label="Delete"
+            :label="t('Delete')"
             icon="i-heroicons-trash"
             color="error"
             variant="ghost"
             @click="confirmingDelete = true"
         />
         <span v-else />
-        <span class="text-sm text-muted">{{ saving ? 'Saving…' : '' }}</span>
+        <span class="text-sm text-muted">{{ saving ? t('Saving…') : '' }}</span>
     </Teleport>
 
-    <UModal v-model:open="confirmingDelete" title="Delete agent" :ui="{ footer: 'justify-end' }">
+    <UModal v-model:open="confirmingDelete" :title="t('Delete agent')" :ui="{ footer: 'justify-end' }">
         <template #body>
-            <p class="text-sm">{{ selected?.name }} and its files will be deleted.</p>
+            <p class="text-sm">{{ t('{name} and its files will be deleted.', { name: selected?.name }) }}</p>
         </template>
         <template #footer>
-            <UButton label="Cancel" color="neutral" variant="outline" @click="confirmingDelete = false" />
-            <UButton label="Delete" color="error" @click="confirmDelete" />
+            <UButton :label="t('Cancel')" color="neutral" variant="outline" @click="confirmingDelete = false" />
+            <UButton :label="t('Delete')" color="error" @click="confirmDelete" />
         </template>
     </UModal>
 </template>

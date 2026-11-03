@@ -6,6 +6,8 @@ const emit = defineEmits<{ saved: [] }>();
 
 const SAVE_DELAY_MS = 700;
 
+const { t } = useI18n();
+
 const { user, name, locked, save, setAvatar, setAvatarSeed } = useUserName();
 
 const draft = ref(name.value ?? '');
@@ -36,7 +38,7 @@ async function submit(): Promise<void> {
         emit('saved');
     }
     catch (failure) {
-        error.value = failureMessage(failure, 'Could not save the name');
+        error.value = failureMessage(failure, t('Could not save the name'));
     }
     finally {
         saving.value = false;
@@ -53,7 +55,7 @@ async function changePicture(upload: Promise<UploadedFile | null | undefined>): 
         }
     }
     catch (failure) {
-        pictureError.value = failureMessage(failure, 'Could not change the picture');
+        pictureError.value = failureMessage(failure, t('Could not change the picture'));
     }
     finally {
         pictureBusy.value = false;
@@ -97,13 +99,13 @@ function onPicked(): void {
 
 <template>
     <form id="profile-form" class="flex flex-col gap-4" @submit.prevent="submit">
-        <UFormField :label="required ? undefined : 'Name'" :error="error">
+        <UFormField :label="required ? undefined : t('Name')" :error="error">
             <UInput
                 v-model="draft"
                 :maxlength="USER_NAME_MAX_LENGTH"
                 :disabled="locked"
-                placeholder="Name"
-                aria-label="Your name"
+                :placeholder="t('Name')"
+                :aria-label="t('Your name')"
                 autofocus
                 class="w-full sm:max-w-sm"
             />
@@ -112,8 +114,8 @@ function onPicked(): void {
             <div class="flex shrink-0 items-center gap-3 sm:w-28 sm:flex-col">
                 <ParticipantAvatar :participant="{ kind: 'person', name: user.name, seed: user.avatarSeed, image: user.avatarUrl }" class="size-20" />
                 <div v-if="!user.avatarLocked" class="flex gap-2 sm:w-full sm:flex-col">
-                    <UButton label="Upload" icon="i-heroicons-arrow-up-tray" color="neutral" variant="outline" class="sm:w-full sm:justify-center" :loading="pictureBusy" @click="fileInput?.click()" />
-                    <UButton v-if="user.avatarUrl" label="Remove" color="neutral" variant="ghost" class="sm:w-full sm:justify-center" :disabled="pictureBusy" @click="removePicture" />
+                    <UButton :label="t('Upload')" icon="i-heroicons-arrow-up-tray" color="neutral" variant="outline" class="sm:w-full sm:justify-center" :loading="pictureBusy" @click="fileInput?.click()" />
+                    <UButton v-if="user.avatarUrl" :label="t('Remove')" color="neutral" variant="ghost" class="sm:w-full sm:justify-center" :disabled="pictureBusy" @click="removePicture" />
                 </div>
                 <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="hidden" @change="onPicked">
             </div>
@@ -128,10 +130,10 @@ function onPicked(): void {
             />
         </div>
         <p v-if="pictureError" class="text-sm text-error">{{ pictureError }}</p>
-        <p class="text-xs text-muted">Drawn avatars: “Glyphs” by Matt Houser and “Dylan” by Natalia Spivak, CC BY 4.0; “Notionists” by Zoish, CC0</p>
+        <p class="text-xs text-muted">{{ t('Drawn avatars: “Glyphs” by Matt Houser and “Dylan” by Natalia Spivak, CC BY 4.0; “Notionists” by Zoish, CC0') }}</p>
     </form>
     <Teleport v-if="actionsTarget" defer :to="actionsTarget">
         <span />
-        <UButton type="submit" form="profile-form" label="Continue" :loading="saving" :disabled="!changed" />
+        <UButton type="submit" form="profile-form" :label="t('Continue')" :loading="saving" :disabled="!changed" />
     </Teleport>
 </template>

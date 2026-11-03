@@ -4,6 +4,7 @@ import type { SettingsCategory } from '~/composables/useSettingsWindow';
 const props = withDefaults(defineProps<{ category?: SettingsCategory }>(), { category: 'appearance' });
 const open = defineModel<boolean>('open', { default: false });
 const emit = defineEmits<{ 'after:leave': []; 'close': [] }>();
+const { t } = useI18n();
 
 const categories: { value: SettingsCategory; label: string; icon: string }[] = [
     { value: 'appearance', label: 'Appearance', icon: 'i-heroicons-swatch' },
@@ -20,7 +21,7 @@ const hasActions = computed(() => active.value === 'agents');
 <template>
     <UModal
         v-model:open="open"
-        title="Settings"
+        :title="t('Settings')"
         :ui="{ content: 'sm:max-w-6xl', body: 'p-0 sm:p-0', footer: 'justify-between' }"
         @after:leave="emit('after:leave')"
     >
@@ -36,7 +37,7 @@ const hasActions = computed(() => active.value === 'agents');
                         @click="active = category.value"
                     >
                         <UIcon :name="category.icon" class="size-5 shrink-0" />
-                        {{ category.label }}
+                        {{ t(category.label) }}
                     </button>
                 </nav>
                 <div class="min-w-0 flex-1 p-4 sm:p-5">

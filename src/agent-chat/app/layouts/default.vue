@@ -2,6 +2,7 @@
 import type { NavigationMenuItem } from '@nuxt/ui';
 import type { ConversationListEvent } from '#shared/types/conversation';
 
+const { t } = useI18n();
 const { conversations, upsert, load } = useConversations();
 const { usage, load: loadAccount } = useAccount();
 const { load: loadAgents } = useAgents();
@@ -36,7 +37,7 @@ else {
 const now = useNow();
 
 const items = computed<NavigationMenuItem[][]>(() => groupByRecency(conversations.value).map(group => [
-    { label: group.label, type: 'label' },
+    { label: t(group.label), type: 'label' },
     ...group.conversations.map(conversation => ({
         label: conversation.title,
         to: `/c/${conversation.id}`,
@@ -92,12 +93,12 @@ onBeforeUnmount(() => {
             :ui="{ root: 'bg-elevated/50', footer: 'pb-4' }"
         >
             <template #header="{ collapsed }">
-                <UTooltip text="New Code Session" :disabled="!collapsed">
+                <UTooltip :text="t('New Code Session')" :disabled="!collapsed">
                     <UButton
                         to="/"
                         icon="i-heroicons-pencil-square"
-                        :label="collapsed ? undefined : 'New Code Session'"
-                        aria-label="New Code Session"
+                        :label="collapsed ? undefined : t('New Code Session')"
+                        :aria-label="t('New Code Session')"
                         color="neutral"
                         variant="soft"
                         block
@@ -135,12 +136,12 @@ onBeforeUnmount(() => {
             <template #footer="{ collapsed }">
                 <div class="flex w-full flex-col gap-2">
                     <div class="flex flex-col">
-                        <UTooltip text="Archived" :disabled="!collapsed">
+                        <UTooltip :text="t('Archived')" :disabled="!collapsed">
                             <UButton
                                 to="/archived"
                                 icon="i-heroicons-archive-box"
-                                :label="collapsed ? undefined : 'Archived'"
-                                aria-label="Archived"
+                                :label="collapsed ? undefined : t('Archived')"
+                                :aria-label="t('Archived')"
                                 color="neutral"
                                 variant="ghost"
                                 :square="collapsed"

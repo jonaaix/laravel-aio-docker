@@ -1,15 +1,16 @@
 <script setup lang="ts">
 defineProps<{ collapsed: boolean }>();
 
+const { t } = useI18n();
 const settingsWindow = useSettingsWindow();
 </script>
 
 <template>
-    <UTooltip text="Settings" :disabled="!collapsed">
+    <UTooltip :text="t('Settings')" :disabled="!collapsed">
         <UButton
             icon="i-heroicons-cog-6-tooth"
-            :label="collapsed ? undefined : 'Settings'"
-            aria-label="Settings"
+            :label="collapsed ? undefined : t('Settings')"
+            :aria-label="t('Settings')"
             color="neutral"
             variant="ghost"
             :square="collapsed"
