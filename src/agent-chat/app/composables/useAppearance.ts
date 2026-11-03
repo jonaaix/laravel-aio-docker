@@ -16,8 +16,8 @@ export function applyTint(value: number): void {
 
 export function cachedTint(): number | null {
     try {
-        const stored = Number(localStorage.getItem(TINT_CACHE_KEY));
-        return isTint(stored) && localStorage.getItem(TINT_CACHE_KEY) !== null ? stored : null;
+        const stored = localStorage.getItem(TINT_CACHE_KEY);
+        return stored !== null && isTint(Number(stored)) ? Number(stored) : null;
     }
     catch {
         return null;
