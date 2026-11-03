@@ -37,6 +37,9 @@ handover runs and the user has reviewed the result.
 - [x] Round 18 (Tarek, his choice): earlier messages load by themselves when scrolling up
 - [x] Round 19 (Tarek): auto loading reviewed by Peter and fixed (history kept through reloads, anchored reading place)
 - [x] Round 20 (Tarek): setup guide in the app's README with an on-device checklist; whole-app pass by Peter
+- [x] Round 21 (Tarek): Mine/Everyone removed, tab bar with Chats and Connections; screenshots of every screen
+- [ ] Round 22 (Tarek): unread count per server, Peter's design findings (radius scale, grey inactive tabs,
+      active-tab tap, "Started by", scanner and offline notice), the person's language from the chat
 - [ ] Review with the user: setup by the README and the on-device checklist
 
 ## State
@@ -44,7 +47,7 @@ handover runs and the user has reviewed the result.
 - The app is built and committed in its own repo (326 tests via `npm test`, Pages workflow runs them
   before deploying); its own plan and Feature Book live in `src/agent-chat-mobile/.ai/`. The chat's
   tests count 38 via `npm test` in `src/agent-chat`.
-- Tarek is paused after round 20; the app is ready for the iPhone test. The README holds the setup steps
+- Tarek works on round 22; the app is otherwise ready for the iPhone test. The README holds the setup steps
   and the on-device checklist. QR scan verified with a fake camera at iPhone size (scan, confirm, connected); push
   verified up to the send attempt, real delivery untested. Untested on a real iPhone: install, icon,
   startup image, flight mode, text size, VoiceOver, camera, push.
@@ -70,5 +73,8 @@ handover runs and the user has reviewed the result.
   installed app does not share. Libraries `qrcode`, `jsqr` and `web-push` approved by me.
 - No push while the app is visible on screen.
 - Copy and share take the whole answer as written, like copying in the web chat.
+- Two fixed tabs, Chats and Connections (user's call); the server list shows each server's unread count.
+- I review every round from Tarek's before/after screenshots in the chat, not by opening the app myself
+  (user's call).
 - The muddy light mode came from our own choices (long answers in iMessage bubbles, cards and pills nested
   in them, grey composer band), not from Framework7, whose defaults look clean in the starter.
