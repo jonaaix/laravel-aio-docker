@@ -1,4 +1,7 @@
 import { spawn, type ChildProcess } from 'node:child_process';
+import { existsSync, statSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 import { getClaudePath } from '#claude-threads/claude/version-check';
 
 const AUTHORIZE_URL = /https:\/\/[^\s\x07\x1B]+\/oauth\/authorize\?[^\s\x07\x1B]+/;
@@ -7,6 +10,7 @@ const START_TIMEOUT_MS = 30_000;
 const CODE_TIMEOUT_MS = 60_000;
 const STATUS_POLL_MS = 1_500;
 const FAILURE = /error|invalid|failed|denied/i;
+const SUCCESS = /login successful|logged in as|signed in as/i;
 
 let child: ChildProcess | null = null;
 let output = '';
@@ -107,11 +111,18 @@ export async function startClaudeLogin(): Promise<string> {
     }
 }
 
+function credentialsStamp(): number | null {
+    const file = join(process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), '.claude'), '.credentials.json');
+    return existsSync(file) ? statSync(file).mtimeMs : null;
+}
+
 export async function submitClaudeLoginCode(code: string): Promise<void> {
     const running = child;
     if (!running?.stdin) {
         throw new Error('Start the sign-in again.');
     }
+    const previous = await readProfile();
+    const stamp = credentialsStamp();
     const before = output.length;
     let exitCode: number | null | undefined;
     running.once('exit', (codeOnExit) => {
@@ -121,11 +132,13 @@ export async function submitClaudeLoginCode(code: string): Promise<void> {
     const deadline = Date.now() + CODE_TIMEOUT_MS;
     while (Date.now() < deadline) {
         await new Promise(resolve => setTimeout(resolve, STATUS_POLL_MS));
-        if (await readProfile()) {
+        const reply = output.slice(before).replace(ESCAPE_SEQUENCES, '').split(/[\r\n]+/).map(line => line.trim()).filter(line => line && !line.includes(code));
+        const current = await readProfile();
+        const switched = current !== null && current.email !== previous?.email;
+        if (exitCode === 0 || switched || credentialsStamp() !== stamp || reply.some(line => SUCCESS.test(line))) {
             cancelClaudeLogin();
             return;
         }
-        const reply = output.slice(before).replace(ESCAPE_SEQUENCES, '').split(/[\r\n]+/).map(line => line.trim()).filter(line => line && !line.includes(code));
         const failure = reply.find(line => FAILURE.test(line));
         if (failure || (exitCode !== undefined && exitCode !== 0)) {
             cancelClaudeLogin();

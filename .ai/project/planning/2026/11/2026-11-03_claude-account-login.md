@@ -23,7 +23,9 @@ follows in every open browser.
   supplies the terminal, `cat` a plain pipe (macOS `script` rejects Node's socket stdin), the group kill
   removes all of it. The authorize URL is read from the output (OSC 8 link); after the code is written,
   success is confirmed by polling `claude auth status` (macOS `script` does not exit while stdin is open),
-  failure by an error line or a non-zero exit.
+  failure by an error line or a non-zero exit. Success when switching accounts is any of: exit 0, a
+  different e-mail, a changed `.credentials.json`, or a "Login successful" line. Sign-in and sign-out
+  clear the stored usage (`usage.json`).
 - Verified on macOS against a stand-in CLI. Under Linux only `script -qfc "claude auth login"` printing the
   URL is confirmed (beta image); the `cat |` wrapper and the real sign-in are still to be tried in the container.
 

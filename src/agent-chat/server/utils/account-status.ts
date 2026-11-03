@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { getClaudePath } from '#claude-threads/claude/version-check';
@@ -52,6 +52,8 @@ function toUsageWindow(limit: RateLimitWindow | undefined): UsageWindow | null {
 
 export function refreshAccountProfile(): void {
     profile = null;
+    usage = null;
+    rmSync(usageFile(), { force: true });
     publishConversationListEvent({ type: 'account' });
 }
 

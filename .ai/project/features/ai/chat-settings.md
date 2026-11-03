@@ -31,12 +31,14 @@ a conversation opens the same window at Agents.
 - **Agents** defines the agents, as described in [Agents in the chat](chat-agents.md).
 - **Claude account** signs the container's Claude Code in to a Claude subscription and out again, the
   same login a terminal `/login` creates. Signed in, it shows the account's e-mail, organisation and
-  plan with "Sign out". Signed out, "Sign in with Claude" offers Claude's own sign-in page in a new tab
+  plan with "Switch account", which signs in another account directly, and "Sign out". Signed out, "Sign in with Claude" offers Claude's own sign-in page in a new tab
   and a field for the code that page shows; a wrong code or a failed sign-in says so, and a sign-in in
   progress can be cancelled. Anyone who can open the chat may do this. The account card at the foot of
   the sidebar shows "Not signed in" while no account is signed in and opens this category; it follows
   sign-ins and sign-outs in every open browser. While signed out, a notice above every message input
-  says "Claude is not signed in" and its "Sign in" opens this category.
+  says "Claude is not signed in" and its "Sign in" opens this category; while a usage limit is reached,
+  it says "Usage limit reached" with the time agents can answer again. Usage figures start over with
+  every sign-in and sign-out, so they never show another account's usage.
 
 There is no save button: every change is stored as it is made — text a moment after typing stops or
 on Enter, choices, pictures and files at once — and errors show at the field concerned. "New agent" adds an entry to the list at once; the agent

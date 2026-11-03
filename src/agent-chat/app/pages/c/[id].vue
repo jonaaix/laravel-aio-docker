@@ -471,6 +471,7 @@ const session = computed(() => sessionState(status.value, turnActive.value));
                 </Transition>
                 <UContainer class="pb-4 sm:pb-6">
                     <ChatSignInNotice v-if="accountLoaded && !account" class="mb-2" />
+                    <ChatUsageNotice v-else class="mb-2" />
                     <ChatBackgroundTasks v-if="backgroundTasks.length > 0" :tasks="backgroundTasks" class="mb-2" />
                     <ChatQueuedMessages v-if="queuedMessages.length > 0" :messages="queuedMessages" :recipient-name="agentName" class="mb-2" />
                     <div v-if="SHOW_TYPING_LINE" class="mb-1.5 flex h-6 items-center px-3.5">

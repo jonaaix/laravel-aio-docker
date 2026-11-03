@@ -81,13 +81,14 @@ onBeforeUnmount(() => {
 
 <template>
     <div class="flex max-w-xl flex-col gap-4">
-        <template v-if="profile">
+        <template v-if="profile && (step === 'idle' || step === 'starting')">
             <div class="rounded-md p-4 ring ring-default">
                 <p class="truncate font-medium text-highlighted">{{ profile.email }}</p>
                 <p v-if="details" class="truncate text-sm text-muted">{{ details }}</p>
             </div>
-            <div>
-                <UButton label="Sign out" icon="i-heroicons-arrow-right-on-rectangle" color="neutral" variant="outline" :loading="signingOut" @click="signOut" />
+            <div class="flex flex-wrap gap-2">
+                <UButton label="Switch account" icon="i-heroicons-arrows-right-left" color="neutral" variant="outline" :loading="step === 'starting'" @click="startSignIn" />
+                <UButton label="Sign out" icon="i-heroicons-arrow-right-on-rectangle" color="neutral" variant="ghost" :loading="signingOut" @click="signOut" />
             </div>
         </template>
 
@@ -107,7 +108,7 @@ onBeforeUnmount(() => {
             </form>
         </template>
 
-        <template v-else>
+        <template v-else-if="!profile">
             <div class="flex items-start gap-3 rounded-md bg-elevated/60 p-4">
                 <UIcon name="i-heroicons-key" class="mt-0.5 size-5 shrink-0 text-muted" />
                 <div>

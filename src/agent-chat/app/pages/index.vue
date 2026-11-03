@@ -34,6 +34,7 @@ async function submit(): Promise<void> {
                     What should we work on?
                 </h1>
                 <ChatSignInNotice v-if="accountLoaded && !account" />
+                <ChatUsageNotice v-else />
                 <ChatComposer
                     v-model="input"
                     placeholder="Ask anything…"
