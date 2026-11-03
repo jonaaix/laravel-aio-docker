@@ -1,16 +1,7 @@
 <script setup lang="ts">
-const CLOCK_TICK_MS = 60_000;
-
 const { usage } = useAccount();
 
-const now = ref(Date.now());
-let clock: ReturnType<typeof setInterval> | undefined;
-onMounted(() => {
-    clock = setInterval(() => {
-        now.value = Date.now();
-    }, CLOCK_TICK_MS);
-});
-onBeforeUnmount(() => clearInterval(clock));
+const now = useNow();
 
 const freeAt = computed(() => {
     const limited = [usage.value?.session, usage.value?.week].filter(window => window?.limited && window.resetsAt > now.value);

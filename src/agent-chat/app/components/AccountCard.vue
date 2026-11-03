@@ -1,19 +1,10 @@
 <script setup lang="ts">
 import type { UsageWindow } from '#shared/types/account';
 
-const CLOCK_TICK_MS = 60_000;
-
 const { profile, usage } = useAccount();
 const settingsWindow = useSettingsWindow();
 
-const now = ref(Date.now());
-let clock: ReturnType<typeof setInterval> | undefined;
-onMounted(() => {
-    clock = setInterval(() => {
-        now.value = Date.now();
-    }, CLOCK_TICK_MS);
-});
-onBeforeUnmount(() => clearInterval(clock));
+const now = useNow();
 
 function expired(limit: UsageWindow): boolean {
     return limit.resetsAt <= now.value;

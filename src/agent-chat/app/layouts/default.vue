@@ -8,7 +8,6 @@ const { load: loadAgents } = useAgents();
 const { users, load: loadUsers, upsert: upsertUser } = useUsers();
 const { baseURL } = useRuntimeConfig().app;
 
-const CLOCK_TICK_MS = 60_000;
 const NAME_PARAM = 'n';
 const AVATAR_PARAM = 'a';
 
@@ -34,8 +33,7 @@ else {
     void restoreUser();
 }
 
-const now = ref(Date.now());
-let clock: ReturnType<typeof setInterval> | undefined;
+const now = useNow();
 
 const items = computed<NavigationMenuItem[][]>(() => groupByRecency(conversations.value).map(group => [
     { label: group.label, type: 'label' },
@@ -75,14 +73,10 @@ onMounted(async () => {
         void Promise.all([load(), loadAccount(), loadUsers(), loadAgents()]);
     });
     await Promise.all([load(), loadAccount(), loadAgents(), loadUsers()]);
-    clock = setInterval(() => {
-        now.value = Date.now();
-    }, CLOCK_TICK_MS);
 });
 
 onBeforeUnmount(() => {
     unsubscribe?.();
-    clearInterval(clock);
 });
 </script>
 
