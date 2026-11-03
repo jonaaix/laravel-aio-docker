@@ -8,7 +8,7 @@ export function savePushSubscription(subscription: StoredSubscription): void {
         .values({ ...subscription, createdAt: Date.now() })
         .onConflictDoUpdate({
             target: [pushSubscriptions.endpoint, pushSubscriptions.userId],
-            set: { p256dh: subscription.p256dh, auth: subscription.auth },
+            set: { p256dh: subscription.p256dh, auth: subscription.auth, language: subscription.language },
         })
         .run();
 }
@@ -37,7 +37,7 @@ export function subscriptionsForUsers(userIds: string[]): StoredSubscription[] {
         return [];
     }
     return useDatabase()
-        .select({ endpoint: pushSubscriptions.endpoint, userId: pushSubscriptions.userId, p256dh: pushSubscriptions.p256dh, auth: pushSubscriptions.auth })
+        .select({ endpoint: pushSubscriptions.endpoint, userId: pushSubscriptions.userId, p256dh: pushSubscriptions.p256dh, auth: pushSubscriptions.auth, language: pushSubscriptions.language })
         .from(pushSubscriptions)
         .where(inArray(pushSubscriptions.userId, userIds))
         .all();

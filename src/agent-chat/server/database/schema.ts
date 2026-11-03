@@ -86,5 +86,6 @@ export const pushSubscriptions = sqliteTable('push_subscriptions', {
     userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
     p256dh: text('p256dh').notNull(),
     auth: text('auth').notNull(),
+    language: text('language'),
     createdAt: integer('created_at').notNull(),
 }, table => [primaryKey({ columns: [table.endpoint, table.userId] })]);

@@ -1,10 +1,11 @@
 interface SubscriptionBody {
     userId?: unknown;
+    language?: unknown;
     subscription?: { endpoint?: unknown; keys?: { p256dh?: unknown; auth?: unknown } };
 }
 
 export default defineEventHandler(async (event) => {
-    const { userId, subscription } = await readBody<SubscriptionBody>(event);
+    const { userId, subscription, language } = await readBody<SubscriptionBody>(event);
     const user = findUser(userId);
     if (!user) {
         throw createError({ statusCode: 404, statusMessage: 'User not found' });
@@ -18,6 +19,6 @@ export default defineEventHandler(async (event) => {
     if (!hasPushSubscription(endpoint, user.id) && countPushSubscriptions(user.id) >= MAX_SUBSCRIPTIONS_PER_USER) {
         throw createError({ statusCode: 422, statusMessage: 'Too many devices are registered for this person' });
     }
-    savePushSubscription({ endpoint, userId: user.id, p256dh, auth });
+    savePushSubscription({ endpoint, userId: user.id, p256dh, auth, language: isLanguage(language) ? language : null });
     return { ok: true };
 });

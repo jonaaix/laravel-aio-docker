@@ -1,21 +1,11 @@
-const FAILED_ANSWER: Record<string, string> = {
-    en: 'The answer could not be completed',
-    de: 'Die Antwort konnte nicht abgeschlossen werden',
-    fr: 'La réponse n\'a pas pu être terminée',
-    nl: 'Het antwoord kon niet worden voltooid',
-    es: 'No se pudo completar la respuesta',
-    it: 'Non è stato possibile completare la risposta',
-};
-
-export function failedAnswerText(language: string | null | undefined): string {
-    return FAILED_ANSWER[language ?? ''] ?? FAILED_ANSWER.en;
-}
+export const FAILED_ANSWER = 'The answer could not be completed';
 
 export interface StoredSubscription {
     endpoint: string;
     userId: string;
     p256dh: string;
     auth: string;
+    language: string | null;
 }
 
 export interface PushPayload {
@@ -37,7 +27,8 @@ export interface AnswerFinished {
 
 export interface PushDelivery {
     subscriptionsFor(userIds: string[]): StoredSubscription[];
-    languageOf(userId: string): string | null;
+    languageOf(subscription: StoredSubscription): string | null;
+    translate(key: string, language: string | null): string;
     isAppVisible(subscription: StoredSubscription): boolean;
     send(subscription: StoredSubscription, payload: PushPayload): Promise<'sent' | 'gone'>;
     forget(subscription: StoredSubscription): void;
@@ -64,11 +55,11 @@ export function recipientIds(creatorId: string | null, lastSenderId: string | nu
     return [...new Set([creatorId, lastSenderId].filter((id): id is string => !!id))];
 }
 
-export function buildPayload(event: AnswerFinished, userId: string, language: string | null = null): PushPayload {
+export function buildPayload(event: AnswerFinished, userId: string, failedSentence: string = FAILED_ANSWER): PushPayload {
     const snippet = answerSnippet(event.text);
     return {
         title: event.conversationTitle,
-        body: event.failed || !snippet ? `${event.agentName}: ${failedAnswerText(language)}` : `${event.agentName}: ${snippet}`,
+        body: event.failed || !snippet ? `${event.agentName}: ${failedSentence}` : `${event.agentName}: ${snippet}`,
         conversationId: event.conversationId,
         userId,
     };
@@ -82,7 +73,7 @@ export function createAnswerNotifier(delivery: PushDelivery): (event: AnswerFini
                 .filter(subscription => !delivery.isAppVisible(subscription));
             await Promise.all(targets.map(async (subscription) => {
                 try {
-                    if (await delivery.send(subscription, buildPayload(event, subscription.userId, delivery.languageOf(subscription.userId))) === 'gone') {
+                    if (await delivery.send(subscription, buildPayload(event, subscription.userId, delivery.translate(FAILED_ANSWER, delivery.languageOf(subscription)))) === 'gone') {
                         delivery.forget(subscription);
                     }
                 }
