@@ -63,8 +63,8 @@
 /* Black is the neutral choice: pure greys with black and white accents. */
 .light[data-tint-neutral] {
     --ui-primary: oklch(0.205 0 0);
-    /* A fixed agreed tone rather than a derived one: Black's bubbles are exactly this. */
-    --user-message: #f5f6f3;
+    /* A fixed agreed tone rather than a derived one: Black's bubbles are exactly #f5f6f3. */
+    --user-message: oklch(0.9716 0.0041 121.6);
 }
 
 .dark[data-tint-neutral] {
