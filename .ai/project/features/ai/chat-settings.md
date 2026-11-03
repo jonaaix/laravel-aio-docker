@@ -28,11 +28,12 @@ a conversation opens the same window at Agents.
   System UI (the default), Geist, Inter, Source Sans 3, IBM Plex Sans or, for those who prefer
   monospaced text throughout, JetBrains Mono, set a size smaller so it reads as large as the
   others, each shown in its own
-  typeface. It also sets the colour of the whole chat — Stone (the default), Slate, Sage, Sand, Rose or Lavender.
-  Each colour builds a tonal palette in the spirit of Material 3: background, sidebar, surfaces, text and borders
-  are tinted with it, the people's message bubbles take a light container tone of it, and main buttons, chosen
-  options, switches and focus rings take its accent, in light and dark alike. Stone is the neutral choice: barely
-  tinted, after the palette of assistant-ui, with black and white accents. It also holds "Move sent message to top", off by default: when off, the conversation
+  typeface. It also sets the colour of the whole chat, picked from thirteen unnamed colour circles, each shown in
+  the button colour it gives (the name appears only as a hint on hover): Black, the default — plain greys with
+  black and white accents, as the chat always looked — and twelve hues around the colour wheel. A hue builds a
+  tonal palette in the spirit of Material 3: background, sidebar, surfaces, text and borders are tinted with it,
+  the people's message bubbles take a light container tone of it, and main buttons, chosen options, switches and
+  focus rings take its accent, in light and dark alike. It also holds "Move sent message to top", off by default: when off, the conversation
   stays at the bottom after sending and follows the answer; when on, the sent message moves to the
   top with room below for the answer. Every choice applies at once and belongs to the person, so it
   follows them to every device and browser.

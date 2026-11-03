@@ -25,26 +25,28 @@ export function fontChoice(value: string | null | undefined): FontChoice {
 }
 
 export interface TintChoice {
-    value: number;
+    value: number | null;
     label: string;
-    chroma: number;
 }
 
 export const TINT_CHOICES: TintChoice[] = [
-    { value: 106, label: 'Stone', chroma: 0.35 },
-    { value: 250, label: 'Slate', chroma: 1 },
-    { value: 150, label: 'Sage', chroma: 1 },
-    { value: 70, label: 'Sand', chroma: 1 },
-    { value: 15, label: 'Rose', chroma: 1 },
-    { value: 290, label: 'Lavender', chroma: 1 },
+    { value: null, label: 'Black' },
+    { value: 15, label: 'Rose' },
+    { value: 40, label: 'Coral' },
+    { value: 70, label: 'Amber' },
+    { value: 125, label: 'Lime' },
+    { value: 150, label: 'Green' },
+    { value: 180, label: 'Teal' },
+    { value: 205, label: 'Cyan' },
+    { value: 235, label: 'Sky' },
+    { value: 260, label: 'Blue' },
+    { value: 280, label: 'Indigo' },
+    { value: 300, label: 'Violet' },
+    { value: 340, label: 'Pink' },
 ];
 
-export const DEFAULT_TINT = 106;
+export const DEFAULT_TINT = null;
 
-export function tintChoice(value: number): TintChoice {
-    return TINT_CHOICES.find(choice => choice.value === value) ?? TINT_CHOICES[0]!;
-}
-
-export function isTint(value: unknown): value is number {
+export function isTint(value: unknown): value is number | null {
     return TINT_CHOICES.some(choice => choice.value === value);
 }

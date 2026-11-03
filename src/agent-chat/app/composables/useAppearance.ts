@@ -3,23 +3,23 @@ import type { ChatUser } from '#shared/types/user';
 const FONT_CACHE_KEY = 'chat-font';
 const TINT_CACHE_KEY = 'chat-tint';
 
-export function applyTint(value: number): void {
-    const choice = tintChoice(value);
-    document.documentElement.style.setProperty('--tint', String(choice.value));
-    document.documentElement.style.setProperty('--tint-chroma', String(choice.chroma));
-    document.documentElement.toggleAttribute('data-tint-neutral', choice.value === DEFAULT_TINT);
+export function applyTint(value: number | null): void {
+    const root = document.documentElement;
+    root.style.setProperty('--tint', String(value ?? 0));
+    root.style.setProperty('--tint-chroma', value === null ? '0' : '1');
+    root.toggleAttribute('data-tint-neutral', value === null);
     try {
         localStorage.setItem(TINT_CACHE_KEY, String(value));
     }
     catch {
-        // Blocked storage (private mode) only costs the cache; the tint still applies to this page.
+        // Blocked storage (private mode) only costs the cache; the colour still applies to this page.
     }
 }
 
 export function cachedTint(): number | null {
     try {
-        const stored = localStorage.getItem(TINT_CACHE_KEY);
-        return stored !== null && isTint(Number(stored)) ? Number(stored) : null;
+        const stored = Number(localStorage.getItem(TINT_CACHE_KEY));
+        return isTint(stored) ? stored : null;
     }
     catch {
         return null;
@@ -56,7 +56,7 @@ export function useAppearance() {
     const mode = computed(() => colorMode.preference as ColorModeChoice);
     const pinSentMessage = computed(() => user.value?.pinSentMessage ?? false);
     const language = computed(() => locale.value);
-    const tint = computed(() => isTint(user.value?.tint) ? user.value.tint : DEFAULT_TINT);
+    const tint = computed(() => isTint(user.value?.tint) ? user.value?.tint ?? null : DEFAULT_TINT);
 
     function adopt(chatUser: ChatUser): void {
         if (chatUser.colorMode) {
@@ -69,7 +69,7 @@ export function useAppearance() {
         }
     }
 
-    async function save(changes: { colorMode?: ColorModeChoice; font?: string; language?: string; pinSentMessage?: boolean; tint?: number }): Promise<void> {
+    async function save(changes: { colorMode?: ColorModeChoice; font?: string; language?: string; pinSentMessage?: boolean; tint?: number | null }): Promise<void> {
         if (!user.value) {
             return;
         }
@@ -92,7 +92,7 @@ export function useAppearance() {
         return save({ language: value });
     }
 
-    function setTint(value: number): Promise<void> {
+    function setTint(value: number | null): Promise<void> {
         applyTint(value);
         return save({ tint: value });
     }

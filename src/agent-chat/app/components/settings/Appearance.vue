@@ -49,19 +49,23 @@ const modes: { value: ColorModeChoice; label: string; icon: string }[] = [
         </UFormField>
         <UFormField :label="t('Color')">
             <div role="radiogroup" :aria-label="t('Color')" class="flex flex-wrap gap-2">
-                <button
-                    v-for="choice in TINT_CHOICES"
-                    :key="choice.value"
-                    type="button"
-                    role="radio"
-                    :aria-checked="tint === choice.value"
-                    class="flex h-9 items-center gap-2 rounded-full px-3 text-sm ring transition-colors duration-500 ease-out hover:bg-elevated"
-                    :class="tint === choice.value ? 'bg-elevated text-highlighted ring-inverted' : 'text-toned ring-default'"
-                    @click="setTint(choice.value)"
-                >
-                    <span class="size-4 rounded-full ring ring-black/10 dark:ring-white/15" :style="{ background: `oklch(0.72 0.09 ${choice.value})` }" />
-                    {{ t(choice.label) }}
-                </button>
+                <UTooltip v-for="choice in TINT_CHOICES" :key="choice.value ?? 'black'" :text="t(choice.label)">
+                    <button
+                        type="button"
+                        role="radio"
+                        :aria-checked="tint === choice.value"
+                        :aria-label="t(choice.label)"
+                        class="flex size-9 items-center justify-center rounded-full transition-shadow duration-500 ease-out"
+                        :class="tint === choice.value ? 'ring-2 ring-(--ui-text-highlighted)' : ''"
+                        @click="setTint(choice.value)"
+                    >
+                        <span
+                            class="size-6 rounded-full"
+                            :class="choice.value === null ? 'bg-[oklch(0.205_0_0)] dark:bg-[oklch(0.922_0_0)]' : 'bg-[oklch(0.5_0.14_var(--swatch-hue))] dark:bg-[oklch(0.8_0.11_var(--swatch-hue))]'"
+                            :style="choice.value === null ? undefined : { '--swatch-hue': choice.value }"
+                        />
+                    </button>
+                </UTooltip>
             </div>
         </UFormField>
         <UFormField :label="t('Conversation')">
