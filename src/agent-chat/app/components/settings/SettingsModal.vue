@@ -37,7 +37,7 @@ const hasActions = computed(() => active.value === 'agents');
                         :key="category.value"
                         type="button"
                         class="flex h-9 shrink-0 items-center gap-2 rounded-md px-2.5 text-sm transition-colors duration-500 ease-out hover:bg-primary/10"
-                        :class="active === category.value ? 'bg-elevated font-medium text-highlighted' : 'text-toned'"
+                        :class="active === category.value ? 'bg-primary/12 font-medium text-primary' : 'text-toned'"
                         @click="active = category.value"
                     >
                         <UIcon :name="category.icon" class="size-5 shrink-0" />

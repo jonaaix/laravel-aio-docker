@@ -14,6 +14,12 @@ export default defineAppConfig({
         },
         dropdownMenu: {
             defaultVariants: { size: 'lg' },
+            variants: {
+                active: {
+                    true: { item: 'before:bg-primary/12' },
+                    false: { item: 'data-highlighted:before:bg-primary/10 data-[state=open]:before:bg-primary/10' },
+                },
+            },
         },
         input: {
             slots: { base: 'rounded-full' },
