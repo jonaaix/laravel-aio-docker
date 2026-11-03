@@ -69,7 +69,7 @@ const chatPlugins = useChatMarkdownPlugins();
                         type="button"
                         :disabled="!active"
                         :aria-pressed="isSelected(question, option.letter)"
-                        class="flex w-full items-start gap-2 rounded-sm px-2 py-0.5 text-start text-[calc(var(--text-base)-2px)] transition-colors duration-500 ease-out disabled:cursor-default"
+                        class="flex w-full items-start gap-2 rounded-sm px-2 py-0.5 text-start text-[calc(var(--text-base)-1px)] transition-colors duration-500 ease-out disabled:cursor-default"
                         :class="isSelected(question, option.letter)
                             ? 'bg-primary/10 text-primary ring ring-inset ring-primary/40'
                             : 'text-default enabled:hover:bg-elevated/60'"
