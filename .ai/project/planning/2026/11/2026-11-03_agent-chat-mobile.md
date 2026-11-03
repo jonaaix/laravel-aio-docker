@@ -25,14 +25,16 @@ handover runs and the user has reviewed the result.
       working steps, reviewed by Peter and fixed
 - [x] Round 9 (Tarek, his choice): saved chats show at once and stay readable offline, reviewed by Peter and fixed
 - [x] Round 10 (Tarek, his choice): add and remove agents in a chat from the app, reviewed by Peter and fixed
-- [ ] Round 11 (Tarek): check the agent switch in the browser; the chat accepts only true/false for `member`
+- [x] Round 11 (Tarek): agent switch checked in the browser, list follows changes on every page; the chat
+      accepts only true/false for `member`
+- [ ] Round 12 (Tarek): Peter reviews the app-wide listening, "Always in" alignment, then his own topic
 - [ ] Review with the user
 
 ## State
 
-- The app is built and committed in its own repo (271 tests via `npm test`, Pages workflow runs them
+- The app is built and committed in its own repo (272 tests via `npm test`, Pages workflow runs them
   before deploying); its own plan and Feature Book live in `src/agent-chat-mobile/.ai/`. The chat's
-  tests count 33 via `npm test` in `src/agent-chat`.
+  tests count 35 via `npm test` in `src/agent-chat`.
 - Tarek is paused. QR scan verified with a fake camera at iPhone size (scan, confirm, connected); push
   verified up to the send attempt, real delivery untested. Untested on a real iPhone: install, icon,
   startup image, flight mode, text size, VoiceOver, camera, push.
