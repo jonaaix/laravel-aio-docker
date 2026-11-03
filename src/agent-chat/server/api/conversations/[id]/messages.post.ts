@@ -1,5 +1,5 @@
 export default defineEventHandler(async (event) => {
-    const { text = '', attachments, senderId } = await readBody<{ text?: string; attachments?: unknown; senderId?: unknown }>(event);
+    const { text = '', attachments } = await readBody<{ text?: string; attachments?: unknown }>(event);
     const references = readAttachmentReferences(attachments);
     if (!text.trim() && references.length === 0) {
         throw createError({ statusCode: 422, statusMessage: 'Message text or an attachment is required' });
@@ -12,6 +12,6 @@ export default defineEventHandler(async (event) => {
     if (conversation.archivedAt !== null) {
         throw createError({ statusCode: 409, statusMessage: 'Conversation is archived' });
     }
-    useConversationRuntime(id).send(text, adoptUploads(id, references), localServerOrigin(event), findUser(senderId));
+    useConversationRuntime(id).send(text, adoptUploads(id, references), localServerOrigin(event), sessionUser(event));
     return { ok: true };
 });

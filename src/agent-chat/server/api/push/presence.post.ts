@@ -1,9 +1,6 @@
 export default defineEventHandler(async (event) => {
-    const { userId, endpoint, visible } = await readBody<{ userId?: unknown; endpoint?: unknown; visible?: unknown }>(event);
-    const user = findUser(userId);
-    if (!user) {
-        throw createError({ statusCode: 404, statusMessage: 'User not found' });
-    }
+    const { endpoint, visible } = await readBody<{ endpoint?: unknown; visible?: unknown }>(event);
+    const user = sessionUser(event);
     if (!isPushEndpoint(endpoint, import.meta.dev) || typeof visible !== 'boolean') {
         throw createError({ statusCode: 422, statusMessage: 'Endpoint and visibility are required' });
     }

@@ -9,30 +9,13 @@ const { load: loadAgents } = useAgents();
 const { users, load: loadUsers, upsert: upsertUser } = useUsers();
 const { baseURL } = useRuntimeConfig().app;
 
-const NAME_PARAM = 'n';
-const AVATAR_PARAM = 'a';
-
-const route = useRoute();
-const router = useRouter();
-const { user, adopt: adoptUserName, restore: restoreUser } = useUserName();
+const { user } = useUserName();
 const { adopt: adoptAppearance } = useAppearance();
 watch(() => user.value?.id, () => {
     if (user.value) {
         adoptAppearance(user.value);
     }
 }, { immediate: true });
-const encodedName = route.query[NAME_PARAM];
-const encodedAvatar = route.query[AVATAR_PARAM];
-if (typeof encodedName === 'string') {
-    void adoptUserName(encodedName, typeof encodedAvatar === 'string' ? encodedAvatar : undefined);
-    const query = { ...route.query };
-    delete query[NAME_PARAM];
-    delete query[AVATAR_PARAM];
-    void router.replace({ query });
-}
-else {
-    void restoreUser();
-}
 
 const now = useNow();
 
@@ -157,6 +140,5 @@ onBeforeUnmount(() => {
         </UDashboardSidebar>
 
         <slot />
-        <UserNameModal />
     </UDashboardGroup>
 </template>

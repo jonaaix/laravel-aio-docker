@@ -4,11 +4,8 @@ export default defineEventHandler(async (event) => {
     if (!conversation) {
         throw createError({ statusCode: 404, statusMessage: 'Conversation not found' });
     }
-    const { userId, muted } = await readBody<{ userId?: unknown; muted?: unknown }>(event);
-    const user = findUser(userId);
-    if (!user) {
-        throw createError({ statusCode: 404, statusMessage: 'User not found' });
-    }
+    const { muted } = await readBody<{ muted?: unknown }>(event);
+    const user = sessionUser(event);
     if (!isMembershipFlag(muted)) {
         throw createError({ statusCode: 422, statusMessage: 'muted must be true or false' });
     }

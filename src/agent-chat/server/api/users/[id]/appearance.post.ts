@@ -2,10 +2,7 @@ import { COLOR_MODES, FONT_CHOICES, type ColorModeChoice } from '../../../../sha
 import { isLanguage } from '../../../../shared/utils/languages';
 
 export default defineEventHandler(async (event) => {
-    const user = findUser(getRouterParam(event, 'id'));
-    if (!user) {
-        throw createError({ statusCode: 404, statusMessage: 'User not found' });
-    }
+    const user = ownUser(event);
     const { colorMode, font, language, pinSentMessage } = await readBody<{ colorMode?: unknown; font?: unknown; language?: unknown; pinSentMessage?: unknown }>(event);
     const changes: Parameters<typeof setUserAppearance>[1] = {};
     if (colorMode !== undefined) {

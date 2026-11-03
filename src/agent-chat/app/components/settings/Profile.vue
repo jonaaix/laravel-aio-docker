@@ -1,48 +1,17 @@
 <script setup lang="ts">
 import type { UploadedFile } from '#shared/types/conversation';
 
-const props = defineProps<{ actionsTarget?: string }>();
-const emit = defineEmits<{ saved: [] }>();
-
-const SAVE_DELAY_MS = 700;
-
 const { t } = useI18n();
 
-const { user, name, locked, save, setAvatar, setAvatarSeed } = useUserName();
+const { user, setAvatar, setAvatarSeed } = useUserName();
 
-const draft = ref(name.value ?? '');
-const saving = ref(false);
 const pictureBusy = ref(false);
-const error = ref<string | undefined>();
 const pictureError = ref<string | undefined>();
 const fileInput = ref<HTMLInputElement | null>(null);
-const required = computed(() => !name.value);
-const changed = computed(() => normalizeUserName(draft.value) !== null && normalizeUserName(draft.value) !== name.value);
 
 function failureMessage(failure: unknown, fallback: string): string {
     const data = (failure as { data?: { statusMessage?: string }; statusMessage?: string });
     return data.data?.statusMessage ?? data.statusMessage ?? fallback;
-}
-
-let saveTimer: ReturnType<typeof setTimeout> | undefined;
-
-async function submit(): Promise<void> {
-    clearTimeout(saveTimer);
-    if (locked.value || !changed.value || saving.value) {
-        return;
-    }
-    saving.value = true;
-    error.value = undefined;
-    try {
-        await save(draft.value);
-        emit('saved');
-    }
-    catch (failure) {
-        error.value = failureMessage(failure, t('Could not save the name'));
-    }
-    finally {
-        saving.value = false;
-    }
 }
 
 async function changePicture(upload: Promise<UploadedFile | null | undefined>): Promise<void> {
@@ -61,19 +30,6 @@ async function changePicture(upload: Promise<UploadedFile | null | undefined>): 
         pictureBusy.value = false;
     }
 }
-
-watch(draft, () => {
-    clearTimeout(saveTimer);
-    if (!props.actionsTarget) {
-        saveTimer = setTimeout(() => void submit(), SAVE_DELAY_MS);
-    }
-});
-
-onBeforeUnmount(() => {
-    if (!props.actionsTarget) {
-        void submit();
-    }
-});
 
 function pickAvatar(seed: string): void {
     void changePicture(setAvatarSeed(seed).then(() => undefined));
@@ -98,17 +54,9 @@ function onPicked(): void {
 </script>
 
 <template>
-    <form id="profile-form" class="flex flex-col gap-4" @submit.prevent="submit">
-        <UFormField :label="required ? undefined : t('Name')" :error="error">
-            <UInput
-                v-model="draft"
-                :maxlength="USER_NAME_MAX_LENGTH"
-                :disabled="locked"
-                :placeholder="t('Name')"
-                :aria-label="t('Your name')"
-                autofocus
-                class="w-full sm:max-w-sm"
-            />
+    <div class="flex flex-col gap-4">
+        <UFormField v-if="user" :label="t('Name')">
+            <UInput :model-value="user.name" disabled class="w-full sm:max-w-sm" />
         </UFormField>
         <div v-if="user" class="flex flex-col gap-3 sm:flex-row sm:items-start">
             <div class="flex shrink-0 items-center gap-3 sm:w-28 sm:flex-col">
@@ -131,9 +79,5 @@ function onPicked(): void {
         </div>
         <p v-if="pictureError" class="text-sm text-error">{{ pictureError }}</p>
         <p class="text-xs text-muted">{{ t('Drawn avatars: “Glyphs” by Matt Houser and “Dylan” by Natalia Spivak, CC BY 4.0; “Notionists” by Zoish, CC0') }}</p>
-    </form>
-    <Teleport v-if="actionsTarget" defer :to="actionsTarget">
-        <span />
-        <UButton type="submit" form="profile-form" :label="t('Continue')" :loading="saving" :disabled="!changed" />
-    </Teleport>
+    </div>
 </template>

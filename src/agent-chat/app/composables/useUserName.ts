@@ -1,97 +1,43 @@
 import type { UploadedFile } from '#shared/types/conversation';
 import type { ChatUser } from '#shared/types/user';
 
-const USER_COOKIE = 'chat-user-id';
-const LEGACY_NAME_COOKIE = 'chat-user-name';
-const LOCKED_COOKIE = 'chat-user-name-locked';
-const COOKIE_MAX_AGE_S = 60 * 60 * 24 * 365;
+const SIGN_IN_PARAMS = ['n', 'a', 'exp', 'nonce', 'sig'] as const;
 
-function decodeBase64Url(value: string): string | null {
-    try {
-        const base64 = value.replace(/-/g, '+').replace(/_/g, '/');
-        const binary = atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, '='));
-        return new TextDecoder('utf-8', { fatal: true }).decode(Uint8Array.from(binary, character => character.charCodeAt(0)));
-    }
-    catch {
+function takeSignInParams(): Record<string, string> | null {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has('sig')) {
         return null;
     }
+    const params = Object.fromEntries(SIGN_IN_PARAMS.map(name => [name, url.searchParams.get(name) ?? '']));
+    SIGN_IN_PARAMS.forEach(name => url.searchParams.delete(name));
+    window.history.replaceState(window.history.state, '', url);
+    return params;
 }
 
 export function useUserName() {
-    const cookieOptions = {
-        maxAge: COOKIE_MAX_AGE_S,
-        sameSite: 'lax' as const,
-        encode: (value: string | null) => encodeURIComponent(value ?? ''),
-        decode: (value: string) => decodeURIComponent(value),
-    };
-    const userCookie = useCookie<string | null>(USER_COOKIE, { ...cookieOptions, default: () => null });
-    const legacyNameCookie = useCookie<string | null>(LEGACY_NAME_COOKIE, { ...cookieOptions, default: () => null });
-    const lockedCookie = useCookie<string | null>(LOCKED_COOKIE, { ...cookieOptions, default: () => null });
     const user = useState<ChatUser | null>('chat-user', () => null);
     const ready = useState<boolean>('chat-user-ready', () => false);
-    const locked = useState<boolean>('chat-user-locked', () => lockedCookie.value === 'true');
     const { upsert } = useUsers();
     const userId = computed(() => user.value?.id ?? null);
     const name = computed(() => user.value?.name ?? null);
 
-    function remember(value: ChatUser, lock: boolean): void {
-        user.value = value;
-        upsert(value);
-        userCookie.value = value.id;
-        legacyNameCookie.value = null;
-        locked.value = lock;
-        lockedCookie.value = lock ? 'true' : null;
-    }
-
-    async function signIn(rawName: string, lock: boolean, avatarUrl?: string): Promise<void> {
-        const normalized = normalizeUserName(rawName);
-        if (normalized) {
-            remember(await apiFetch<ChatUser>('users', { method: 'POST', body: { name: normalized, avatarUrl } }), lock);
-        }
-    }
-
-    async function restore(): Promise<void> {
+    async function signIn(): Promise<void> {
         if (ready.value) {
             return;
         }
+        const params = takeSignInParams();
         try {
-            if (userCookie.value) {
-                user.value = await apiFetch<ChatUser>(`users/${userCookie.value}`);
-            }
-            else if (legacyNameCookie.value) {
-                await signIn(legacyNameCookie.value, locked.value);
-            }
+            user.value = params
+                ? await apiFetch<ChatUser>('auth/session', { method: 'POST', body: params })
+                : await apiFetch<ChatUser>('auth/me');
+            upsert(user.value);
         }
         catch {
-            user.value = null;
-            userCookie.value = null;
+            user.value = params ? await apiFetch<ChatUser>('auth/me').catch(() => null) : null;
         }
         finally {
             ready.value = true;
         }
-    }
-
-    async function save(rawName: string): Promise<void> {
-        if (locked.value) {
-            return;
-        }
-        if (user.value) {
-            const normalized = normalizeUserName(rawName);
-            if (normalized) {
-                remember(await apiFetch<ChatUser>(`users/${user.value.id}/rename`, { method: 'POST', body: { name: normalized } }), false);
-            }
-        }
-        else {
-            await signIn(rawName, false);
-        }
-    }
-
-    async function adopt(encodedName: string, encodedAvatar?: string): Promise<void> {
-        const decoded = decodeBase64Url(encodedName);
-        if (decoded) {
-            await signIn(decoded, true, encodedAvatar ? decodeBase64Url(encodedAvatar) ?? undefined : undefined);
-        }
-        ready.value = true;
     }
 
     async function setAvatar(upload: UploadedFile | null): Promise<void> {
@@ -108,5 +54,5 @@ export function useUserName() {
         }
     }
 
-    return { user, userId, name, ready, locked, restore, save, adopt, setAvatar, setAvatarSeed };
+    return { user, userId, name, ready, signIn, setAvatar, setAvatarSeed };
 }

@@ -51,6 +51,7 @@ export default defineNuxtConfig({
     },
 
     runtimeConfig: {
+        chatKey: '',
         workingDir: '',
         dataDir: '',
         claudeModel: '',

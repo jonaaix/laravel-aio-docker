@@ -9,7 +9,7 @@ iPhone and desktop, and the Framework7 app is retired.
 
 ## Milestones
 
-- [ ] Sign-in by signed link only: the chat issues one-time links (~60 s) on request of the Laravel app, which
+- [x] Sign-in by signed link only: the chat issues one-time links (~60 s) on request of the Laravel app, which
       proves itself with `CHAT_KEY`; lifelong session until the key changes; "Unauthorized" otherwise; name
       prompt removed
 - [ ] Device pairing: one-time pairing code (QR and link in Remote control), device key pair (WebCrypto,
@@ -26,10 +26,12 @@ iPhone and desktop, and the Framework7 app is retired.
 
 ## State
 
-- Concept agreed with the user; the Feature Book chapters `ai/web-chat.md` (Reaching the chat) and
-  `ai/chat-settings.md` (Remote control) describe the target. Nothing built yet.
-- Today the chat identifies a person by a `chat-user-id` cookie / user id; the Framework7 app connects with a
-  permanent link that carries the user id. Both go away.
+- Sign-in works: `POST /api/auth/links` (Bearer `NUXT_CHAT_KEY`) issues a one-time link, `/api/auth/session`
+  redeems it into a `chat-session` cookie, every other API route needs that session (except `/api/mcp/`), and
+  routes act as the signed-in person instead of trusting ids in the body. The name prompt and renaming are gone.
+- Development: the dev server runs with a key in `~/.config/agent-chat/dev/chat-key`; a link is requested
+  the way Laravel would. The Framework7 app no longer connects (its permanent link is refused).
+- Not yet: pairing, Remote control still shows the old permanent link, CORS still open to any origin.
 
 ## Decisions
 

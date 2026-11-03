@@ -1,15 +1,11 @@
 interface SubscriptionBody {
-    userId?: unknown;
     language?: unknown;
     subscription?: { endpoint?: unknown; keys?: { p256dh?: unknown; auth?: unknown } };
 }
 
 export default defineEventHandler(async (event) => {
-    const { userId, subscription, language } = await readBody<SubscriptionBody>(event);
-    const user = findUser(userId);
-    if (!user) {
-        throw createError({ statusCode: 404, statusMessage: 'User not found' });
-    }
+    const { subscription, language } = await readBody<SubscriptionBody>(event);
+    const user = sessionUser(event);
     const endpoint = subscription?.endpoint;
     const p256dh = subscription?.keys?.p256dh;
     const auth = subscription?.keys?.auth;

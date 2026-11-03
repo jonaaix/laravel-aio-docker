@@ -22,15 +22,6 @@ export function findOrCreateUser(name: string): UserRow {
     return announce(row);
 }
 
-export function renameUser(id: string, name: string): UserRow {
-    const taken = useDatabase().select().from(users).where(eq(users.name, name)).get();
-    if (taken && taken.id !== id) {
-        throw createError({ statusCode: 409, statusMessage: 'This name is already taken' });
-    }
-    useDatabase().update(users).set({ name }).where(eq(users.id, id)).run();
-    return announce(findUser(id)!);
-}
-
 export function setUserAppearance(row: UserRow, changes: Partial<Pick<UserRow, 'colorMode' | 'font' | 'language' | 'pinSentMessage'>>): UserRow {
     useDatabase().update(users).set(changes).where(eq(users.id, row.id)).run();
     return announce({ ...row, ...changes });

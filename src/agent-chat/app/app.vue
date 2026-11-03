@@ -2,6 +2,8 @@
 import * as uiLocales from '@nuxt/ui/locale';
 
 const { locale } = useI18n();
+const { user, ready, signIn } = useUserName();
+void signIn();
 const uiLocale = computed(() => uiLocales[locale.value as keyof typeof uiLocales] ?? uiLocales.en);
 
 useHead({
@@ -13,8 +15,11 @@ useHead({
 
 <template>
     <UApp :locale="uiLocale">
-        <NuxtLayout>
-            <NuxtPage />
-        </NuxtLayout>
+        <template v-if="ready">
+            <NuxtLayout v-if="user">
+                <NuxtPage />
+            </NuxtLayout>
+            <Unauthorized v-else />
+        </template>
     </UApp>
 </template>

@@ -2,7 +2,6 @@ import type { ChatStatus } from 'ai';
 import type { BackgroundTask, ChatMessage, UploadedFile, ConversationDetail, ConversationEvent, ConversationStatus, ConversationSummary, MessagePage, QueuedMessage } from '#shared/types/conversation';
 
 export function useConversation(conversationId: string) {
-    const { userId } = useUserName();
     const title = ref('');
     const workingDir = ref('');
     const messages = ref<ChatMessage[]>([]);
@@ -104,7 +103,7 @@ export function useConversation(conversationId: string) {
     async function send(text: string, attachments: UploadedFile[]): Promise<void> {
         error.value = undefined;
         turnActive.value = true;
-        await apiFetch(`conversations/${conversationId}/messages`, { method: 'POST', body: { text, attachments, senderId: userId.value } });
+        await apiFetch(`conversations/${conversationId}/messages`, { method: 'POST', body: { text, attachments } });
     }
 
     async function stop(): Promise<void> {
