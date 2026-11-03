@@ -4,6 +4,8 @@ const SECTION_BAR = /^\s*╌{3,}\s*$/;
 const QUESTION_MARK = '❓';
 const SUMMARY_MARK = '🔑';
 const NEXT_MARK = '🚀';
+const PLAN_MARK = '🎯';
+const MARKER_HEADING = new RegExp(`^\\s*(?:#{1,6}\\s+)?(?:\\*\\*)?\\s*((?:${[QUESTION_MARK, SUMMARY_MARK, NEXT_MARK, PLAN_MARK].join('|')})\\s*\\S[^\\n]{0,48}?)\\s*(?:\\*\\*)?\\s*:?\\s*$`, 'u');
 
 export type TextSection =
     | { kind: 'text'; text: string }
@@ -15,6 +17,12 @@ function opensSection(lines: string[], index: number): boolean {
         && (lines[index + 1] ?? '').trim() !== ''
         && !SECTION_BAR.test(lines[index + 1] ?? '')
         && SECTION_BAR.test(lines[index + 2] ?? '');
+}
+
+function markerHeading(lines: string[], index: number): string | null {
+    const found = MARKER_HEADING.exec(lines[index] ?? '');
+    const standsAlone = index === 0 || (lines[index - 1] ?? '').trim() === '' || SECTION_BAR.test(lines[index - 1] ?? '');
+    return found && standsAlone ? found[1]!.trim() : null;
 }
 
 function toSection(title: string | null, lines: string[]): TextSection | null {
@@ -48,10 +56,18 @@ export function splitTextSections(text: string): TextSection[] {
         buffer = [];
     };
     for (let index = 0; index < lines.length; index++) {
+        const heading = markerHeading(lines, index);
         if (opensSection(lines, index)) {
             flush();
             title = lines[index + 1]!.trim();
             index += 2;
+        }
+        else if (heading) {
+            flush();
+            title = heading;
+            if (SECTION_BAR.test(lines[index + 1] ?? '')) {
+                index += 1;
+            }
         }
         else if (SECTION_BAR.test(lines[index]!)) {
             flush();
