@@ -33,6 +33,19 @@ export default defineAppConfig({
                 class: { root: 'bg-white ring-black/5 dark:bg-elevated dark:ring-default has-[textarea:focus-visible]:outline-0 has-[textarea:focus-visible]:ring-black/5 dark:has-[textarea:focus-visible]:ring-default' },
             }],
         },
+        chatMessages: {
+            slots: {
+                indicator: [
+                    'gap-1.5 *:bg-(--ui-text-muted)',
+                    'motion-safe:[&>*:nth-child(1)]:animate-[typing-dot_1.2s_ease-in-out_infinite]',
+                    'motion-safe:[&>*:nth-child(2)]:animate-[typing-dot_1.2s_0.15s_ease-in-out_infinite]',
+                    'motion-safe:[&>*:nth-child(3)]:animate-[typing-dot_1.2s_0.3s_ease-in-out_infinite]',
+                    'motion-reduce:[&>*:nth-child(1)]:animate-[typing-fade_1.2s_ease-in-out_infinite]',
+                    'motion-reduce:[&>*:nth-child(2)]:animate-[typing-fade_1.2s_0.15s_ease-in-out_infinite]',
+                    'motion-reduce:[&>*:nth-child(3)]:animate-[typing-fade_1.2s_0.3s_ease-in-out_infinite]',
+                ].join(' '),
+            },
+        },
         prose: {
             p: { base: 'my-3 leading-6.5' },
             ul: { base: 'my-3' },

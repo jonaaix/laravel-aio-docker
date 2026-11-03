@@ -77,3 +77,25 @@
         background: var(--ui-border-accented);
     }
 }
+
+@keyframes typing-dot {
+    0%, 60%, 100% {
+        opacity: 0.35;
+        transform: none;
+    }
+
+    30% {
+        opacity: 1;
+        transform: translateY(-0.25rem);
+    }
+}
+
+@keyframes typing-fade {
+    0%, 60%, 100% {
+        opacity: 0.35;
+    }
+
+    30% {
+        opacity: 1;
+    }
+}
