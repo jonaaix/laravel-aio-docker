@@ -132,8 +132,11 @@ class ConversationRuntime {
             handoffs: this.handoffs,
             handoffLimit: HANDOFF_LIMIT,
             findTarget: () => {
-                const agent = author && message ? handoffTarget(plainMessageText(message), this.reachableAgents().filter(candidate => candidate.id !== author.id)) : null;
-                return agent ? { agent, author: author!, message: message! } : null;
+                if (!author || !message) {
+                    return null;
+                }
+                const agent = handoffTarget(plainMessageText(message), this.reachableAgents().filter(candidate => candidate.id !== author.id));
+                return agent ? { agent, author, message } : null;
             },
         });
         if (step.action === 'next-queued') {
