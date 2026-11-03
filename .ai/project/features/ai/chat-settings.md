@@ -39,9 +39,9 @@ a conversation opens the same window at Agents.
   says "Claude is not signed in" and its "Sign in" opens this category; while a usage limit is reached,
   it says "Usage limit reached" with the time agents can answer again. Usage figures start over with
   every sign-in and sign-out, so they never show another account's usage.
-- **Remote control** shows the person's "Mobile app link" with a copy button. Pasted into the mobile
-  app, it connects that app to this chat as this person. To make that possible, the chat answers
-  requests from pages on other addresses.
+- **Remote control** shows the person's "Mobile app link" with a copy button and the same link as a QR code. Pasted
+  or scanned in the mobile app, it connects that app to this chat as this person. To make that possible, the chat
+  answers requests from pages on other addresses.
 
 There is no save button: every change is stored as it is made — text a moment after typing stops or
 on Enter, choices, pictures and files at once — and errors show at the field concerned. "New agent" adds an entry to the list at once; the agent

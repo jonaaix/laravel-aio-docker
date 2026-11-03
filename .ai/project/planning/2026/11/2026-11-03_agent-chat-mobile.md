@@ -16,8 +16,8 @@ handover runs and the user has reviewed the result.
       user Claude with a brief, Peter added
 - [x] Overnight: four rounds with Tarek and Peter (connections, list, live thread, offline and unsent
       messages, attachments, install polish, load time, accessibility, tests, update flow, Pages deploy)
-- [ ] Round 5 (Tarek): connect by QR code (code in Remote control, scanner in the app), push notifications
-      when an agent finishes an answer
+- [x] Round 5 (Tarek): connect by QR code (code in Remote control, scanner in the app), push notifications
+      when an agent finishes an answer; chat side committed in `Chat:` commits, needs the `push_subscriptions` migration
 - [ ] Review with the user
 
 ## State
