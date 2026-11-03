@@ -18,15 +18,16 @@ handover runs and the user has reviewed the result.
       messages, attachments, install polish, load time, accessibility, tests, update flow, Pages deploy)
 - [x] Round 5 (Tarek): connect by QR code (code in Remote control, scanner in the app), push notifications
             when an agent finishes an answer, reviewed by Peter and fixed; `push_subscriptions` migration 0019
-- [ ] Round 6 (Tarek): per-connection switch to show only the title on the lock screen, testable
-      notify decision in `afterTurn`, tappable question cards in the app
+- [x] Round 6 (Tarek): per-connection switch to show only the title on the lock screen, testable
+      notify decision in `afterTurn`, tappable question cards in the app, reviewed by Peter and fixed
+- [ ] Round 7 (Tarek): web chat keeps other question cards' choices; then a topic of his own choice
 - [ ] Review with the user
 
 ## State
 
-- The app is built and committed in its own repo (133 tests via `npm test`, Pages workflow runs them
+- The app is built and committed in its own repo (172 tests via `npm test`, Pages workflow runs them
   before deploying); its own plan and Feature Book live in `src/agent-chat-mobile/.ai/`. The chat's
-  push part has 20 tests via `npm test` in `src/agent-chat`.
+  push part has 27 tests via `npm test` in `src/agent-chat`.
 - Tarek is paused. QR scan verified with a fake camera at iPhone size (scan, confirm, connected); push
   verified up to the send attempt, real delivery untested. Untested on a real iPhone: install, icon,
   startup image, flight mode, text size, VoiceOver, camera, push.
