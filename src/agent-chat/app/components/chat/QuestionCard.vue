@@ -52,7 +52,7 @@ const chatPlugins = useChatMarkdownPlugins();
             <div
                 v-for="question in section.questions"
                 :key="question.number"
-                class="grid grid-cols-[minmax(1.75rem,auto)_minmax(0,1fr)] gap-x-1 gap-y-1"
+                class="grid grid-cols-[minmax(1.75rem,auto)_minmax(0,1fr)] gap-x-1 gap-y-1 text-[calc(var(--text-base)-1px)]"
             >
                 <span class="font-medium whitespace-nowrap text-highlighted tabular-nums">{{ question.number }}.</span>
                 <Markdown :value="question.text" :plugins="chatPlugins" class="font-medium text-highlighted *:my-0" />
