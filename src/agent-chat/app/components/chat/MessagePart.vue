@@ -42,7 +42,7 @@ const outputLanguage = computed(() => {
         return 'json';
     }
     const filePath = (props.part.input as Record<string, unknown> | undefined)?.file_path;
-    return props.part.toolName === 'Read' && typeof filePath === 'string' ? fileLanguage(filePath) : null;
+    return props.part.toolName === 'Read' && typeof filePath === 'string' ? fileLanguage(filePath) : commandLanguage(toolSummary(props.part.input));
 });
 
 const chatPlugins = useChatMarkdownPlugins();

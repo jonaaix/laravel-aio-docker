@@ -12,6 +12,12 @@ export function fileLanguage(path: string): string | null {
     return dot > 0 ? name.slice(dot + 1).toLowerCase() : null;
 }
 
+const FILE_EXTENSION = /\.([a-z]\w{0,4})(?=$|[\s'"`|;&)<>:,])/gi;
+
+export function commandLanguage(command: string): string | null {
+    return [...command.matchAll(FILE_EXTENSION)].at(-1)?.[1]?.toLowerCase() ?? null;
+}
+
 export function useCodeTokens(code: MaybeRefOrGetter<string>, language: MaybeRefOrGetter<string | null>): Readonly<Ref<ThemedToken[][] | null>> {
     const tokens = shallowRef<ThemedToken[][] | null>(null);
 
