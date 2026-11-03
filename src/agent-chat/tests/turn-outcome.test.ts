@@ -4,7 +4,7 @@ import { afterTurnStep } from '../server/utils/turn-outcome.ts';
 import type { AfterTurnState } from '../server/utils/turn-outcome.ts';
 
 function state(overrides: Partial<AfterTurnState<string>> = {}): AfterTurnState<string> {
-    return { pausing: false, sessionBusy: false, hasQueued: false, stopped: false, handoffs: 0, handoffLimit: 25, findTarget: () => null, ...overrides };
+    return { pausing: false, sessionBusy: false, hasQueued: false, stopped: false, failed: false, handoffs: 0, handoffLimit: 25, findTarget: () => null, ...overrides };
 }
 
 test('an answer that ends the conversation turn notifies', () => {
@@ -41,4 +41,11 @@ test('while pausing or while the same agent is still working nothing happens', (
 
 test('a stopped answer with a queued message still moves on to the queue', () => {
     assert.deepEqual(afterTurnStep(state({ stopped: true, hasQueued: true })), { action: 'next-queued' });
+});
+
+test('a failed answer ends the turn with a notification and without looking for a hand-over', () => {
+    let looked = 0;
+    const step = afterTurnStep(state({ failed: true, findTarget: () => { looked += 1; return 'peter'; } }));
+    assert.deepEqual(step, { action: 'finish', notify: true });
+    assert.equal(looked, 0);
 });

@@ -26,6 +26,9 @@ function storedKeys(): Pick<VapidDetails, 'publicKey' | 'privateKey'> {
 export function vapidDetails(): VapidDetails {
     if (!cached) {
         const config = useRuntimeConfig();
+        if (!config.vapidPublicKey !== !config.vapidPrivateKey) {
+            throw new Error('Set both NUXT_VAPID_PUBLIC_KEY and NUXT_VAPID_PRIVATE_KEY, or neither.');
+        }
         const keys = config.vapidPublicKey && config.vapidPrivateKey
             ? { publicKey: config.vapidPublicKey, privateKey: config.vapidPrivateKey }
             : storedKeys();

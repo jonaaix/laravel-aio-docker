@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
     }
     const { agentId, member } = await readBody<{ agentId?: unknown; member?: unknown }>(event);
     if (!isMembershipFlag(member)) {
-        throw createError({ statusCode: 400, statusMessage: 'member must be true or false' });
+        throw createError({ statusCode: 422, statusMessage: 'member must be true or false' });
     }
     const agent = findAgent(agentId);
     if (!agent || agent.lead) {

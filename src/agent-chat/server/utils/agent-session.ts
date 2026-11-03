@@ -1,5 +1,5 @@
 import { ClaudeCli, type ClaudeEvent } from '#claude-threads/claude/cli';
-import type { BackgroundTask, ChatMessage, ChatPart, QueuedMessage } from '../../shared/types/conversation';
+import type { BackgroundTask, ChatMessage, ChatPart, QueuedMessage, TurnOutcome } from '../../shared/types/conversation';
 import { metricsFromResult, outcomeOnlyMetrics, type TurnMetrics } from './turn-metrics';
 import type { UserRow } from './user-store';
 
@@ -32,7 +32,7 @@ export interface AgentLaunch {
 
 export interface AgentSessionHooks {
     userMessage(session: AgentSession, queued: QueuedPrompt): void;
-    turnEnded(session: AgentSession, message: ChatMessage | null, stopped: boolean): void;
+    turnEnded(session: AgentSession, message: ChatMessage | null, outcome: TurnOutcome): void;
     controlResponse(event: ClaudeEvent): void;
     changed(): void;
     exited(): void;
@@ -335,7 +335,7 @@ export class AgentSession {
         saveTurnMetrics(this.conversationId, message.id, metrics);
         const finished = { ...message, parts: [...turn.parts], metadata: { ...message.metadata!, outcome: metrics.outcome, error: metrics.errorMessage ?? undefined } };
         publishConversationEvent(this.conversationId, { type: 'message', message: finished });
-        this.hooks.turnEnded(this, turn.message ? finished : null, turn.stopRequested || metrics.outcome !== 'completed');
+        this.hooks.turnEnded(this, turn.message ? finished : null, turn.stopRequested ? 'stopped' : metrics.outcome);
     }
 
     private handleExit(cli: ClaudeCli): void {

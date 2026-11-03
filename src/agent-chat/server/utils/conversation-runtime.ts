@@ -2,7 +2,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ClaudeEvent } from '#claude-threads/claude/cli';
-import type { BackgroundTask, ChatMessage, ChatPart, ConversationSummary, QueuedMessage } from '../../shared/types/conversation';
+import type { BackgroundTask, ChatMessage, ChatPart, ConversationSummary, QueuedMessage, TurnOutcome } from '../../shared/types/conversation';
 import { AgentSession, type AgentSessionHooks, type QueuedPrompt } from './agent-session';
 import type { AgentRow } from './agent-store';
 import type { StoredFile } from './conversation-files';
@@ -38,7 +38,7 @@ class ConversationRuntime {
     private readonly mcpToken = randomBytes(24).toString('hex');
     private readonly hooks: AgentSessionHooks = {
         userMessage: (session, queued) => this.addUserMessage(queued.parts, queued.sender, session),
-        turnEnded: (session, message, stopped) => this.afterTurn(session, message, stopped),
+        turnEnded: (session, message, outcome) => this.afterTurn(session, message, outcome),
         controlResponse: event => this.applyTitle(event),
         changed: () => this.publishStatus(),
         exited: () => this.publishStatus(),
@@ -121,16 +121,20 @@ class ConversationRuntime {
         this.publishStatus();
     }
 
-    private afterTurn(session: AgentSession, message: ChatMessage | null, stopped: boolean): void {
+    private afterTurn(session: AgentSession, message: ChatMessage | null, outcome: TurnOutcome): void {
         const author = findAgent(session.agentId);
         const step = afterTurnStep({
             pausing: this.pausing,
             sessionBusy: session.turnActive,
             hasQueued: this.pending.length > 0,
-            stopped,
+            stopped: outcome === 'stopped',
+            failed: outcome === 'failed',
             handoffs: this.handoffs,
             handoffLimit: HANDOFF_LIMIT,
-            findTarget: () => author && message ? handoffTarget(plainMessageText(message), this.reachableAgents().filter(agent => agent.id !== author.id)) : null,
+            findTarget: () => {
+                const agent = author && message ? handoffTarget(plainMessageText(message), this.reachableAgents().filter(candidate => candidate.id !== author.id)) : null;
+                return agent ? { agent, author: author!, message: message! } : null;
+            },
         });
         if (step.action === 'next-queued') {
             const next = this.pending.shift()!;
@@ -139,19 +143,19 @@ class ConversationRuntime {
         }
         else if (step.action === 'handoff') {
             this.handoffs += 1;
-            this.deliverHandoff(step.target, author!, message!);
+            this.deliverHandoff(step.target.agent, step.target.author, step.target.message);
         }
         else if (step.action === 'finish' || step.action === 'limit') {
             if (step.action === 'limit') {
                 publishConversationEvent(this.conversationId, { type: 'error', message: `Stopped after ${HANDOFF_LIMIT} hand-overs between agents. Reply to continue.` });
             }
-            if (step.notify) {
-                updateConversation(this.conversationId, { lastAnswerAt: Date.now() });
+            if (!step.notify) {
+                this.publishStatus();
+                return;
             }
+            updateConversation(this.conversationId, { lastAnswerAt: Date.now() });
             this.publishStatus();
-            if (step.notify) {
-                notifyAnswerFinished(this.conversationId, session.agentId, message);
-            }
+            notifyAnswerFinished(this.conversationId, session.agentId, message, outcome === 'failed');
         }
     }
 

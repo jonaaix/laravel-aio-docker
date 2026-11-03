@@ -59,7 +59,7 @@ export function buildPayload(event: AnswerFinished, userId: string, failedSenten
     const snippet = answerSnippet(event.text);
     return {
         title: event.conversationTitle,
-        body: event.failed || !snippet ? `${event.agentName}: ${failedSentence}` : `${event.agentName}: ${snippet}`,
+        body: event.failed ? `${event.agentName}: ${failedSentence}` : snippet ? `${event.agentName}: ${snippet}` : event.agentName,
         conversationId: event.conversationId,
         userId,
     };

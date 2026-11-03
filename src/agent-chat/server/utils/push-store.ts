@@ -1,5 +1,5 @@
-import { and, count, desc, eq, inArray, isNotNull } from 'drizzle-orm';
-import { messages, pushSubscriptions } from '../database/schema';
+import { and, count, eq, inArray } from 'drizzle-orm';
+import { pushSubscriptions } from '../database/schema';
 import type { StoredSubscription } from './push-notifier';
 
 export function savePushSubscription(subscription: StoredSubscription): void {
@@ -43,13 +43,3 @@ export function subscriptionsForUsers(userIds: string[]): StoredSubscription[] {
         .all();
 }
 
-export function latestSenderId(conversationId: string): string | null {
-    const last = useDatabase()
-        .select({ senderId: messages.senderId })
-        .from(messages)
-        .where(and(eq(messages.conversationId, conversationId), eq(messages.role, 'user'), isNotNull(messages.senderId)))
-        .orderBy(desc(messages.seq))
-        .limit(1)
-        .get();
-    return last?.senderId ?? null;
-}

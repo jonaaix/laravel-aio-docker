@@ -2,16 +2,16 @@ import webpush from 'web-push';
 import type { ChatMessage } from '../../shared/types/conversation';
 import { plainMessageText } from './agent-prompts';
 import { findAgent } from './agent-store';
-import { findConversation } from './conversation-store';
+import { findConversation, latestSenderId } from './conversation-store';
 import { createAnswerNotifier, type PushDelivery } from './push-notifier';
 import { isAppVisible } from './push-presence';
 import { findUser } from './user-store';
 import { serverText } from './push-texts';
 import { vapidDetails } from './push-keys';
-import { latestSenderId, removePushSubscription, subscriptionsForUsers } from './push-store';
+import { removePushSubscription, subscriptionsForUsers } from './push-store';
 
 const TTL_SECONDS = 60 * 60;
-const GONE_STATUS_CODES = new Set([404, 410]);
+const GONE_STATUS_CODES = new Set([400, 403, 404, 410]);
 
 const delivery: PushDelivery = {
     subscriptionsFor: subscriptionsForUsers,
@@ -40,7 +40,7 @@ const delivery: PushDelivery = {
 
 const notify = createAnswerNotifier(delivery);
 
-export function notifyAnswerFinished(conversationId: string, agentId: string, message: ChatMessage | null): void {
+export function notifyAnswerFinished(conversationId: string, agentId: string, message: ChatMessage | null, failed: boolean): void {
     const conversation = findConversation(conversationId);
     const agent = findAgent(agentId);
     if (!conversation || !agent) {
@@ -53,6 +53,6 @@ export function notifyAnswerFinished(conversationId: string, agentId: string, me
         lastSenderId: latestSenderId(conversationId),
         agentName: agent.name,
         text: message ? plainMessageText(message) : '',
-        failed: !message || message.metadata?.outcome === 'failed',
+        failed,
     });
 }

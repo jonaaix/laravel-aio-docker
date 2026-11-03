@@ -49,9 +49,13 @@ test('the payload names the conversation, the agent and the person it is for', (
     assert.deepEqual(buildPayload(event, 'u2'), { title: 'Plan the trip', body: 'Tarek: Done.', conversationId: 'c1', userId: 'u2' });
 });
 
-test('a failed or empty answer gets a plain sentence instead of text', () => {
+test('a failed answer gets a plain sentence instead of text', () => {
     assert.equal(buildPayload({ ...event, failed: true, text: 'partial' }, 'u1').body, 'Tarek: The answer could not be completed');
-    assert.equal(buildPayload({ ...event, text: '   ' }, 'u1').body, 'Tarek: The answer could not be completed');
+});
+
+test('a finished answer without plain text shows only the agent, never the failure sentence', () => {
+    assert.equal(buildPayload({ ...event, text: '   ' }, 'u1').body, 'Tarek');
+    assert.equal(buildPayload({ ...event, text: '```ts\nconst a = 1;\n```' }, 'u1').body, 'Tarek');
 });
 
 test('every device of the creator and of the last sender gets the notification', async () => {

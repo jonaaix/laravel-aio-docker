@@ -10,6 +10,7 @@ export interface AfterTurnState<T> {
     sessionBusy: boolean;
     hasQueued: boolean;
     stopped: boolean;
+    failed: boolean;
     handoffs: number;
     handoffLimit: number;
     findTarget: () => T | null;
@@ -22,7 +23,7 @@ export function afterTurnStep<T>(state: AfterTurnState<T>): AfterTurnStep<T> {
     if (state.hasQueued) {
         return { action: 'next-queued' };
     }
-    const target = state.stopped ? null : state.findTarget();
+    const target = state.stopped || state.failed ? null : state.findTarget();
     if (!target) {
         return { action: 'finish', notify: !state.stopped };
     }

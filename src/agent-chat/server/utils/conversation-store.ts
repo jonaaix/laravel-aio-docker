@@ -78,6 +78,7 @@ export function createConversation(title: string, workingDir: string, creatorId:
         announcedAgents: [],
         createdAt: now,
         lastActivityAt: now,
+        lastAnswerAt: null,
         archivedAt: null,
     };
     useDatabase().insert(conversations).values(row).run();
@@ -174,6 +175,17 @@ export function missedMessages(conversationId: string, agentId: string, excluded
         .all()
         .reverse()
         .map(toChatMessage);
+}
+
+export function latestSenderId(conversationId: string): string | null {
+    const last = useDatabase()
+        .select({ senderId: messages.senderId })
+        .from(messages)
+        .where(and(eq(messages.conversationId, conversationId), eq(messages.role, 'user'), isNotNull(messages.senderId)))
+        .orderBy(desc(messages.seq))
+        .limit(1)
+        .get();
+    return last?.senderId ?? null;
 }
 
 export function conversationSenderIds(conversationId: string): string[] {
