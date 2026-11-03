@@ -46,7 +46,7 @@ onMounted(shuffle);
                 v-for="seed in row"
                 :key="seed"
                 type="button"
-                class="flex items-center justify-center rounded-md transition-colors duration-500 ease-out hover:bg-elevated"
+                class="flex items-center justify-center rounded-md transition-colors duration-500 ease-out hover:bg-primary/10"
                 :class="[CELL[size ?? 'md'], seed === current ? 'bg-accented/60' : '']"
                 :aria-label="t('Use avatar {seed}', { seed })"
                 @click="emit('select', seed)"

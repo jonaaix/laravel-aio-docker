@@ -13,7 +13,7 @@ const settingsWindow = useSettingsWindow();
     <button
         v-else
         type="button"
-        class="flex w-full items-center gap-2 rounded-md bg-default p-3 text-start ring ring-default transition-colors duration-500 ease-out hover:bg-elevated dark:bg-default/60 dark:hover:bg-elevated"
+        class="flex w-full items-center gap-2 rounded-md bg-default p-3 text-start ring ring-default transition-colors duration-500 ease-out hover:bg-primary/10 dark:bg-default/60 dark:hover:bg-primary/10"
         @click="settingsWindow.open('account')"
     >
         <UIcon name="i-heroicons-key" class="size-4 shrink-0 text-muted" />

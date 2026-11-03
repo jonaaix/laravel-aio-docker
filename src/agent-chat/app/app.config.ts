@@ -7,6 +7,10 @@ export default defineAppConfig({
         button: {
             slots: { base: 'rounded-full' },
             defaultVariants: { size: 'lg' },
+            compoundVariants: [
+                { color: 'neutral', variant: ['outline', 'ghost'], class: 'hover:bg-primary/10 active:bg-primary/10' },
+                { color: 'neutral', variant: ['soft', 'subtle'], class: 'hover:bg-primary/15 active:bg-primary/15' },
+            ],
         },
         dropdownMenu: {
             defaultVariants: { size: 'lg' },

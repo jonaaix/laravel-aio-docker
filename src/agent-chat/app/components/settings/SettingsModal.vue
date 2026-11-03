@@ -36,7 +36,7 @@ const hasActions = computed(() => active.value === 'agents');
                         v-for="category in categories"
                         :key="category.value"
                         type="button"
-                        class="flex h-9 shrink-0 items-center gap-2 rounded-md px-2.5 text-sm transition-colors duration-500 ease-out hover:bg-elevated"
+                        class="flex h-9 shrink-0 items-center gap-2 rounded-md px-2.5 text-sm transition-colors duration-500 ease-out hover:bg-primary/10"
                         :class="active === category.value ? 'bg-elevated font-medium text-highlighted' : 'text-toned'"
                         @click="active = category.value"
                     >

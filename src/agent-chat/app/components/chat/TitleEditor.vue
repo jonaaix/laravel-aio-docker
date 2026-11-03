@@ -68,7 +68,7 @@ async function commit(): Promise<void> {
     <UTooltip v-else-if="editable" :text="t('Rename')">
         <button
             type="button"
-            class="h-9 min-w-0 truncate rounded-md px-2 text-start transition-colors duration-500 ease-out hover:bg-elevated/60"
+            class="h-9 min-w-0 truncate rounded-md px-2 text-start transition-colors duration-500 ease-out hover:bg-primary/10"
             @click="startEditing"
         >
             {{ title }}

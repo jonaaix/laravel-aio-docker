@@ -37,7 +37,7 @@ const modes: { value: ColorModeChoice; label: string; icon: string }[] = [
                     type="button"
                     role="radio"
                     :aria-checked="font === choice.value"
-                    class="flex flex-col items-start gap-0.5 rounded-md px-3.5 py-2.5 text-start ring transition-colors duration-500 ease-out hover:bg-elevated"
+                    class="flex flex-col items-start gap-0.5 rounded-md px-3.5 py-2.5 text-start ring transition-colors duration-500 ease-out hover:bg-primary/10"
                     :class="font === choice.value ? 'bg-elevated ring-inverted' : 'ring-default'"
                     :style="{ fontFamily: choice.stack }"
                     @click="setFont(choice.value)"

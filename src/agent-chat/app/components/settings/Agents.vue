@@ -261,7 +261,7 @@ async function confirmDelete(): Promise<void> {
                 v-for="agent in agents"
                 :key="agent.id"
                 type="button"
-                class="flex min-h-12 items-center gap-2.5 rounded-md px-2 py-1.5 text-start transition-colors duration-500 ease-out hover:bg-elevated"
+                class="flex min-h-12 items-center gap-2.5 rounded-md px-2 py-1.5 text-start transition-colors duration-500 ease-out hover:bg-primary/10"
                 :class="!creating && agent.id === selectedId ? 'bg-elevated' : ''"
                 @click="select(agent)"
             >

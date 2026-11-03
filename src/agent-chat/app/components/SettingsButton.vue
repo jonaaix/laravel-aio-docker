@@ -15,7 +15,7 @@ const settingsWindow = useSettingsWindow();
             variant="ghost"
             :square="collapsed"
             :block="!collapsed"
-            class="justify-start hover:bg-accented/60"
+            class="justify-start hover:bg-primary/10"
             @click="settingsWindow.open()"
         />
     </UTooltip>
