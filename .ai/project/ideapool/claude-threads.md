@@ -13,3 +13,4 @@
 - 2026-11-02 [agent]: Header heads show at most four and fold the rest into a "+N" bubble, as Google Docs does, once many people and agents take part
 - 2026-11-03 [user]: Close the open API: accept cross-origin requests only from the mobile app's address (GitHub Pages) and local dev, later a secret per connected device instead of the bare user id
 - 2026-11-03 [agent]: Stamp the last sender on the conversation (like last_answer_at) so the conversation list no longer runs one extra query per row
+- 2026-11-04 [user]: "Copy resume command" in the agent menu (`cd <folder> && claude --resume <session>`), since /resume never lists sessions the chat started
