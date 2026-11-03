@@ -9,14 +9,15 @@ export interface PendingAttachment {
     error: string | null;
 }
 
-function uploadError(error: unknown): string {
+function uploadError(error: unknown, fallback: string): string {
     const message = (error as { data?: { statusMessage?: string } }).data?.statusMessage;
-    return message || 'Upload failed';
+    return message || fallback;
 }
 
 let nextKey = 0;
 
 export function useAttachments() {
+    const { t } = useI18n();
     const attachments = ref<PendingAttachment[]>([]);
     const uploading = computed(() => attachments.value.some(attachment => !attachment.upload && !attachment.error));
     const ready = computed(() => attachments.value.flatMap(attachment => attachment.upload ? [attachment.upload] : []));
@@ -43,7 +44,7 @@ export function useAttachments() {
             }
         }
         catch (error) {
-            attachment.error = uploadError(error);
+            attachment.error = uploadError(error, t('Upload failed'));
         }
     }
 
