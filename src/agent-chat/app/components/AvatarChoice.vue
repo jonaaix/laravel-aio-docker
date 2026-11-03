@@ -11,9 +11,9 @@ const props = defineProps<{
     styles?: string[];
 }>();
 
-const CELL = { sm: 'size-10', md: 'size-14', lg: 'size-18' };
-const FRAMED = { sm: 'size-7', md: 'size-9.5', lg: 'size-14' };
-const FREE = { sm: 'size-9', md: 'size-12', lg: 'size-16' };
+const CELL = { sm: 'size-12', md: 'size-14', lg: 'size-18' };
+const FRAMED = { sm: 'size-9', md: 'size-9.5', lg: 'size-14' };
+const FREE = { sm: 'size-11', md: 'size-12', lg: 'size-16' };
 
 const emit = defineEmits<{ select: [seed: string] }>();
 
