@@ -20,4 +20,5 @@ export interface AccountStatus {
     profile: AccountProfile | null;
     usage: UsageSnapshot | null;
     detailsHidden: boolean;
+    signedInBy: string | null;
 }

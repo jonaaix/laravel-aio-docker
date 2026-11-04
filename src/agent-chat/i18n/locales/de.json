@@ -242,5 +242,6 @@
     "People can be set differently under People.": "Unter „Personen“ lässt sich das pro Person abweichend einstellen.",
     "Person": "Person",
     "AI account details": "KI-Account-Details",
-    "{option} for {name}": "{option} für {name}"
+    "{option} for {name}": "{option} für {name}",
+    "Signed in this account": "Hat dieses Konto angemeldet"
 }

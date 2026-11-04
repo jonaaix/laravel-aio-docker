@@ -9,6 +9,7 @@ export default defineEventHandler(async (event) => {
     catch (error) {
         throw createError({ statusCode: 422, statusMessage: (error as Error).message });
     }
-    refreshAccountProfile();
-    return accountStatusFor(showDetailsTo(sessionUser(event)));
+    const user = sessionUser(event);
+    refreshAccountProfile(user);
+    return accountStatusFor(user);
 });

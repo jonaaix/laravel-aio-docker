@@ -242,5 +242,6 @@
     "People can be set differently under People.": "People can be set differently under People.",
     "Person": "Person",
     "AI account details": "AI account details",
-    "{option} for {name}": "{option} for {name}"
+    "{option} for {name}": "{option} for {name}",
+    "Signed in this account": "Signed in this account"
 }

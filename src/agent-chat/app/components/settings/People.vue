@@ -6,7 +6,7 @@ type PersonSetting = 'admin' | 'account-details' | 'blocked';
 const { t } = useI18n();
 const { users, upsert } = useUsers();
 const { user: me } = useUserName();
-const { detailsHidden } = useAccount();
+const { detailsHidden, signedInBy } = useAccount();
 
 const pending = ref<{ id: string; setting: PersonSetting; value: boolean } | null>(null);
 const error = ref<string | undefined>();
@@ -24,7 +24,14 @@ function failureMessage(failure: unknown): string {
     return data.data?.statusMessage ?? data.statusMessage ?? t('Could not change this person');
 }
 
+function signedInAccount(person: ChatUser, setting: PersonSetting): boolean {
+    return setting === 'account-details' && person.id === signedInBy.value;
+}
+
 function seesAccountDetails(person: ChatUser): boolean {
+    if (person.id === signedInBy.value) {
+        return true;
+    }
     return person.accountDetails ? person.accountDetails === 'shown' : person.admin || !detailsHidden.value;
 }
 
@@ -50,7 +57,7 @@ function locked(person: ChatUser, setting: PersonSetting): boolean {
     if (setting === 'blocked') {
         return person.id === me.value?.id;
     }
-    return person.blocked;
+    return person.blocked || signedInAccount(person, setting);
 }
 
 function requestBody(setting: PersonSetting, value: boolean): Record<string, boolean> {
@@ -107,15 +114,17 @@ async function change(person: ChatUser, setting: PersonSetting, value: boolean |
                             </div>
                         </td>
                         <td v-for="column in columns" :key="column.setting">
-                            <div class="flex justify-center">
-                                <UCheckbox
-                                    :model-value="checked(person, column.setting)"
-                                    :disabled="locked(person, column.setting)"
-                                    :color="column.setting === 'blocked' ? 'error' : 'primary'"
-                                    :aria-label="t('{option} for {name}', { option: column.label, name: person.name })"
-                                    @update:model-value="change(person, column.setting, $event)"
-                                />
-                            </div>
+                            <UTooltip :text="t('Signed in this account')" :disabled="!signedInAccount(person, column.setting)">
+                                <div class="flex justify-center">
+                                    <UCheckbox
+                                        :model-value="checked(person, column.setting)"
+                                        :disabled="locked(person, column.setting)"
+                                        :color="column.setting === 'blocked' ? 'error' : 'primary'"
+                                        :aria-label="t('{option} for {name}', { option: column.label, name: person.name })"
+                                        @update:model-value="change(person, column.setting, $event)"
+                                    />
+                                </div>
+                            </UTooltip>
                         </td>
                     </tr>
                 </tbody>

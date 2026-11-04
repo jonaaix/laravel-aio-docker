@@ -7,6 +7,7 @@ import type { AccountProfile, AccountStatus, UsageSnapshot, UsageWindow } from '
 import type { UserRow } from './user-store';
 
 const DETAILS_HIDDEN_SETTING = 'account.detailsHidden';
+const SIGNED_IN_BY_SETTING = 'account.signedInBy';
 const HIDDEN_PROFILE: AccountProfile = { email: null, organization: null, plan: null };
 
 interface RateLimitWindow {
@@ -54,11 +55,21 @@ function toUsageWindow(limit: RateLimitWindow | undefined): UsageWindow | null {
     return { utilization: limit.utilization, resetsAt: limit.resetsAt * 1000, limited: limit.status !== 'allowed' };
 }
 
-export function refreshAccountProfile(): void {
+export function refreshAccountProfile(signedInBy: UserRow | null): void {
+    if (signedInBy) {
+        writeSetting(SIGNED_IN_BY_SETTING, signedInBy.id);
+    }
+    else {
+        removeSetting(SIGNED_IN_BY_SETTING);
+    }
     profile = null;
     usage = null;
     rmSync(usageFile(), { force: true });
     publishConversationListEvent({ type: 'account' });
+}
+
+export function accountSignedInBy(): string | null {
+    return readSetting(SIGNED_IN_BY_SETTING);
 }
 
 export function accountDetailsHidden(): boolean {
@@ -75,11 +86,10 @@ export function detailsHiddenByDefault(user: UserRow): boolean {
 }
 
 export function detailsHiddenFrom(user: UserRow): boolean {
+    if (user.id === accountSignedInBy()) {
+        return false;
+    }
     return user.accountDetails ? user.accountDetails === 'hidden' : detailsHiddenByDefault(user);
-}
-
-export function showDetailsTo(user: UserRow): UserRow {
-    return detailsHiddenFrom(user) ? setUserAccountDetails(user, detailsHiddenByDefault(user) ? 'shown' : null) : user;
 }
 
 export function visibleUsage(usageSnapshot: UsageSnapshot | null, user: UserRow): UsageSnapshot | null {
@@ -93,6 +103,7 @@ export async function accountStatusFor(user: UserRow): Promise<AccountStatus> {
         profile: current && detailsHiddenFrom(user) ? HIDDEN_PROFILE : current,
         usage: visibleUsage(storedUsage(), user),
         detailsHidden: accountDetailsHidden(),
+        signedInBy: accountSignedInBy(),
     };
 }
 

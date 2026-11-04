@@ -242,5 +242,6 @@
     "People can be set differently under People.": "Si può impostare diversamente per persona in Persone.",
     "Person": "Persona",
     "AI account details": "Dettagli dell'account IA",
-    "{option} for {name}": "{option} per {name}"
+    "{option} for {name}": "{option} per {name}",
+    "Signed in this account": "Ha collegato questo account"
 }

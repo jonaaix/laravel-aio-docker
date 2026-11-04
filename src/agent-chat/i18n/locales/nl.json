@@ -242,5 +242,6 @@
     "People can be set differently under People.": "Per persoon anders in te stellen onder Personen.",
     "Person": "Persoon",
     "AI account details": "AI-accountgegevens",
-    "{option} for {name}": "{option} voor {name}"
+    "{option} for {name}": "{option} voor {name}",
+    "Signed in this account": "Heeft dit account aangemeld"
 }

@@ -9,6 +9,6 @@ export default defineEventHandler(async (event) => {
     catch {
         throw createError({ statusCode: 502, statusMessage: 'Claude could not sign out.' });
     }
-    refreshAccountProfile();
+    refreshAccountProfile(null);
     return accountStatusFor(sessionUser(event));
 });
