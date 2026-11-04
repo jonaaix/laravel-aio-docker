@@ -2,8 +2,6 @@
 const { t } = useI18n();
 const { font, mode, language, pinSentMessage, tint, setColorMode, setFont, setLanguage, setPinSentMessage, setTint } = useAppearance();
 
-const tintRows = [TINT_CHOICES.filter(choice => !choice.extended), TINT_CHOICES.filter(choice => choice.extended)];
-
 const languageItems = LANGUAGES.map(choice => ({ value: choice.code, label: choice.name }));
 
 const modes: { value: ColorModeChoice; label: string; icon: string }[] = [
@@ -50,26 +48,24 @@ const modes: { value: ColorModeChoice; label: string; icon: string }[] = [
             </div>
         </UFormField>
         <UFormField :label="t('Color')">
-            <div role="radiogroup" :aria-label="t('Color')" class="flex flex-col gap-2">
-                <div v-for="(row, index) in tintRows" :key="index" class="flex flex-wrap gap-2">
-                    <UTooltip v-for="choice in row" :key="choice.value ?? 'black'" :text="t(choice.label)">
-                        <button
-                            type="button"
-                            role="radio"
-                            :aria-checked="tint === choice.value"
-                            :aria-label="t(choice.label)"
-                            class="flex size-9 items-center justify-center rounded-full transition-shadow duration-500 ease-out"
-                            :class="tint === choice.value ? 'ring-2 ring-(--ui-text-highlighted)' : ''"
-                            @click="setTint(choice.value)"
-                        >
-                            <span
-                                class="size-6 rounded-full"
-                                :class="choice.value === null ? 'bg-[oklch(0.205_0_0)] dark:bg-[oklch(0.922_0_0)]' : 'bg-[oklch(var(--swatch-lightness)_calc(0.18*var(--swatch-chroma))_var(--swatch-hue))] dark:bg-[oklch(0.8_calc(0.14*var(--swatch-chroma))_var(--swatch-hue))]'"
-                                :style="choice.value === null ? undefined : { '--swatch-hue': choice.value, '--swatch-chroma': tintChroma(choice.value), '--swatch-lightness': tintLightness(choice.value) }"
-                            />
-                        </button>
-                    </UTooltip>
-                </div>
+            <div role="radiogroup" :aria-label="t('Color')" class="flex max-w-[32.5rem] flex-wrap gap-2">
+                <UTooltip v-for="choice in TINT_CHOICES" :key="choice.value ?? 'black'" :text="t(choice.label)">
+                    <button
+                        type="button"
+                        role="radio"
+                        :aria-checked="tint === choice.value"
+                        :aria-label="t(choice.label)"
+                        class="flex size-9 items-center justify-center rounded-full transition-shadow duration-500 ease-out"
+                        :class="tint === choice.value ? 'ring-2 ring-(--ui-text-highlighted)' : ''"
+                        @click="setTint(choice.value)"
+                    >
+                        <span
+                            class="size-6 rounded-full"
+                            :class="choice.value === null ? 'bg-[oklch(0.205_0_0)] dark:bg-[oklch(0.922_0_0)]' : 'bg-[oklch(var(--swatch-lightness)_calc(0.18*var(--swatch-chroma))_var(--swatch-hue))] dark:bg-[oklch(0.8_calc(0.14*var(--swatch-chroma))_var(--swatch-hue))]'"
+                            :style="choice.value === null ? undefined : { '--swatch-hue': choice.value, '--swatch-chroma': tintChroma(choice.value), '--swatch-lightness': tintLightness(choice.value) }"
+                        />
+                    </button>
+                </UTooltip>
             </div>
         </UFormField>
         <UFormField :label="t('Conversation')">
