@@ -25,18 +25,27 @@ export function isAppUserBlocked(userRef: string): boolean {
 }
 
 export function isNameTakenByOther(name: string, userRef: string): boolean {
-    return !userByRef(userRef) && Boolean(userByName(name)?.appUserRef);
+    const owner = userByName(name);
+    if (!owner || owner.appUserRef === userRef) {
+        return false;
+    }
+    return owner.appUserRef !== null || Boolean(userByRef(userRef));
+}
+
+function renameUser(row: UserRow, name: string): UserRow {
+    useDatabase().update(users).set({ name }).where(eq(users.id, row.id)).run();
+    return announce({ ...row, name });
 }
 
 export function signInUser(name: string, userRef: string): UserRow | null {
-    const known = userByRef(userRef);
-    if (known) {
-        return known;
-    }
-    const named = userByName(name);
-    if (named?.appUserRef) {
+    if (isNameTakenByOther(name, userRef)) {
         return null;
     }
+    const known = userByRef(userRef);
+    if (known) {
+        return known.name === name ? known : renameUser(known, name);
+    }
+    const named = userByName(name);
     if (named) {
         useDatabase().update(users).set({ appUserRef: userRef }).where(eq(users.id, named.id)).run();
         return { ...named, appUserRef: userRef };
@@ -98,7 +107,14 @@ function saveAvatar(row: UserRow, avatarFile: string | null, avatarSource: strin
     return announce({ ...row, ...changes });
 }
 
-export async function syncLinkedAvatar(row: UserRow, source: string): Promise<UserRow> {
+export async function syncLinkedAvatar(row: UserRow, source: string | null): Promise<UserRow> {
+    if (!source) {
+        if (row.avatarSource === null) {
+            return row;
+        }
+        removeAvatar(userAvatarBase(row));
+        return saveAvatar(row, null, null);
+    }
     if (row.avatarSource === source && row.avatarFile) {
         return row;
     }

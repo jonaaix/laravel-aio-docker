@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
     if (signedIn.blockedAt) {
         throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
     }
-    const user = signIn.avatarUrl ? await syncLinkedAvatar(signedIn, signIn.avatarUrl) : signedIn;
+    const user = await syncLinkedAvatar(signedIn, signIn.avatarUrl);
     const secure = isSecureContext(getRequestURL(event));
     // Embedded in the Laravel app the chat is a third-party frame; only a partitioned, cross-site cookie survives there.
     setCookie(event, SESSION_COOKIE, createSessionValue(chatKey(), user.id), {
