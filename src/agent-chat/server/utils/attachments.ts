@@ -60,7 +60,7 @@ export async function receiveUpload(event: H3Event, name: string): Promise<Uploa
             ? createError({ statusCode: 413, statusMessage: 'File is larger than 2 GB' })
             : createError({ statusCode: 400, statusMessage: 'Upload failed' });
     }
-    return { id, filename, mediaType: mediaTypeFor(filename), size };
+    return { id, filename, mediaType: detectedMediaType(uploadPath(id), filename), size };
 }
 
 export function discardUpload(id: string): void {
@@ -99,7 +99,7 @@ export function adoptUploads(conversationId: string, references: AttachmentRefer
         const storedName = storedNameFor(reference.id, reference.filename);
         const target = join(dir, storedName);
         renameSync(uploadPath(reference.id), target);
-        return { storedName, filename: reference.filename, mediaType: mediaTypeFor(reference.filename), size: statSync(target).size };
+        return { storedName, filename: reference.filename, mediaType: detectedMediaType(target, reference.filename), size: statSync(target).size };
     });
 }
 

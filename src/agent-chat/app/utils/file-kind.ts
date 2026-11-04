@@ -37,6 +37,8 @@ const PREVIEW_LANGUAGES: Record<string, string> = {
 
 export type FilePreview = { kind: 'markdown' } | { kind: 'code'; language: string };
 
+const TEXT_MEDIA_TYPE = /^(text\/|application\/(json|xml|javascript|x-sh|x-httpd-php|sql|toml|yaml)\b)/;
+
 export function filePreview(filename: string): FilePreview | null {
     const extension = fileExtension(filename);
     if (extension === 'md') {
@@ -53,4 +55,12 @@ export function fencedCode(content: string, language: string): string {
     const longestRun = Math.max(2, ...[...content.matchAll(/`+/g)].map(match => match[0].length));
     const fence = '`'.repeat(longestRun + 1);
     return `${fence}${language}\n${content}\n${fence}`;
+}
+
+export function textFilePreview(filename: string): FilePreview {
+    return filePreview(filename) ?? { kind: 'code', language: fileLanguage(filename) ?? 'text' };
+}
+
+export function isTextMediaType(mediaType: string): boolean {
+    return TEXT_MEDIA_TYPE.test(mediaType);
 }

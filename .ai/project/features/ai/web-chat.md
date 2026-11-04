@@ -220,7 +220,8 @@ viewer in place of the file name. Small tweaks such as
 a colour or a label get no screenshot. People can attach files of any type to their own messages as
 well — by picking them, dropping them onto the chat or pasting them — up to 2 GB each; a message may
 consist of attachments only. Attached files are stored with the conversation and shown in the sent
-message the same way as the agent's. The agent never receives their content inline: it gets the
+message the same way as the agent's. Any shared file whose content is text opens in a preview beside the
+conversation, whatever its name or extension. The agent never receives their content inline: it gets the
 list of saved paths ahead of the message text and reads the files itself.
 
 ### People, agents and settings

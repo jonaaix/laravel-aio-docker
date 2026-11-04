@@ -15,7 +15,7 @@ const details = computed(() => [
     fileExtension(filename.value).toUpperCase() || t('File'),
     size.value === null ? null : formatBytes(size.value),
 ].filter(Boolean).join(' · '));
-const preview = computed(() => filePreview(filename.value));
+const preview = computed(() => filePreview(filename.value) ?? (isTextMediaType(props.part.mediaType) ? textFilePreview(filename.value) : null));
 const previewOpen = ref(false);
 
 function openPreview(): void {
