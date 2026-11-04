@@ -4,7 +4,8 @@ import type { ChatMessage, ChatPart } from '#shared/types/conversation';
 export type AnswerSegment =
     | { kind: 'part'; key: string; part: ChatPart }
     | { kind: 'images'; key: string; parts: FileUIPart[] }
-    | { kind: 'stop-hook'; key: string; text: string };
+    | { kind: 'stop-hook'; key: string; text: string }
+    | { kind: 'compacted'; key: string };
 
 function isImage(part: ChatPart): part is FileUIPart {
     return part.type === 'file' && part.mediaType.startsWith('image/');
@@ -14,6 +15,10 @@ export function answerSegments(message: ChatMessage): AnswerSegment[] {
     const segments: AnswerSegment[] = [];
     let afterStopHook = false;
     message.parts.forEach((part, index) => {
+        if (isCompactionMark(part)) {
+            segments.push({ kind: 'compacted', key: `${message.id}-${index}` });
+            return;
+        }
         if (isStopHookMark(part)) {
             afterStopHook = true;
             return;

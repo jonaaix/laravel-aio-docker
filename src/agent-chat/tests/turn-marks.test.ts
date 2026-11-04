@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { STOP_HOOK_PART, isStopHookMark, partsBeforeStopHook } from '../shared/utils/stop-hook.ts';
+import { COMPACTION_PART, STOP_HOOK_PART, isCompactionMark, isStopHookMark, partsBeforeStopHook } from '../shared/utils/turn-marks.ts';
 import type { ChatPart } from '../shared/types/conversation.ts';
 
 const answer: ChatPart = { type: 'text', text: 'Done.', state: 'done' };
@@ -17,4 +17,9 @@ test('an answer without a stop hook stays whole', () => {
 test('only the mark counts as a stop hook', () => {
     assert.equal(isStopHookMark({ ...STOP_HOOK_PART }), true);
     assert.equal(isStopHookMark(answer), false);
+});
+
+test('a compaction is its own mark, apart from the stop hook', () => {
+    assert.equal(isCompactionMark({ ...COMPACTION_PART }), true);
+    assert.equal(isStopHookMark({ ...COMPACTION_PART }), false);
 });

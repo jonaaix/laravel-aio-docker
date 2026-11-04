@@ -78,8 +78,10 @@ message is shown collapsed to its beginning and can be expanded and collapsed ag
 collapsed whenever the conversation is opened. Copying always takes the whole message.
 
 When a stop hook of the project sends the agent back after its answer — a final code check, say — the answer
-still ends where the agent finished it. What the agent replies to the hook follows as a small grey line,
-"Stop hook · …"; it is left out when the message is copied, in notifications and in what other agents read.
+still ends where the agent finished it. What the agent replies to the hook follows as a small grey line behind a
+return-arrow icon, named "Stop hook" on hover; it is left out when the message is copied, in notifications and in
+what other agents read. When Claude summarizes a long conversation to make room, a small grey line "Conversation
+summarized" marks the spot in the answer where it happened, since the agent remembers less detail from before it.
 
 Every conversation keeps its full history — messages, tool activity, and the files and images
 exchanged — and comes back complete after a page reload or a container restart. A newer version

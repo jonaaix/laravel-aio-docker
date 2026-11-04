@@ -1,7 +1,7 @@
 import { tmpdir } from 'node:os';
 import type { AnnouncedAgent } from '../database/schema';
 import type { ChatMessage } from '../../shared/types/conversation';
-import { partsBeforeStopHook } from '../../shared/utils/stop-hook';
+import { partsBeforeStopHook } from '../../shared/utils/turn-marks';
 import type { AgentRow } from './agent-store';
 
 const MISSED_MESSAGE_LENGTH = 10_000;

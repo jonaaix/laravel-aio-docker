@@ -482,7 +482,17 @@ const session = computed(() => sessionState(status.value, turnActive.value));
                             </div>
                             <template v-for="segment in answerSegments(message)" :key="`${segment.key}:${mentionKey}`">
                                 <ChatImageGroup v-if="segment.kind === 'images'" :parts="segment.parts" />
-                                <p v-else-if="segment.kind === 'stop-hook'" class="text-sm whitespace-pre-line text-muted">{{ t('Stop hook') }} · {{ segment.text }}</p>
+                                <p v-else-if="segment.kind === 'stop-hook'" class="flex items-start gap-2 text-sm text-muted">
+                                    <UTooltip :text="t('Stop hook')">
+                                        <UIcon name="i-heroicons-arrow-uturn-left" class="mt-0.5 size-4 shrink-0" />
+                                    </UTooltip>
+                                    <span class="sr-only">{{ t('Stop hook') }}</span>
+                                    <span class="min-w-0 whitespace-pre-line">{{ segment.text }}</span>
+                                </p>
+                                <p v-else-if="segment.kind === 'compacted'" class="flex items-center gap-2 text-sm text-muted">
+                                    <UIcon name="i-heroicons-arrows-pointing-in" class="size-4 shrink-0" />
+                                    {{ t('Conversation summarized') }}
+                                </p>
                                 <ChatMessagePart v-else :part="segment.part" :message="message" :streaming="isStreaming(message.id)" />
                             </template>
                             <ChatTurnOutcome v-if="message.role === 'assistant'" :message="message" />

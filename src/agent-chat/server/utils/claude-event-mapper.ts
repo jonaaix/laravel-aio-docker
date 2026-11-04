@@ -1,6 +1,6 @@
 import type { ClaudeEvent } from '#claude-threads/claude/cli';
 import type { ChatPart } from '../../shared/types/conversation';
-import { STOP_HOOK_FEEDBACK, STOP_HOOK_PART } from '../../shared/utils/stop-hook';
+import { COMPACTION_PART, STOP_HOOK_FEEDBACK, STOP_HOOK_PART } from '../../shared/utils/turn-marks';
 
 interface ClaudeContentBlock {
     type: string;
@@ -108,6 +108,9 @@ export function applyClaudeEvent(parts: ChatPart[], event: ClaudeEvent): number[
         return [];
     }
     const changed: number[] = [];
+    if (event.type === 'system' && event.subtype === 'compact_boundary') {
+        changed.push(parts.push({ ...COMPACTION_PART }) - 1);
+    }
     if (event.type === 'assistant') {
         for (const block of contentBlocks(event)) {
             const part = assistantBlockToPart(block);
