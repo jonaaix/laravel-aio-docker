@@ -1,5 +1,6 @@
 import type { ClaudeEvent } from '#claude-threads/claude/cli';
 import type { ChatPart } from '../../shared/types/conversation';
+import { STOP_HOOK_FEEDBACK, STOP_HOOK_PART } from '../../shared/utils/stop-hook';
 
 interface ClaudeContentBlock {
     type: string;
@@ -117,6 +118,10 @@ export function applyClaudeEvent(parts: ChatPart[], event: ClaudeEvent): number[
     }
     if (event.type === 'user') {
         for (const block of contentBlocks(event)) {
+            if (block.type === 'text' && block.text?.startsWith(STOP_HOOK_FEEDBACK)) {
+                changed.push(parts.push({ ...STOP_HOOK_PART }) - 1);
+                continue;
+            }
             const index = block.type === 'tool_result' ? applyToolResult(parts, block) : null;
             if (index !== null) {
                 changed.push(index);

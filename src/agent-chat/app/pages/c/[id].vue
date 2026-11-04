@@ -482,6 +482,7 @@ const session = computed(() => sessionState(status.value, turnActive.value));
                             </div>
                             <template v-for="segment in answerSegments(message)" :key="`${segment.key}:${mentionKey}`">
                                 <ChatImageGroup v-if="segment.kind === 'images'" :parts="segment.parts" />
+                                <p v-else-if="segment.kind === 'stop-hook'" class="text-sm whitespace-pre-line text-muted">{{ t('Stop hook') }} · {{ segment.text }}</p>
                                 <ChatMessagePart v-else :part="segment.part" :message="message" :streaming="isStreaming(message.id)" />
                             </template>
                             <ChatTurnOutcome v-if="message.role === 'assistant'" :message="message" />

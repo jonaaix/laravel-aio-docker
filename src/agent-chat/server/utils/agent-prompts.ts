@@ -1,6 +1,7 @@
 import { tmpdir } from 'node:os';
 import type { AnnouncedAgent } from '../database/schema';
 import type { ChatMessage } from '../../shared/types/conversation';
+import { partsBeforeStopHook } from '../../shared/utils/stop-hook';
 import type { AgentRow } from './agent-store';
 
 const MISSED_MESSAGE_LENGTH = 10_000;
@@ -100,7 +101,7 @@ export function missedMessagesBlock(messages: MissedMessage[]): string | null {
 }
 
 export function plainMessageText(message: ChatMessage): string {
-    return message.parts
+    return partsBeforeStopHook(message.parts)
         .flatMap((part) => {
             if (part.type === 'text') {
                 return [part.text.trim()];

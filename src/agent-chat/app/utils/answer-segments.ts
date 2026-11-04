@@ -3,7 +3,8 @@ import type { ChatMessage, ChatPart } from '#shared/types/conversation';
 
 export type AnswerSegment =
     | { kind: 'part'; key: string; part: ChatPart }
-    | { kind: 'images'; key: string; parts: FileUIPart[] };
+    | { kind: 'images'; key: string; parts: FileUIPart[] }
+    | { kind: 'stop-hook'; key: string; text: string };
 
 function isImage(part: ChatPart): part is FileUIPart {
     return part.type === 'file' && part.mediaType.startsWith('image/');
@@ -11,7 +12,18 @@ function isImage(part: ChatPart): part is FileUIPart {
 
 export function answerSegments(message: ChatMessage): AnswerSegment[] {
     const segments: AnswerSegment[] = [];
+    let afterStopHook = false;
     message.parts.forEach((part, index) => {
+        if (isStopHookMark(part)) {
+            afterStopHook = true;
+            return;
+        }
+        if (afterStopHook) {
+            if (part.type === 'text' && part.text.trim()) {
+                segments.push({ kind: 'stop-hook', key: `${message.id}-${index}`, text: part.text.trim() });
+            }
+            return;
+        }
         if (part.type !== 'text' && part.type !== 'file') {
             return;
         }
