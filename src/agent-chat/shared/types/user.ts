@@ -9,6 +9,7 @@ export interface ChatUser {
     language: string | null;
     pinSentMessage: boolean;
     changesPanelHidden: boolean;
+    changesPanelAuto: boolean;
     tint: number | null;
     speechRate: number | null;
     admin: boolean;

@@ -239,6 +239,13 @@
       "when": 1793825039303,
       "tag": "0033_conversation_reads",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "6",
+      "when": 1793826372838,
+      "tag": "0034_user_changes_panel_auto",
+      "breakpoints": true
     }
   ]
 }

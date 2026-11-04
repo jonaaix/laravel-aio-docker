@@ -39,7 +39,9 @@ a conversation opens the same window at Agents.
   people's message bubbles a light container tone of it — while background, sidebar, surfaces, text and borders
   stay the plain greys of Black, in light and dark alike. It also holds "Move sent message to top", off by default: when off, the conversation
   stays at the bottom after sending and follows the answer; when on, the sent message moves to the
-  top with room below for the answer. Every choice applies at once and belongs to the person, so it
+  top with room below for the answer. "Show changes automatically", on by default, lets the changes panel open on
+  its own beside the conversation (see [AI web chat](web-chat.md)); when off, it opens only through "N files
+  changed" and only for that conversation. Every choice applies at once and belongs to the person, so it
   follows them to every device and browser.
 - **Read aloud** sets the person's reading speed — 1×, 1.25×, 1.5× (the default), 1.75× or 2× — and the voice
   service of the whole chat: Gemini or ElevenLabs with an API key. The key is checked with the service before it is

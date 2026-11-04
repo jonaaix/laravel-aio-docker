@@ -80,7 +80,7 @@ async function toggleMute(): Promise<void> {
 const leadAgent = computed<Participant>(() => ({ kind: 'agent', name: lead.value?.name ?? LEAD_AGENT_NAME, seed: lead.value ? lead.value.avatarSeed : LEAD_AGENT_AVATAR_SEED, image: lead.value?.avatarUrl }));
 
 const { participant: userParticipant } = useUsers();
-const { pinSentMessage, changesPanelHidden, setChangesPanelHidden } = useAppearance();
+const { pinSentMessage, changesPanelHidden, changesPanelAuto, setChangesPanelHidden } = useAppearance();
 const { profile: account, loaded: accountLoaded } = useAccount();
 const mentionNames = useMentionNames();
 const mentionKey = computed(() => mentionNames.value.join('|'));
@@ -157,7 +157,9 @@ const changesTitle = useChangesTitle();
 const selectedChangesId = ref<string | null>(null);
 const changedMessages = computed(() => visibleMessages.value.filter(message => message.role === 'assistant' && turnFileChanges(message).files.length > 0));
 const changesMessage = computed(() => changedMessages.value.find(message => message.id === selectedChangesId.value) ?? changedMessages.value.at(-1) ?? null);
-const changesPanelShown = computed(() => changesPanelAvailable.value && !changesPanelHidden.value && changesMessage.value !== null);
+const changesOpenedHere = ref(false);
+const changesPanelShown = computed(() => changesPanelAvailable.value && changesMessage.value !== null
+    && (changesPanelAuto.value ? !changesPanelHidden.value : changesOpenedHere.value));
 
 watch(() => changedMessages.value.at(-1)?.id, () => {
     selectedChangesId.value = null;
@@ -165,7 +167,7 @@ watch(() => changedMessages.value.at(-1)?.id, () => {
 watch(changesPanelAvailable, (available) => {
     if (available && changesOverlayOpen.value) {
         changesOverlayOpen.value = false;
-        void setChangesPanelHidden(false);
+        openChangesPanel();
     }
 });
 
@@ -175,13 +177,27 @@ function changesShownFor(messageId: string): boolean {
     return (changesPanelShown.value || changesOverlayOpen.value) && changesMessage.value?.id === messageId;
 }
 
+function openChangesPanel(): void {
+    changesOpenedHere.value = true;
+    if (changesPanelAuto.value && changesPanelHidden.value) {
+        void setChangesPanelHidden(false);
+    }
+}
+
+function closeChangesPanel(): void {
+    changesOpenedHere.value = false;
+    if (changesPanelAuto.value) {
+        void setChangesPanelHidden(true);
+    }
+}
+
 function showChanges(messageId: string): void {
     selectedChangesId.value = messageId;
-    if (!changesPanelAvailable.value) {
-        changesOverlayOpen.value = true;
+    if (changesPanelAvailable.value) {
+        openChangesPanel();
     }
-    else if (changesPanelHidden.value) {
-        void setChangesPanelHidden(false);
+    else {
+        changesOverlayOpen.value = true;
     }
 }
 
@@ -658,7 +674,7 @@ const restoreConversation = () => withFlag(archiving, restore);
         :message="changesMessage"
         :streaming="isStreaming(changesMessage.id)"
         :max-width="changesPanelRoom"
-        @close="setChangesPanelHidden(true)"
+        @close="closeChangesPanel"
     />
     <USlideover
         v-if="changesMessage"

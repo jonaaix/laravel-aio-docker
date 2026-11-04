@@ -4,7 +4,7 @@ import { isSpeechRate } from '../../../../shared/utils/speech';
 
 export default defineEventHandler(async (event) => {
     const user = ownUser(event);
-    const { colorMode, font, language, pinSentMessage, changesPanelHidden, tint, speechRate } = await readBody<{ colorMode?: unknown; font?: unknown; language?: unknown; pinSentMessage?: unknown; changesPanelHidden?: unknown; tint?: unknown; speechRate?: unknown }>(event);
+    const { colorMode, font, language, pinSentMessage, changesPanelHidden, changesPanelAuto, tint, speechRate } = await readBody<{ colorMode?: unknown; font?: unknown; language?: unknown; pinSentMessage?: unknown; changesPanelHidden?: unknown; changesPanelAuto?: unknown; tint?: unknown; speechRate?: unknown }>(event);
     const changes: Parameters<typeof setUserAppearance>[1] = {};
     if (colorMode !== undefined) {
         if (!(COLOR_MODES as readonly unknown[]).includes(colorMode)) {
@@ -41,6 +41,9 @@ export default defineEventHandler(async (event) => {
     }
     if (typeof changesPanelHidden === 'boolean') {
         changes.changesPanelHidden = changesPanelHidden;
+    }
+    if (typeof changesPanelAuto === 'boolean') {
+        changes.changesPanelAuto = changesPanelAuto;
     }
     return toChatUser(Object.keys(changes).length > 0 ? setUserAppearance(user, changes) : user);
 });

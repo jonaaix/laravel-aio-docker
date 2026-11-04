@@ -253,5 +253,6 @@
     "Changes": "Modifiche",
     "Close changes": "Chiudi modifiche",
     "Resize changes": "Ridimensiona le modifiche",
-    "Press Esc again to stop": "Premi di nuovo Esc per fermare"
+    "Press Esc again to stop": "Premi di nuovo Esc per fermare",
+    "Show changes automatically": "Mostra le modifiche automaticamente"
 }

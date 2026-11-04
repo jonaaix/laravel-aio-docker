@@ -253,5 +253,6 @@
     "Changes": "Cambios",
     "Close changes": "Cerrar cambios",
     "Resize changes": "Ajustar el ancho de los cambios",
-    "Press Esc again to stop": "Pulsa Esc otra vez para detener"
+    "Press Esc again to stop": "Pulsa Esc otra vez para detener",
+    "Show changes automatically": "Mostrar cambios automáticamente"
 }

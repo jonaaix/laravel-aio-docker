@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const { t } = useI18n();
-const { font, mode, language, pinSentMessage, tint, setColorMode, setFont, setLanguage, setPinSentMessage, setTint } = useAppearance();
+const { font, mode, language, pinSentMessage, changesPanelAuto, tint, setColorMode, setFont, setLanguage, setPinSentMessage, setChangesPanelAuto, setTint } = useAppearance();
 
 const languageItems = LANGUAGES.map(choice => ({ value: choice.code, label: choice.name }));
 
@@ -73,6 +73,12 @@ const modes: { value: ColorModeChoice; label: string; icon: string }[] = [
                 :model-value="pinSentMessage"
                 :label="t('Move sent message to top')"
                 @update:model-value="value => setPinSentMessage(value === true)"
+            />
+            <USwitch
+                :model-value="changesPanelAuto"
+                :label="t('Show changes automatically')"
+                class="mt-3"
+                @update:model-value="value => setChangesPanelAuto(value === true)"
             />
         </UFormField>
     </div>

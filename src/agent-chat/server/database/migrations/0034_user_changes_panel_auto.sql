@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `changes_panel_auto` integer DEFAULT true NOT NULL;
