@@ -1,4 +1,4 @@
-// Chat heads hang beside the reading column; below this width they would have to move into it.
+// Below this width the reading column would have to narrow to keep the chat heads beside it.
 const MIN_CONVERSATION_PX = 1000;
 
 export const CHANGES_PANEL_MIN_PX = 384;
