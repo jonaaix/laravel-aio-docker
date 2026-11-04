@@ -1,6 +1,7 @@
 export interface DiffLine {
     kind: 'added' | 'removed' | 'same' | 'gap';
     text: string;
+    number?: number;
 }
 
 /**

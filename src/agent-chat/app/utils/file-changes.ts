@@ -1,21 +1,28 @@
 import type { ChatMessage, FileChange, StepFileChanges, TurnFileChanges } from '#shared/types/conversation';
 import type { DiffLine } from './line-diff';
 
-function diffLine(line: string): DiffLine {
-    if (line.startsWith('@@')) {
-        return { kind: 'gap', text: '⋯' };
-    }
-    if (line.startsWith('+')) {
-        return { kind: 'added', text: line.slice(1) };
-    }
-    if (line.startsWith('-')) {
-        return { kind: 'removed', text: line.slice(1) };
-    }
-    return { kind: 'same', text: line.slice(1) };
-}
+const HUNK_START = /^@@ -(\d+)(?:,\d+)? \+(\d+)/;
 
 export function unifiedDiffLines(lines: string[]): DiffLine[] {
-    return lines.map(diffLine).filter((line, index) => index > 0 || line.kind !== 'gap');
+    let oldNumber = 0;
+    let newNumber = 0;
+    const result = lines.map((line): DiffLine => {
+        const hunk = line.match(HUNK_START);
+        if (hunk) {
+            oldNumber = Number(hunk[1]);
+            newNumber = Number(hunk[2]);
+            return { kind: 'gap', text: '⋯' };
+        }
+        if (line.startsWith('+')) {
+            return { kind: 'added', text: line.slice(1), number: newNumber++ };
+        }
+        if (line.startsWith('-')) {
+            return { kind: 'removed', text: line.slice(1), number: oldNumber++ };
+        }
+        oldNumber++;
+        return { kind: 'same', text: line.slice(1), number: newNumber++ };
+    });
+    return result.filter((line, index) => index > 0 || line.kind !== 'gap');
 }
 
 export function stepFileChanges(message: ChatMessage): Map<string, FileChange[]> {

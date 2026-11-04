@@ -80,7 +80,7 @@ last file the command names whose language is known; where no language can be to
 highlighting still sets strings, numbers, dates, links and words like "error" apart. Errors stay
 plain red. Every file change shows, however it was made — through the agent's file tools, a shell
 command or a script — as long as the project is a git repository: right under the step that made it, visible
-while the agent works, long diffs cut to their first lines and expandable; and at the end of the answer as
+while the agent works, with line numbers, long diffs cut to their first lines and expandable; and at the end of the answer as
 "N files changed · +A −R", where each file opens its diff. Files git ignores do not show, and the project's
 own git state (staged changes, commits) is never touched.
 
@@ -120,7 +120,7 @@ reading speed from the settings (Read aloud).
 
 When a stop hook of the project sends the agent back after its answer — a final code check, say — the answer
 still ends where the agent finished it. What the agent replies to the hook follows as a small grey line behind a
-return-arrow icon, named "Stop hook" on hover; it is left out when the message is copied, in notifications and in
+shield-with-check icon, named "Stop hook" on hover; it is left out when the message is copied, in notifications and in
 what other agents read. When Claude summarizes a long conversation to make room, a small grey line "Conversation
 summarized" marks the spot in the answer where it happened, since the agent remembers less detail from before it.
 
