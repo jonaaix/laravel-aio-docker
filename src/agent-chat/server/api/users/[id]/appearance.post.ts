@@ -4,7 +4,7 @@ import { SPEECH_VOICES, isSpeechProvider, isSpeechRate } from '../../../../share
 
 export default defineEventHandler(async (event) => {
     const user = ownUser(event);
-    const { colorMode, font, language, pinSentMessage, changesPanelHidden, changesPanelAuto, tint, speechRate, speechVoice } = await readBody<{ colorMode?: unknown; font?: unknown; language?: unknown; pinSentMessage?: unknown; changesPanelHidden?: unknown; changesPanelAuto?: unknown; speechVoice?: { provider?: unknown; voice?: unknown }; tint?: unknown; speechRate?: unknown }>(event);
+    const { colorMode, font, language, pinSentMessage, changesPanelHidden, changesPanelAuto, doneSound, tint, speechRate, speechVoice } = await readBody<{ colorMode?: unknown; font?: unknown; language?: unknown; pinSentMessage?: unknown; changesPanelHidden?: unknown; changesPanelAuto?: unknown; doneSound?: unknown; speechVoice?: { provider?: unknown; voice?: unknown }; tint?: unknown; speechRate?: unknown }>(event);
     const changes: Parameters<typeof setUserAppearance>[1] = {};
     if (colorMode !== undefined) {
         if (!(COLOR_MODES as readonly unknown[]).includes(colorMode)) {
@@ -44,6 +44,9 @@ export default defineEventHandler(async (event) => {
     }
     if (typeof changesPanelAuto === 'boolean') {
         changes.changesPanelAuto = changesPanelAuto;
+    }
+    if (typeof doneSound === 'boolean') {
+        changes.doneSound = doneSound;
     }
     if (speechVoice !== undefined) {
         const { provider, voice } = speechVoice ?? {};

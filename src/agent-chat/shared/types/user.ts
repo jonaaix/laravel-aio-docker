@@ -10,6 +10,7 @@ export interface ChatUser {
     pinSentMessage: boolean;
     changesPanelHidden: boolean;
     changesPanelAuto: boolean;
+    doneSound: boolean;
     tint: number | null;
     speechVoices: Partial<Record<string, string>>;
     speechRate: number | null;

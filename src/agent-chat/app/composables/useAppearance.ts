@@ -61,6 +61,7 @@ export function useAppearance() {
     const pinSentMessage = computed(() => user.value?.pinSentMessage ?? false);
     const changesPanelHidden = computed(() => user.value?.changesPanelHidden ?? false);
     const changesPanelAuto = computed(() => user.value?.changesPanelAuto ?? true);
+    const doneSound = computed(() => user.value?.doneSound ?? true);
     const language = computed(() => locale.value);
     const tint = computed(() => isTint(user.value?.tint) ? user.value?.tint ?? null : DEFAULT_TINT);
     const speechRate = computed(() => isSpeechRate(user.value?.speechRate) ? user.value.speechRate : DEFAULT_SPEECH_RATE);
@@ -76,7 +77,7 @@ export function useAppearance() {
         }
     }
 
-    async function save(changes: { colorMode?: ColorModeChoice; font?: string; language?: string; pinSentMessage?: boolean; changesPanelHidden?: boolean; changesPanelAuto?: boolean; tint?: number | null; speechRate?: number; speechVoice?: { provider: SpeechProvider; voice: string } }): Promise<void> {
+    async function save(changes: { colorMode?: ColorModeChoice; font?: string; language?: string; pinSentMessage?: boolean; changesPanelHidden?: boolean; changesPanelAuto?: boolean; doneSound?: boolean; tint?: number | null; speechRate?: number; speechVoice?: { provider: SpeechProvider; voice: string } }): Promise<void> {
         if (!user.value) {
             return;
         }
@@ -134,5 +135,9 @@ export function useAppearance() {
         return save({ changesPanelAuto: value });
     }
 
-    return { font, mode, language, pinSentMessage, changesPanelHidden, changesPanelAuto, tint, speechRate, adopt, setColorMode, setFont, setLanguage, setPinSentMessage, setChangesPanelHidden, setChangesPanelAuto, setSpeechRate, speechVoiceFor, setSpeechVoice, setTint };
+    function setDoneSound(value: boolean): Promise<void> {
+        return save({ doneSound: value });
+    }
+
+    return { font, mode, language, pinSentMessage, changesPanelHidden, changesPanelAuto, doneSound, tint, speechRate, adopt, setColorMode, setFont, setLanguage, setPinSentMessage, setChangesPanelHidden, setChangesPanelAuto, setDoneSound, setSpeechRate, speechVoiceFor, setSpeechVoice, setTint };
 }

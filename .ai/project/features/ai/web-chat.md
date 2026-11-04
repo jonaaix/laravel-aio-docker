@@ -62,7 +62,11 @@ with the name of the person who started it: a development conversation is long-l
 works on the same app. Each entry shows the title and, below it, who started it and when something last happened, with a badge at the
 right end while the session is working (the agent is answering) or ready (running and waiting, shown as "Ready"); a paused session
 shows no badge. A conversation with an answer the person has not seen shows its title in bold with a dot after it, by the same rule as in
-the Orbit app (see [Orbit](chat-hub.md#unread)), and the browser tab shows how many there are, as "(2) AI Chat". A new conversation is named
+the Orbit app (see [Orbit](chat-hub.md#unread)), and the browser tab shows how many there are, as "(2) AI Chat". When an answer
+finishes in a conversation the person has written in but is not looking at — another conversation is open, or the
+tab is in the background — a short, low double drum beat sounds, once per answer even with several tabs open; the
+browser lets it sound only after the person has clicked or typed in the page since loading it. It can be switched
+off in the settings (Chat). A new conversation is named
 after the beginning of its first message. When the user sends the third message, the agent titles
 the session from the user's first three messages, the way Claude Code titles its terminal sessions;
 that title replaces the name in the chat and also names the session in Claude Code's own history.

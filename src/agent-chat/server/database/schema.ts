@@ -19,6 +19,7 @@ export const users = sqliteTable('users', {
     pinSentMessage: integer('pin_sent_message', { mode: 'boolean' }).notNull().default(false),
     changesPanelHidden: integer('changes_panel_hidden', { mode: 'boolean' }).notNull().default(false),
     changesPanelAuto: integer('changes_panel_auto', { mode: 'boolean' }).notNull().default(true),
+    doneSound: integer('done_sound', { mode: 'boolean' }).notNull().default(true),
     tint: integer('tint'),
     speechVoices: text('speech_voices', { mode: 'json' }).$type<Partial<Record<string, string>>>(),
     speechRate: real('speech_rate'),

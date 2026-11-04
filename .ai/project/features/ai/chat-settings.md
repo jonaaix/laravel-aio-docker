@@ -44,6 +44,8 @@ a conversation opens the same window at Agents.
   follows the answer; when on, the sent message moves to the top with room below for the answer. "Show file changes
   automatically", on by default, lets the changes panel open on its own beside the conversation (see
   [AI web chat](web-chat.md)); when off, it opens only through "N files changed" and only for that conversation.
+  "Sound when a chat is done", on by default, plays the drum beat when an answer finishes out of sight (see
+  [AI web chat](web-chat.md)).
 - **Read aloud** sets the person's reading speed on a slider from 0.5× to 3× in steps of 0.05× (1.5× by default) and the voice
   service of the whole chat, chosen in a strip: Device, Google Cloud, Gemini, ElevenLabs or OpenAI. Each service keeps its own API
   key, so several can be stored and switched between at will; choosing a service that has a key puts it to use at

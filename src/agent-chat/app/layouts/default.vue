@@ -14,6 +14,7 @@ const devicesVersion = useState('devices-version', () => 0);
 const { public: { hub } } = useRuntimeConfig();
 const unread = useUnread();
 unread.track();
+useDoneSound().track();
 const hubUnread = hub ? useHubUnread() : null;
 hubUnread?.track();
 const { load: loadReads, apply: applyRead } = useReads();
