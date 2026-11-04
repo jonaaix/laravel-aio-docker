@@ -264,5 +264,5 @@
     "Stop sample": "Arrêter l'extrait",
     "This is how I sound when I read answers to you.": "Voici ma voix quand je vous lis les réponses.",
     "Could not change the quality": "Impossible de changer la qualité",
-    "{service} has no credit left on this account. Reading aloud starts once credit is added there.": "{service} n'a plus de crédit sur ce compte. La lecture reprend dès que du crédit y est ajouté."
+    "{service} has no credit left on this account. Add credit there, then choose {service} again.": "{service} n'a plus de crédit sur ce compte. Ajoutez du crédit, puis choisissez à nouveau {service}."
 }

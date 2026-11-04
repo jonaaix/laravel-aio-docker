@@ -205,7 +205,7 @@ onMounted(load);
                 </div>
                 <p v-if="shown !== 'device' && noCredit === shown" class="flex items-start gap-2 rounded-lg bg-warning/10 px-3 py-2 text-sm">
                     <UIcon name="i-heroicons-exclamation-triangle" class="mt-0.5 size-4 shrink-0 text-warning" />
-                    <span>{{ t('{service} has no credit left on this account. Reading aloud starts once credit is added there.', { service: shownLabel }) }}</span>
+                    <span>{{ t('{service} has no credit left on this account. Add credit there, then choose {service} again.', { service: shownLabel }) }}</span>
                 </p>
                 <template v-if="shown !== 'device' && !showForm">
                     <div class="flex flex-col gap-1.5">

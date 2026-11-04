@@ -50,7 +50,7 @@ a conversation opens the same window at Agents.
   once and marks it with a check, choosing one without shows the field for its key, while the one in use keeps
   reading. The chosen service also transcribes dictation. A key is checked with the service before it is stored; a
   key the service refuses is not stored and the field says so. A key the service accepts but whose account has no
-  credit left is stored, with a note that reading aloud starts once credit is added there. Once stored, a key is never shown again — the strip
+  credit left is stored without being put to use, with a note to add credit there and then choose the service. Once stored, a key is never shown again — the strip
   only says which service has one, with "Replace key" and "Remove" (which asks first). Anyone signed in may replace
   or remove keys, nobody can read them. Device uses the device's own voice and leaves the keys in place.
   For a service with a key, "Quality" lists its models with what an hour of reading costs about (list prices,

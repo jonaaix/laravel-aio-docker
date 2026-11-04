@@ -264,5 +264,5 @@
     "Stop sample": "Stop sample",
     "This is how I sound when I read answers to you.": "This is how I sound when I read answers to you.",
     "Could not change the quality": "Could not change the quality",
-    "{service} has no credit left on this account. Reading aloud starts once credit is added there.": "{service} has no credit left on this account. Reading aloud starts once credit is added there."
+    "{service} has no credit left on this account. Add credit there, then choose {service} again.": "{service} has no credit left on this account. Add credit there, then choose {service} again."
 }

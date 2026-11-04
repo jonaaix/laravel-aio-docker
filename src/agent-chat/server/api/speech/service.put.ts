@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
     }
     catch (failure) {
         if (failure instanceof SpeechServiceError && failure.reason === 'credit') {
-            storeSpeechKey(service);
+            storeSpeechKey(service, false);
             return { ...speechServices(), noCredit: true };
         }
         if (failure instanceof SpeechServiceError) {
@@ -25,6 +25,6 @@ export default defineEventHandler(async (event) => {
         }
         throw failure;
     }
-    storeSpeechKey(service);
+    storeSpeechKey(service, true);
     return speechServices();
 });

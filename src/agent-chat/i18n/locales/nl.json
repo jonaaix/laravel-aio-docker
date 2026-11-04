@@ -264,5 +264,5 @@
     "Stop sample": "Voorbeeld stoppen",
     "This is how I sound when I read answers to you.": "Zo klink ik als ik je antwoorden voorlees.",
     "Could not change the quality": "De kwaliteit kon niet worden gewijzigd",
-    "{service} has no credit left on this account. Reading aloud starts once credit is added there.": "{service} heeft geen tegoed meer op dit account. Voorlezen werkt zodra er tegoed is opgewaardeerd."
+    "{service} has no credit left on this account. Add credit there, then choose {service} again.": "{service} heeft geen tegoed meer op dit account. Waardeer daar op en kies daarna opnieuw {service}."
 }
