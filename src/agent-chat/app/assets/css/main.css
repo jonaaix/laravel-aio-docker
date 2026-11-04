@@ -16,6 +16,7 @@
     --tint: 106;
     --tint-chroma: 1;
     --tint-lightness: 0.5;
+    --tint-dark-lightness: 0.8;
     --font-scale: 1;
     --ui-radius: 0.5rem;
     --ui-container: 52rem;
@@ -42,7 +43,7 @@
 }
 
 .dark {
-    --ui-primary: oklch(0.8 calc(0.14 * var(--tint-chroma)) var(--tint));
+    --ui-primary: oklch(var(--tint-dark-lightness) calc(0.14 * var(--tint-chroma)) var(--tint));
     --user-message: oklch(0.3 calc(0.04 * var(--tint-chroma)) var(--tint));
     --ui-bg: oklch(0.17 0 0);
     --ui-bg-muted: oklch(0.205 0 0);

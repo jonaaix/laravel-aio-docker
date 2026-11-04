@@ -61,8 +61,8 @@ const modes: { value: ColorModeChoice; label: string; icon: string }[] = [
                     >
                         <span
                             class="size-6 rounded-full"
-                            :class="choice.value === null ? 'bg-[oklch(0.205_0_0)] dark:bg-[oklch(0.922_0_0)]' : 'bg-[oklch(var(--swatch-lightness)_calc(0.18*var(--swatch-chroma))_var(--swatch-hue))] dark:bg-[oklch(0.8_calc(0.14*var(--swatch-chroma))_var(--swatch-hue))]'"
-                            :style="choice.value === null ? undefined : { '--swatch-hue': choice.value, '--swatch-chroma': tintChroma(choice.value), '--swatch-lightness': tintLightness(choice.value) }"
+                            :class="choice.value === null ? 'bg-[oklch(0.205_0_0)] dark:bg-[oklch(0.922_0_0)]' : 'bg-[oklch(var(--swatch-lightness)_calc(0.18*var(--swatch-chroma))_var(--swatch-hue))] dark:bg-[oklch(var(--swatch-dark-lightness)_calc(0.14*var(--swatch-chroma))_var(--swatch-hue))]'"
+                            :style="choice.value === null ? undefined : { '--swatch-hue': choice.value, '--swatch-chroma': tintChroma(choice.value), '--swatch-lightness': tintLightness(choice.value), '--swatch-dark-lightness': tintDarkLightness(choice.value) }"
                         />
                     </button>
                 </UTooltip>
