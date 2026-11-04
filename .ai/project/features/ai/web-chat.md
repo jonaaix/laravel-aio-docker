@@ -82,8 +82,8 @@ plain red. Every file change shows, however it was made — through the agent's 
 command or a script — as long as the project is a git repository. Right below
 "Worked", in the same quiet style, "N files changed · +A −R" appears with the first changed file and counts up while the
 agent works; while it works it is open and shows the diff of the file changed last, and it closes like "Worked" once the
-answer is done. Opened, it lists the files, and each file opens its diff: with line numbers, in full up to 1,000 lines,
-its name and counts staying in view while it scrolls by. The steps themselves show no diff. Clicking a file's name opens the whole file as it is now in the preview
+answer is done. Opened, it lists the files, and each file unfolds its diff: with line numbers, up to 1,000 lines in a
+scroll area of limited height. The steps themselves show no diff. Clicking a file's name opens the whole file as it is now in the preview
 panel beside the conversation, unless it was deleted: with line numbers, the lines the change added marked,
 and scrolled to the first of them; with several changes, arrows next to "1 of 3" step through them. Files git ignores do not show and cannot be opened, and the project's
 own git state (staged changes, commits) is never touched.

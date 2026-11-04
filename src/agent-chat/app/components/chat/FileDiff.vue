@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { CollapsibleContent, CollapsibleRoot } from 'reka-ui';
 import type { FileChange } from '#shared/types/conversation';
 
 const props = withDefaults(defineProps<{
@@ -37,8 +38,8 @@ const statusLabel = computed(() => {
 </script>
 
 <template>
-    <div class="flex flex-col gap-1">
-        <div class="sticky top-14 z-10 flex min-h-7 items-center gap-2 bg-default text-xs">
+    <CollapsibleRoot :open="open" class="flex flex-col">
+        <div class="flex min-h-7 items-center gap-2 text-xs">
             <UIcon name="i-heroicons-document-text" class="size-4 shrink-0 text-muted" />
             <button
                 v-if="preview"
@@ -67,11 +68,13 @@ const statusLabel = computed(() => {
                 />
             </component>
         </div>
-        <template v-if="open">
-            <p v-if="change.binary" class="text-xs text-muted">{{ t('Binary file') }}</p>
-            <ChatDiffLines v-else-if="lines.length > 0" :lines="lines" :language="fileLanguage(change.path)" />
-            <p v-if="change.truncated" class="text-xs text-muted">{{ t('Diff shortened') }}</p>
-        </template>
+        <CollapsibleContent class="data-[state=closed]:animate-[collapsible-up_200ms_var(--ease-out)] data-[state=open]:animate-[collapsible-down_200ms_var(--ease-out)] data-[state=closed]:overflow-hidden">
+            <div class="flex flex-col gap-1 pt-1 pb-1.5">
+                <p v-if="change.binary" class="text-xs text-muted">{{ t('Binary file') }}</p>
+                <ChatDiffLines v-else-if="lines.length > 0" :lines="lines" :language="fileLanguage(change.path)" class="max-h-96" />
+                <p v-if="change.truncated" class="text-xs text-muted">{{ t('Diff shortened') }}</p>
+            </div>
+        </CollapsibleContent>
         <ChatFilePreview
             v-if="preview"
             v-model:open="previewOpen"
@@ -82,5 +85,5 @@ const statusLabel = computed(() => {
             :size="null"
             :changed-lines="changedLines"
         />
-    </div>
+    </CollapsibleRoot>
 </template>
