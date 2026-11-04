@@ -45,7 +45,8 @@ new request.
   the reading language of a message may still differ, where the same gender-and-rank mapping applies.
 - The reading speed is saved shortly after the slider stops moving, so arrow keys and dragging don't lose steps.
 - The speed is applied when playing (playback rate), because ElevenLabs only allows up to 1.2× itself.
-- Long texts go out in pieces so services start playing sooner.
+- Long texts go out in pieces so services start playing sooner; the first piece is capped at 120 characters (about one
+  sentence), the rest at 400, so the voice starts after roughly a second.
 
 ## Open
 

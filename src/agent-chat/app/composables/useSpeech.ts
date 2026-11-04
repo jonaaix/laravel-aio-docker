@@ -1,6 +1,7 @@
 import type { SpeechProvider } from '#shared/utils/speech';
 
 const SERVICE_CHUNK_LENGTH = 400;
+const SERVICE_FIRST_CHUNK_LENGTH = 120;
 const SILENT_SAMPLES = 400;
 const SILENT_SAMPLE_RATE = 8000;
 
@@ -110,7 +111,7 @@ export function useSpeech() {
     }
 
     async function speakWithService(text: string, current: number, audio: HTMLAudioElement): Promise<void> {
-        const chunks = speechChunks(text, SERVICE_CHUNK_LENGTH);
+        const chunks = speechChunks(text, SERVICE_CHUNK_LENGTH, SERVICE_FIRST_CHUNK_LENGTH);
         const language = guessLanguage(text, locale.value);
         const fetchChunk = (chunk: string) => apiFetch<Blob>('speech', { method: 'POST', body: { text: chunk, language }, responseType: 'blob' });
         let next = fetchChunk(chunks[0]!);
