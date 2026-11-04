@@ -238,14 +238,9 @@
     "You": "Jij",
     "Admin": "Admin",
     "Blocked": "Geblokkeerd",
-    "Remove admin": "Adminrechten intrekken",
-    "Make admin": "Admin maken",
-    "Unblock": "Deblokkeren",
-    "Block": "Blokkeren",
-    "Actions for {name}": "Acties voor {name}",
     "Could not change this person": "Deze persoon kon niet worden gewijzigd",
-    "Hide account details": "Accountgegevens verbergen",
-    "Show account details": "Accountgegevens tonen",
-    "Account details hidden": "Accountgegevens verborgen",
-    "People can be set differently under People.": "Per persoon anders in te stellen onder Personen."
+    "People can be set differently under People.": "Per persoon anders in te stellen onder Personen.",
+    "Person": "Persoon",
+    "AI account details": "AI-accountgegevens",
+    "{option} for {name}": "{option} voor {name}"
 }

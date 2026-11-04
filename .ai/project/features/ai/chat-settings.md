@@ -62,10 +62,12 @@ a conversation opens the same window at Agents.
   with its session usage: no e-mail, organisation, plan or weekly usage reaches their browser. Admins always
   see the details. Switching and signing out stay open to everyone, so a friend
   can sign in their own account.
-- **People** appears only for admins. It lists everyone who has signed in to the chat, marking the admins
-  and the blocked, and showing a crossed-out eye beside anyone the account details are hidden from. An admin
-  can show or hide the account details for a single person, apart from what everyone else sees, make others admins, take the role away again (also from themselves) and
-  block or unblock anyone but themselves. A blocked person is no longer an admin, is signed out of every
+- **People** appears only for admins. It is a table of everyone who has signed in to the chat, with a tick box
+  per person for Admin, AI account details and Blocked; a tick takes effect at once. An admin can make others
+  admins, take the role away again (also from themselves), show or hide the AI account details for a single
+  person apart from what everyone else sees, and block or unblock anyone but themselves. Boxes that cannot
+  apply are greyed out: admins always see the AI account details, and a blocked person can be neither made
+  admin nor given the details. A blocked person is no longer an admin, is signed out of every
   open browser at once and is refused by every later sign-in link from the Laravel app. They are not told
   they were blocked: the chat only answers "Unauthorized", as it does for anyone not signed in.
   Becoming an admin is hidden: tapping one's own picture in Profile seven times in quick succession makes

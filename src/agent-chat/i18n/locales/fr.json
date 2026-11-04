@@ -238,14 +238,9 @@
     "You": "Vous",
     "Admin": "Admin",
     "Blocked": "Bloqué",
-    "Remove admin": "Retirer les droits admin",
-    "Make admin": "Nommer admin",
-    "Unblock": "Débloquer",
-    "Block": "Bloquer",
-    "Actions for {name}": "Actions pour {name}",
     "Could not change this person": "Impossible de modifier cette personne",
-    "Hide account details": "Masquer les détails du compte",
-    "Show account details": "Afficher les détails du compte",
-    "Account details hidden": "Détails du compte masqués",
-    "People can be set differently under People.": "Réglable différemment par personne sous Personnes."
+    "People can be set differently under People.": "Réglable différemment par personne sous Personnes.",
+    "Person": "Personne",
+    "AI account details": "Détails du compte IA",
+    "{option} for {name}": "{option} pour {name}"
 }

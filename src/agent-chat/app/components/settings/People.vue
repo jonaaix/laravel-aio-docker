@@ -1,16 +1,23 @@
 <script setup lang="ts">
-import type { DropdownMenuItem } from '@nuxt/ui';
 import type { ChatUser } from '#shared/types/user';
+
+type PersonSetting = 'admin' | 'account-details' | 'blocked';
 
 const { t } = useI18n();
 const { users, upsert } = useUsers();
 const { user: me } = useUserName();
 const { detailsHidden } = useAccount();
 
-const busyId = ref<string | null>(null);
+const pending = ref<{ id: string; setting: PersonSetting; value: boolean } | null>(null);
 const error = ref<string | undefined>();
 
 const people = computed(() => Object.values(users.value).sort((a, b) => a.name.localeCompare(b.name)));
+
+const columns = computed<{ setting: PersonSetting; label: string }[]>(() => [
+    { setting: 'admin', label: t('Admin') },
+    { setting: 'account-details', label: t('AI account details') },
+    { setting: 'blocked', label: t('Blocked') },
+]);
 
 function failureMessage(failure: unknown): string {
     const data = failure as { data?: { statusMessage?: string }; statusMessage?: string };
@@ -21,11 +28,50 @@ function seesAccountDetails(person: ChatUser): boolean {
     return person.admin || (person.accountDetails ? person.accountDetails === 'shown' : !detailsHidden.value);
 }
 
-async function change(person: ChatUser, setting: 'admin' | 'blocked' | 'account-details', body: Record<string, boolean>): Promise<void> {
-    busyId.value = person.id;
+function storedValue(person: ChatUser, setting: PersonSetting): boolean {
+    if (setting === 'admin') {
+        return person.admin;
+    }
+    if (setting === 'blocked') {
+        return person.blocked;
+    }
+    return seesAccountDetails(person);
+}
+
+function checked(person: ChatUser, setting: PersonSetting): boolean {
+    const change = pending.value;
+    return change?.id === person.id && change.setting === setting ? change.value : storedValue(person, setting);
+}
+
+function locked(person: ChatUser, setting: PersonSetting): boolean {
+    if (pending.value?.id === person.id) {
+        return true;
+    }
+    if (setting === 'blocked') {
+        return person.id === me.value?.id;
+    }
+    if (setting === 'account-details') {
+        return person.blocked || person.admin;
+    }
+    return person.blocked;
+}
+
+function requestBody(setting: PersonSetting, value: boolean): Record<string, boolean> {
+    if (setting === 'admin') {
+        return { admin: value };
+    }
+    if (setting === 'blocked') {
+        return { blocked: value };
+    }
+    return { shown: value };
+}
+
+async function change(person: ChatUser, setting: PersonSetting, value: boolean | 'indeterminate'): Promise<void> {
+    const enabled = value === true;
+    pending.value = { id: person.id, setting, value: enabled };
     error.value = undefined;
     try {
-        const updated = await apiFetch<ChatUser>(`users/${person.id}/${setting}`, { method: 'PUT', body });
+        const updated = await apiFetch<ChatUser>(`users/${person.id}/${setting}`, { method: 'PUT', body: requestBody(setting, enabled) });
         upsert(updated);
         if (updated.id === me.value?.id) {
             me.value = updated;
@@ -35,57 +81,70 @@ async function change(person: ChatUser, setting: 'admin' | 'blocked' | 'account-
         error.value = failureMessage(failure);
     }
     finally {
-        busyId.value = null;
+        pending.value = null;
     }
-}
-
-function actions(person: ChatUser): DropdownMenuItem[] {
-    const items: DropdownMenuItem[] = [];
-    if (person.admin) {
-        items.push({ label: t('Remove admin'), icon: 'i-heroicons-shield-exclamation', onSelect: () => change(person, 'admin', { admin: false }) });
-    }
-    else if (!person.blocked) {
-        items.push({ label: t('Make admin'), icon: 'i-heroicons-shield-check', onSelect: () => change(person, 'admin', { admin: true }) });
-        items.push(seesAccountDetails(person)
-            ? { label: t('Hide account details'), icon: 'i-heroicons-eye-slash', onSelect: () => change(person, 'account-details', { shown: false }) }
-            : { label: t('Show account details'), icon: 'i-heroicons-eye', onSelect: () => change(person, 'account-details', { shown: true }) });
-    }
-    if (person.id !== me.value?.id) {
-        items.push(person.blocked
-            ? { label: t('Unblock'), icon: 'i-heroicons-lock-open', onSelect: () => change(person, 'blocked', { blocked: false }) }
-            : { label: t('Block'), icon: 'i-heroicons-no-symbol', color: 'error', onSelect: () => change(person, 'blocked', { blocked: true }) });
-    }
-    return items;
 }
 </script>
 
 <template>
-    <div class="flex max-w-xl flex-col gap-4">
-        <ul class="divide-y divide-default rounded-md ring ring-default">
-            <li v-for="person in people" :key="person.id" class="flex items-center gap-3 px-3 py-2.5">
-                <ParticipantAvatar :participant="{ kind: 'person', name: person.name, seed: person.avatarSeed, image: person.avatarUrl }" class="size-8" :class="{ 'opacity-50': person.blocked }" />
-                <div class="flex min-w-0 flex-1 items-center gap-2">
-                    <span class="truncate text-sm font-medium" :class="person.blocked ? 'text-muted' : 'text-highlighted'">{{ person.name }}</span>
-                    <span v-if="person.id === me?.id" class="text-xs text-muted">{{ t('You') }}</span>
-                    <UBadge v-if="person.admin" :label="t('Admin')" color="primary" variant="subtle" size="sm" />
-                    <UBadge v-if="person.blocked" :label="t('Blocked')" color="error" variant="subtle" size="sm" />
-                    <UTooltip v-else-if="!seesAccountDetails(person)" :text="t('Account details hidden')">
-                        <UIcon name="i-heroicons-eye-slash" class="size-4 shrink-0 text-muted" :aria-label="t('Account details hidden')" />
-                    </UTooltip>
-                </div>
-                <UDropdownMenu :items="actions(person)" :content="{ align: 'end' }">
-                    <UTooltip :text="t('Actions for {name}', { name: person.name })">
-                        <UButton
-                            icon="i-heroicons-ellipsis-horizontal"
-                            color="neutral"
-                            variant="ghost"
-                            :loading="busyId === person.id"
-                            :aria-label="t('Actions for {name}', { name: person.name })"
-                        />
-                    </UTooltip>
-                </UDropdownMenu>
-            </li>
-        </ul>
+    <div class="flex max-w-2xl flex-col gap-4">
+        <div class="overflow-x-auto rounded-md ring ring-default">
+            <table class="people-table w-full text-sm">
+                <thead>
+                    <tr>
+                        <th class="text-start">{{ t('Person') }}</th>
+                        <th v-for="column in columns" :key="column.setting">{{ column.label }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="person in people" :key="person.id">
+                        <td>
+                            <div class="flex items-center gap-3">
+                                <ParticipantAvatar
+                                    :participant="{ kind: 'person', name: person.name, seed: person.avatarSeed, image: person.avatarUrl }"
+                                    class="size-8"
+                                    :class="{ 'opacity-50': person.blocked }"
+                                />
+                                <span class="font-medium whitespace-nowrap" :class="person.blocked ? 'text-muted' : 'text-highlighted'">{{ person.name }}</span>
+                                <span v-if="person.id === me?.id" class="text-xs text-muted">{{ t('You') }}</span>
+                            </div>
+                        </td>
+                        <td v-for="column in columns" :key="column.setting">
+                            <div class="flex justify-center">
+                                <UCheckbox
+                                    :model-value="checked(person, column.setting)"
+                                    :disabled="locked(person, column.setting)"
+                                    :color="column.setting === 'blocked' ? 'error' : 'primary'"
+                                    :aria-label="t('{option} for {name}', { option: column.label, name: person.name })"
+                                    @update:model-value="change(person, column.setting, $event)"
+                                />
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
         <p v-if="error" class="text-sm text-error">{{ error }}</p>
     </div>
 </template>
+
+<style scoped>
+.people-table :where(th) {
+    height: 2.25rem;
+    padding-inline: 0.75rem;
+    border-bottom: 1px solid var(--ui-border);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--ui-text-muted);
+    white-space: nowrap;
+}
+
+.people-table :where(td) {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--ui-border);
+}
+
+.people-table :where(tbody tr:last-child td) {
+    border-bottom: 0;
+}
+</style>
