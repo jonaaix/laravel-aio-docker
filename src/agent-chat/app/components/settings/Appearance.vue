@@ -76,7 +76,7 @@ const modes: { value: ColorModeChoice; label: string; icon: string }[] = [
             />
             <USwitch
                 :model-value="changesPanelAuto"
-                :label="t('Show changes automatically')"
+                :label="t('Show file changes automatically')"
                 class="mt-3"
                 @update:model-value="value => setChangesPanelAuto(value === true)"
             />

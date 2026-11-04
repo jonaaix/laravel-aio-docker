@@ -39,7 +39,7 @@ a conversation opens the same window at Agents.
   people's message bubbles a light container tone of it — while background, sidebar, surfaces, text and borders
   stay the plain greys of Black, in light and dark alike. It also holds "Move sent message to top", off by default: when off, the conversation
   stays at the bottom after sending and follows the answer; when on, the sent message moves to the
-  top with room below for the answer. "Show changes automatically", on by default, lets the changes panel open on
+  top with room below for the answer. "Show file changes automatically", on by default, lets the changes panel open on
   its own beside the conversation (see [AI web chat](web-chat.md)); when off, it opens only through "N files
   changed" and only for that conversation. Every choice applies at once and belongs to the person, so it
   follows them to every device and browser.

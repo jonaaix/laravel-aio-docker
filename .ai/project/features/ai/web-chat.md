@@ -88,7 +88,7 @@ step writes. Where the screen leaves the conversation
 enough room (from a window of about 1,670 pixels, so that the chat heads keep hanging beside the reading column), the changes stay in view in a "Changes" panel to its right, for a developer following along. It shows
 the newest answer with changes, opens at its bottom and stays there as the agent's changes come in, a newly changed file unfolding smoothly
 into place; "N files changed" in an older answer shows that one, and a newer answer with
-changes takes over again. Whoever turned off "Show changes automatically" in the settings gets the panel only
+changes takes over again. Whoever turned off "Show file changes automatically" in the settings gets the panel only
 through "N files changed", for that conversation. The panel can be closed, which each person keeps until they open it again through
 "N files changed", and its edge drags the width, as far as the conversation keeps enough room; a double click
 restores the default width. Where there is no room — a narrow window, a phone, the chat embedded in the app —
