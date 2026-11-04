@@ -78,7 +78,7 @@ message is shown collapsed to its beginning and can be expanded and collapsed ag
 collapsed whenever the conversation is opened. Copying always takes the whole message.
 
 Any message can also be read aloud: the speaker beside "Copy" starts reading and turns into a stop button until it is
-done. With a voice service set up in the settings, a natural voice of that service reads, and a message read once
+done; while it reads, the button stays visible without pointing at the message. With a voice service set up in the settings, a natural voice of that service reads, and a message read once
 plays again without asking the service anew; if the service fails, the device's voice reads the rest. Without a
 service the device's own voice reads, chosen by the language the message is written in — one of the six chat
 languages, recognised by its common words — falling back to the person's chat language for very short texts. Only

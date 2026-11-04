@@ -32,6 +32,7 @@ onBeforeUnmount(() => {
             size="xs"
             color="neutral"
             variant="ghost"
+            :data-speaking="speaking || undefined"
             @click="toggle"
         />
     </UTooltip>

@@ -43,6 +43,9 @@ export default defineAppConfig({
                 class: { root: 'bg-default ring-black/5 dark:bg-elevated dark:ring-default has-[textarea:focus-visible]:outline-0 has-[textarea:focus-visible]:ring-black/5 dark:has-[textarea:focus-visible]:ring-default' },
             }],
         },
+        chatMessage: {
+            slots: { actions: 'has-[[data-speaking]]:opacity-100!' },
+        },
         chatMessages: {
             slots: {
                 indicator: [
