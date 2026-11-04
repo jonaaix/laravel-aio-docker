@@ -3,6 +3,7 @@ import type { ChatMessage } from '#shared/types/conversation';
 
 const props = defineProps<{
     message: ChatMessage;
+    live: boolean;
 }>();
 
 const files = computed(() => turnFileChanges(props.message).files);
@@ -11,6 +12,7 @@ const files = computed(() => turnFileChanges(props.message).files);
 <template>
     <TransitionGroup
         :key="message.id"
+        :appear="live"
         tag="div"
         class="flex flex-col"
         enter-active-class="transition-[grid-template-rows,opacity] duration-350 ease-[cubic-bezier(0.22,1,0.36,1)]"

@@ -636,6 +636,7 @@ const restoreConversation = () => withFlag(archiving, restore);
     <ChatChangesPanel
         v-if="changesPanelShown && changesMessage"
         :message="changesMessage"
+        :streaming="isStreaming(changesMessage.id)"
         :max-width="changesPanelRoom"
         @close="setChangesPanelHidden(true)"
     />
@@ -647,7 +648,7 @@ const restoreConversation = () => withFlag(archiving, restore);
         :ui="{ content: 'sm:max-w-3xl', body: 'scrollbar-slim flex flex-col-reverse' }"
     >
         <template #body>
-            <ChatChangesFiles :message="changesMessage" />
+            <ChatChangesFiles :message="changesMessage" :live="false" />
         </template>
     </USlideover>
 </template>

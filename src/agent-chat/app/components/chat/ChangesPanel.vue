@@ -7,6 +7,7 @@ const WIDTH_STORAGE_KEY = 'chat-changes-panel-width';
 
 const props = defineProps<{
     message: ChatMessage;
+    streaming: boolean;
     maxWidth: number;
 }>();
 
@@ -91,7 +92,7 @@ onMounted(() => {
             </UTooltip>
         </div>
         <div class="scrollbar-slim flex min-h-0 flex-1 flex-col-reverse overflow-y-auto px-4 pb-4">
-            <ChatChangesFiles :message="message" />
+            <ChatChangesFiles :message="message" :live="streaming" />
         </div>
     </aside>
 </template>
