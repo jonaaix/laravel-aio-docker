@@ -144,6 +144,8 @@ function isStreaming(messageId: string): boolean {
 const header = ref<HTMLElement | null>(null);
 const changesPanelRoom = useChangesPanelRoom(header);
 const changesPanelAvailable = computed(() => !isEmbedded() && changesPanelRoom.value >= CHANGES_PANEL_MIN_PX);
+const changesOverlayOpen = ref(false);
+const changesTitle = useChangesTitle();
 const selectedChangesId = ref<string | null>(null);
 const changedMessages = computed(() => visibleMessages.value.filter(message => message.role === 'assistant' && turnFileChanges(message).files.length > 0));
 const changesMessage = computed(() => changedMessages.value.find(message => message.id === selectedChangesId.value) ?? changedMessages.value.at(-1) ?? null);
@@ -152,10 +154,23 @@ const changesPanelShown = computed(() => changesPanelAvailable.value && !changes
 watch(() => changedMessages.value.at(-1)?.id, () => {
     selectedChangesId.value = null;
 });
+watch(changesPanelAvailable, (available) => {
+    if (available && changesOverlayOpen.value) {
+        changesOverlayOpen.value = false;
+        void setChangesPanelHidden(false);
+    }
+});
+
+function changesShownFor(messageId: string): boolean {
+    return (changesPanelShown.value || changesOverlayOpen.value) && changesMessage.value?.id === messageId;
+}
 
 function showChanges(messageId: string): void {
     selectedChangesId.value = messageId;
-    if (changesPanelHidden.value) {
+    if (!changesPanelAvailable.value) {
+        changesOverlayOpen.value = true;
+    }
+    else if (changesPanelHidden.value) {
         void setChangesPanelHidden(false);
     }
 }
@@ -530,13 +545,7 @@ const restoreConversation = () => withFlag(archiving, restore);
                             <div v-if="message.role === 'assistant'" class="mb-3 flex flex-col empty:hidden">
                                 <ChatThinkingBlock :message="message" :streaming="isStreaming(message.id)" />
                                 <ChatWorkingBlock :message="message" :streaming="isStreaming(message.id)" />
-                                <ChatTurnChanges
-                                    :message="message"
-                                    :streaming="isStreaming(message.id)"
-                                    :panel-available="changesPanelAvailable"
-                                    :shown-in-panel="changesPanelShown && changesMessage?.id === message.id"
-                                    @show="showChanges(message.id)"
-                                />
+                                <ChatTurnChanges :message="message" :shown="changesShownFor(message.id)" @show="showChanges(message.id)" />
                             </div>
                             <template v-for="segment in answerSegments(message)" :key="`${segment.key}:${mentionKey}`">
                                 <ChatImageGroup v-if="segment.kind === 'images'" :parts="segment.parts" />
@@ -629,4 +638,15 @@ const restoreConversation = () => withFlag(archiving, restore);
         :max-width="changesPanelRoom"
         @close="setChangesPanelHidden(true)"
     />
+    <USlideover
+        v-if="changesMessage"
+        v-model:open="changesOverlayOpen"
+        :title="t('Changes')"
+        :description="changesTitle(turnFileChanges(changesMessage).files)"
+        :ui="{ content: 'sm:max-w-3xl', body: 'scrollbar-slim' }"
+    >
+        <template #body>
+            <ChatChangesFiles :message="changesMessage" :streaming="isStreaming(changesMessage.id)" />
+        </template>
+    </USlideover>
 </template>

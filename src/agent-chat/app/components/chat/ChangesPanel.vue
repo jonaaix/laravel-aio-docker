@@ -15,11 +15,8 @@ const emit = defineEmits<{ close: [] }>();
 
 const { t } = useI18n();
 
-const changes = computed(() => turnFileChanges(props.message));
-const totals = computed(() => changeTotals(changes.value.files));
-
-const body = ref<HTMLElement | null>(null);
-const followsLatest = ref(true);
+const changesTitle = useChangesTitle();
+const files = computed(() => turnFileChanges(props.message).files);
 
 function clampedWidth(value: number): number {
     return Math.max(CHANGES_PANEL_MIN_PX, value);
@@ -70,30 +67,6 @@ function resetWidth(): void {
     saveWidth();
 }
 
-function stopFollowing(): void {
-    followsLatest.value = false;
-}
-
-async function showLatest(): Promise<void> {
-    const path = changes.value.recentPaths[0];
-    if (!props.streaming || !followsLatest.value || !path) {
-        return;
-    }
-    await nextTick();
-    body.value?.querySelector(`[data-path="${CSS.escape(path)}"]`)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-}
-
-watch(() => props.message.id, () => {
-    followsLatest.value = true;
-    body.value?.scrollTo({ top: 0 });
-});
-watch(() => props.streaming, (streaming) => {
-    if (streaming) {
-        followsLatest.value = true;
-    }
-});
-watch(() => changes.value.recentPaths.join('\n'), showLatest);
-
 onMounted(() => {
     width.value = storedWidth();
 });
@@ -111,22 +84,15 @@ onMounted(() => {
             <div class="min-w-0 flex-1">
                 <p class="text-sm font-semibold text-highlighted">{{ t('Changes') }}</p>
                 <p class="text-xs text-muted tabular-nums">
-                    {{ t('1 file changed | {count} files changed', { count: changes.files.length }, changes.files.length) }} · +{{ totals.added }} −{{ totals.removed }}
+                    {{ changesTitle(files) }}
                 </p>
             </div>
             <UTooltip :text="t('Close changes')">
                 <UButton icon="i-heroicons-x-mark" color="neutral" variant="ghost" :aria-label="t('Close changes')" @click="emit('close')" />
             </UTooltip>
         </div>
-        <div
-            ref="body"
-            class="scrollbar-slim flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4"
-            @wheel.passive="stopFollowing"
-            @touchmove.passive="stopFollowing"
-        >
-            <div v-for="file in changes.files" :key="file.path" :data-path="file.path" class="scroll-mt-2">
-                <ChatFileDiff :change="file" full-height />
-            </div>
+        <div class="scrollbar-slim min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+            <ChatChangesFiles :message="message" :streaming="streaming" />
         </div>
     </aside>
 </template>

@@ -13,7 +13,7 @@ older answer's changes, can be closed and resized, and the open/closed choice fo
       person has not closed it; left edge drags the width (kept per browser like the sidebar)
 - [x] Content: newest answer with changes by default, live while working, scrolls to the file changed last unless
       the person scrolled; clicking "N files changed" of an answer shows that answer
-- [x] With the panel visible, "N files changed" in the answer does not unfold inline
+- [x] "N files changed" is a button everywhere: panel when it fits, overlay otherwise
 - [x] Feature Book: web chat chapter
 
 ## State
@@ -24,8 +24,10 @@ older answer's changes, can be closed and resized, and the open/closed choice fo
 
 ## Decisions
 
-- User's calls (questions 111–114): newest answer plus older ones on click; all files open and stacked; automatic
-  on wide screens, closable, remembered per person; nothing on narrow screens or in the embedded chat.
+- User's calls (questions 111–113): newest answer plus older ones on click; all files open and stacked; automatic
+  on wide screens, closable, remembered per person.
+- Without room (narrow, phone, embedded) the same view opens as an overlay; inline unfolding in the answer was
+  dropped for it (user's call, replacing the earlier "nothing on narrow screens").
 - Own aside with a left resize handle instead of `UDashboardPanel`: its handle only sits on the right edge.
 - "Wide enough" is measured, not a breakpoint: the conversation keeps 1000 px (chat heads hang beside the
   messages), the panel needs 384 px; its width is capped by what is left.
