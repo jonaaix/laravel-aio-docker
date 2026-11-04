@@ -2,6 +2,7 @@ import type { ChatStatus } from 'ai';
 import type { BackgroundTask, ChatMessage, UploadedFile, ConversationDetail, ConversationEvent, ConversationStatus, ConversationSummary, MessagePage, QueuedMessage } from '#shared/types/conversation';
 
 const EMBEDDED_FIRST_PAGE = 10;
+const SNAPSHOT_MESSAGES = 50;
 
 export function useConversation(conversationId: string) {
     const title = ref('');
@@ -60,14 +61,42 @@ export function useConversation(conversationId: string) {
         }
     }
 
-    async function load(): Promise<void> {
-        const detail = await apiFetch<ConversationDetail>(`conversations/${conversationId}`, { query: { limit: isEmbedded() ? EMBEDDED_FIRST_PAGE : undefined } });
+    let lastDetail: ConversationDetail | null = null;
+
+    function applyDetail(detail: ConversationDetail): void {
+        lastDetail = detail;
         title.value = detail.title;
         workingDir.value = detail.workingDir;
         messages.value = detail.messages;
         hasEarlier.value = detail.hasEarlier;
         applySummary(detail);
         loaded.value = true;
+    }
+
+    function load(): Promise<void> {
+        const fetchDetail = () => apiFetch<ConversationDetail>(`conversations/${conversationId}`, { query: { limit: isEmbedded() ? EMBEDDED_FIRST_PAGE : undefined } });
+        return loadWithSnapshot(`conversation:${conversationId}`, fetchDetail, applyDetail);
+    }
+
+    function keepSnapshot(): void {
+        if (lastDetail) {
+            writeSnapshot(`conversation:${conversationId}`, { ...lastDetail, title: title.value, messages: messages.value.slice(-SNAPSHOT_MESSAGES), hasEarlier: hasEarlier.value || messages.value.length > SNAPSHOT_MESSAGES });
+        }
+    }
+
+    if (import.meta.client) {
+        const keepWhenHidden = () => {
+            if (document.hidden) {
+                keepSnapshot();
+            }
+        };
+        document.addEventListener('visibilitychange', keepWhenHidden);
+        window.addEventListener('pagehide', keepSnapshot);
+        onBeforeUnmount(() => {
+            keepSnapshot();
+            document.removeEventListener('visibilitychange', keepWhenHidden);
+            window.removeEventListener('pagehide', keepSnapshot);
+        });
     }
 
     function applySummary(summary: ConversationSummary): void {

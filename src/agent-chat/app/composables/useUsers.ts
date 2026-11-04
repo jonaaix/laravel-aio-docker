@@ -4,9 +4,10 @@ import type { Participant } from '~/utils/avatars';
 export function useUsers() {
     const users = useState<Record<string, ChatUser>>('users', () => ({}));
 
-    async function load(): Promise<void> {
-        const list = await apiFetch<ChatUser[]>('users');
-        users.value = Object.fromEntries(list.map(user => [user.id, user]));
+    function load(): Promise<void> {
+        return loadWithSnapshot('users', () => apiFetch<ChatUser[]>('users'), (list) => {
+            users.value = Object.fromEntries(list.map(user => [user.id, user]));
+        });
     }
 
     function upsert(user: ChatUser): void {

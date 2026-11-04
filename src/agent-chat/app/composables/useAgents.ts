@@ -4,8 +4,10 @@ export function useAgents() {
     const agents = useState<Agent[]>('agents', () => []);
     const lead = computed(() => agents.value.find(agent => agent.lead) ?? null);
 
-    async function load(): Promise<void> {
-        agents.value = await apiFetch<Agent[]>('agents');
+    function load(): Promise<void> {
+        return loadWithSnapshot('agents', () => apiFetch<Agent[]>('agents'), (list) => {
+            agents.value = list;
+        });
     }
 
     async function save(id: string | null, input: AgentInput): Promise<Agent> {

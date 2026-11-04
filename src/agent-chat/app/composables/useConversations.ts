@@ -10,8 +10,10 @@ export function useConversations() {
             : others;
     }
 
-    async function load(): Promise<void> {
-        conversations.value = await apiFetch<ConversationSummary[]>('conversations');
+    function load(): Promise<void> {
+        return loadWithSnapshot('conversations', () => apiFetch<ConversationSummary[]>('conversations'), (list) => {
+            conversations.value = list;
+        });
     }
 
     async function start(text: string, attachments: UploadedFile[]): Promise<ConversationSummary> {

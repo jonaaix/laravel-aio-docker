@@ -1,6 +1,8 @@
 import type { UploadedFile } from '#shared/types/conversation';
 import type { ChatUser } from '#shared/types/user';
 
+const UNAUTHORIZED_STATUS = 401;
+
 const SIGN_IN_PARAMS = ['n', 'a', 'exp', 'nonce', 'sig'] as const;
 
 function takeSignInParams(): Record<string, string> | null {
@@ -31,14 +33,24 @@ export function useUserName() {
             return;
         }
         const params = takeSignInParams();
+        const remembered = params ? undefined : await readSnapshot<ChatUser>('me');
+        if (remembered) {
+            user.value = remembered;
+            upsert(remembered);
+            ready.value = true;
+        }
         try {
             user.value = params
                 ? await apiFetch<ChatUser>('auth/session', { method: 'POST', body: params })
                 : await apiFetch<ChatUser>('auth/me');
             upsert(user.value);
+            writeSnapshot('me', user.value);
         }
-        catch {
-            user.value = params ? await apiFetch<ChatUser>('auth/me').catch(() => null) : null;
+        catch (failure) {
+            const signedOut = (failure as { statusCode?: number }).statusCode === UNAUTHORIZED_STATUS;
+            if (params || signedOut || !remembered) {
+                user.value = params ? await apiFetch<ChatUser>('auth/me').catch(() => null) : null;
+            }
         }
         finally {
             ready.value = true;
