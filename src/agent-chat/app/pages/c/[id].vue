@@ -482,7 +482,7 @@ const session = computed(() => sessionState(status.value, turnActive.value));
                             </div>
                             <template v-for="segment in answerSegments(message)" :key="`${segment.key}:${mentionKey}`">
                                 <ChatImageGroup v-if="segment.kind === 'images'" :parts="segment.parts" />
-                                <p v-else-if="segment.kind === 'stop-hook'" class="flex items-start gap-2 text-sm text-muted">
+                                <p v-else-if="segment.kind === 'stop-hook'" class="-mt-2 flex items-start gap-2 pb-2 text-sm text-muted">
                                     <UTooltip :text="t('Stop hook')">
                                         <UIcon name="i-heroicons-arrow-uturn-left" class="mt-0.5 size-4 shrink-0" />
                                     </UTooltip>
