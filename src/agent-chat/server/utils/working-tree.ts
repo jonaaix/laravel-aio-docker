@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, realpathSync, rmSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { copyFileSync, existsSync, mkdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { promisify } from 'node:util';
 import type { FileChange } from '../../shared/types/conversation';
@@ -72,9 +73,58 @@ export function parsePatch(patch: string): FileChange[] {
     return withinBudget(patch.split(/^(?=diff --git )/m).filter(section => section.startsWith('diff --git ')).map(fileChange));
 }
 
-async function isIgnored(root: string, path: string): Promise<boolean | null> {
+// Without a project .gitignore these would land in the chat's own archive and in diffs: secrets and bulky folders.
+const SHADOW_EXCLUDES = ['.git/', '.env', '.env.*', '*.key', '*.pem', '*.p12', '*.pfx', 'id_rsa*', 'id_ed25519*', '.ssh/', 'node_modules/', 'vendor/', 'storage/', 'dist/', 'build/'];
+
+interface GitLocation {
+    root: string;
+    env: Record<string, string>;
+    index: string | null;
+}
+
+function shadowDir(shadowBase: string, root: string): string {
+    return join(shadowBase, createHash('sha256').update(root).digest('hex').slice(0, 16));
+}
+
+async function projectRepository(dir: string): Promise<{ root: string; index: string } | null> {
     try {
-        await run('git', ['check-ignore', '--quiet', '--', path], { cwd: root });
+        const { stdout } = await run('git', ['rev-parse', '--show-toplevel', '--git-path', 'index'], { cwd: dir });
+        const [root, index] = stdout.trim().split('\n');
+        return root && index ? { root: realpathSync(root), index: isAbsolute(index) ? index : join(dir, index) } : null;
+    }
+    catch {
+        return null;
+    }
+}
+
+async function shadowRepository(root: string, shadowBase: string, create: boolean): Promise<GitLocation | null> {
+    const base = resolve(shadowBase);
+    if (base === root || base.startsWith(root + sep)) {
+        return null;
+    }
+    const gitDir = join(shadowDir(base, root), '.git');
+    if (!existsSync(gitDir)) {
+        if (!create) {
+            return null;
+        }
+        await run('git', ['init', '--quiet', dirname(gitDir)]);
+        writeFileSync(join(gitDir, 'info', 'exclude'), `${SHADOW_EXCLUDES.join('\n')}\n`);
+    }
+    return { root, env: { GIT_DIR: gitDir, GIT_WORK_TREE: root }, index: null };
+}
+
+async function locateGit(dir: string, shadowBase: string, create: boolean): Promise<GitLocation | null> {
+    const repository = await projectRepository(dir);
+    if (repository) {
+        rmSync(shadowDir(resolve(shadowBase), repository.root), { recursive: true, force: true });
+        return { root: repository.root, env: {}, index: repository.index };
+    }
+    return existsSync(dir) ? shadowRepository(realpathSync(dir), shadowBase, create) : null;
+}
+
+async function isIgnored(location: GitLocation, path: string): Promise<boolean | null> {
+    try {
+        await run('git', ['check-ignore', '--quiet', '--', path], { cwd: location.root, env: { ...process.env, ...location.env } });
         return true;
     }
     catch (error) {
@@ -82,16 +132,18 @@ async function isIgnored(root: string, path: string): Promise<boolean | null> {
     }
 }
 
-export async function projectFilePath(dir: string, path: string): Promise<string | null> {
+export async function projectFilePath(dir: string, path: string, shadowBase: string): Promise<string | null> {
     try {
-        const { stdout } = await run('git', ['rev-parse', '--show-toplevel'], { cwd: dir });
-        const root = realpathSync(stdout.trim());
-        const target = realpathSync(resolve(root, path));
-        const inside = relative(root, target);
-        if (!target.startsWith(root + sep) || inside.split(sep)[0] === '.git') {
+        const location = await locateGit(dir, shadowBase, false);
+        if (!location) {
             return null;
         }
-        return await isIgnored(root, inside) === false ? target : null;
+        const target = realpathSync(resolve(location.root, path));
+        const inside = relative(location.root, target);
+        if (!target.startsWith(location.root + sep) || inside.split(sep)[0] === '.git') {
+            return null;
+        }
+        return await isIgnored(location, inside) === false ? target : null;
     }
     catch {
         return null;
@@ -99,22 +151,22 @@ export async function projectFilePath(dir: string, path: string): Promise<string
 }
 
 export class WorkingTree {
-    private constructor(private readonly root: string, private readonly indexFile: string) {}
+    private constructor(private readonly location: GitLocation, private readonly indexFile: string) {}
 
-    static async open(dir: string, indexFile: string): Promise<WorkingTree | null> {
+    static async open(dir: string, indexFile: string, shadowBase: string): Promise<WorkingTree | null> {
         try {
-            const { stdout } = await run('git', ['rev-parse', '--show-toplevel', '--git-path', 'index'], { cwd: dir });
-            const [root, index] = stdout.trim().split('\n');
-            if (!root || !index) {
+            const location = await locateGit(dir, shadowBase, true);
+            if (!location) {
                 return null;
             }
-            const realIndex = isAbsolute(index) ? index : join(dir, index);
             mkdirSync(dirname(indexFile), { recursive: true });
-            rmSync(indexFile, { force: true });
-            if (existsSync(realIndex)) {
-                copyFileSync(realIndex, indexFile);
+            if (location.index) {
+                rmSync(indexFile, { force: true });
+                if (existsSync(location.index)) {
+                    copyFileSync(location.index, indexFile);
+                }
             }
-            return new WorkingTree(root, indexFile);
+            return new WorkingTree(location, indexFile);
         }
         catch {
             return null;
@@ -135,8 +187,8 @@ export class WorkingTree {
 
     private async git(args: string[]): Promise<string> {
         const { stdout } = await run('git', ['-c', 'core.quotePath=false', ...args], {
-            cwd: this.root,
-            env: { ...process.env, GIT_INDEX_FILE: this.indexFile },
+            cwd: this.location.root,
+            env: { ...process.env, ...this.location.env, GIT_INDEX_FILE: this.indexFile },
             maxBuffer: GIT_OUTPUT_LIMIT,
         });
         return stdout;
@@ -151,9 +203,10 @@ export class ChangeTracker {
     private changeOrder = new Map<string, number>();
     private changeCount = 0;
 
-    constructor(private readonly dir: string, private readonly indexFile: string) {}
+    constructor(private readonly dir: string, private readonly indexFile: string, private readonly shadowBase: string) {}
 
     beginTurn(): void {
+        this.tree = null;
         this.queue(async (tree) => {
             this.turnStart = await tree.snapshot();
             this.latest = this.turnStart;
@@ -199,7 +252,7 @@ export class ChangeTracker {
     }
 
     private queue(step: (tree: WorkingTree) => Promise<void>): void {
-        this.tree ??= WorkingTree.open(this.dir, this.indexFile);
+        this.tree ??= WorkingTree.open(this.dir, this.indexFile, this.shadowBase);
         const tree = this.tree;
         this.work = this.work
             .then(async () => {

@@ -5,7 +5,7 @@ const MAX_PROJECT_FILE_BYTES = 1024 * 1024;
 export default defineEventHandler(async (event) => {
     const conversation = findConversation(getRouterParam(event, 'id')!);
     const requested = getQuery(event).path;
-    const path = conversation && typeof requested === 'string' ? await projectFilePath(conversation.workingDir, requested) : null;
+    const path = conversation && typeof requested === 'string' ? await projectFilePath(conversation.workingDir, requested, shadowGitBase()) : null;
     if (!path || !statSync(path).isFile()) {
         throw createError({ statusCode: 404, statusMessage: 'File not found' });
     }

@@ -6,6 +6,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { WorkingTree, parsePatch, projectFilePath } from '../server/utils/working-tree.ts';
 
+function shadowBase(): string {
+    return join(tmpdir(), 'working-tree-shadow');
+}
+
 function repository(): string {
     const dir = mkdtempSync(join(tmpdir(), 'working-tree-'));
     const git = (...args: string[]) => execFileSync('git', args, { cwd: dir, stdio: 'ignore' });
@@ -23,7 +27,7 @@ function repository(): string {
 test('changes made outside any file tool are found, the real index stays untouched', async () => {
     const dir = repository();
     const indexBefore = readFileSync(join(dir, '.git', 'index'));
-    const tree = await WorkingTree.open(dir, join(dir, '..', `${Date.now()}.index`));
+    const tree = await WorkingTree.open(dir, join(dir, '..', `${Date.now()}.index`), shadowBase());
     assert.ok(tree);
     const before = await tree.snapshot();
     execFileSync('sed', ['-i.bak', 's/two/TWO/', 'app.php'], { cwd: dir });
@@ -45,9 +49,9 @@ test('changes made outside any file tool are found, the real index stays untouch
     rmSync(dir, { recursive: true, force: true });
 });
 
-test('a folder outside git has no working tree', async () => {
+test('a folder outside git gets a shadow archive', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'no-git-'));
-    assert.equal(await WorkingTree.open(dir, join(dir, 'index')), null);
+    assert.notEqual(await WorkingTree.open(dir, join(dir, '..', 'plain.index'), shadowBase()), null);
     rmSync(dir, { recursive: true, force: true });
 });
 
@@ -60,10 +64,32 @@ test('only files git keeps inside the project can be opened', async () => {
     const dir = repository();
     writeFileSync(join(dir, '.env'), 'APP_KEY=secret\n');
     writeFileSync(join(dir, '.gitignore'), 'vendor/\n.env\n');
-    assert.equal(await projectFilePath(dir, 'app.php'), join(realpathSync(dir), 'app.php'));
-    assert.equal(await projectFilePath(dir, '.env'), null);
-    assert.equal(await projectFilePath(dir, '.git/config'), null);
-    assert.equal(await projectFilePath(dir, '../outside.txt'), null);
-    assert.equal(await projectFilePath(dir, 'missing.php'), null);
+    assert.equal(await projectFilePath(dir, 'app.php', shadowBase()), join(realpathSync(dir), 'app.php'));
+    assert.equal(await projectFilePath(dir, '.env', shadowBase()), null);
+    assert.equal(await projectFilePath(dir, '.git/config', shadowBase()), null);
+    assert.equal(await projectFilePath(dir, '../outside.txt', shadowBase()), null);
+    assert.equal(await projectFilePath(dir, 'missing.php', shadowBase()), null);
+    rmSync(dir, { recursive: true, force: true });
+});
+
+test('a folder without git shows changes but never secrets or bulky folders, and drops its archive once git arrives', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'plain-'));
+    writeFileSync(join(dir, 'main.rs'), 'fn main() {}\n');
+    const tree = await WorkingTree.open(dir, join(dir, '..', `${Date.now()}-plain.index`), shadowBase());
+    assert.ok(tree);
+    const before = await tree.snapshot();
+    writeFileSync(join(dir, 'main.rs'), 'fn main() { println!("hi"); }\n');
+    writeFileSync(join(dir, '.env'), 'SECRET=1\n');
+    execFileSync('mkdir', ['-p', 'node_modules/x'], { cwd: dir });
+    writeFileSync(join(dir, 'node_modules', 'x', 'index.js'), 'x\n');
+    const changes = await tree.changes(before, await tree.snapshot());
+    assert.deepEqual(changes.map(change => change.path), ['main.rs']);
+    assert.equal(await projectFilePath(dir, '.env', shadowBase()), null);
+    assert.equal(await projectFilePath(dir, 'main.rs', shadowBase()), join(realpathSync(dir), 'main.rs'));
+    const archives = () => execFileSync('ls', [shadowBase()]).toString().trim().split('\n').filter(Boolean).length;
+    const count = archives();
+    execFileSync('git', ['init', '-q'], { cwd: dir });
+    assert.ok(await WorkingTree.open(dir, join(dir, '..', `${Date.now()}-git.index`), shadowBase()));
+    assert.equal(archives(), count - 1);
     rmSync(dir, { recursive: true, force: true });
 });

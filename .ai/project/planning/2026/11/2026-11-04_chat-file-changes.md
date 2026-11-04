@@ -29,7 +29,8 @@ Finished when a change made through a shell command shows up in that block while
   way. Claude Code additionally parses `sed -i` into an edit; not needed once git covers everything.
 - Live and at the end in one block, no diff under the steps (user's call: live, but not twice).
 - Older messages may still carry `data-file-changes` parts from the first version; nothing renders them.
-- Only in git repositories; elsewhere nothing is shown. Ignored files (vendor, node_modules) are not shown.
+- Folders without git use a private archive under the data folder (`shadow-git/`), with a fixed list of secrets and
+  bulky folders excluded (user's call, question 131); it is deleted once the folder becomes a git repository.
 - Read-only tools skip the snapshot to keep steps fast.
 - Several agents in one project at once may get each other's changes attributed; accepted.
 

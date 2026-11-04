@@ -80,7 +80,10 @@ code highlighting in the language they are written in — a command's output in 
 last file the command names whose language is known; where no language can be told, a basic
 highlighting still sets strings, numbers, dates, links and words like "error" apart. Errors stay
 plain red. Every file change shows, however it was made — through the agent's file tools, a shell
-command or a script — as long as the project is a git repository. Right below
+command or a script. In a git repository the chat compares through git itself, leaving the project's git state
+untouched; a folder without git gets a private archive in the chat's own data folder instead, which never takes in
+secrets (`.env` files, keys, certificates, `.ssh`) or bulky folders (`node_modules`, `vendor`, `storage`, `dist`,
+`build`), and is removed once the folder becomes a git repository. Right below
 "Worked", in the same quiet style, "N files changed · +A −R" appears with the first changed file and counts up while the
 agent works; it is a button that shows that answer's changes: all changed files stacked in the order they were changed,
 the latest at the bottom, each diff in full with line numbers, up to 1,000 lines per file. The steps themselves show no diff, and while the panel is open, "Worked" does not preview the file a running
@@ -95,8 +98,7 @@ restores the default width. Where there is no room — a narrow window, a phone,
 "N files changed" opens the same view as an overlay from the right, which turns into the panel when the window
 grows wide enough. Clicking a file's name opens the whole file as it is now in the preview
 panel beside the conversation, any text file in any language, unless it was deleted: with line numbers, the lines the change added marked,
-and scrolled to the first of them; with several changes, arrows next to "1 of 3" step through them. Files git ignores do not show and cannot be opened, and the project's
-own git state (staged changes, commits) is never touched.
+and scrolled to the first of them; with several changes, arrows next to "1 of 3" step through them. Files git ignores, or that the private archive leaves out, do not show and cannot be opened.
 Code blocks in answers are highlighted in the language they name, any language highlighting knows; a block
 that names none, or one highlighting does not know, still gets the basic highlighting rather than none.
 

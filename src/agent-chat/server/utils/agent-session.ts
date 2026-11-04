@@ -106,7 +106,7 @@ export class AgentSession {
             cli.sendMessage(queued.prompt);
         }
         this.workingDir = launch.workingDir;
-        this.changes = new ChangeTracker(launch.workingDir, join(resolveDataDir(), 'git-index', `${this.conversationId}-${this.agentId}`));
+        this.changes = new ChangeTracker(launch.workingDir, join(resolveDataDir(), 'git-index', `${this.conversationId}-${this.agentId}`), shadowGitBase());
         this.cli = cli;
     }
 

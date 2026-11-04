@@ -9,6 +9,10 @@ export function resolveDataDir(): string {
     return dataDir;
 }
 
+export function shadowGitBase(): string {
+    return join(resolveDataDir(), 'shadow-git');
+}
+
 export function localServerOrigin(event: H3Event): string {
     const port = event.node.req.socket.localPort ?? getRequestURL(event).port;
     return `http://127.0.0.1:${port}`;
