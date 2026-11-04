@@ -12,8 +12,16 @@ const { baseURL } = useRuntimeConfig().app;
 const { user } = useUserName();
 const devicesVersion = useState('devices-version', () => 0);
 const { public: { hub } } = useRuntimeConfig();
+const unread = useUnread();
+unread.track();
 const hubUnread = hub ? useHubUnread() : null;
 hubUnread?.track();
+const { load: loadReads, apply: applyRead } = useReads();
+const unreadCount = computed(() => hubUnread ? hubUnread.total.value : unread.unreadIds.value.length);
+useHead(computed(() => {
+    const count = unreadCount.value;
+    return { titleTemplate: (title?: string) => count > 0 ? `(${count}) ${title ?? ''}` : title ?? '' };
+}));
 const { adopt: adoptAppearance } = useAppearance();
 watch(() => user.value?.id, () => {
     if (user.value) {
@@ -65,13 +73,18 @@ onMounted(async () => {
                 devicesVersion.value += 1;
             }
         }
+        else if (event.type === 'read') {
+            if (event.userId === user.value?.id) {
+                applyRead(event.conversationId, event.seenAnswerAt);
+            }
+        }
         else {
             usage.value = event.usage;
         }
     }, () => {
-        void Promise.all([load(), loadAccount(), loadUsers(), loadAgents()]);
+        void Promise.all([load(), loadAccount(), loadUsers(), loadAgents(), loadReads()]);
     });
-    await Promise.all([load(), loadAccount(), loadAgents(), loadUsers()]).catch(() => undefined);
+    await Promise.all([load(), loadAccount(), loadAgents(), loadUsers(), loadReads()]).catch(() => undefined);
 });
 
 onBeforeUnmount(() => {
@@ -131,7 +144,7 @@ onBeforeUnmount(() => {
                         <template v-if="item.session">
                             <span class="flex items-center gap-1.5">
                                 <span class="block truncate">{{ item.label }}</span>
-                                <span v-if="hubUnread?.isUnread(item.id)" class="size-2 shrink-0 rounded-full bg-primary" :aria-label="t('Unread')" />
+                                <span v-if="unread.isUnread(item.id)" class="size-2 shrink-0 rounded-full bg-primary" :aria-label="t('Unread')" />
                             </span>
                             <span class="mt-0.5 flex items-center gap-1.5 text-xs font-normal text-muted">
                                 <template v-if="item.creatorName">

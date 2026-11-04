@@ -41,8 +41,9 @@ profile follow that person. Remote control is not part of Orbit's settings; Noti
 A conversation counts as unread for a person who has written in it when an agent finished an answer there
 since the person last opened it — the same people a notification goes to. Unread conversations carry a dot in
 the sidebar; the chat switcher shows the count of the other chats, and the app icon shows the total where the
-system supports it. A conversation that is open counts as read. Muting does not hide the dot. When a chat is
-paired, its existing conversations count as read.
+system supports it. A conversation that is open counts as read. Muting does not hide the dot. What a person has
+read is kept per person by the chat itself, so reading on one device clears the dot on all of them, in the app and
+in the web chat alike; the first time a person's reads are asked for, all existing conversations count as read.
 
 ### Notifications and muting
 

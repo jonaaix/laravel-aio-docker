@@ -2,6 +2,9 @@ export default defineEventHandler((event) => {
     const user = sessionUser(event);
     const stream = createEventStream(event);
     const unsubscribe = subscribeConversationList((listEvent) => {
+        if (listEvent.type === 'read' && listEvent.userId !== user.id) {
+            return;
+        }
         stream.push(JSON.stringify(listEvent.type === 'usage' ? { ...listEvent, usage: visibleUsage(listEvent.usage, findUser(user.id) ?? user) } : listEvent));
     });
     const unwatchBlock = onUserBlocked((userId) => {

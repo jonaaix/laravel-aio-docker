@@ -93,4 +93,5 @@ export type ConversationListEvent =
     | { type: 'user'; user: ChatUser }
     | { type: 'agents' }
     | { type: 'account' }
-    | { type: 'devices'; userId: string };
+    | { type: 'devices'; userId: string }
+    | { type: 'read'; userId: string; conversationId: string; seenAnswerAt: number };

@@ -87,6 +87,12 @@ export const conversationMutes = sqliteTable('conversation_mutes', {
     mutedAt: integer('muted_at').notNull(),
 }, table => [primaryKey({ columns: [table.conversationId, table.userId] })]);
 
+export const conversationReads = sqliteTable('conversation_reads', {
+    conversationId: text('conversation_id').notNull().references(() => conversations.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    seenAnswerAt: integer('seen_answer_at').notNull(),
+}, table => [primaryKey({ columns: [table.conversationId, table.userId] })]);
+
 export const messages = sqliteTable('messages', {
     id: text('id').primaryKey(),
     conversationId: text('conversation_id').notNull().references(() => conversations.id, { onDelete: 'cascade' }),
