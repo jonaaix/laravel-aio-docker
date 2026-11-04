@@ -29,9 +29,11 @@ export interface TintChoice {
     label: string;
     muted?: boolean;
     chroma?: number;
+    lightness?: number;
 }
 
 const MUTED_CHROMA = 0.4;
+const LIGHT_MODE_LIGHTNESS = 0.5;
 
 export const TINT_CHOICES: TintChoice[] = [
     { value: null, label: 'Black' },
@@ -39,7 +41,7 @@ export const TINT_CHOICES: TintChoice[] = [
     { value: 28, label: 'Red' },
     { value: 40, label: 'Coral' },
     { value: 70, label: 'Amber' },
-    { value: 95, label: 'Yellow' },
+    { value: 85, label: 'Gold', lightness: 0.65 },
     { value: 125, label: 'Lime' },
     { value: 150, label: 'Green' },
     { value: 180, label: 'Teal' },
@@ -56,7 +58,7 @@ export const TINT_CHOICES: TintChoice[] = [
     { value: 45, label: 'Clay', muted: true },
     { value: 60, label: 'Taupe', muted: true, chroma: 0.2 },
     { value: 75, label: 'Sand', muted: true },
-    { value: 88, label: 'Gold', muted: true, chroma: 0.7 },
+    { value: 105, label: 'Olive', muted: true },
     { value: 120, label: 'Moss', muted: true },
     { value: 155, label: 'Sage', muted: true },
     { value: 190, label: 'Sea glass', muted: true },
@@ -80,4 +82,8 @@ export function tintChroma(value: number | null): number {
     }
     const choice = TINT_CHOICES.find(candidate => candidate.value === value);
     return choice?.chroma ?? (choice?.muted ? MUTED_CHROMA : 1);
+}
+
+export function tintLightness(value: number | null): number {
+    return TINT_CHOICES.find(choice => choice.value === value)?.lightness ?? LIGHT_MODE_LIGHTNESS;
 }
