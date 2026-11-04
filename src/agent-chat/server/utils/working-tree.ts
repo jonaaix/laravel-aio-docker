@@ -7,8 +7,8 @@ import type { FileChange } from '../../shared/types/conversation';
 const run = promisify(execFile);
 const GIT_OUTPUT_LIMIT = 64 * 1024 * 1024;
 // A formatter run can touch hundreds of files; past this budget files keep their counts but lose their lines.
-const MAX_LINES_PER_FILE = 400;
-const MAX_LINES_PER_CHANGE = 2_000;
+const MAX_LINES_PER_FILE = 1_000;
+const MAX_LINES_PER_CHANGE = 5_000;
 
 function headerPath(header: string): string {
     const match = header.match(/^diff --git a\/.+ b\/(.+)$/);

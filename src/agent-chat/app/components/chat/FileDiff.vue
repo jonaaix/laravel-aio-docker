@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import type { FileChange } from '#shared/types/conversation';
 
-const PREVIEW_LINES = 12;
-
 const props = withDefaults(defineProps<{
     change: FileChange;
     collapsible?: boolean;
@@ -19,12 +17,9 @@ const fileUrl = computed(() => {
     const base = apiUrl(`conversations/${route.params.id}/project-file`);
     return `${base}${base.includes('?') ? '&' : '?'}path=${encodeURIComponent(props.change.path)}`;
 });
-const expanded = ref(false);
 
 const lines = computed(() => unifiedDiffLines(props.change.lines));
 const changedLines = computed(() => lines.value.flatMap(line => line.kind === 'added' && line.number ? [line.number] : []));
-const hiddenCount = computed(() => Math.max(0, lines.value.length - PREVIEW_LINES));
-const shownLines = computed(() => expanded.value ? lines.value : lines.value.slice(0, PREVIEW_LINES));
 
 const statusLabel = computed(() => {
     if (props.change.status === 'added') {
@@ -70,19 +65,7 @@ const statusLabel = computed(() => {
         </div>
         <template v-if="open">
             <p v-if="change.binary" class="text-xs text-muted">{{ t('Binary file') }}</p>
-            <template v-else-if="lines.length > 0">
-                <ChatDiffLines :lines="shownLines" :language="fileLanguage(change.path)" :class="expanded ? 'max-h-96' : ''" />
-                <UButton
-                    v-if="hiddenCount > 0"
-                    :label="expanded ? t('Show less') : t('Show 1 more line | Show {count} more lines', { count: hiddenCount }, hiddenCount)"
-                    :trailing-icon="expanded ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
-                    color="neutral"
-                    variant="link"
-                    size="xs"
-                    class="self-start px-0"
-                    @click="expanded = !expanded"
-                />
-            </template>
+            <ChatDiffLines v-else-if="lines.length > 0" :lines="lines" :language="fileLanguage(change.path)" />
             <p v-if="change.truncated" class="text-xs text-muted">{{ t('Diff shortened') }}</p>
         </template>
         <ChatFilePreview
