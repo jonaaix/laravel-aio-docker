@@ -366,19 +366,15 @@ const archiveConversation = () => withFlag(archiving, async () => {
 });
 const restoreConversation = () => withFlag(archiving, restore);
 
-const session = computed(() => sessionState(status.value, turnActive.value));
 </script>
 
 <template>
     <UDashboardPanel :id="`conversation-${conversationId}`" :ui="{ body: 'px-0 sm:px-0' }">
         <template #header>
             <div ref="header" class="sticky top-0 z-30 bg-default/70 backdrop-blur-md backdrop-saturate-150">
-                <UDashboardNavbar :title="title" class="bg-transparent">
+                <UDashboardNavbar :title="title" class="h-14 bg-transparent">
                     <template #title>
-                        <div class="flex min-w-0 flex-col items-start gap-0.5">
-                            <ChatTitleEditor :title="title" :editable="loaded && archivedAt === null" :save="rename" />
-                            <ChatSessionPill :state="session" />
-                        </div>
+                        <ChatTitleEditor :title="title" :editable="loaded && archivedAt === null" :save="rename" />
                     </template>
                     <template #right>
                         <template v-if="archivedAt !== null">
