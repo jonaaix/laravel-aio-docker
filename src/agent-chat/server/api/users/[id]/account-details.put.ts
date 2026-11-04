@@ -8,8 +8,8 @@ export default defineEventHandler(async (event) => {
     if (typeof shown !== 'boolean') {
         throw createError({ statusCode: 422, statusMessage: 'Say whether the person sees the account details' });
     }
-    const followsEveryone = shown === !accountDetailsHidden();
-    const updated = setUserAccountDetails(target, followsEveryone ? null : shown ? 'shown' : 'hidden');
+    const followsDefault = shown === !detailsHiddenByDefault(target);
+    const updated = setUserAccountDetails(target, followsDefault ? null : shown ? 'shown' : 'hidden');
     publishConversationListEvent({ type: 'account' });
     return toChatUser(updated);
 });

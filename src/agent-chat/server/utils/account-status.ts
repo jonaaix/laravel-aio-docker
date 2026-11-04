@@ -70,11 +70,12 @@ export function setAccountDetailsHidden(hidden: boolean): void {
     publishConversationListEvent({ type: 'account' });
 }
 
+export function detailsHiddenByDefault(user: UserRow): boolean {
+    return !user.isAdmin && accountDetailsHidden();
+}
+
 export function detailsHiddenFrom(user: UserRow): boolean {
-    if (user.isAdmin) {
-        return false;
-    }
-    return user.accountDetails ? user.accountDetails === 'hidden' : accountDetailsHidden();
+    return user.accountDetails ? user.accountDetails === 'hidden' : detailsHiddenByDefault(user);
 }
 
 export function visibleUsage(usageSnapshot: UsageSnapshot | null, user: UserRow): UsageSnapshot | null {

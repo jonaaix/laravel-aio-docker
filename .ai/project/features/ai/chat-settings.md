@@ -59,15 +59,14 @@ a conversation opens the same window at Agents.
   every sign-in and sign-out, so they never show another account's usage.
   Admins see a switch "Show account details to everyone", on by default; it sets what everyone sees unless
   People sets a person differently. Hidden from someone, the account shows to them only as "Claude account"
-  with its session usage: no e-mail, organisation, plan or weekly usage reaches their browser. Admins always
-  see the details. Switching and signing out stay open to everyone, so a friend
+  with its session usage: no e-mail, organisation, plan or weekly usage reaches their browser. The switch
+  does not hide them from admins; People can, also from an admin themselves. Switching and signing out stay open to everyone, so a friend
   can sign in their own account.
 - **People** appears only for admins. It is a table of everyone who has signed in to the chat, with a tick box
   per person for Admin, AI account details and Blocked; a tick takes effect at once. An admin can make others
   admins, take the role away again (also from themselves), show or hide the AI account details for a single
-  person apart from what everyone else sees, and block or unblock anyone but themselves. Boxes that cannot
-  apply are greyed out: admins always see the AI account details, and a blocked person can be neither made
-  admin nor given the details. A blocked person is no longer an admin, is signed out of every
+  person apart from what everyone else sees, and block or unblock anyone but themselves. A blocked person's
+  boxes for Admin and AI account details are greyed out. A blocked person is no longer an admin, is signed out of every
   open browser at once and is refused by every later sign-in link from the Laravel app. They are not told
   they were blocked: the chat only answers "Unauthorized", as it does for anyone not signed in.
   Becoming an admin is hidden: tapping one's own picture in Profile seven times in quick succession makes

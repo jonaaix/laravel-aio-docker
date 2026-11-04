@@ -25,7 +25,7 @@ function failureMessage(failure: unknown): string {
 }
 
 function seesAccountDetails(person: ChatUser): boolean {
-    return person.admin || (person.accountDetails ? person.accountDetails === 'shown' : !detailsHidden.value);
+    return person.accountDetails ? person.accountDetails === 'shown' : person.admin || !detailsHidden.value;
 }
 
 function storedValue(person: ChatUser, setting: PersonSetting): boolean {
@@ -49,9 +49,6 @@ function locked(person: ChatUser, setting: PersonSetting): boolean {
     }
     if (setting === 'blocked') {
         return person.id === me.value?.id;
-    }
-    if (setting === 'account-details') {
-        return person.blocked || person.admin;
     }
     return person.blocked;
 }
