@@ -137,6 +137,14 @@ const answerableMessageId = computed(() => {
     return last?.role === 'assistant' && chatStatus.value === 'ready' && archivedAt.value === null ? last.id : null;
 });
 
+const followUpIds = computed(() => new Set(visibleMessages.value.flatMap((message, index) => {
+    const previous = visibleMessages.value[index - 1];
+    const sameAuthor = previous?.role === message.role && (message.role === 'user'
+        ? previous.metadata?.senderId === message.metadata?.senderId
+        : previous.metadata?.agentId === message.metadata?.agentId);
+    return sameAuthor ? [message.id] : [];
+})));
+
 function isStreaming(messageId: string): boolean {
     return chatStatus.value === 'streaming' && messageId === visibleMessages.value.at(-1)?.id;
 }
@@ -525,13 +533,18 @@ const restoreConversation = () => withFlag(archiving, restore);
                         :status="chatStatus"
                         :auto-scroll="false"
                         :style="{ '--last-message-height': `${answerSpace}px`, '--message-scroll-margin': `${messageScrollMargin}px` }"
-                        :ui="{ root: 'px-0 [&>article]:scroll-mt-(--message-scroll-margin) [&>article[data-role=assistant]+article[data-role=assistant]]:mt-6' }"
+                        :ui="{ root: 'px-0 [&>article]:scroll-mt-(--message-scroll-margin) [&>article[data-role=assistant]+article[data-role=assistant]:not(:has([data-follow-up]))]:mt-6 [&>article:has([data-follow-up])]:-mt-5' }"
                         :should-scroll-to-bottom="false"
                         :assistant="{ side: 'left', variant: 'naked', ui: { container: 'flex-col gap-1.5 pb-7 @min-[48rem]:flex-row @min-[48rem]:gap-3', leading: 'mt-0 self-start @min-[48rem]:-ms-[6.75rem]', content: 'text-base/6.5', actions: 'h-6 gap-1' } }"
                         :user="{ side: 'right', variant: 'soft', ui: { container: 'max-w-[90%] flex-col items-end gap-1.5 pb-7 @min-[40rem]:max-w-[75%] @min-[48rem]:flex-row-reverse @min-[48rem]:items-start @min-[48rem]:justify-start @min-[48rem]:gap-3', leading: 'mt-0 self-end @min-[48rem]:self-start @min-[48rem]:-me-[6.75rem]', body: 'max-w-full', actions: 'h-6 gap-1', content: 'min-h-0 rounded-[1.125rem] bg-(--user-message) px-3.5 py-2 text-base/6.5' } }"
                     >
                         <template #leading="{ message }">
-                            <ChatHead :participant="messageAuthor(message)" :reverse="message.role === 'user'" />
+                            <ChatHead
+                                :participant="messageAuthor(message)"
+                                :reverse="message.role === 'user'"
+                                :class="followUpIds.has(message.id) ? 'invisible @max-[48rem]:hidden' : ''"
+                                :data-follow-up="followUpIds.has(message.id) || undefined"
+                            />
                         </template>
                         <template #indicator="{ ui }">
                             <div class="flex items-center gap-2.5">

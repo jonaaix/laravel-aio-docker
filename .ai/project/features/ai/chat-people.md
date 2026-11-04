@@ -38,7 +38,8 @@ Everyone taking part in a conversation — people and agents — appears with a 
 derived from their name with the name beneath it, next to each of their messages. The heads hang
 beside the reading column, outside it; when the conversation narrows, the column gives way rather than the heads
 moving in, and only on narrow screens do the heads sit above the messages, in the same large form, flush with the message's
-edge. People and agents
+edge. A message that directly follows one by the same person or agent shows no head of its own and moves
+closer to the one before. People and agents
 are drawn in clearly different styles. The title bar shows the participants' pictures at the top
 right, all the same size and each in a circle, with the name on hover.
 
