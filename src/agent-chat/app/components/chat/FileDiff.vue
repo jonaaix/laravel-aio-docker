@@ -22,6 +22,7 @@ const fileUrl = computed(() => {
 const expanded = ref(false);
 
 const lines = computed(() => unifiedDiffLines(props.change.lines));
+const changedLines = computed(() => lines.value.flatMap(line => line.kind === 'added' && line.number ? [line.number] : []));
 const hiddenCount = computed(() => Math.max(0, lines.value.length - PREVIEW_LINES));
 const shownLines = computed(() => expanded.value ? lines.value : lines.value.slice(0, PREVIEW_LINES));
 
@@ -92,6 +93,7 @@ const statusLabel = computed(() => {
             :details="change.path"
             :preview="preview"
             :size="null"
+            :changed-lines="changedLines"
         />
     </div>
 </template>

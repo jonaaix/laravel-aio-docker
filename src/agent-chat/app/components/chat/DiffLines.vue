@@ -24,7 +24,7 @@ const linePrefix: Record<DiffLine['kind'], string> = { added: '+ ', removed: '- 
 
 <template>
     <div class="overflow-auto rounded-md bg-elevated py-2 font-mono text-xs/5">
-        <div v-for="(line, index) in lines" :key="index" class="flex px-3" :class="lineClass[line.kind]">
+        <div v-for="(line, index) in lines" :key="index" class="flex px-3" :class="lineClass[line.kind]" :data-kind="line.kind">
             <span v-if="numberWidth" class="shrink-0 pe-3 text-end text-dimmed tabular-nums select-none" :style="{ width: numberWidth }">{{ line.number }}</span>
             <span class="min-w-0 flex-1 whitespace-pre-wrap [overflow-wrap:anywhere]">{{ linePrefix[line.kind] }}<ChatCodeLine :text="line.text" :tokens="line.kind === 'gap' ? undefined : tokens?.[index]" /></span>
         </div>

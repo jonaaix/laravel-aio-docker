@@ -82,7 +82,8 @@ plain red. Every file change shows, however it was made — through the agent's 
 command or a script — as long as the project is a git repository: right under the step that made it, visible
 while the agent works, with line numbers, long diffs cut to their first lines and expandable; and at the end of the answer as
 "N files changed · +A −R", where each file opens its diff. Clicking a file's name opens the whole file as it is now in the preview
-panel beside the conversation, unless it was deleted. Files git ignores do not show and cannot be opened, and the project's
+panel beside the conversation, unless it was deleted: with line numbers, the lines the change added marked,
+and scrolled to the first of them. Files git ignores do not show and cannot be opened, and the project's
 own git state (staged changes, commits) is never touched.
 
 Any message can be copied with one click. To comment on specific passages, the user selects text

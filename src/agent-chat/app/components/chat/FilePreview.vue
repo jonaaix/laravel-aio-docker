@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { FilePreview } from '~/utils/file-kind';
+import type { DiffLine } from '~/utils/line-diff';
 
 const MAX_PREVIEW_BYTES = 1024 * 1024;
 
@@ -11,6 +12,7 @@ const props = defineProps<{
     details: string;
     preview: FilePreview;
     size: number | null;
+    changedLines?: number[];
 }>();
 
 const { t } = useI18n();
@@ -18,6 +20,30 @@ const { t } = useI18n();
 const content = ref<string | null>(null);
 const failed = ref(false);
 const tooLarge = computed(() => props.size !== null && props.size > MAX_PREVIEW_BYTES);
+
+const body = ref<HTMLElement | null>(null);
+
+const changedSource = computed<DiffLine[] | null>(() => {
+    if (content.value === null || !props.changedLines?.length) {
+        return null;
+    }
+    const changed = new Set(props.changedLines);
+    const lines = content.value.split('\n');
+    if (lines.at(-1) === '') {
+        lines.pop();
+    }
+    return lines.map((text, index) => ({ kind: changed.has(index + 1) ? 'added' : 'same', text, number: index + 1 }));
+});
+
+const sourceLanguage = computed(() => props.preview.kind === 'code' ? props.preview.language : 'markdown');
+
+watch(changedSource, async (lines) => {
+    if (!lines) {
+        return;
+    }
+    await nextTick();
+    body.value?.querySelector('[data-kind="added"]')?.scrollIntoView({ block: 'center' });
+});
 
 const markdown = computed(() => {
     if (content.value === null) {
@@ -64,6 +90,9 @@ watch(open, (value) => {
             />
             <div v-else-if="content === null" class="flex flex-col gap-2">
                 <USkeleton v-for="line in 12" :key="line" class="h-4 rounded-md" :class="line % 3 === 0 ? 'w-2/3' : 'w-full'" />
+            </div>
+            <div v-else-if="changedSource" ref="body">
+                <ChatDiffLines :lines="changedSource" :language="sourceLanguage" />
             </div>
             <Markdown v-else :value="markdown" :plugins="markdownPlugins" class="*:first:mt-0 *:last:mb-0" />
         </template>
