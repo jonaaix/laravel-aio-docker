@@ -256,5 +256,12 @@
     "Your device's own voice reads aloud.": "Your device's own voice reads aloud.",
     "{service} API key": "{service} API key",
     "The {service} key is deleted.": "The {service} key is deleted.",
-    "Could not switch the voice service": "Could not switch the voice service"
+    "Could not switch the voice service": "Could not switch the voice service",
+    "Quality": "Quality",
+    "Voice": "Voice",
+    "about {price} per hour": "about {price} per hour",
+    "Play sample": "Play sample",
+    "Stop sample": "Stop sample",
+    "This is how I sound when I read answers to you.": "This is how I sound when I read answers to you.",
+    "Could not change the quality": "Could not change the quality"
 }

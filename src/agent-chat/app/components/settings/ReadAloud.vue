@@ -1,17 +1,18 @@
 <script setup lang="ts">
-import type { SpeechProvider } from '#shared/utils/speech';
+import { SPEECH_MODELS, SPEECH_VOICES, type SpeechProvider } from '#shared/utils/speech';
 
 type VoiceChoice = SpeechProvider | 'device';
 
 interface SpeechServices {
     provider: SpeechProvider | null;
     stored: SpeechProvider[];
+    models: Record<SpeechProvider, string>;
 }
 
 const KEY_REJECTED = 422;
 
 const { t } = useI18n();
-const { speechRate, setSpeechRate } = useAppearance();
+const { speechRate, setSpeechRate, speechVoiceFor, setSpeechVoice } = useAppearance();
 
 const choices: { value: VoiceChoice; label: string }[] = [
     { value: 'device', label: 'Device' },
@@ -29,6 +30,9 @@ const saving = ref(false);
 const switching = ref(false);
 const error = ref<string>();
 const confirmingRemove = ref(false);
+const playing = ref<string | null>(null);
+const loadingSample = ref<string | null>(null);
+let sampleAudio: HTMLAudioElement | undefined;
 
 const active = computed<VoiceChoice>(() => services.value?.provider ?? 'device');
 const shownLabel = computed(() => choices.find(choice => choice.value === shown.value)?.label ?? '');
@@ -94,6 +98,50 @@ async function save(): Promise<void> {
     }
 }
 
+async function chooseModel(provider: SpeechProvider, model: string): Promise<void> {
+    error.value = undefined;
+    try {
+        apply(await apiFetch<SpeechServices>('speech/model', { method: 'PUT', body: { provider, model } }));
+    }
+    catch {
+        error.value = t('Could not change the quality');
+    }
+}
+
+function stopSample(): void {
+    sampleAudio?.pause();
+    sampleAudio = undefined;
+    playing.value = null;
+}
+
+async function playSample(provider: SpeechProvider, voice: string): Promise<void> {
+    const wasPlaying = playing.value === voice;
+    stopSample();
+    if (wasPlaying) {
+        return;
+    }
+    loadingSample.value = voice;
+    error.value = undefined;
+    try {
+        const blob = await apiFetch<Blob>('speech/preview', { method: 'POST', body: { provider, voice, text: t('This is how I sound when I read answers to you.') }, responseType: 'blob' });
+        const audio = new Audio(URL.createObjectURL(blob));
+        audio.playbackRate = speechRate.value;
+        audio.addEventListener('ended', stopSample);
+        sampleAudio = audio;
+        playing.value = voice;
+        await audio.play();
+    }
+    catch {
+        error.value = t('The voice service could not be reached');
+        stopSample();
+    }
+    finally {
+        loadingSample.value = null;
+    }
+}
+
+onBeforeUnmount(stopSample);
+
 async function remove(): Promise<void> {
     apply(await apiFetch<SpeechServices>('speech/service', { method: 'DELETE', query: { provider: shown.value } }));
     confirmingRemove.value = false;
@@ -146,7 +194,47 @@ onMounted(load);
                     <UButton :label="t('Replace key')" color="neutral" variant="outline" @click="replacing = true" />
                     <UButton :label="t('Remove')" color="neutral" variant="ghost" @click="confirmingRemove = true" />
                 </div>
-                <form v-else class="flex flex-col gap-3" @submit.prevent="save">
+                <template v-if="shown !== 'device' && !showForm">
+                    <div class="flex flex-col gap-1.5">
+                        <p class="text-sm font-medium text-highlighted">{{ t('Quality') }}</p>
+                        <button
+                            v-for="model in SPEECH_MODELS[shown]"
+                            :key="model.id"
+                            type="button"
+                            class="flex h-9 items-center gap-2 rounded-md px-3 text-start text-sm ring transition-colors duration-500 ease-out"
+                            :class="services?.models[shown] === model.id ? 'bg-primary/10 text-primary ring-primary/40' : 'ring-default hover:bg-primary/8'"
+                            @click="chooseModel(shown, model.id)"
+                        >
+                            <span class="flex-1 font-medium">{{ model.label }}</span>
+                            <span class="text-muted tabular-nums">{{ t('about {price} per hour', { price: formatDollars(model.dollarsPerHour) }) }}</span>
+                        </button>
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <p class="text-sm font-medium text-highlighted">{{ t('Voice') }}</p>
+                        <div
+                            v-for="voice in SPEECH_VOICES[shown]"
+                            :key="voice.id"
+                            class="flex h-9 items-center gap-1 rounded-md ps-3 pe-1 text-sm ring transition-colors duration-500 ease-out"
+                            :class="speechVoiceFor(shown) === voice.id ? 'bg-primary/10 text-primary ring-primary/40' : 'ring-default hover:bg-primary/8'"
+                        >
+                            <button type="button" class="flex h-full flex-1 items-center text-start font-medium" @click="setSpeechVoice(shown, voice.id)">
+                                {{ voice.label }}
+                            </button>
+                            <UTooltip :text="playing === voice.id ? t('Stop sample') : t('Play sample')">
+                                <UButton
+                                    :icon="playing === voice.id ? 'i-heroicons-stop' : 'i-heroicons-play'"
+                                    :loading="loadingSample === voice.id"
+                                    color="neutral"
+                                    variant="ghost"
+                                    size="sm"
+                                    :aria-label="playing === voice.id ? t('Stop sample') : t('Play sample')"
+                                    @click="playSample(shown, voice.id)"
+                                />
+                            </UTooltip>
+                        </div>
+                    </div>
+                </template>
+                <form v-if="showForm" class="flex flex-col gap-3" @submit.prevent="save">
                     <UInput v-model="apiKey" type="password" autocomplete="off" :placeholder="t('{service} API key', { service: shownLabel })" class="w-full" />
                     <div class="flex gap-2">
                         <UButton v-if="replacing" :label="t('Cancel')" color="neutral" variant="outline" @click="replacing = false" />

@@ -1,4 +1,4 @@
-import { SPEECH_PROVIDERS, isSpeechProvider, type SpeechProvider } from '../../shared/utils/speech';
+import { SPEECH_PROVIDERS, isSpeechProvider, speechModel, type SpeechProvider } from '../../shared/utils/speech';
 
 const ACTIVE_SETTING = 'speech.provider';
 const LEGACY_KEY_SETTING = 'speech.apiKey';
@@ -6,11 +6,25 @@ const LEGACY_KEY_SETTING = 'speech.apiKey';
 export interface SpeechService {
     provider: SpeechProvider;
     apiKey: string;
+    model: string;
 }
 
 export interface SpeechServices {
     provider: SpeechProvider | null;
     stored: SpeechProvider[];
+    models: Record<SpeechProvider, string>;
+}
+
+function modelSetting(provider: SpeechProvider): string {
+    return `speech.model.${provider}`;
+}
+
+export function chosenSpeechModel(provider: SpeechProvider): string {
+    return speechModel(provider, readSetting(modelSetting(provider))).id;
+}
+
+export function setSpeechModel(provider: SpeechProvider, model: string): void {
+    writeSetting(modelSetting(provider), speechModel(provider, model).id);
 }
 
 function keySetting(provider: SpeechProvider): string {
@@ -39,16 +53,21 @@ export function speechServices(): SpeechServices {
     adoptLegacyKey();
     const stored = SPEECH_PROVIDERS.filter(provider => readSetting(keySetting(provider)) !== null);
     const active = readSetting(ACTIVE_SETTING);
-    return { provider: isSpeechProvider(active) && stored.includes(active) ? active : null, stored };
+    const models = Object.fromEntries(SPEECH_PROVIDERS.map(provider => [provider, chosenSpeechModel(provider)])) as Record<SpeechProvider, string>;
+    return { provider: isSpeechProvider(active) && stored.includes(active) ? active : null, stored, models };
+}
+
+export function speechServiceFor(provider: SpeechProvider): SpeechService | null {
+    const apiKey = storedKey(provider);
+    return apiKey ? { provider, apiKey, model: chosenSpeechModel(provider) } : null;
 }
 
 export function speechService(): SpeechService | null {
     const { provider } = speechServices();
-    const apiKey = provider ? storedKey(provider) : null;
-    return provider && apiKey ? { provider, apiKey } : null;
+    return provider ? speechServiceFor(provider) : null;
 }
 
-export function storeSpeechKey(service: SpeechService): void {
+export function storeSpeechKey(service: Omit<SpeechService, 'model'>): void {
     writeSetting(keySetting(service.provider), sealSecret(chatKey(), service.apiKey));
     writeSetting(ACTIVE_SETTING, service.provider);
 }

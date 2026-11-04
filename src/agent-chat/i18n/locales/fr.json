@@ -256,5 +256,12 @@
     "Your device's own voice reads aloud.": "La voix de votre appareil lit à voix haute.",
     "{service} API key": "Clé API {service}",
     "The {service} key is deleted.": "La clé {service} est supprimée.",
-    "Could not switch the voice service": "Impossible de changer de service vocal"
+    "Could not switch the voice service": "Impossible de changer de service vocal",
+    "Quality": "Qualité",
+    "Voice": "Voix",
+    "about {price} per hour": "env. {price} par heure",
+    "Play sample": "Écouter un extrait",
+    "Stop sample": "Arrêter l'extrait",
+    "This is how I sound when I read answers to you.": "Voici ma voix quand je vous lis les réponses.",
+    "Could not change the quality": "Impossible de changer la qualité"
 }

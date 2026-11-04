@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
     }
     const service = { provider, apiKey: apiKey.trim() };
     try {
-        await synthesizeSpeech(service, KEY_CHECK_TEXT);
+        await synthesizeSpeech({ ...service, model: chosenSpeechModel(provider) }, KEY_CHECK_TEXT, '');
     }
     catch (failure) {
         if (failure instanceof SpeechServiceError) {

@@ -56,3 +56,7 @@ export function formatElapsed(milliseconds: number): string {
     const seconds = String(totalSeconds % 60).padStart(2, '0');
     return hours > 0 ? `${hours}:${String(minutes).padStart(2, '0')}:${seconds}` : `${minutes}:${seconds}`;
 }
+
+export function formatDollars(amount: number): string {
+    return new Intl.NumberFormat(formatLocale.value, { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(amount);
+}

@@ -256,5 +256,12 @@
     "Your device's own voice reads aloud.": "De eigen stem van je apparaat leest voor.",
     "{service} API key": "{service}-API-sleutel",
     "The {service} key is deleted.": "De {service}-sleutel wordt verwijderd.",
-    "Could not switch the voice service": "De spraakdienst kon niet worden gewisseld"
+    "Could not switch the voice service": "De spraakdienst kon niet worden gewisseld",
+    "Quality": "Kwaliteit",
+    "Voice": "Stem",
+    "about {price} per hour": "ca. {price} per uur",
+    "Play sample": "Voorbeeld afspelen",
+    "Stop sample": "Voorbeeld stoppen",
+    "This is how I sound when I read answers to you.": "Zo klink ik als ik je antwoorden voorlees.",
+    "Could not change the quality": "De kwaliteit kon niet worden gewijzigd"
 }

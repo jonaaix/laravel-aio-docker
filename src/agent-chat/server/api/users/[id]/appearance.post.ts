@@ -1,10 +1,10 @@
 import { COLOR_MODES, FONT_CHOICES, isTint, type ColorModeChoice } from '../../../../shared/utils/fonts';
 import { isLanguage } from '../../../../shared/utils/languages';
-import { isSpeechRate } from '../../../../shared/utils/speech';
+import { SPEECH_VOICES, isSpeechProvider, isSpeechRate } from '../../../../shared/utils/speech';
 
 export default defineEventHandler(async (event) => {
     const user = ownUser(event);
-    const { colorMode, font, language, pinSentMessage, changesPanelHidden, changesPanelAuto, tint, speechRate } = await readBody<{ colorMode?: unknown; font?: unknown; language?: unknown; pinSentMessage?: unknown; changesPanelHidden?: unknown; changesPanelAuto?: unknown; tint?: unknown; speechRate?: unknown }>(event);
+    const { colorMode, font, language, pinSentMessage, changesPanelHidden, changesPanelAuto, tint, speechRate, speechVoice } = await readBody<{ colorMode?: unknown; font?: unknown; language?: unknown; pinSentMessage?: unknown; changesPanelHidden?: unknown; changesPanelAuto?: unknown; speechVoice?: { provider?: unknown; voice?: unknown }; tint?: unknown; speechRate?: unknown }>(event);
     const changes: Parameters<typeof setUserAppearance>[1] = {};
     if (colorMode !== undefined) {
         if (!(COLOR_MODES as readonly unknown[]).includes(colorMode)) {
@@ -44,6 +44,13 @@ export default defineEventHandler(async (event) => {
     }
     if (typeof changesPanelAuto === 'boolean') {
         changes.changesPanelAuto = changesPanelAuto;
+    }
+    if (speechVoice !== undefined) {
+        const { provider, voice } = speechVoice ?? {};
+        if (!isSpeechProvider(provider) || !SPEECH_VOICES[provider].some(choice => choice.id === voice)) {
+            throw createError({ statusCode: 422, statusMessage: 'Unknown voice' });
+        }
+        changes.speechVoices = { ...user.speechVoices, [provider]: voice as string };
     }
     return toChatUser(Object.keys(changes).length > 0 ? setUserAppearance(user, changes) : user);
 });

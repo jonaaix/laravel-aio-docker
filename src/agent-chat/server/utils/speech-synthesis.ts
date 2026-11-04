@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { SpeechProvider } from '../../shared/utils/speech';
+import { speechVoice, type SpeechProvider } from '../../shared/utils/speech';
 import type { SpeechService } from './speech-service';
 
 export interface SynthesizedAudio {
@@ -9,18 +9,23 @@ export interface SynthesizedAudio {
     mediaType: string;
 }
 
-interface VoiceSetup {
-    model: string;
-    voice: string;
+interface AudioFormat {
     mediaType: string;
     extension: string;
 }
 
-const VOICES: Record<SpeechProvider, VoiceSetup> = {
-    gemini: { model: 'gemini-3.8-flash-lite-tts', voice: 'Sulafat', mediaType: 'audio/wav', extension: 'wav' },
-    elevenlabs: { model: 'eleven_flash_v2_5', voice: 'JBFqnCBsd6RMkjVDRZzb', mediaType: 'audio/mpeg', extension: 'mp3' },
-    openai: { model: 'gpt-4o-mini-tts', voice: 'coral', mediaType: 'audio/mpeg', extension: 'mp3' },
+const FORMATS: Record<SpeechProvider, AudioFormat> = {
+    gemini: { mediaType: 'audio/wav', extension: 'wav' },
+    elevenlabs: { mediaType: 'audio/mpeg', extension: 'mp3' },
+    openai: { mediaType: 'audio/mpeg', extension: 'mp3' },
 };
+
+interface SpeechRequest {
+    apiKey: string;
+    model: string;
+    voice: string;
+    text: string;
+}
 
 const REJECTED_KEY = new Set([401, 403]);
 const GEMINI_INVALID_KEY = 'API_KEY_INVALID';
@@ -53,16 +58,15 @@ function findAudioData(value: unknown): string | null {
     return null;
 }
 
-async function synthesizeWithGemini(apiKey: string, text: string): Promise<Buffer> {
-    const setup = VOICES.gemini;
+async function synthesizeWithGemini({ apiKey, model, voice, text }: SpeechRequest): Promise<Buffer> {
     const response = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
         method: 'POST',
         headers: { 'x-goog-api-key': apiKey, 'content-type': 'application/json' },
         body: JSON.stringify({
-            model: setup.model,
+            model,
             input: [{ type: 'user_input', content: [{ type: 'text', text }] }],
-            response_format: { type: 'audio', mime_type: setup.mediaType },
-            generation_config: { speech_config: [{ voice: setup.voice }] },
+            response_format: { type: 'audio', mime_type: FORMATS.gemini.mediaType },
+            generation_config: { speech_config: [{ voice }] },
         }),
     });
     if (!response.ok) {
@@ -75,12 +79,11 @@ async function synthesizeWithGemini(apiKey: string, text: string): Promise<Buffe
     return Buffer.from(audio, 'base64');
 }
 
-async function synthesizeWithElevenLabs(apiKey: string, text: string): Promise<Buffer> {
-    const setup = VOICES.elevenlabs;
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${setup.voice}?output_format=mp3_44100_128`, {
+async function synthesizeWithElevenLabs({ apiKey, model, voice, text }: SpeechRequest): Promise<Buffer> {
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=mp3_44100_128`, {
         method: 'POST',
         headers: { 'xi-api-key': apiKey, 'content-type': 'application/json' },
-        body: JSON.stringify({ text, model_id: setup.model }),
+        body: JSON.stringify({ text, model_id: model }),
     });
     if (!response.ok) {
         throw await serviceFailure(response);
@@ -88,12 +91,11 @@ async function synthesizeWithElevenLabs(apiKey: string, text: string): Promise<B
     return Buffer.from(await response.arrayBuffer());
 }
 
-async function synthesizeWithOpenAI(apiKey: string, text: string): Promise<Buffer> {
-    const setup = VOICES.openai;
+async function synthesizeWithOpenAI({ apiKey, model, voice, text }: SpeechRequest): Promise<Buffer> {
     const response = await fetch('https://api.openai.com/v1/audio/speech', {
         method: 'POST',
         headers: { 'authorization': `Bearer ${apiKey}`, 'content-type': 'application/json' },
-        body: JSON.stringify({ model: setup.model, voice: setup.voice, input: text, response_format: setup.extension }),
+        body: JSON.stringify({ model, voice, input: text, response_format: FORMATS.openai.extension }),
     });
     if (!response.ok) {
         throw await serviceFailure(response);
@@ -101,31 +103,30 @@ async function synthesizeWithOpenAI(apiKey: string, text: string): Promise<Buffe
     return Buffer.from(await response.arrayBuffer());
 }
 
-const SYNTHESIZERS: Record<SpeechProvider, (apiKey: string, text: string) => Promise<Buffer>> = {
+const SYNTHESIZERS: Record<SpeechProvider, (request: SpeechRequest) => Promise<Buffer>> = {
     gemini: synthesizeWithGemini,
     elevenlabs: synthesizeWithElevenLabs,
     openai: synthesizeWithOpenAI,
 };
 
-export async function synthesizeSpeech(service: SpeechService, text: string): Promise<SynthesizedAudio> {
-    const data = await SYNTHESIZERS[service.provider](service.apiKey, text);
-    return { data, mediaType: VOICES[service.provider].mediaType };
+export async function synthesizeSpeech(service: SpeechService, text: string, voice: string): Promise<SynthesizedAudio> {
+    const data = await SYNTHESIZERS[service.provider]({ apiKey: service.apiKey, model: service.model, voice: speechVoice(service.provider, voice).id, text });
+    return { data, mediaType: FORMATS[service.provider].mediaType };
 }
 
-function cachePath(provider: SpeechProvider, text: string): string {
-    const setup = VOICES[provider];
+function cachePath(service: SpeechService, voice: string, text: string): string {
     const dir = join(resolveDataDir(), 'speech');
     mkdirSync(dir, { recursive: true });
-    const name = createHash('sha256').update(`${provider}|${setup.model}|${setup.voice}|${text}`).digest('hex');
-    return join(dir, `${name}.${setup.extension}`);
+    const name = createHash('sha256').update(`${service.provider}|${service.model}|${speechVoice(service.provider, voice).id}|${text}`).digest('hex');
+    return join(dir, `${name}.${FORMATS[service.provider].extension}`);
 }
 
-export async function cachedSpeech(service: SpeechService, text: string): Promise<SynthesizedAudio> {
-    const path = cachePath(service.provider, text);
+export async function cachedSpeech(service: SpeechService, text: string, voice: string): Promise<SynthesizedAudio> {
+    const path = cachePath(service, voice, text);
     if (existsSync(path)) {
-        return { data: readFileSync(path), mediaType: VOICES[service.provider].mediaType };
+        return { data: readFileSync(path), mediaType: FORMATS[service.provider].mediaType };
     }
-    const audio = await synthesizeSpeech(service, text);
+    const audio = await synthesizeSpeech(service, text, voice);
     writeFileSync(path, audio.data);
     return audio;
 }

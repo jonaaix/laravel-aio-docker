@@ -52,6 +52,10 @@ a conversation opens the same window at Agents.
   key the service refuses is not stored and the field says so. Once stored, a key is never shown again — the strip
   only says which service has one, with "Replace key" and "Remove" (which asks first). Anyone signed in may replace
   or remove keys, nobody can read them. Device uses the device's own voice and leaves the keys in place.
+  For a service with a key, "Quality" lists its models with what an hour of reading costs about (list prices,
+  shown as estimates), and the choice holds for the whole chat because it decides the cost on the shared key;
+  ElevenLabs offers only its low-cost Flash model. "Voice" lists six voices of the service; each person picks their
+  own, and each voice plays a short sample sentence in the person's language, which is kept so it is paid once.
 - **Agents** defines the agents, as described in [Agents in the chat](chat-agents.md).
 - **Claude account** signs the container's Claude Code in to a Claude subscription and out again, the
   same login a terminal `/login` creates. Signed in, it shows the account's e-mail, organisation,

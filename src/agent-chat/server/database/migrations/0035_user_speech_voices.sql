@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `speech_voices` text;

@@ -20,6 +20,7 @@ export const users = sqliteTable('users', {
     changesPanelHidden: integer('changes_panel_hidden', { mode: 'boolean' }).notNull().default(false),
     changesPanelAuto: integer('changes_panel_auto', { mode: 'boolean' }).notNull().default(true),
     tint: integer('tint'),
+    speechVoices: text('speech_voices', { mode: 'json' }).$type<Partial<Record<string, string>>>(),
     speechRate: real('speech_rate'),
     appUserRef: text('app_user_ref'),
     isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
