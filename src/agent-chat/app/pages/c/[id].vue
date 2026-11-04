@@ -504,7 +504,7 @@ const restoreConversation = () => withFlag(archiving, restore);
         </template>
 
         <template #body>
-            <UContainer class="flex-1">
+            <UContainer class="@container flex-1">
                 <div ref="timeline" />
                 <ChatQuoteButton v-if="loaded && archivedAt === null" :root="timeline?.parentElement ?? null" @quote="quote" />
                 <div v-if="!loaded && skeletonDue" class="flex flex-col gap-6 py-4">
@@ -527,8 +527,8 @@ const restoreConversation = () => withFlag(archiving, restore);
                         :style="{ '--last-message-height': `${answerSpace}px`, '--message-scroll-margin': `${messageScrollMargin}px` }"
                         :ui="{ root: 'px-0 [&>article]:scroll-mt-(--message-scroll-margin) [&>article[data-role=assistant]+article[data-role=assistant]]:mt-6' }"
                         :should-scroll-to-bottom="false"
-                        :assistant="{ side: 'left', variant: 'naked', ui: { container: 'flex-col gap-1.5 pb-7 sm:flex-row sm:gap-3', leading: 'mt-0 self-start xl:-ms-[6.75rem]', content: 'text-base/6.5', actions: 'h-6 gap-1' } }"
-                        :user="{ side: 'right', variant: 'soft', ui: { container: 'max-w-[90%] flex-col items-end gap-1.5 pb-7 sm:max-w-[75%] sm:flex-row-reverse sm:items-start sm:justify-start sm:gap-3', leading: 'mt-0 self-end sm:self-start xl:-me-[6.75rem]', body: 'max-w-full', actions: 'h-6 gap-1', content: 'min-h-0 rounded-[1.125rem] bg-(--user-message) px-3.5 py-2 text-base/6.5' } }"
+                        :assistant="{ side: 'left', variant: 'naked', ui: { container: 'flex-col gap-1.5 pb-7 @min-[58rem]:flex-row @min-[58rem]:gap-3', leading: 'mt-0 self-start @min-[58rem]:-ms-[6.75rem]', content: 'text-base/6.5', actions: 'h-6 gap-1' } }"
+                        :user="{ side: 'right', variant: 'soft', ui: { container: 'max-w-[90%] flex-col items-end gap-1.5 pb-7 sm:max-w-[75%] @min-[58rem]:flex-row-reverse @min-[58rem]:items-start @min-[58rem]:justify-start @min-[58rem]:gap-3', leading: 'mt-0 self-end @min-[58rem]:self-start @min-[58rem]:-me-[6.75rem]', body: 'max-w-full', actions: 'h-6 gap-1', content: 'min-h-0 rounded-[1.125rem] bg-(--user-message) px-3.5 py-2 text-base/6.5' } }"
                     >
                         <template #leading="{ message }">
                             <ChatHead :participant="messageAuthor(message)" :reverse="message.role === 'user'" />
