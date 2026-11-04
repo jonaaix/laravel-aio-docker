@@ -7,34 +7,35 @@ const NOW = Date.UTC(2026, 10, 3, 12, 0, 0);
 
 test('a signed link signs in once with its name and picture', () => {
     const ledger = createNonceLedger();
-    const params = createSignInParams(KEY, { name: 'Jonas Ä', avatarUrl: 'https://app.test/a.png' }, NOW);
-    assert.deepEqual(redeemSignIn(KEY, params, ledger, NOW), { name: 'Jonas Ä', avatarUrl: 'https://app.test/a.png' });
+    const params = createSignInParams(KEY, { name: 'Jonas Ä', avatarUrl: 'https://app.test/a.png', userRef: '7' }, NOW);
+    assert.deepEqual(redeemSignIn(KEY, params, ledger, NOW), { name: 'Jonas Ä', avatarUrl: 'https://app.test/a.png', userRef: '7' });
     assert.equal(redeemSignIn(KEY, params, ledger, NOW), null);
 });
 
 test('a link without a picture signs in with none', () => {
-    const params = createSignInParams(KEY, { name: 'Jonas', avatarUrl: null }, NOW);
-    assert.deepEqual(redeemSignIn(KEY, params, createNonceLedger(), NOW), { name: 'Jonas', avatarUrl: null });
+    const params = createSignInParams(KEY, { name: 'Jonas', avatarUrl: null, userRef: '7' }, NOW);
+    assert.deepEqual(redeemSignIn(KEY, params, createNonceLedger(), NOW), { name: 'Jonas', avatarUrl: null, userRef: '7' });
 });
 
 test('an expired link is refused', () => {
-    const params = createSignInParams(KEY, { name: 'Jonas', avatarUrl: null }, NOW);
+    const params = createSignInParams(KEY, { name: 'Jonas', avatarUrl: null, userRef: '7' }, NOW);
     assert.equal(redeemSignIn(KEY, params, createNonceLedger(), NOW + 61_000), null);
     assert.ok(redeemSignIn(KEY, params, createNonceLedger(), NOW + 59_000));
 });
 
-test('a changed name, picture, expiry or another key breaks the signature', () => {
-    const params = createSignInParams(KEY, { name: 'Jonas', avatarUrl: null }, NOW);
-    const other = createSignInParams(KEY, { name: 'Dana', avatarUrl: null }, NOW);
+test('a changed name, picture, user, expiry or another key breaks the signature', () => {
+    const params = createSignInParams(KEY, { name: 'Jonas', avatarUrl: null, userRef: '7' }, NOW);
+    const other = createSignInParams(KEY, { name: 'Dana', avatarUrl: null, userRef: '8' }, NOW);
     assert.equal(redeemSignIn(KEY, { ...params, n: other.n }, createNonceLedger(), NOW), null);
     assert.equal(redeemSignIn(KEY, { ...params, a: other.n }, createNonceLedger(), NOW), null);
+    assert.equal(redeemSignIn(KEY, { ...params, r: other.r }, createNonceLedger(), NOW), null);
     assert.equal(redeemSignIn(KEY, { ...params, exp: String(Number(params.exp) + 3600) }, createNonceLedger(), NOW), null);
     assert.equal(redeemSignIn('other-key', params, createNonceLedger(), NOW), null);
     assert.equal(redeemSignIn('', params, createNonceLedger(), NOW), null);
 });
 
 test('incomplete parameters are refused', () => {
-    const { sig: _sig, ...unsigned } = createSignInParams(KEY, { name: 'Jonas', avatarUrl: null }, NOW);
+    const { sig: _sig, ...unsigned } = createSignInParams(KEY, { name: 'Jonas', avatarUrl: null, userRef: '7' }, NOW);
     assert.equal(redeemSignIn(KEY, unsigned, createNonceLedger(), NOW), null);
     assert.equal(redeemSignIn(KEY, {}, createNonceLedger(), NOW), null);
 });

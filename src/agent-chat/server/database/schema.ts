@@ -19,8 +19,9 @@ export const users = sqliteTable('users', {
     pinSentMessage: integer('pin_sent_message', { mode: 'boolean' }).notNull().default(false),
     tint: integer('tint'),
     speechRate: real('speech_rate'),
+    appUserRef: text('app_user_ref'),
     createdAt: integer('created_at').notNull(),
-}, table => [uniqueIndex('users_name_unique').on(table.name)]);
+}, table => [uniqueIndex('users_name_unique').on(table.name), uniqueIndex('users_app_user_ref_unique').on(table.appUserRef)]);
 
 export const settings = sqliteTable('settings', {
     key: text('key').primaryKey(),

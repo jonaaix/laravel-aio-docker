@@ -29,15 +29,18 @@ POST {AGENT_CHAT_URL}/api/auth/links
 Authorization: Bearer {AGENT_CHAT_KEY}
 Content-Type: application/json
 
-{ "name": "Ada Lovelace", "avatarUrl": "https://example.com/ada.png" }
+{ "name": "Ada Lovelace", "userRef": "42", "avatarUrl": "https://example.com/ada.png" }
 ```
 
-- `name` is required. It is the person's identity in the chat: the same name always signs in as the same person.
+- `name` is required. It is the name the person carries in the chat.
+- `userRef` is required: the person's stable id in the app, usually the user's primary key. The same `userRef`
+  always signs in as the same person. A name that already belongs to another `userRef` is refused.
 - `avatarUrl` is optional. When present, the chat fetches the picture and uses it as the person's head.
 - Answer `200`: `{ "path": "/?n=…&a=…&exp=…&nonce=…&sig=…" }`. The browser opens `{AGENT_CHAT_URL}{path}`.
 - The link works once and only for about a minute. Request it at the moment the person clicks, never earlier,
   and never cache or store it.
-- `401` means the key is wrong. `422` means the name is missing.
+- `401` means the key is wrong. `422` means the name or `userRef` is missing. `409` means the name already belongs
+  to another person: show the user that their name is taken in the chat, never retry under another name on your own.
 
 A route that signs the current user in and lands them in the chat:
 
@@ -50,6 +53,7 @@ Route::get('/agent-chat', function (Request $request) {
         ->acceptJson()
         ->post("{$chat['url']}/api/auth/links", array_filter([
             'name' => $user->name,
+            'userRef' => (string) $user->getKey(),
             'avatarUrl' => $user->avatar_url,
         ]))
         ->throw()

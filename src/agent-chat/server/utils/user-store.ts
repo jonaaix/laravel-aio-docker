@@ -12,12 +12,32 @@ export function findUser(id: unknown): UserRow | null {
     return useDatabase().select().from(users).where(eq(users.id, id)).get() ?? null;
 }
 
-export function findOrCreateUser(name: string): UserRow {
-    const existing = useDatabase().select().from(users).where(eq(users.name, name)).get();
-    if (existing) {
-        return existing;
+function userByRef(userRef: string): UserRow | undefined {
+    return useDatabase().select().from(users).where(eq(users.appUserRef, userRef)).get();
+}
+
+function userByName(name: string): UserRow | undefined {
+    return useDatabase().select().from(users).where(eq(users.name, name)).get();
+}
+
+export function isNameTakenByOther(name: string, userRef: string): boolean {
+    return !userByRef(userRef) && Boolean(userByName(name)?.appUserRef);
+}
+
+export function signInUser(name: string, userRef: string): UserRow | null {
+    const known = userByRef(userRef);
+    if (known) {
+        return known;
     }
-    const row: UserRow = { id: randomUUID(), name, avatarSeed: null, avatarFile: null, avatarSource: null, avatarUpdatedAt: null, colorMode: null, font: null, language: null, pinSentMessage: false, tint: null, speechRate: null, createdAt: Date.now() };
+    const named = userByName(name);
+    if (named?.appUserRef) {
+        return null;
+    }
+    if (named) {
+        useDatabase().update(users).set({ appUserRef: userRef }).where(eq(users.id, named.id)).run();
+        return { ...named, appUserRef: userRef };
+    }
+    const row: UserRow = { id: randomUUID(), name, avatarSeed: null, avatarFile: null, avatarSource: null, avatarUpdatedAt: null, colorMode: null, font: null, language: null, pinSentMessage: false, tint: null, speechRate: null, appUserRef: userRef, createdAt: Date.now() };
     useDatabase().insert(users).values(row).run();
     return announce(row);
 }

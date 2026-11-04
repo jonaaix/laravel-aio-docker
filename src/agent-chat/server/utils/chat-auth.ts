@@ -8,6 +8,7 @@ export const SIGN_IN_LIFETIME_S = 60;
 export interface SignInParams {
     n: string;
     a: string;
+    r: string;
     exp: string;
     nonce: string;
     sig: string;
@@ -16,6 +17,7 @@ export interface SignInParams {
 export interface SignIn {
     name: string;
     avatarUrl: string | null;
+    userRef: string;
 }
 
 function signature(key: string, message: string): string {
@@ -38,7 +40,7 @@ function decodeText(value: string): string | null {
 }
 
 function signInMessage(params: Omit<SignInParams, 'sig'>): string {
-    return ['sign-in', params.n, params.a, params.exp, params.nonce].join('|');
+    return ['sign-in', params.n, params.a, params.r, params.exp, params.nonce].join('|');
 }
 
 export function isChatKey(key: string, given: string): boolean {
@@ -49,6 +51,7 @@ export function createSignInParams(key: string, signIn: SignIn, now = Date.now()
     const params = {
         n: encodeText(signIn.name),
         a: signIn.avatarUrl ? encodeText(signIn.avatarUrl) : '',
+        r: encodeText(signIn.userRef),
         exp: String(Math.floor(now / 1000) + SIGN_IN_LIFETIME_S),
         nonce: randomBytes(16).toString('base64url'),
     };
@@ -76,11 +79,11 @@ export function createNonceLedger() {
 export type NonceLedger = ReturnType<typeof createNonceLedger>;
 
 export function redeemSignIn(key: string, params: Partial<Record<keyof SignInParams, unknown>>, ledger: NonceLedger, now = Date.now()): SignIn | null {
-    const { n, a = '', exp, nonce, sig } = params;
-    if (!key || typeof n !== 'string' || typeof a !== 'string' || typeof exp !== 'string' || typeof nonce !== 'string' || typeof sig !== 'string') {
+    const { n, a = '', r, exp, nonce, sig } = params;
+    if (!key || typeof n !== 'string' || typeof a !== 'string' || typeof r !== 'string' || typeof exp !== 'string' || typeof nonce !== 'string' || typeof sig !== 'string') {
         return null;
     }
-    if (!sameSecret(signature(key, signInMessage({ n, a, exp, nonce })), sig)) {
+    if (!sameSecret(signature(key, signInMessage({ n, a, r, exp, nonce })), sig)) {
         return null;
     }
     const expiresAtS = Number(exp);
@@ -90,7 +93,8 @@ export function redeemSignIn(key: string, params: Partial<Record<keyof SignInPar
     }
     const name = decodeText(n);
     const avatarUrl = a ? decodeText(a) : null;
-    return name && (a === '' || avatarUrl) ? { name, avatarUrl } : null;
+    const userRef = decodeText(r);
+    return name && userRef && (a === '' || avatarUrl) ? { name, avatarUrl, userRef } : null;
 }
 
 export function createSessionValue(key: string, userId: string): string {

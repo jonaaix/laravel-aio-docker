@@ -10,8 +10,11 @@ export default defineEventHandler(async (event) => {
     if (!signIn) {
         throw createError({ statusCode: 401, statusMessage: 'This sign-in link is invalid or has expired' });
     }
-    const created = findOrCreateUser(signIn.name);
-    const user = signIn.avatarUrl ? await syncLinkedAvatar(created, signIn.avatarUrl) : created;
+    const signedIn = signInUser(signIn.name, signIn.userRef);
+    if (!signedIn) {
+        throw createError({ statusCode: 409, statusMessage: 'This name is already taken' });
+    }
+    const user = signIn.avatarUrl ? await syncLinkedAvatar(signedIn, signIn.avatarUrl) : signedIn;
     const secure = isSecureContext(getRequestURL(event));
     // Embedded in the Laravel app the chat is a third-party frame; only a partitioned, cross-site cookie survives there.
     setCookie(event, SESSION_COOKIE, createSessionValue(chatKey(), user.id), {

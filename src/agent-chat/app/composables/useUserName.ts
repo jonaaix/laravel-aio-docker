@@ -3,7 +3,7 @@ import type { ChatUser } from '#shared/types/user';
 
 const UNAUTHORIZED_STATUS = 401;
 
-const SIGN_IN_PARAMS = ['n', 'a', 'exp', 'nonce', 'sig'] as const;
+const SIGN_IN_PARAMS = ['n', 'a', 'r', 'exp', 'nonce', 'sig'] as const;
 
 function takeSignInParams(): Record<string, string> | null {
     const url = new URL(window.location.href);

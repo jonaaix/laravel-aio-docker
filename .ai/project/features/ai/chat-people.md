@@ -17,8 +17,10 @@ Names and pictures make a shared conversation readable at a glance.
 ### Names
 
 A person's name and picture come from the signed link they signed in with (see [AI web chat](web-chat.md)):
-the name is taken over as it is and cannot be changed in the chat, and the chat never asks for one. A person
-whose name is already known is that person again. A new picture shows on all their earlier messages too, for
+the name is taken over as it is and cannot be changed in the chat, and the chat never asks for one. Along with
+the name the Laravel app passes on who the person is in the app; that person is always the same person in the
+chat, from any browser. A name already belonging to another person of the app is refused, so nobody can sign in
+under someone else's name. Someone known from before this rule takes their name over on their next sign-in. A new picture shows on all their earlier messages too, for
 everyone, right away. Each new conversation keeps the name of the person
 who started it, and every message keeps the name of the person who sent it. The agent learns who is
 writing: the first message of a conversation, and every message from someone other than the previous
