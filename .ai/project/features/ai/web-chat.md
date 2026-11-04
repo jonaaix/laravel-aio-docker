@@ -92,7 +92,7 @@ place, and a newer answer with changes takes over again. The panel can be closed
 they open it again through "N files changed", and its edge drags the width, as far as the conversation keeps enough
 room; a double click restores the default width. On narrow screens and in the chat embedded in the app there is no
 panel. Clicking a file's name opens the whole file as it is now in the preview
-panel beside the conversation, unless it was deleted: with line numbers, the lines the change added marked,
+panel beside the conversation, any text file in any language, unless it was deleted: with line numbers, the lines the change added marked,
 and scrolled to the first of them; with several changes, arrows next to "1 of 3" step through them. Files git ignores do not show and cannot be opened, and the project's
 own git state (staged changes, commits) is never touched.
 Code blocks in answers are highlighted in the language they name, any language highlighting knows; a block

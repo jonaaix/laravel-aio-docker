@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { CollapsibleContent, CollapsibleRoot } from 'reka-ui';
 import type { FileChange } from '#shared/types/conversation';
+import type { FilePreview } from '~/utils/file-kind';
 
 const props = withDefaults(defineProps<{
     change: FileChange;
@@ -17,7 +18,12 @@ watch(() => props.expanded, (expanded) => {
     open.value = expanded;
 });
 const previewOpen = ref(false);
-const preview = computed(() => props.change.status === 'deleted' ? null : filePreview(props.change.path));
+const preview = computed<FilePreview | null>(() => {
+    if (props.change.status === 'deleted' || props.change.binary) {
+        return null;
+    }
+    return filePreview(props.change.path) ?? { kind: 'code', language: fileLanguage(props.change.path) ?? 'text' };
+});
 const fileName = computed(() => props.change.path.split('/').at(-1) ?? props.change.path);
 const fileUrl = computed(() => {
     const base = apiUrl(`conversations/${route.params.id}/project-file`);
