@@ -1,6 +1,6 @@
 const MARK_TONES: [mark: string, tone: string][] = [
     ['⚠', 'bg-warning/10'],
-    ['❌', 'bg-error/10'],
+    ['❌', 'bg-error/5'],
 ];
 
 export function markTone(text: string): string | null {
