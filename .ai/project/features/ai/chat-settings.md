@@ -48,9 +48,9 @@ a conversation opens the same window at Agents.
   service of the whole chat, chosen in a strip: Device, Gemini, ElevenLabs or OpenAI. Each service keeps its own API
   key, so several can be stored and switched between at will; choosing a service that has a key puts it to use at
   once and marks it with a check, choosing one without shows the field for its key, while the one in use keeps
-  reading. The chosen service also transcribes dictation. A key is checked with the service before it is stored; a
-  key the service refuses is not stored and the field says so. A key the service accepts but whose account has no
-  credit left is stored without being put to use, with a note to add credit there and then choose the service. Once stored, a key is never shown again — the strip
+  reading. The chosen service also transcribes dictation. A key is always stored, then checked with the service: if the
+  check passes, the service is put to use; if not, the key stays stored, the service in use keeps reading, and a note
+  says what is wrong — the key refused, no credit left on the account, or the service not reachable. Once stored, a key is never shown again — the strip
   only says which service has one, with "Replace key" and "Remove" (which asks first). Anyone signed in may replace
   or remove keys, nobody can read them. Device uses the device's own voice and leaves the keys in place.
   For a service with a key, "Quality" lists its models with what an hour of reading costs about (list prices,

@@ -185,7 +185,6 @@
     "The answer could not be completed": "Het antwoord kon niet worden voltooid",
     "The code was not accepted": "De code is niet geaccepteerd",
     "The file could not be loaded": "Het bestand kon niet worden geladen",
-    "The key was not accepted": "De sleutel is niet geaccepteerd",
     "The quick brown fox jumps over the lazy dog": "Pa's wijze lynx bezag vroom het fikse aquaduct",
     "The recording could not be transcribed": "De opname kon niet worden uitgeschreven",
     "The voice service could not be reached": "De spraakdienst is niet bereikbaar",
@@ -264,5 +263,8 @@
     "Stop sample": "Voorbeeld stoppen",
     "This is how I sound when I read answers to you.": "Zo klink ik als ik je antwoorden voorlees.",
     "Could not change the quality": "De kwaliteit kon niet worden gewijzigd",
-    "{service} has no credit left on this account. Add credit there, then choose {service} again.": "{service} heeft geen tegoed meer op dit account. Waardeer daar op en kies daarna opnieuw {service}."
+    "{service} has no credit left on this account. Add credit there, then choose {service} again.": "{service} heeft geen tegoed meer op dit account. Waardeer daar op en kies daarna opnieuw {service}.",
+    "Key saved, but {service} did not accept it. Check it and save it again.": "Sleutel opgeslagen, maar {service} accepteerde hem niet. Controleer hem en sla hem opnieuw op.",
+    "Key saved, but {service} could not be reached. Choose {service} again later.": "Sleutel opgeslagen, maar {service} was niet bereikbaar. Kies {service} later opnieuw.",
+    "The key could not be saved": "De sleutel kon niet worden opgeslagen"
 }

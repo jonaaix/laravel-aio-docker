@@ -185,7 +185,6 @@
     "The answer could not be completed": "Non è stato possibile completare la risposta",
     "The code was not accepted": "Il codice non è stato accettato",
     "The file could not be loaded": "Impossibile caricare il file",
-    "The key was not accepted": "La chiave non è stata accettata",
     "The quick brown fox jumps over the lazy dog": "Pranzo d'acqua fa volti sghembi",
     "The recording could not be transcribed": "Impossibile trascrivere la registrazione",
     "The voice service could not be reached": "Il servizio vocale non è raggiungibile",
@@ -264,5 +263,8 @@
     "Stop sample": "Ferma l'esempio",
     "This is how I sound when I read answers to you.": "Ecco come suono quando ti leggo le risposte.",
     "Could not change the quality": "Impossibile cambiare la qualità",
-    "{service} has no credit left on this account. Add credit there, then choose {service} again.": "{service} non ha più credito su questo account. Aggiungi credito e poi scegli di nuovo {service}."
+    "{service} has no credit left on this account. Add credit there, then choose {service} again.": "{service} non ha più credito su questo account. Aggiungi credito e poi scegli di nuovo {service}.",
+    "Key saved, but {service} did not accept it. Check it and save it again.": "Chiave salvata, ma {service} non l'ha accettata. Controllala e salvala di nuovo.",
+    "Key saved, but {service} could not be reached. Choose {service} again later.": "Chiave salvata, ma {service} non è raggiungibile. Scegli di nuovo {service} più tardi.",
+    "The key could not be saved": "Impossibile salvare la chiave"
 }

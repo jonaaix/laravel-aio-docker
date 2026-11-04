@@ -185,7 +185,6 @@
     "The answer could not be completed": "The answer could not be completed",
     "The code was not accepted": "The code was not accepted",
     "The file could not be loaded": "The file could not be loaded",
-    "The key was not accepted": "The key was not accepted",
     "The quick brown fox jumps over the lazy dog": "The quick brown fox jumps over the lazy dog",
     "The recording could not be transcribed": "The recording could not be transcribed",
     "The voice service could not be reached": "The voice service could not be reached",
@@ -264,5 +263,8 @@
     "Stop sample": "Stop sample",
     "This is how I sound when I read answers to you.": "This is how I sound when I read answers to you.",
     "Could not change the quality": "Could not change the quality",
-    "{service} has no credit left on this account. Add credit there, then choose {service} again.": "{service} has no credit left on this account. Add credit there, then choose {service} again."
+    "{service} has no credit left on this account. Add credit there, then choose {service} again.": "{service} has no credit left on this account. Add credit there, then choose {service} again.",
+    "Key saved, but {service} did not accept it. Check it and save it again.": "Key saved, but {service} did not accept it. Check it and save it again.",
+    "Key saved, but {service} could not be reached. Choose {service} again later.": "Key saved, but {service} could not be reached. Choose {service} again later.",
+    "The key could not be saved": "The key could not be saved"
 }

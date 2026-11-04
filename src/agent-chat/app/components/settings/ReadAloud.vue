@@ -9,8 +9,12 @@ interface SpeechServices {
     models: Record<SpeechProvider, string>;
 }
 
-const KEY_REJECTED = 422;
 const NO_CREDIT = 402;
+const PROBLEM_TEXTS: Record<'key' | 'credit' | 'unavailable', string> = {
+    key: 'Key saved, but {service} did not accept it. Check it and save it again.',
+    credit: '{service} has no credit left on this account. Add credit there, then choose {service} again.',
+    unavailable: 'Key saved, but {service} could not be reached. Choose {service} again later.',
+};
 
 const { t } = useI18n();
 const { speechRate, setSpeechRate, speechVoiceFor, setSpeechVoice } = useAppearance();
@@ -30,7 +34,9 @@ const apiKey = ref('');
 const saving = ref(false);
 const switching = ref(false);
 const error = ref<string>();
-const noCredit = ref<SpeechProvider | null>(null);
+type KeyProblem = 'key' | 'credit' | 'unavailable';
+
+const problem = ref<{ provider: SpeechProvider; reason: KeyProblem } | null>(null);
 const confirmingRemove = ref(false);
 const playing = ref<string | null>(null);
 const loadingSample = ref<string | null>(null);
@@ -86,16 +92,15 @@ async function save(): Promise<void> {
     saving.value = true;
     error.value = undefined;
     try {
-        const result = await apiFetch<SpeechServices & { noCredit?: boolean }>('speech/service', { method: 'PUT', body: { provider: shown.value, apiKey: apiKey.value } });
+        const provider = shown.value as SpeechProvider;
+        const result = await apiFetch<SpeechServices & { problem?: KeyProblem }>('speech/service', { method: 'PUT', body: { provider, apiKey: apiKey.value } });
         apply(result);
-        noCredit.value = result.noCredit && shown.value !== 'device' ? shown.value : null;
+        problem.value = result.problem ? { provider, reason: result.problem } : null;
         apiKey.value = '';
         replacing.value = false;
     }
-    catch (failure) {
-        error.value = (failure as { statusCode?: number }).statusCode === KEY_REJECTED
-            ? t('The key was not accepted')
-            : t('The voice service could not be reached');
+    catch {
+        error.value = t('The key could not be saved');
     }
     finally {
         saving.value = false;
@@ -137,7 +142,7 @@ async function playSample(provider: SpeechProvider, voice: string): Promise<void
     }
     catch (failure) {
         if ((failure as { statusCode?: number }).statusCode === NO_CREDIT) {
-            noCredit.value = provider;
+            problem.value = { provider, reason: 'credit' };
         }
         else {
             error.value = t('The voice service could not be reached');
@@ -203,9 +208,9 @@ onMounted(load);
                     <UButton :label="t('Replace key')" color="neutral" variant="outline" @click="replacing = true" />
                     <UButton :label="t('Remove')" color="neutral" variant="ghost" @click="confirmingRemove = true" />
                 </div>
-                <p v-if="shown !== 'device' && noCredit === shown" class="flex items-start gap-2 rounded-lg bg-warning/10 px-3 py-2 text-sm">
+                <p v-if="problem && problem.provider === shown" class="flex items-start gap-2 rounded-lg bg-warning/10 px-3 py-2 text-sm">
                     <UIcon name="i-heroicons-exclamation-triangle" class="mt-0.5 size-4 shrink-0 text-warning" />
-                    <span>{{ t('{service} has no credit left on this account. Add credit there, then choose {service} again.', { service: shownLabel }) }}</span>
+                    <span>{{ t(PROBLEM_TEXTS[problem.reason], { service: shownLabel }) }}</span>
                 </p>
                 <template v-if="shown !== 'device' && !showForm">
                     <div class="flex flex-col gap-1.5">
