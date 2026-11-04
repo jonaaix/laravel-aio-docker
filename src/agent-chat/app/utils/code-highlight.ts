@@ -21,6 +21,9 @@ export async function grammarsFor(names: string[]): Promise<LanguageRegistration
 export async function highlightLines(code: string, language: string | string[] | null): Promise<ThemedToken[][] | null> {
     const id = [language ?? []].flat().map(resolveLanguage).find(Boolean) ?? BASIC_LANGUAGE;
     const grammar = (await bundledLanguages[id]()).default;
-    const highlighter = await getHighlighter({ themes: codeThemes, languages: [grammar], registerDefaultThemes: false });
+    const options = { themes: codeThemes, languages: [grammar], registerDefaultThemes: false };
+    // A highlighter still being created is handed out without this call's languages; the second request loads them.
+    await getHighlighter(options);
+    const highlighter = await getHighlighter(options);
     return codeToTokens(highlighter, code, { lang: id, themes: codeThemes }).tokens;
 }
