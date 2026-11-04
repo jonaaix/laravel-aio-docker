@@ -158,6 +158,22 @@ watch(suggestions, () => {
     activeSuggestion.value = 0;
 });
 
+const speechProvider = useSpeechProvider();
+const dictation = useDictation(insertDictation);
+
+async function insertDictation(spoken: string): Promise<void> {
+    const position = Math.min(caret.value, text.value.length);
+    const before = text.value.slice(0, position);
+    const after = text.value.slice(position);
+    const inserted = `${before && !/\s$/.test(before) ? ' ' : ''}${spoken}${after && !/^\s/.test(after) ? ' ' : ''}`;
+    text.value = `${before}${inserted}${after}`;
+    await nextTick();
+    const field = textarea();
+    field?.focus();
+    field?.setSelectionRange(position + inserted.length, position + inserted.length);
+    updateCaret();
+}
+
 async function pickMention(participant: Participant): Promise<void> {
     const before = text.value.slice(0, caret.value);
     const start = before.lastIndexOf('@');
@@ -229,7 +245,7 @@ function onKeydown(event: KeyboardEvent): void {
             variant="outline"
             color="neutral"
             :placeholder="placeholder"
-            :error="error"
+            :error="error ?? dictation.error.value"
             :disabled="disabled"
             :autofocus="autofocus"
             :maxrows="MAX_ROWS"
@@ -256,6 +272,26 @@ function onKeydown(event: KeyboardEvent): void {
                 </UTooltip>
                 <input ref="fileInput" type="file" multiple class="hidden" @change="onPicked">
             </template>
+            <span v-if="dictation.state.value === 'recording'" aria-hidden="true" class="flex h-9 shrink-0 items-center gap-0.5">
+                <span
+                    v-for="(level, index) in dictation.levels.value"
+                    :key="index"
+                    class="w-0.5 rounded-full bg-error transition-[height] duration-75 ease-out"
+                    :style="{ height: `${4 + level * 20}px` }"
+                />
+            </span>
+            <UTooltip v-if="speechProvider" :text="dictation.state.value === 'recording' ? t('Stop dictation') : t('Dictate')">
+                <UButton
+                    :icon="dictation.state.value === 'recording' ? 'i-heroicons-stop' : 'i-heroicons-microphone'"
+                    :aria-label="dictation.state.value === 'recording' ? t('Stop dictation') : t('Dictate')"
+                    :loading="dictation.state.value === 'transcribing'"
+                    :color="dictation.state.value === 'recording' ? 'error' : 'neutral'"
+                    :variant="dictation.state.value === 'recording' ? 'soft' : 'ghost'"
+                    :disabled="disabled"
+                    class="shrink-0"
+                    @click="dictation.toggle"
+                />
+            </UTooltip>
             <UTooltip :text="stoppable ? t('Stop') : t('Send')">
                 <UChatPromptSubmit
                     :status="stoppable ? props.status : 'ready'"

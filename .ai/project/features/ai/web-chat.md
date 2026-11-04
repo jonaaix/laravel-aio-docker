@@ -77,6 +77,11 @@ break shows as written, the way Claude Code's terminal shows it. A very long sen
 message is shown collapsed to its beginning and can be expanded and collapsed again; it starts
 collapsed whenever the conversation is opened. Copying always takes the whole message.
 
+While a voice service is set up for reading aloud, a microphone sits in the message input: pressing it records,
+small bars beside the stop button follow the voice so it is clear the microphone hears something, and pressing stop
+has the service write down what was said. The text lands in the input at the cursor, to be checked and sent by hand.
+A refused microphone or a failed transcript is said at the input. Without a voice service there is no microphone.
+
 Any message can also be read aloud: the speaker beside "Copy" starts reading and turns into a stop button until it is
 done; while it reads, the button stays visible without pointing at the message. With a voice service set up in the settings, a natural voice of that service reads, and a message read once
 plays again without asking the service anew; if the service fails, the device's voice reads the rest. Without a

@@ -44,6 +44,13 @@ export async function loadSpeechProvider(): Promise<SpeechProvider | null> {
     return speechProvider.value;
 }
 
+export function useSpeechProvider(): Readonly<Ref<SpeechProvider | null | undefined>> {
+    if (import.meta.client && speechProvider.value === undefined) {
+        void loadSpeechProvider().catch(() => undefined);
+    }
+    return readonly(speechProvider);
+}
+
 export function setSpeechProvider(provider: SpeechProvider | null): void {
     speechProvider.value = provider;
 }

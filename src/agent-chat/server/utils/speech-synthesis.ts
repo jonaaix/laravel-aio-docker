@@ -30,7 +30,7 @@ export class SpeechServiceError extends Error {
     }
 }
 
-async function failure(response: Response): Promise<SpeechServiceError> {
+export async function serviceFailure(response: Response): Promise<SpeechServiceError> {
     const body = await response.text().catch(() => '');
     return new SpeechServiceError(REJECTED_KEY.has(response.status) || body.includes(GEMINI_INVALID_KEY));
 }
@@ -65,7 +65,7 @@ async function synthesizeWithGemini(apiKey: string, text: string): Promise<Buffe
         }),
     });
     if (!response.ok) {
-        throw await failure(response);
+        throw await serviceFailure(response);
     }
     const audio = findAudioData(await response.json());
     if (!audio) {
@@ -82,7 +82,7 @@ async function synthesizeWithElevenLabs(apiKey: string, text: string): Promise<B
         body: JSON.stringify({ text, model_id: setup.model }),
     });
     if (!response.ok) {
-        throw await failure(response);
+        throw await serviceFailure(response);
     }
     return Buffer.from(await response.arrayBuffer());
 }
