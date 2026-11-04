@@ -10,17 +10,17 @@
     const Z_INDEX = 2147483000;
 
     const LABELS = {
-        en: { open: 'Open chat', close: 'Close chat' },
-        de: { open: 'Chat öffnen', close: 'Chat schließen' },
-        fr: { open: 'Ouvrir le chat', close: 'Fermer le chat' },
-        nl: { open: 'Chat openen', close: 'Chat sluiten' },
-        es: { open: 'Abrir chat', close: 'Cerrar chat' },
-        it: { open: 'Apri chat', close: 'Chiudi chat' },
+        en: { open: 'Open AI chat', close: 'Close chat' },
+        de: { open: 'KI-Chat öffnen', close: 'Chat schließen' },
+        fr: { open: 'Ouvrir le chat IA', close: 'Fermer le chat' },
+        nl: { open: 'AI-chat openen', close: 'Chat sluiten' },
+        es: { open: 'Abrir chat de IA', close: 'Cerrar chat' },
+        it: { open: 'Apri chat IA', close: 'Chiudi chat' },
     };
     const labels = LABELS[(navigator.language || 'en').slice(0, 2)] || LABELS.en;
 
     const ICONS = {
-        chat: 'M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 0 1-.825-.242m9.345-8.334a2.126 2.126 0 0 0-.476-.095 48.64 48.64 0 0 0-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0 0 11.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155',
+        sparkles: 'M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z',
         close: 'm8.25 4.5 7.5 7.5-7.5 7.5',
     };
 
@@ -71,20 +71,33 @@
             .catcher { position: fixed; inset: 0; z-index: ${Z_INDEX + 1}; display: none; cursor: col-resize; }
             .catcher.active { display: block; }
             .controls { position: fixed; bottom: 16px; right: 16px; z-index: ${Z_INDEX}; }
-            button { position: relative; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px;
-                padding: 0; border: 0; border-radius: 9999px; cursor: pointer; background: #171717; color: #fafafa;
-                box-shadow: 0 4px 14px rgb(0 0 0 / 0.18); transition: transform 180ms ease-out; }
-            button:hover { transform: scale(1.05); }
+            button { position: relative; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px;
+                padding: 0; border: 0; border-radius: 9999px; cursor: pointer; background: rgb(255 255 255 / 0.9); color: #737373;
+                box-shadow: 0 0 0 1px rgb(0 0 0 / 0.08), 0 1px 3px rgb(0 0 0 / 0.08); backdrop-filter: blur(8px);
+                transition: transform 180ms ease-out, color 180ms ease-out; }
+            button:hover { color: #171717; }
             button:focus-visible { outline: 2px solid #3b82f6; outline-offset: 2px; }
-            svg { width: 22px; height: 22px; }
-            button::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 8px); right: 0; padding: 4px 8px;
+            svg { width: 18px; height: 18px; }
+            button.launch { width: auto; height: 40px; gap: 8px; padding: 0 16px 0 13px; color: #fff;
+                background: linear-gradient(120deg, #6366f1, #a855f7, #ec4899) 0% 50% / 200% 100%;
+                box-shadow: 0 6px 20px rgb(168 85 247 / 0.35); font: 600 14px/20px system-ui, sans-serif;
+                animation: flow 6s ease-in-out infinite alternate; }
+            button.launch:hover { color: #fff; transform: scale(1.04); }
+            button.launch svg { animation: twinkle 2.4s ease-in-out infinite; }
+            @keyframes flow { to { background-position: 100% 50%; } }
+            @keyframes twinkle { 50% { transform: scale(1.18) rotate(14deg); } }
+            @media (prefers-reduced-motion: reduce) {
+                button.launch, button.launch svg { animation: none; }
+            }
+            button[data-tip]::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 8px); right: 0; padding: 4px 8px;
                 border-radius: 6px; background: #171717; color: #fafafa; font: 500 12px/16px system-ui, sans-serif; white-space: nowrap;
                 opacity: 0; pointer-events: none; transition: opacity 120ms ease; }
-            button:hover::after, button:focus-visible::after { opacity: 1; }
+            button[data-tip]:hover::after, button[data-tip]:focus-visible::after { opacity: 1; }
             @media (prefers-color-scheme: dark) {
                 .grip:hover::after, .grip.dragging::after { background: #60a5fa; }
-                button { background: #f5f5f5; color: #171717; }
-                button::after { background: #f5f5f5; color: #171717; }
+                button { background: rgb(38 38 38 / 0.9); color: #a3a3a3; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.1); }
+                button:hover { color: #f5f5f5; }
+                button[data-tip]::after { background: #f5f5f5; color: #171717; }
             }
         </style>
         <div class="panel"><div class="grip"></div></div>
@@ -113,9 +126,15 @@
         panel.classList.toggle('open', state.open);
         panel.style.width = `${state.width}px`;
         controls.style.right = state.open ? `${state.width + 16}px` : '16px';
-        toggleButton.innerHTML = icon(state.open ? 'close' : 'chat');
-        toggleButton.dataset.tip = state.open ? labels.close : labels.open;
-        toggleButton.setAttribute('aria-label', toggleButton.dataset.tip);
+        toggleButton.classList.toggle('launch', !state.open);
+        toggleButton.innerHTML = state.open ? icon('close') : `${icon('sparkles')}<span>${labels.open}</span>`;
+        if (state.open) {
+            toggleButton.dataset.tip = labels.close;
+        }
+        else {
+            delete toggleButton.dataset.tip;
+        }
+        toggleButton.setAttribute('aria-label', state.open ? labels.close : labels.open);
         toggleButton.setAttribute('aria-expanded', String(state.open));
         pageShift.textContent = state.open ? `
             html { margin-right: ${state.width}px !important; scrollbar-width: thin; scrollbar-color: rgb(0 0 0 / 0.22) transparent; }
