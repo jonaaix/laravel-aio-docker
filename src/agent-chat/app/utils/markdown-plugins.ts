@@ -84,17 +84,38 @@ function hasHighlightableCode(tree: MarkdownDocument): boolean {
     return found;
 }
 
+function codeBlockAttributes(tree: MarkdownDocument): Record<string, unknown>[] {
+    const blocks: Record<string, unknown>[] = [];
+    visit(tree, node => Array.isArray(node) && node[0] === 'pre', (node) => {
+        blocks.push(((node as unknown[])[1] ?? {}) as Record<string, unknown>);
+    });
+    return blocks;
+}
+
 const lazyHighlight = {
     name: 'shiki',
     async post(state: { tree: MarkdownDocument }) {
         if (!hasHighlightableCode(state.tree)) {
             return;
         }
-        const [{ highlightCodeBlocks }, { codeLanguages, codeThemes }] = await Promise.all([
+        const [{ getHighlighter, highlightCodeBlocks }, { codeLanguages, codeThemes }, { BASIC_LANGUAGE, grammarsFor, resolveLanguage }] = await Promise.all([
             import('@comark/nuxt/plugins/shiki'),
             import('./code-languages'),
+            import('./code-highlight'),
         ]);
-        state.tree = await highlightCodeBlocks(state.tree, { preStyles: false, registerDefaultThemes: false, themes: codeThemes, languages: codeLanguages });
+        const blocks = codeBlockAttributes(state.tree);
+        for (const attributes of blocks) {
+            attributes.language = (typeof attributes.language === 'string' ? resolveLanguage(attributes.language) : null) ?? BASIC_LANGUAGE;
+        }
+        const options = {
+            preStyles: false,
+            registerDefaultThemes: false,
+            themes: codeThemes,
+            languages: [...codeLanguages, ...await grammarsFor(blocks.map(attributes => attributes.language as string))],
+        };
+        // A highlighter still being created is handed out without this call's languages; the second request loads them.
+        await getHighlighter(options);
+        state.tree = await highlightCodeBlocks(state.tree, options);
     },
 };
 

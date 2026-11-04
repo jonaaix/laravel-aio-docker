@@ -85,6 +85,8 @@ while the agent works, with line numbers, long diffs cut to their first lines an
 panel beside the conversation, unless it was deleted: with line numbers, the lines the change added marked,
 and scrolled to the first of them; with several changes, arrows next to "1 of 3" step through them. Files git ignores do not show and cannot be opened, and the project's
 own git state (staged changes, commits) is never touched.
+Code blocks in answers are highlighted in the language they name, any language highlighting knows; a block
+that names none, or one highlighting does not know, still gets the basic highlighting rather than none.
 
 Any message can be copied with one click. To comment on specific passages, the user selects text
 in the conversation and quotes it: the passage lands in the message input as a quote with the
