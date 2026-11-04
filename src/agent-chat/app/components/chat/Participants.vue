@@ -59,7 +59,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
                 <button
                     type="button"
                     :aria-label="t('Agents')"
-                    class="relative z-0 -ms-2 flex size-9 lg:ms-1 items-center justify-center rounded-full bg-default text-muted ring ring-accented transition-colors hover:text-default"
+                    class="relative z-0 -ms-2 flex size-9 lg:ms-1 items-center justify-center rounded-full bg-default text-muted ring ring-accented transition-colors duration-500 ease-out hover:bg-[color-mix(in_oklab,var(--ui-primary)_10%,var(--ui-bg))] hover:text-default"
                 >
                     <UIcon name="i-heroicons-plus" class="size-5" />
                 </button>
