@@ -1,5 +1,6 @@
 import breaks from '@comark/nuxt/plugins/breaks';
 import { visit } from '@comark/nuxt/utils';
+import { markTone } from './mark-tones';
 
 const EXTERNAL_LINK = /^https?:\/\//i;
 
@@ -120,15 +121,10 @@ const lazyHighlight = {
 };
 
 const TONED_BLOCK = 'my-3 rounded-lg px-4 py-3';
-const PARAGRAPH_TONES: [mark: string, tone: string][] = [
-    ['⚠', 'bg-warning/10'],
-    ['❌', 'bg-error/10'],
-];
 
 function paragraphTone(node: unknown): string | null {
     const first = Array.isArray(node) && node[0] === 'p' ? node[2] : undefined;
-    const text = typeof first === 'string' ? first.trimStart() : '';
-    return PARAGRAPH_TONES.find(([mark]) => text.startsWith(mark))?.[1] ?? null;
+    return typeof first === 'string' ? markTone(first) : null;
 }
 
 const tonedParagraphs = {

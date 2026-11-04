@@ -186,8 +186,8 @@ its reply, and the user answers with the next message.
 Sections the agent marks off with bars — a bar, a title such as "🎯 Plan", another bar — appear
 each as a quiet block with a light grey surface and rounded corners, the title on top, without frame or lines; the
 bars themselves are not shown. The summary, next-step and question sections look the same. A paragraph that
-starts with "⚠️" becomes a block of the same quiet kind, tinted amber, one that starts with "❌" tinted red; other marks
-at the start of a line stay text. The plan ("🎯"), summary ("🔑"), next-step ("🚀") and questions ("❓") sections are also
+starts with "⚠️" becomes a block of the same quiet kind, tinted amber, one that starts with "❌" tinted red, and so does a section whose
+title starts with one of these marks; other marks at the start of a line stay text. The plan ("🎯"), summary ("🔑"), next-step ("🚀") and questions ("❓") sections are also
 recognised when the agent forgets the bars: after a blank line, their mark and a short title open the section,
 on a line of their own or followed by a colon and the section's first text ("🚀 Next: …"). Without bars a summary or
 next-step section ends with its paragraph; the others run to the next bar or section. The agent that forgot them gets a short reminder
