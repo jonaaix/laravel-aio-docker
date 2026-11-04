@@ -243,5 +243,9 @@
     "Unblock": "Débloquer",
     "Block": "Bloquer",
     "Actions for {name}": "Actions pour {name}",
-    "Could not change this person": "Impossible de modifier cette personne"
+    "Could not change this person": "Impossible de modifier cette personne",
+    "Hide account details": "Masquer les détails du compte",
+    "Show account details": "Afficher les détails du compte",
+    "Account details hidden": "Détails du compte masqués",
+    "People can be set differently under People.": "Réglable différemment par personne sous Personnes."
 }

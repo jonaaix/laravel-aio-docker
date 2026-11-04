@@ -22,6 +22,7 @@ export const users = sqliteTable('users', {
     appUserRef: text('app_user_ref'),
     isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
     blockedAt: integer('blocked_at'),
+    accountDetails: text('account_details', { enum: ['shown', 'hidden'] }),
     createdAt: integer('created_at').notNull(),
 }, table => [uniqueIndex('users_name_unique').on(table.name), uniqueIndex('users_app_user_ref_unique').on(table.appUserRef)]);
 

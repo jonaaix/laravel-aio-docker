@@ -12,4 +12,5 @@ export interface ChatUser {
     speechRate: number | null;
     admin: boolean;
     blocked: boolean;
+    accountDetails: 'shown' | 'hidden' | null;
 }

@@ -218,6 +218,13 @@
       "when": 1793785056340,
       "tag": "0030_user_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "6",
+      "when": 1793785625672,
+      "tag": "0031_user_account_details",
+      "breakpoints": true
     }
   ]
 }

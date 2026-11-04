@@ -108,6 +108,7 @@ onBeforeUnmount(() => {
                 v-if="user?.admin"
                 :model-value="!detailsHidden"
                 :label="t('Show account details to everyone')"
+                :description="t('People can be set differently under People.')"
                 :loading="visibilityBusy"
                 :disabled="visibilityBusy"
                 @update:model-value="value => setDetailsHidden(value !== true)"

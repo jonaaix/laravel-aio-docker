@@ -243,5 +243,9 @@
     "Unblock": "Deblokkeren",
     "Block": "Blokkeren",
     "Actions for {name}": "Acties voor {name}",
-    "Could not change this person": "Deze persoon kon niet worden gewijzigd"
+    "Could not change this person": "Deze persoon kon niet worden gewijzigd",
+    "Hide account details": "Accountgegevens verbergen",
+    "Show account details": "Accountgegevens tonen",
+    "Account details hidden": "Accountgegevens verborgen",
+    "People can be set differently under People.": "Per persoon anders in te stellen onder Personen."
 }

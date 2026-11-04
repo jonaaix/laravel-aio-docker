@@ -57,12 +57,14 @@ a conversation opens the same window at Agents.
   says "Claude is not signed in" and its "Sign in" opens this category; while a usage limit is reached,
   it says "Usage limit reached" with the time agents can answer again. Usage figures start over with
   every sign-in and sign-out, so they never show another account's usage.
-  Admins see a switch "Show account details to everyone", on by default. Switched off, everyone but the
-  admins sees the account only as "Claude account" with its session usage: no e-mail, organisation, plan
-  or weekly usage reaches their browser. Switching and signing out stay open to everyone, so a friend
+  Admins see a switch "Show account details to everyone", on by default; it sets what everyone sees unless
+  People sets a person differently. Hidden from someone, the account shows to them only as "Claude account"
+  with its session usage: no e-mail, organisation, plan or weekly usage reaches their browser. Admins always
+  see the details. Switching and signing out stay open to everyone, so a friend
   can sign in their own account.
 - **People** appears only for admins. It lists everyone who has signed in to the chat, marking the admins
-  and the blocked. An admin can make others admins, take the role away again (also from themselves) and
+  and the blocked, and showing a crossed-out eye beside anyone the account details are hidden from. An admin
+  can show or hide the account details for a single person, apart from what everyone else sees, make others admins, take the role away again (also from themselves) and
   block or unblock anyone but themselves. A blocked person is no longer an admin, is signed out of every
   open browser at once and is refused by every later sign-in link from the Laravel app.
   Becoming an admin is hidden: tapping one's own picture in Profile seven times in quick succession makes

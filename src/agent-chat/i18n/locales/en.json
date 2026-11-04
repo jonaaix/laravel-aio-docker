@@ -243,5 +243,9 @@
     "Unblock": "Unblock",
     "Block": "Block",
     "Actions for {name}": "Actions for {name}",
-    "Could not change this person": "Could not change this person"
+    "Could not change this person": "Could not change this person",
+    "Hide account details": "Hide account details",
+    "Show account details": "Show account details",
+    "Account details hidden": "Account details hidden",
+    "People can be set differently under People.": "People can be set differently under People."
 }

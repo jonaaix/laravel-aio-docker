@@ -243,5 +243,9 @@
     "Unblock": "Entsperren",
     "Block": "Sperren",
     "Actions for {name}": "Aktionen für {name}",
-    "Could not change this person": "Die Person konnte nicht geändert werden"
+    "Could not change this person": "Die Person konnte nicht geändert werden",
+    "Hide account details": "Account-Details verbergen",
+    "Show account details": "Account-Details zeigen",
+    "Account details hidden": "Account-Details verborgen",
+    "People can be set differently under People.": "Unter „Personen“ lässt sich das pro Person abweichend einstellen."
 }

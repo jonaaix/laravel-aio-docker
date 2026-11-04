@@ -17,6 +17,8 @@ hidden details, and a taken name is refused.
       their `userRef` are refused (403), redeeming one is refused
 - [x] Switch "Show account details to everyone" (default: shown); hidden → non-admins get no email,
       organisation, plan or weekly usage from the server, only the session usage
+- [x] Per person: show or hide the account details apart from the default (`users.account_details`, only stored
+      where it differs from the default at the time it is set)
 - [x] Feature Book: chat settings chapter
 
 ## State

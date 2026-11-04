@@ -70,18 +70,24 @@ export function setAccountDetailsHidden(hidden: boolean): void {
     publishConversationListEvent({ type: 'account' });
 }
 
+export function detailsHiddenFrom(user: UserRow): boolean {
+    if (user.isAdmin) {
+        return false;
+    }
+    return user.accountDetails ? user.accountDetails === 'hidden' : accountDetailsHidden();
+}
+
 export function visibleUsage(usageSnapshot: UsageSnapshot | null, user: UserRow): UsageSnapshot | null {
-    return usageSnapshot && accountDetailsHidden() && !user.isAdmin ? { ...usageSnapshot, week: null } : usageSnapshot;
+    return usageSnapshot && detailsHiddenFrom(user) ? { ...usageSnapshot, week: null } : usageSnapshot;
 }
 
 export async function accountStatusFor(user: UserRow): Promise<AccountStatus> {
     profile ??= readProfile();
     const current = await profile;
-    const detailsHidden = accountDetailsHidden();
     return {
-        profile: current && detailsHidden && !user.isAdmin ? HIDDEN_PROFILE : current,
+        profile: current && detailsHiddenFrom(user) ? HIDDEN_PROFILE : current,
         usage: visibleUsage(storedUsage(), user),
-        detailsHidden,
+        detailsHidden: accountDetailsHidden(),
     };
 }
 
