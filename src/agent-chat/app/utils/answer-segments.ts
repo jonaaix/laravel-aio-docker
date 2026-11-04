@@ -4,7 +4,7 @@ import type { ChatMessage, ChatPart } from '#shared/types/conversation';
 export type AnswerSegment =
     | { kind: 'part'; key: string; part: ChatPart }
     | { kind: 'images'; key: string; parts: FileUIPart[] }
-    | { kind: 'stop-hook'; key: string; text: string }
+    | { kind: 'stop-hook'; key: string; paragraphs: string[] }
     | { kind: 'compacted'; key: string };
 
 function isImage(part: ChatPart): part is FileUIPart {
@@ -24,9 +24,10 @@ export function answerSegments(message: ChatMessage): AnswerSegment[] {
             return;
         }
         if (afterStopHook) {
-            const text = part.type === 'text' ? part.text.split('\n').filter(line => !SECTION_BAR.test(line) && line.trim()).join('\n').trim() : '';
-            if (text) {
-                segments.push({ kind: 'stop-hook', key: `${message.id}-${index}`, text });
+            const text = part.type === 'text' ? part.text.split('\n').filter(line => !SECTION_BAR.test(line)).join('\n') : '';
+            const paragraphs = text.split(/\n\s*\n/).map(paragraph => paragraph.trim()).filter(Boolean);
+            if (paragraphs.length > 0) {
+                segments.push({ kind: 'stop-hook', key: `${message.id}-${index}`, paragraphs });
             }
             return;
         }
