@@ -54,7 +54,7 @@ const hasActions = computed(() => active.value === 'agents');
                         {{ t(category.label) }}
                     </button>
                 </nav>
-                <div class="min-w-0 flex-1 p-4 sm:p-5">
+                <div class="min-w-0 flex-1 p-4 pb-8 sm:p-5 sm:pb-10">
                     <SettingsAppearance v-if="active === 'appearance'" />
                     <SettingsChat v-else-if="active === 'chat'" />
                     <SettingsReadAloud v-else-if="active === 'speech'" />
