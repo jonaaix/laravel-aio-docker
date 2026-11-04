@@ -119,8 +119,28 @@ const lazyHighlight = {
     },
 };
 
+const WARNING_MARK = '⚠';
+const WARNING_CLASS = 'my-3 rounded-lg bg-warning/10 px-4 py-3';
+
+function startsWithWarning(node: unknown): boolean {
+    const first = Array.isArray(node) && node[0] === 'p' ? node[2] : undefined;
+    return typeof first === 'string' && first.trimStart().startsWith(WARNING_MARK);
+}
+
+const warningParagraphs = {
+    name: 'warning-paragraphs',
+    post(state: { tree: MarkdownDocument }) {
+        visit(state.tree, startsWithWarning, (node) => {
+            const attributes = ((node as unknown[])[1] ?? {}) as Record<string, unknown>;
+            attributes.class = typeof attributes.class === 'string' ? `${attributes.class} ${WARNING_CLASS}` : WARNING_CLASS;
+            (node as unknown[])[1] = attributes;
+        });
+    },
+};
+
 export const markdownPlugins = [
     breaks(),
     externalLinksInNewTab,
+    warningParagraphs,
     lazyHighlight,
 ];
