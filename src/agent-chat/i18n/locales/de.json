@@ -252,5 +252,6 @@
     "{current} of {total}": "{current} von {total}",
     "Changes": "Änderungen",
     "Close changes": "Änderungen schließen",
-    "Resize changes": "Breite der Änderungen anpassen"
+    "Resize changes": "Breite der Änderungen anpassen",
+    "Press Esc again to stop": "Zum Stoppen erneut Esc drücken"
 }

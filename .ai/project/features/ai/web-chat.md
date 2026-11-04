@@ -155,7 +155,9 @@ token usage, cost, duration and whether it finished, was stopped or failed.
 There are no chat commands. Two controls replace the ones that mattered:
 
 - **Stop** interrupts the answer currently being produced. The conversation stays open and can
-  continue with the next message.
+  continue with the next message. Pressing Esc twice within two seconds stops as well: the first press shows
+  "Press Esc again to stop" above the message input; while a dialog, menu or suggestion list is open, Esc only
+  closes that.
 - **Pause** ends the running agent session but keeps the conversation resumable. Sending a new
   message picks the conversation up again. While the paused session starts up again, the dots
   waiting for the answer say "Starting…".

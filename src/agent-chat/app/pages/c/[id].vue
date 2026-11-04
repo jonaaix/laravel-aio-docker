@@ -161,6 +161,8 @@ watch(changesPanelAvailable, (available) => {
     }
 });
 
+const stopArmed = useEscapeToStop(() => chatStatus.value === 'streaming' || chatStatus.value === 'submitted', () => void stop());
+
 function changesShownFor(messageId: string): boolean {
     return (changesPanelShown.value || changesOverlayOpen.value) && changesMessage.value?.id === messageId;
 }
@@ -613,6 +615,11 @@ const restoreConversation = () => withFlag(archiving, restore);
                                     </template>
                                 </i18n-t>
                             </div>
+                        </Transition>
+                    </div>
+                    <div class="relative">
+                        <Transition enter-active-class="transition-opacity duration-150 ease-out" enter-from-class="opacity-0" leave-active-class="transition-opacity duration-150 ease-in" leave-to-class="opacity-0">
+                            <p v-if="stopArmed" class="pointer-events-none absolute inset-x-0 -top-6 text-center text-xs text-muted">{{ t('Press Esc again to stop') }}</p>
                         </Transition>
                     </div>
                     <ChatComposer

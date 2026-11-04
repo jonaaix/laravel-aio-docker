@@ -252,5 +252,6 @@
     "{current} of {total}": "{current} of {total}",
     "Changes": "Changes",
     "Close changes": "Close changes",
-    "Resize changes": "Resize changes"
+    "Resize changes": "Resize changes",
+    "Press Esc again to stop": "Press Esc again to stop"
 }
