@@ -14,7 +14,6 @@
     "Agents can answer again at {time}.": "Les agents pourront répondre à nouveau à {time}.",
     "Agents can't answer until a Claude subscription is signed in.": "Les agents ne peuvent pas répondre tant qu'aucun abonnement Claude n'est connecté.",
     "Amber": "Ambre",
-    "API key": "Clé API",
     "Appearance": "Apparence",
     "Archive": "Archiver",
     "Archived": "Archivée",
@@ -186,7 +185,6 @@
     "The answer could not be completed": "La réponse n'a pas pu être terminée",
     "The code was not accepted": "Le code n'a pas été accepté",
     "The file could not be loaded": "Impossible de charger le fichier",
-    "The key is deleted. Your device's voice reads instead.": "La clé est supprimée. La voix de votre appareil lit à la place.",
     "The key was not accepted": "La clé n'a pas été acceptée",
     "The quick brown fox jumps over the lazy dog": "Portez ce vieux whisky au juge blond qui fume",
     "The recording could not be transcribed": "L'enregistrement n'a pas pu être transcrit",
@@ -217,7 +215,6 @@
     "Voice service": "Service vocal",
     "Week": "Semaine",
     "What should we work on?": "Sur quoi travaillons-nous ?",
-    "Without a key, your device's voice reads.": "Sans clé, la voix de votre appareil lit.",
     "Worked · 1 step | Worked · {count} steps": "Terminé · 1 étape | Terminé · {count} étapes",
     "Working": "En cours",
     "Working…": "En cours…",
@@ -254,5 +251,10 @@
     "Resize changes": "Redimensionner les modifications",
     "Press Esc again to stop": "Appuyez à nouveau sur Échap pour arrêter",
     "Show file changes automatically": "Afficher automatiquement les modifications de fichiers",
-    "Chat": "Chat"
+    "Chat": "Chat",
+    "Device": "Appareil",
+    "Your device's own voice reads aloud.": "La voix de votre appareil lit à voix haute.",
+    "{service} API key": "Clé API {service}",
+    "The {service} key is deleted.": "La clé {service} est supprimée.",
+    "Could not switch the voice service": "Impossible de changer de service vocal"
 }

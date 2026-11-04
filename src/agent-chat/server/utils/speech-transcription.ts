@@ -1,6 +1,8 @@
+import type { SpeechProvider } from '../../shared/utils/speech';
 import type { SpeechService } from './speech-service';
 
 const ELEVENLABS_MODEL = 'scribe_v2';
+const OPENAI_MODEL = 'gpt-4o-transcribe';
 const GEMINI_MODEL = 'gemini-3.8-flash';
 const GEMINI_API_REVISION = '2026-05-20';
 const GEMINI_PROMPT = 'Transcribe this recording exactly as spoken, in the language spoken. Reply with the transcript only.';
@@ -71,9 +73,24 @@ async function transcribeWithGemini(apiKey: string, recording: Recording): Promi
     return text;
 }
 
+async function transcribeWithOpenAI(apiKey: string, recording: Recording): Promise<string> {
+    const form = new FormData();
+    form.append('model', OPENAI_MODEL);
+    form.append('file', new Blob([new Uint8Array(recording.data)], { type: baseMediaType(recording.mediaType) }), `recording.${baseMediaType(recording.mediaType).split('/')[1] ?? 'webm'}`);
+    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', { method: 'POST', headers: { authorization: `Bearer ${apiKey}` }, body: form });
+    if (!response.ok) {
+        throw await serviceFailure(response);
+    }
+    const { text } = await response.json() as { text?: unknown };
+    return typeof text === 'string' ? text : '';
+}
+
+const TRANSCRIBERS: Record<SpeechProvider, (apiKey: string, recording: Recording) => Promise<string>> = {
+    gemini: transcribeWithGemini,
+    elevenlabs: transcribeWithElevenLabs,
+    openai: transcribeWithOpenAI,
+};
+
 export async function transcribeSpeech(service: SpeechService, recording: Recording): Promise<string> {
-    const text = service.provider === 'elevenlabs'
-        ? await transcribeWithElevenLabs(service.apiKey, recording)
-        : await transcribeWithGemini(service.apiKey, recording);
-    return text.trim();
+    return (await TRANSCRIBERS[service.provider](service.apiKey, recording)).trim();
 }

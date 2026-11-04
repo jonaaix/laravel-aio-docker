@@ -14,7 +14,6 @@
     "Agents can answer again at {time}.": "Agenten können ab {time} wieder antworten.",
     "Agents can't answer until a Claude subscription is signed in.": "Agenten können erst antworten, wenn ein Claude-Abo angemeldet ist.",
     "Amber": "Bernstein",
-    "API key": "API-Schlüssel",
     "Appearance": "Darstellung",
     "Archive": "Archivieren",
     "Archived": "Archiviert",
@@ -186,7 +185,6 @@
     "The answer could not be completed": "Die Antwort konnte nicht abgeschlossen werden",
     "The code was not accepted": "Der Code wurde nicht akzeptiert",
     "The file could not be loaded": "Die Datei konnte nicht geladen werden",
-    "The key is deleted. Your device's voice reads instead.": "Der Schlüssel wird gelöscht. Danach liest die Stimme deines Geräts.",
     "The key was not accepted": "Der Schlüssel wurde nicht akzeptiert",
     "The quick brown fox jumps over the lazy dog": "Franz jagt im komplett verwahrlosten Taxi quer durch Bayern",
     "The recording could not be transcribed": "Die Aufnahme konnte nicht umgeschrieben werden",
@@ -217,7 +215,6 @@
     "Voice service": "Sprachdienst",
     "Week": "Woche",
     "What should we work on?": "Woran arbeiten wir?",
-    "Without a key, your device's voice reads.": "Ohne Schlüssel liest die Stimme deines Geräts.",
     "Worked · 1 step | Worked · {count} steps": "Gearbeitet · 1 Schritt | Gearbeitet · {count} Schritte",
     "Working": "Arbeitet",
     "Working…": "Arbeitet…",
@@ -254,5 +251,10 @@
     "Resize changes": "Breite der Änderungen anpassen",
     "Press Esc again to stop": "Zum Stoppen erneut Esc drücken",
     "Show file changes automatically": "Dateiänderungen automatisch anzeigen",
-    "Chat": "Chat"
+    "Chat": "Chat",
+    "Device": "Gerät",
+    "Your device's own voice reads aloud.": "Die eigene Stimme deines Geräts liest vor.",
+    "{service} API key": "{service}-API-Schlüssel",
+    "The {service} key is deleted.": "Der {service}-Schlüssel wird gelöscht.",
+    "Could not switch the voice service": "Der Sprachdienst konnte nicht gewechselt werden"
 }

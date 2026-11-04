@@ -19,6 +19,7 @@ interface VoiceSetup {
 const VOICES: Record<SpeechProvider, VoiceSetup> = {
     gemini: { model: 'gemini-3.8-flash-lite-tts', voice: 'Sulafat', mediaType: 'audio/wav', extension: 'wav' },
     elevenlabs: { model: 'eleven_flash_v2_5', voice: 'JBFqnCBsd6RMkjVDRZzb', mediaType: 'audio/mpeg', extension: 'mp3' },
+    openai: { model: 'gpt-4o-mini-tts', voice: 'coral', mediaType: 'audio/mpeg', extension: 'mp3' },
 };
 
 const REJECTED_KEY = new Set([401, 403]);
@@ -87,12 +88,28 @@ async function synthesizeWithElevenLabs(apiKey: string, text: string): Promise<B
     return Buffer.from(await response.arrayBuffer());
 }
 
+async function synthesizeWithOpenAI(apiKey: string, text: string): Promise<Buffer> {
+    const setup = VOICES.openai;
+    const response = await fetch('https://api.openai.com/v1/audio/speech', {
+        method: 'POST',
+        headers: { 'authorization': `Bearer ${apiKey}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ model: setup.model, voice: setup.voice, input: text, response_format: setup.extension }),
+    });
+    if (!response.ok) {
+        throw await serviceFailure(response);
+    }
+    return Buffer.from(await response.arrayBuffer());
+}
+
+const SYNTHESIZERS: Record<SpeechProvider, (apiKey: string, text: string) => Promise<Buffer>> = {
+    gemini: synthesizeWithGemini,
+    elevenlabs: synthesizeWithElevenLabs,
+    openai: synthesizeWithOpenAI,
+};
+
 export async function synthesizeSpeech(service: SpeechService, text: string): Promise<SynthesizedAudio> {
-    const setup = VOICES[service.provider];
-    const data = service.provider === 'gemini'
-        ? await synthesizeWithGemini(service.apiKey, text)
-        : await synthesizeWithElevenLabs(service.apiKey, text);
-    return { data, mediaType: setup.mediaType };
+    const data = await SYNTHESIZERS[service.provider](service.apiKey, text);
+    return { data, mediaType: VOICES[service.provider].mediaType };
 }
 
 function cachePath(provider: SpeechProvider, text: string): string {

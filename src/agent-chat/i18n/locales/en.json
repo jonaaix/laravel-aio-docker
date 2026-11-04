@@ -14,7 +14,6 @@
     "Agents can answer again at {time}.": "Agents can answer again at {time}.",
     "Agents can't answer until a Claude subscription is signed in.": "Agents can't answer until a Claude subscription is signed in.",
     "Amber": "Amber",
-    "API key": "API key",
     "Appearance": "Appearance",
     "Archive": "Archive",
     "Archived": "Archived",
@@ -186,7 +185,6 @@
     "The answer could not be completed": "The answer could not be completed",
     "The code was not accepted": "The code was not accepted",
     "The file could not be loaded": "The file could not be loaded",
-    "The key is deleted. Your device's voice reads instead.": "The key is deleted. Your device's voice reads instead.",
     "The key was not accepted": "The key was not accepted",
     "The quick brown fox jumps over the lazy dog": "The quick brown fox jumps over the lazy dog",
     "The recording could not be transcribed": "The recording could not be transcribed",
@@ -217,7 +215,6 @@
     "Voice service": "Voice service",
     "Week": "Week",
     "What should we work on?": "What should we work on?",
-    "Without a key, your device's voice reads.": "Without a key, your device's voice reads.",
     "Worked · 1 step | Worked · {count} steps": "Worked · 1 step | Worked · {count} steps",
     "Working": "Working",
     "Working…": "Working…",
@@ -254,5 +251,10 @@
     "Resize changes": "Resize changes",
     "Press Esc again to stop": "Press Esc again to stop",
     "Show file changes automatically": "Show file changes automatically",
-    "Chat": "Chat"
+    "Chat": "Chat",
+    "Device": "Device",
+    "Your device's own voice reads aloud.": "Your device's own voice reads aloud.",
+    "{service} API key": "{service} API key",
+    "The {service} key is deleted.": "The {service} key is deleted.",
+    "Could not switch the voice service": "Could not switch the voice service"
 }

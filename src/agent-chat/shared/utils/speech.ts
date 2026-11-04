@@ -6,7 +6,7 @@ export function isSpeechRate(value: unknown): value is number {
     return (SPEECH_RATES as readonly unknown[]).includes(value);
 }
 
-export const SPEECH_PROVIDERS = ['gemini', 'elevenlabs'] as const;
+export const SPEECH_PROVIDERS = ['gemini', 'elevenlabs', 'openai'] as const;
 
 export type SpeechProvider = typeof SPEECH_PROVIDERS[number];
 

@@ -14,7 +14,6 @@
     "Agents can answer again at {time}.": "Gli agenti potranno rispondere di nuovo alle {time}.",
     "Agents can't answer until a Claude subscription is signed in.": "Gli agenti non possono rispondere finché non si accede con un abbonamento Claude.",
     "Amber": "Ambra",
-    "API key": "Chiave API",
     "Appearance": "Aspetto",
     "Archive": "Archivia",
     "Archived": "Archiviata",
@@ -186,7 +185,6 @@
     "The answer could not be completed": "Non è stato possibile completare la risposta",
     "The code was not accepted": "Il codice non è stato accettato",
     "The file could not be loaded": "Impossibile caricare il file",
-    "The key is deleted. Your device's voice reads instead.": "La chiave viene eliminata. Poi legge la voce del tuo dispositivo.",
     "The key was not accepted": "La chiave non è stata accettata",
     "The quick brown fox jumps over the lazy dog": "Pranzo d'acqua fa volti sghembi",
     "The recording could not be transcribed": "Impossibile trascrivere la registrazione",
@@ -217,7 +215,6 @@
     "Voice service": "Servizio vocale",
     "Week": "Settimana",
     "What should we work on?": "Su cosa lavoriamo?",
-    "Without a key, your device's voice reads.": "Senza chiave legge la voce del tuo dispositivo.",
     "Worked · 1 step | Worked · {count} steps": "Completato · 1 passaggio | Completato · {count} passaggi",
     "Working": "In corso",
     "Working…": "In corso…",
@@ -254,5 +251,10 @@
     "Resize changes": "Ridimensiona le modifiche",
     "Press Esc again to stop": "Premi di nuovo Esc per fermare",
     "Show file changes automatically": "Mostra automaticamente le modifiche ai file",
-    "Chat": "Chat"
+    "Chat": "Chat",
+    "Device": "Dispositivo",
+    "Your device's own voice reads aloud.": "Legge ad alta voce la voce del tuo dispositivo.",
+    "{service} API key": "Chiave API {service}",
+    "The {service} key is deleted.": "La chiave {service} viene eliminata.",
+    "Could not switch the voice service": "Impossibile cambiare il servizio vocale"
 }

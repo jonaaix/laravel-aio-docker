@@ -45,10 +45,13 @@ a conversation opens the same window at Agents.
   automatically", on by default, lets the changes panel open on its own beside the conversation (see
   [AI web chat](web-chat.md)); when off, it opens only through "N files changed" and only for that conversation.
 - **Read aloud** sets the person's reading speed — 1×, 1.25×, 1.5× (the default), 1.75× or 2× — and the voice
-  service of the whole chat: Gemini or ElevenLabs with an API key. The key is checked with the service before it is
-  stored; a key the service refuses is not stored and the field says so. Once stored, the key is never shown again —
-  the category only says which service has a key, with "Replace key" and "Remove" (which asks first). Anyone signed
-  in may replace or remove it, nobody can read it. Without a key, the device's own voice reads.
+  service of the whole chat, chosen in a strip: Device, Gemini, ElevenLabs or OpenAI. Each service keeps its own API
+  key, so several can be stored and switched between at will; choosing a service that has a key puts it to use at
+  once and marks it with a check, choosing one without shows the field for its key, while the one in use keeps
+  reading. The chosen service also transcribes dictation. A key is checked with the service before it is stored; a
+  key the service refuses is not stored and the field says so. Once stored, a key is never shown again — the strip
+  only says which service has one, with "Replace key" and "Remove" (which asks first). Anyone signed in may replace
+  or remove keys, nobody can read them. Device uses the device's own voice and leaves the keys in place.
 - **Agents** defines the agents, as described in [Agents in the chat](chat-agents.md).
 - **Claude account** signs the container's Claude Code in to a Claude subscription and out again, the
   same login a terminal `/login` creates. Signed in, it shows the account's e-mail, organisation,

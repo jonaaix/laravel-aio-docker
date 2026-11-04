@@ -21,6 +21,6 @@ export default defineEventHandler(async (event) => {
         }
         throw failure;
     }
-    storeSpeechService(service);
-    return { provider };
+    storeSpeechKey(service);
+    return speechServices();
 });

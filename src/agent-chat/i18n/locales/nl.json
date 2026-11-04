@@ -14,7 +14,6 @@
     "Agents can answer again at {time}.": "Agents kunnen om {time} weer antwoorden.",
     "Agents can't answer until a Claude subscription is signed in.": "Agents kunnen pas antwoorden als er is ingelogd met een Claude-abonnement.",
     "Amber": "Amber",
-    "API key": "API-sleutel",
     "Appearance": "Weergave",
     "Archive": "Archiveren",
     "Archived": "Gearchiveerd",
@@ -186,7 +185,6 @@
     "The answer could not be completed": "Het antwoord kon niet worden voltooid",
     "The code was not accepted": "De code is niet geaccepteerd",
     "The file could not be loaded": "Het bestand kon niet worden geladen",
-    "The key is deleted. Your device's voice reads instead.": "De sleutel wordt verwijderd. Daarna leest de stem van je apparaat.",
     "The key was not accepted": "De sleutel is niet geaccepteerd",
     "The quick brown fox jumps over the lazy dog": "Pa's wijze lynx bezag vroom het fikse aquaduct",
     "The recording could not be transcribed": "De opname kon niet worden uitgeschreven",
@@ -217,7 +215,6 @@
     "Voice service": "Spraakdienst",
     "Week": "Week",
     "What should we work on?": "Waar gaan we aan werken?",
-    "Without a key, your device's voice reads.": "Zonder sleutel leest de stem van je apparaat.",
     "Worked · 1 step | Worked · {count} steps": "Gewerkt · 1 stap | Gewerkt · {count} stappen",
     "Working": "Bezig",
     "Working…": "Bezig…",
@@ -254,5 +251,10 @@
     "Resize changes": "Breedte van wijzigingen aanpassen",
     "Press Esc again to stop": "Druk nogmaals op Esc om te stoppen",
     "Show file changes automatically": "Bestandswijzigingen automatisch tonen",
-    "Chat": "Chat"
+    "Chat": "Chat",
+    "Device": "Apparaat",
+    "Your device's own voice reads aloud.": "De eigen stem van je apparaat leest voor.",
+    "{service} API key": "{service}-API-sleutel",
+    "The {service} key is deleted.": "De {service}-sleutel wordt verwijderd.",
+    "Could not switch the voice service": "De spraakdienst kon niet worden gewisseld"
 }

@@ -14,7 +14,6 @@
     "Agents can answer again at {time}.": "Los agentes podrán responder de nuevo a las {time}.",
     "Agents can't answer until a Claude subscription is signed in.": "Los agentes no pueden responder hasta que se inicie sesión con una suscripción de Claude.",
     "Amber": "Ámbar",
-    "API key": "Clave de API",
     "Appearance": "Apariencia",
     "Archive": "Archivar",
     "Archived": "Archivada",
@@ -186,7 +185,6 @@
     "The answer could not be completed": "No se pudo completar la respuesta",
     "The code was not accepted": "El código no se ha aceptado",
     "The file could not be loaded": "No se ha podido cargar el archivo",
-    "The key is deleted. Your device's voice reads instead.": "La clave se elimina. Después lee la voz de tu dispositivo.",
     "The key was not accepted": "La clave no fue aceptada",
     "The quick brown fox jumps over the lazy dog": "El veloz murciélago hindú comía feliz cardillo y kiwi",
     "The recording could not be transcribed": "No se pudo transcribir la grabación",
@@ -217,7 +215,6 @@
     "Voice service": "Servicio de voz",
     "Week": "Semana",
     "What should we work on?": "¿En qué trabajamos?",
-    "Without a key, your device's voice reads.": "Sin clave, lee la voz de tu dispositivo.",
     "Worked · 1 step | Worked · {count} steps": "Completado · 1 paso | Completado · {count} pasos",
     "Working": "Trabajando",
     "Working…": "Trabajando…",
@@ -254,5 +251,10 @@
     "Resize changes": "Ajustar el ancho de los cambios",
     "Press Esc again to stop": "Pulsa Esc otra vez para detener",
     "Show file changes automatically": "Mostrar cambios de archivos automáticamente",
-    "Chat": "Chat"
+    "Chat": "Chat",
+    "Device": "Dispositivo",
+    "Your device's own voice reads aloud.": "La voz de tu dispositivo lee en voz alta.",
+    "{service} API key": "Clave API de {service}",
+    "The {service} key is deleted.": "Se elimina la clave de {service}.",
+    "Could not switch the voice service": "No se pudo cambiar el servicio de voz"
 }
