@@ -14,13 +14,13 @@ const freeStanding = computed(() => isVoxelBot(props.participant));
 
 <template>
     <div
-        class="flex shrink-0 items-center gap-2 select-none sm:w-24 sm:flex-col sm:gap-1"
-        :class="reverse ? 'flex-row-reverse' : 'flex-row'"
+        class="flex shrink-0 flex-col gap-1 select-none @min-[48rem]:w-24 @min-[48rem]:items-center"
+        :class="reverse ? 'items-end' : 'items-start'"
     >
-        <ParticipantAvatar :participant="participant" :class="freeStanding ? 'size-8 sm:size-11' : 'size-6 sm:size-10'" />
+        <ParticipantAvatar :participant="participant" :class="freeStanding ? 'size-11' : 'size-10'" />
         <span
             v-if="participant.name"
-            class="rounded-md bg-elevated px-1.5 py-0.5 text-xs/4 font-medium text-default sm:max-w-full sm:text-center sm:[overflow-wrap:anywhere]"
+            class="max-w-full rounded-md bg-elevated px-1.5 py-0.5 text-xs/4 font-medium text-default [overflow-wrap:anywhere] @min-[48rem]:text-center"
         >
             {{ label }}
         </span>
