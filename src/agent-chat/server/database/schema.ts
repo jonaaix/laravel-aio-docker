@@ -22,6 +22,12 @@ export const users = sqliteTable('users', {
     createdAt: integer('created_at').notNull(),
 }, table => [uniqueIndex('users_name_unique').on(table.name)]);
 
+export const settings = sqliteTable('settings', {
+    key: text('key').primaryKey(),
+    value: text('value').notNull(),
+    updatedAt: integer('updated_at').notNull(),
+});
+
 export const agents = sqliteTable('agents', {
     id: text('id').primaryKey(),
     name: text('name').notNull(),

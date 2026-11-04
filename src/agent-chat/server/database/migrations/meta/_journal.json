@@ -197,6 +197,13 @@
       "when": 1793752487024,
       "tag": "0027_user_speech_rate",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "6",
+      "when": 1793752982343,
+      "tag": "0028_settings",
+      "breakpoints": true
     }
   ]
 }

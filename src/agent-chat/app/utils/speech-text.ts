@@ -1,4 +1,4 @@
-const MAX_CHUNK_LENGTH = 200;
+const DEVICE_CHUNK_LENGTH = 200;
 
 const MARKDOWN_RULES: [RegExp, string][] = [
     [/```[\s\S]*?(?:```|$)/g, '\n'],
@@ -19,15 +19,15 @@ export function speakableText(markdown: string): string {
     return MARKDOWN_RULES.reduce((text, [pattern, replacement]) => text.replace(pattern, replacement), markdown).trim();
 }
 
-function splitLong(piece: string): string[] {
-    if (piece.length <= MAX_CHUNK_LENGTH) {
+function splitLong(piece: string, maxLength: number): string[] {
+    if (piece.length <= maxLength) {
         return [piece];
     }
     const words = piece.split(' ');
     const chunks: string[] = [];
     let current = '';
     for (const word of words) {
-        if (current && current.length + word.length + 1 > MAX_CHUNK_LENGTH) {
+        if (current && current.length + word.length + 1 > maxLength) {
             chunks.push(current);
             current = word;
         }
@@ -38,12 +38,12 @@ function splitLong(piece: string): string[] {
     return current ? [...chunks, current] : chunks;
 }
 
-export function speechChunks(text: string): string[] {
+export function speechChunks(text: string, maxLength = DEVICE_CHUNK_LENGTH): string[] {
     const sentences = text.split(/(?<=[.!?…:;])\s+|\n+/).map(sentence => sentence.trim()).filter(Boolean);
     const chunks: string[] = [];
-    for (const sentence of sentences.flatMap(splitLong)) {
+    for (const sentence of sentences.flatMap(sentence => splitLong(sentence, maxLength))) {
         const last = chunks.at(-1);
-        if (last !== undefined && last.length + sentence.length + 1 <= MAX_CHUNK_LENGTH) {
+        if (last !== undefined && last.length + sentence.length + 1 <= maxLength) {
             chunks[chunks.length - 1] = `${last} ${sentence}`;
         }
         else {

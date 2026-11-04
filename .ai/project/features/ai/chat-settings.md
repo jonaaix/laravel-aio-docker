@@ -14,7 +14,7 @@ take further categories as the chat grows.
 ## How does it work?
 
 Settings at the foot of the sidebar, below Archived, opens one Settings window with its categories on the left (on
-phones as tabs along the top): Appearance, Agents, Profile, Claude account and Remote control, opening at Appearance. "Manage agents" in the agents menu of
+phones as tabs along the top): Appearance, Read aloud, Agents, Profile, Claude account and Remote control, opening at Appearance. "Manage agents" in the agents menu of
 a conversation opens the same window at Agents.
 
 - **Profile** holds the person's name and picture, as described in
@@ -37,10 +37,15 @@ a conversation opens the same window at Agents.
   category and the light tint under anything the pointer rests on — buttons, menu items, list entries — take it,
   "New Code Session" shows its label and icon in it with a thin line around, and the
   people's message bubbles a light container tone of it — while background, sidebar, surfaces, text and borders
-  stay the plain greys of Black, in light and dark alike. It sets the reading speed for messages read aloud — 1×, 1.25×, 1.5× (the default), 1.75× or 2×. It also holds "Move sent message to top", off by default: when off, the conversation
+  stay the plain greys of Black, in light and dark alike. It also holds "Move sent message to top", off by default: when off, the conversation
   stays at the bottom after sending and follows the answer; when on, the sent message moves to the
   top with room below for the answer. Every choice applies at once and belongs to the person, so it
   follows them to every device and browser.
+- **Read aloud** sets the person's reading speed — 1×, 1.25×, 1.5× (the default), 1.75× or 2× — and the voice
+  service of the whole chat: Gemini or ElevenLabs with an API key. The key is checked with the service before it is
+  stored; a key the service refuses is not stored and the field says so. Once stored, the key is never shown again —
+  the category only says which service has a key, with "Replace key" and "Remove" (which asks first). Anyone signed
+  in may replace or remove it, nobody can read it. Without a key, the device's own voice reads.
 - **Agents** defines the agents, as described in [Agents in the chat](chat-agents.md).
 - **Claude account** signs the container's Claude Code in to a Claude subscription and out again, the
   same login a terminal `/login` creates. Signed in, it shows the account's e-mail, organisation,
