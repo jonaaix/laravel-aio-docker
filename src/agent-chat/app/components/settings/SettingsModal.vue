@@ -11,6 +11,7 @@ const { user } = useUserName();
 
 const categories = computed<{ value: SettingsCategory; label: string; icon: string }[]>(() => [
     { value: 'appearance', label: 'Appearance', icon: 'i-heroicons-swatch' },
+    { value: 'chat', label: 'Chat', icon: 'i-heroicons-chat-bubble-left-right' },
     { value: 'speech', label: 'Read aloud', icon: 'i-heroicons-speaker-wave' },
     { value: 'agents', label: 'Agents', icon: 'i-heroicons-cpu-chip' },
     { value: 'profile', label: 'Profile', icon: 'i-heroicons-user' },
@@ -55,6 +56,7 @@ const hasActions = computed(() => active.value === 'agents');
                 </nav>
                 <div class="min-w-0 flex-1 p-4 sm:p-5">
                     <SettingsAppearance v-if="active === 'appearance'" />
+                    <SettingsChat v-else-if="active === 'chat'" />
                     <SettingsReadAloud v-else-if="active === 'speech'" />
                     <SettingsAgents v-else-if="active === 'agents'" actions-target="#settings-actions" />
                     <SettingsProfile v-else-if="active === 'profile'" @unlocked="active = 'people'" />

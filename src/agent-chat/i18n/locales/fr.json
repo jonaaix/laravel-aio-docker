@@ -39,7 +39,6 @@
     "Connect again": "Se reconnecter",
     "Connect to {server}?": "Se connecter à {server} ?",
     "Continue": "Continuer",
-    "Conversation": "Conversation",
     "Conversation summarized": "Conversation résumée",
     "Conversation title": "Titre de la conversation",
     "Copied": "Copié",
@@ -254,5 +253,6 @@
     "Close changes": "Fermer les modifications",
     "Resize changes": "Redimensionner les modifications",
     "Press Esc again to stop": "Appuyez à nouveau sur Échap pour arrêter",
-    "Show file changes automatically": "Afficher automatiquement les modifications de fichiers"
+    "Show file changes automatically": "Afficher automatiquement les modifications de fichiers",
+    "Chat": "Chat"
 }

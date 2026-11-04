@@ -14,7 +14,7 @@ take further categories as the chat grows.
 ## How does it work?
 
 Settings at the foot of the sidebar, below Archived, opens one Settings window with its categories on the left (on
-phones as tabs along the top): Appearance, Read aloud, Agents, Profile, Claude account, People (admins only) and Remote control, opening at Appearance. "Manage agents" in the agents menu of
+phones as tabs along the top): Appearance, Chat, Read aloud, Agents, Profile, Claude account, People (admins only) and Remote control, opening at Appearance. "Manage agents" in the agents menu of
 a conversation opens the same window at Agents.
 
 - **Profile** holds the person's name and picture, as described in
@@ -37,12 +37,13 @@ a conversation opens the same window at Agents.
   category and the light tint under anything the pointer rests on — buttons, menu items, list entries — take it,
   "New Code Session" shows its label and icon in it with a thin line around, and the
   people's message bubbles a light container tone of it — while background, sidebar, surfaces, text and borders
-  stay the plain greys of Black, in light and dark alike. It also holds "Move sent message to top", off by default: when off, the conversation
-  stays at the bottom after sending and follows the answer; when on, the sent message moves to the
-  top with room below for the answer. "Show file changes automatically", on by default, lets the changes panel open on
-  its own beside the conversation (see [AI web chat](web-chat.md)); when off, it opens only through "N files
-  changed" and only for that conversation. Every choice applies at once and belongs to the person, so it
+  stay the plain greys of Black, in light and dark alike. Every choice applies at once and belongs to the person, so it
   follows them to every device and browser.
+- **Chat** holds how the conversation behaves, each choice belonging to the person like the appearance:
+  "Move sent message to top", off by default: when off, the conversation stays at the bottom after sending and
+  follows the answer; when on, the sent message moves to the top with room below for the answer. "Show file changes
+  automatically", on by default, lets the changes panel open on its own beside the conversation (see
+  [AI web chat](web-chat.md)); when off, it opens only through "N files changed" and only for that conversation.
 - **Read aloud** sets the person's reading speed — 1×, 1.25×, 1.5× (the default), 1.75× or 2× — and the voice
   service of the whole chat: Gemini or ElevenLabs with an API key. The key is checked with the service before it is
   stored; a key the service refuses is not stored and the field says so. Once stored, the key is never shown again —

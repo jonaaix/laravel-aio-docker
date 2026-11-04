@@ -1,6 +1,6 @@
 import { SettingsModal } from '#components';
 
-export type SettingsCategory = 'profile' | 'appearance' | 'speech' | 'agents' | 'account' | 'people' | 'remote' | 'notifications';
+export type SettingsCategory = 'profile' | 'appearance' | 'chat' | 'speech' | 'agents' | 'account' | 'people' | 'remote' | 'notifications';
 
 export function useSettingsWindow() {
     const overlay = useOverlay();
