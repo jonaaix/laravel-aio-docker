@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, rmSync } from 'node:fs';
-import { dirname, isAbsolute, join } from 'node:path';
+import { copyFileSync, existsSync, mkdirSync, realpathSync, rmSync } from 'node:fs';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { promisify } from 'node:util';
 import type { FileChange } from '../../shared/types/conversation';
 
@@ -70,6 +70,32 @@ function withinBudget(changes: FileChange[]): FileChange[] {
 
 export function parsePatch(patch: string): FileChange[] {
     return withinBudget(patch.split(/^(?=diff --git )/m).filter(section => section.startsWith('diff --git ')).map(fileChange));
+}
+
+async function isIgnored(root: string, path: string): Promise<boolean | null> {
+    try {
+        await run('git', ['check-ignore', '--quiet', '--', path], { cwd: root });
+        return true;
+    }
+    catch (error) {
+        return (error as { code?: unknown }).code === 1 ? false : null;
+    }
+}
+
+export async function projectFilePath(dir: string, path: string): Promise<string | null> {
+    try {
+        const { stdout } = await run('git', ['rev-parse', '--show-toplevel'], { cwd: dir });
+        const root = realpathSync(stdout.trim());
+        const target = realpathSync(resolve(root, path));
+        const inside = relative(root, target);
+        if (!target.startsWith(root + sep) || inside.split(sep)[0] === '.git') {
+            return null;
+        }
+        return await isIgnored(root, inside) === false ? target : null;
+    }
+    catch {
+        return null;
+    }
 }
 
 export class WorkingTree {

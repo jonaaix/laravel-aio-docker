@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { WorkingTree, parsePatch } from '../server/utils/working-tree.ts';
+import { WorkingTree, parsePatch, projectFilePath } from '../server/utils/working-tree.ts';
 
 function repository(): string {
     const dir = mkdtempSync(join(tmpdir(), 'working-tree-'));
@@ -54,4 +54,16 @@ test('a folder outside git has no working tree', async () => {
 test('a renamed file keeps its previous path', () => {
     const [change] = parsePatch('diff --git a/a.txt b/b.txt\nsimilarity index 100%\nrename from a.txt\nrename to b.txt\n');
     assert.deepEqual([change!.path, change!.previousPath, change!.status], ['b.txt', 'a.txt', 'renamed']);
+});
+
+test('only files git keeps inside the project can be opened', async () => {
+    const dir = repository();
+    writeFileSync(join(dir, '.env'), 'APP_KEY=secret\n');
+    writeFileSync(join(dir, '.gitignore'), 'vendor/\n.env\n');
+    assert.equal(await projectFilePath(dir, 'app.php'), join(realpathSync(dir), 'app.php'));
+    assert.equal(await projectFilePath(dir, '.env'), null);
+    assert.equal(await projectFilePath(dir, '.git/config'), null);
+    assert.equal(await projectFilePath(dir, '../outside.txt'), null);
+    assert.equal(await projectFilePath(dir, 'missing.php'), null);
+    rmSync(dir, { recursive: true, force: true });
 });

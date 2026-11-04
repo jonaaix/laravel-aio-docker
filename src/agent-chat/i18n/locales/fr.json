@@ -247,5 +247,7 @@
     "Binary file": "Fichier binaire",
     "Diff shortened": "Diff raccourci",
     "Show 1 more line | Show {count} more lines": "Afficher 1 ligne de plus | Afficher {count} lignes de plus",
-    "1 file changed | {count} files changed": "1 fichier modifié | {count} fichiers modifiés"
+    "1 file changed | {count} files changed": "1 fichier modifié | {count} fichiers modifiés",
+    "Show changes": "Afficher les modifications",
+    "Hide changes": "Masquer les modifications"
 }
