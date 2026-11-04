@@ -2,46 +2,44 @@
 
 ## Goal
 
-Every message in the web chat can be read aloud. Without a voice service the device's own voices read; with a
-Gemini or ElevenLabs API key stored for the whole chat, a natural voice reads instead. Finished when the button
-beside "Copy" reads at the person's speed, the key can be stored, replaced and removed but never read back, and a
-message read once plays again without a new request.
+Every message in the web chat can be read aloud, and dictation writes down what was said. Without a voice service the
+device's own voices read; with an API key of Google Cloud, Gemini, ElevenLabs or OpenAI stored for the whole chat, a
+natural voice reads and the same service transcribes. Finished when the button beside "Copy" reads at the person's
+speed, keys can be stored, replaced and removed but never read back, and a message read once plays again without a
+new request.
 
 ## Milestones
 
-- [x] Reading speed per person: column, API, setting (1×, 1.25×, 1.5×, 1.75×, 2×)
-- [x] Speakable text: message text without code blocks, tool steps, the stop hook line or markdown marks
-- [x] Language guess from common words of the six chat languages, the person's chat language for short texts
-- [x] Read-aloud button beside "Copy" on every message, turning into a stop button while reading
-- [x] Voice service key: settings table, key encrypted with the chat's signing key, write-only API (status, store
-      with a check against the provider, remove)
-- [x] Server-side synthesis for Gemini (`gemini-3.8-flash-lite-tts`, voice Sulafat) and ElevenLabs
-      (`eleven_flash_v2_5`, voice George), audio cached on disk by provider, voice and text
-- [x] Client plays the service's audio piece by piece at the person's speed, fetching the next piece while one plays;
-      device voices when no key is stored
-- [x] Settings category "Read aloud": reading speed (moved from Appearance), provider and key
+- [x] Reading speed per person, speakable text, language guess, read-aloud button
+- [x] Voice service keys per provider, sealed with the chat's signing key, write-only API, stored first and checked after
+- [x] Synthesis and transcription for Gemini, ElevenLabs and OpenAI; audio cached on disk
+- [x] Quality per service with hourly cost, six voices per service with samples, voice per person
+- [x] Google Cloud: Cloud Text-to-Speech (WaveNet, Chirp 3 HD) and Speech-to-Text v1
 - [x] Feature Book: web chat and settings chapters
 
 ## State
 
-- Everything is built. Checked in the browser as the test user: the Read aloud category, wrong keys for both
-  services are refused ("The key was not accepted"; Gemini answers a bad key with 400 API_KEY_INVALID).
-- Not yet heard with a real key: the Gemini Interactions request and its audio field, and the ElevenLabs voice,
-  follow the providers' documentation of 2026-11-04.
+- Everything is built. Google Cloud checked with the user's real key through the chat's endpoints: samples in both
+  qualities and German/English, a German dictation transcribed correctly. Google Cloud is the active service.
+- The user's Google Cloud key was first stored under Gemini; the sealed row was copied to the Google Cloud slot and
+  still sits under Gemini, where Google answers 403 API_KEY_SERVICE_BLOCKED.
+- Not yet heard with a real key: OpenAI.
 
 ## Decisions
 
-- Device speech synthesis as the fallback: free, instant, works on iPhone (user's call).
-- Language comes from the text, not from the chat language, so an English answer gets an English voice (user's call).
-  The services detect the language themselves.
-- One key for the whole chat; anyone signed in may replace or remove it, nobody can read it (user's call).
-- Both Gemini and ElevenLabs, one fixed voice each that speaks all six languages, no voice choice (user's call).
-- Generated audio is kept, so reading a message again costs nothing (user's call).
-- The key is encrypted with the chat's signing key; if that key changes, the stored key counts as missing. Anyone with
-  shell access to the container can still reach it — accepted, told to the user.
+- Device speech synthesis as the fallback (user's call).
+- One key per service for the whole chat; anyone signed in may replace or remove it, nobody can read it (user's call).
+- A key is always stored, then checked; a failed check leaves the service in use unchanged (user's call).
+- ElevenLabs' Multilingual tier is left out for its cost (user's call).
+- Google Cloud added beside Gemini, not instead of it (user's call, question 138): a Cloud key restricted to
+  Text-to-Speech/Speech-to-Text cannot call the Generative Language API behind Gemini.
+- Google voices are bound to a language: reading sends the guessed language of the text, dictation the chat language.
+  Chirp 3 HD uses the voice names directly; WaveNet has no such names, so each voice maps to the n-th WaveNet voice of
+  the same gender in that language, from Google's voice list (cached per language).
+- Speech-to-Text v1 takes about one minute of inline audio, so the browser cuts Google dictations into 55-second
+  recordings and joins the texts. Only WebM/Ogg Opus is accepted, which every current browser records.
 - The speed is applied when playing (playback rate), because ElevenLabs only allows up to 1.2× itself.
-- Long texts go out in pieces; device voices stop a single long utterance after a few seconds, and services start
-  playing sooner with short pieces.
+- Long texts go out in pieces so services start playing sooner.
 
 ## Open
 

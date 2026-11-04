@@ -1,6 +1,7 @@
 import { isSpeechProvider } from '../../../shared/utils/speech';
 
 const KEY_CHECK_TEXT = 'OK';
+const KEY_CHECK_LANGUAGE = 'en';
 
 export default defineEventHandler(async (event) => {
     sessionUser(event);
@@ -14,7 +15,7 @@ export default defineEventHandler(async (event) => {
     const service = { provider, apiKey: apiKey.trim() };
     storeSpeechKey(service);
     try {
-        await synthesizeSpeech({ ...service, model: chosenSpeechModel(provider) }, KEY_CHECK_TEXT, '');
+        await synthesizeSpeech({ ...service, model: chosenSpeechModel(provider) }, KEY_CHECK_TEXT, '', KEY_CHECK_LANGUAGE);
     }
     catch (failure) {
         if (failure instanceof SpeechServiceError) {

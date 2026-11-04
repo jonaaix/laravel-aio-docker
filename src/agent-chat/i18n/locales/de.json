@@ -259,6 +259,7 @@
     "Quality": "Qualität",
     "Voice": "Stimme",
     "about {price} per hour": "ca. {price} pro Stunde",
+    "{hours} h free monthly, then {price}/h": "{hours} Std./Monat gratis, dann {price}/Std.",
     "Play sample": "Hörprobe abspielen",
     "Stop sample": "Hörprobe stoppen",
     "This is how I sound when I read answers to you.": "So klinge ich, wenn ich dir Antworten vorlese.",

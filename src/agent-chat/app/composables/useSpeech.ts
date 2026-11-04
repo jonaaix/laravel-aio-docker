@@ -97,7 +97,8 @@ export function useSpeech() {
 
     async function speakWithService(text: string, current: number, audio: HTMLAudioElement): Promise<void> {
         const chunks = speechChunks(text, SERVICE_CHUNK_LENGTH);
-        const fetchChunk = (chunk: string) => apiFetch<Blob>('speech', { method: 'POST', body: { text: chunk }, responseType: 'blob' });
+        const language = guessLanguage(text, locale.value);
+        const fetchChunk = (chunk: string) => apiFetch<Blob>('speech', { method: 'POST', body: { text: chunk, language }, responseType: 'blob' });
         let next = fetchChunk(chunks[0]!);
         for (let index = 0; index < chunks.length; index++) {
             let clip: Blob;

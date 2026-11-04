@@ -4,7 +4,7 @@ const MAX_SAMPLE_LENGTH = 200;
 
 export default defineEventHandler(async (event) => {
     sessionUser(event);
-    const { provider, voice, text } = await readBody<{ provider?: unknown; voice?: unknown; text?: unknown }>(event);
+    const { provider, voice, text, language } = await readBody<{ provider?: unknown; voice?: unknown; text?: unknown; language?: unknown }>(event);
     if (!isSpeechProvider(provider) || !SPEECH_VOICES[provider].some(choice => choice.id === voice)) {
         throw createError({ statusCode: 422, statusMessage: 'Unknown voice' });
     }
@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 404, statusMessage: 'This voice service has no key yet' });
     }
     try {
-        const audio = await cachedSpeech(service, text.trim(), voice as string);
+        const audio = await cachedSpeech(service, text.trim(), voice as string, typeof language === 'string' ? language : '');
         setResponseHeader(event, 'content-type', audio.mediaType);
         return audio.data;
     }

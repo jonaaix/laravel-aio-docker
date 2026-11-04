@@ -126,7 +126,9 @@ message is sent or the input is emptied. The input for a new conversation keeps 
 While a voice service is set up for reading aloud, a microphone sits in the message input: pressing it records,
 small bars beside the stop button follow the voice so it is clear the microphone hears something, and pressing stop
 has the service write down what was said. The text lands in the input at the cursor, to be checked and sent by hand.
-A refused microphone or a failed transcript is said at the input. Without a voice service there is no microphone.
+Google Cloud expects the person's chat language and handles about a minute per request, so a longer dictation is
+written down piece by piece and joined. A refused microphone or a failed transcript is said at the input. Without a
+voice service there is no microphone.
 
 Any message can also be read aloud: the speaker beside "Copy" starts reading and turns into a stop button until it is
 done; while it reads, the button stays visible without pointing at the message. With a voice service set up in the settings, a natural voice of that service reads, and a message read once
@@ -134,7 +136,8 @@ plays again without asking the service anew; if the service fails, the device's 
 service the device's own voice reads, chosen by the language the message is written in — one of the six chat
 languages, recognised by its common words — falling back to the person's chat language for very short texts. Only
 the prose is read: no code blocks, tool steps, the stop hook line, markdown marks or emoji. The speed is the person's
-reading speed from the settings (Read aloud).
+reading speed from the settings (Read aloud). Google Cloud voices belong to one language, so it reads in the
+language recognised the same way.
 
 When a stop hook of the project sends the agent back after its answer — a final code check, say — the answer
 still ends where the agent finished it. What the agent replies to the hook follows as a small grey line behind a

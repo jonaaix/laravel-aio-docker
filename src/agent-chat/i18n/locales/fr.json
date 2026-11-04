@@ -259,6 +259,7 @@
     "Quality": "Qualité",
     "Voice": "Voix",
     "about {price} per hour": "env. {price} par heure",
+    "{hours} h free monthly, then {price}/h": "{hours} h gratuites par mois, puis {price}/h",
     "Play sample": "Écouter un extrait",
     "Stop sample": "Arrêter l'extrait",
     "This is how I sound when I read answers to you.": "Voici ma voix quand je vous lis les réponses.",

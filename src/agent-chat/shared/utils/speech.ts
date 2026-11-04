@@ -6,7 +6,7 @@ export function isSpeechRate(value: unknown): value is number {
     return (SPEECH_RATES as readonly unknown[]).includes(value);
 }
 
-export const SPEECH_PROVIDERS = ['gemini', 'elevenlabs', 'openai'] as const;
+export const SPEECH_PROVIDERS = ['google', 'gemini', 'elevenlabs', 'openai'] as const;
 
 export type SpeechProvider = typeof SPEECH_PROVIDERS[number];
 
@@ -18,6 +18,7 @@ export interface SpeechModel {
     id: string;
     label: string;
     dollarsPerHour: number;
+    freeHoursPerMonth?: number;
 }
 
 export interface SpeechVoice {
@@ -27,6 +28,10 @@ export interface SpeechVoice {
 
 // List prices as of 2026-11, converted to one hour of reading (about 55,000 characters); ElevenLabs' Multilingual tier is left out on purpose for its cost.
 export const SPEECH_MODELS: Record<SpeechProvider, SpeechModel[]> = {
+    google: [
+        { id: 'wavenet', label: 'WaveNet', dollarsPerHour: 0.22, freeHoursPerMonth: 72 },
+        { id: 'chirp3-hd', label: 'Chirp 3 HD', dollarsPerHour: 1.65, freeHoursPerMonth: 18 },
+    ],
     gemini: [
         { id: 'gemini-3.8-flash-lite-tts', label: 'Flash-Lite', dollarsPerHour: 0.55 },
         { id: 'gemini-3.8-flash-tts', label: 'Flash', dollarsPerHour: 0.8 },
@@ -42,6 +47,14 @@ export const SPEECH_MODELS: Record<SpeechProvider, SpeechModel[]> = {
 };
 
 export const SPEECH_VOICES: Record<SpeechProvider, SpeechVoice[]> = {
+    google: [
+        { id: 'Sulafat', label: 'Sulafat' },
+        { id: 'Kore', label: 'Kore' },
+        { id: 'Aoede', label: 'Aoede' },
+        { id: 'Puck', label: 'Puck' },
+        { id: 'Charon', label: 'Charon' },
+        { id: 'Fenrir', label: 'Fenrir' },
+    ],
     gemini: [
         { id: 'Sulafat', label: 'Sulafat' },
         { id: 'Kore', label: 'Kore' },

@@ -259,6 +259,7 @@
     "Quality": "Quality",
     "Voice": "Voice",
     "about {price} per hour": "about {price} per hour",
+    "{hours} h free monthly, then {price}/h": "{hours} h free monthly, then {price}/h",
     "Play sample": "Play sample",
     "Stop sample": "Stop sample",
     "This is how I sound when I read answers to you.": "This is how I sound when I read answers to you.",

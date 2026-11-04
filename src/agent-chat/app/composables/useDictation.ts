@@ -3,25 +3,31 @@ const DENIED = 'NotAllowedError';
 const WAVE_BARS = 12;
 const WAVE_FRAME_MS = 60;
 const LEVEL_GAIN = 4;
+// Google Cloud transcribes at most one minute per request, so its recordings go out in pieces.
+const GOOGLE_SEGMENT_MS = 55_000;
 
 export type DictationState = 'idle' | 'recording' | 'transcribing';
 
 export function useDictation(onText: (text: string) => void) {
-    const { t } = useI18n();
+    const { t, locale } = useI18n();
+    const provider = useSpeechProvider();
     const state = ref<DictationState>('idle');
     const error = ref<Error>();
     const levels = shallowRef<number[]>(Array(WAVE_BARS).fill(0));
     let recorder: MediaRecorder | null = null;
-    let chunks: Blob[] = [];
+    let stream: MediaStream | null = null;
+    let segments: Blob[] = [];
+    let finishing = false;
+    let segmentTimer: ReturnType<typeof setInterval> | undefined;
     let listening: AudioContext | null = null;
     let frame = 0;
 
-    function listen(stream: MediaStream): void {
+    function listen(source: MediaStream): void {
         listening = new AudioContext();
         void listening.resume();
         const analyser = listening.createAnalyser();
         analyser.fftSize = 256;
-        listening.createMediaStreamSource(stream).connect(analyser);
+        listening.createMediaStreamSource(source).connect(analyser);
         const samples = new Uint8Array(analyser.fftSize);
         let last = 0;
         const tick = (now: number) => {
@@ -42,16 +48,27 @@ export function useDictation(onText: (text: string) => void) {
         void listening?.close();
         listening = null;
         levels.value = Array(WAVE_BARS).fill(0);
-        recorder?.stream.getTracks().forEach(track => track.stop());
+        clearInterval(segmentTimer);
+        stream?.getTracks().forEach(track => track.stop());
+        stream = null;
         recorder = null;
     }
 
-    async function transcribe(recording: Blob): Promise<void> {
+    async function transcribeSegment(recording: Blob): Promise<string> {
+        const form = new FormData();
+        form.append('audio', recording, 'recording');
+        form.append('language', locale.value);
+        return (await apiFetch<{ text: string }>('speech/transcribe', { method: 'POST', body: form })).text;
+    }
+
+    async function transcribe(recordings: Blob[]): Promise<void> {
         state.value = 'transcribing';
         try {
-            const form = new FormData();
-            form.append('audio', recording, 'recording');
-            const { text } = await apiFetch<{ text: string }>('speech/transcribe', { method: 'POST', body: form });
+            const texts: string[] = [];
+            for (const recording of recordings) {
+                texts.push(await transcribeSegment(recording));
+            }
+            const text = texts.filter(Boolean).join(' ');
             if (text) {
                 onText(text);
             }
@@ -64,31 +81,50 @@ export function useDictation(onText: (text: string) => void) {
         }
     }
 
+    function record(source: MediaStream, mimeType: string | undefined): MediaRecorder {
+        const active = new MediaRecorder(source, mimeType ? { mimeType } : undefined);
+        const chunks: Blob[] = [];
+        active.ondataavailable = event => chunks.push(event.data);
+        active.onstop = () => {
+            segments.push(new Blob(chunks, { type: active.mimeType }));
+            if (finishing) {
+                release();
+                void transcribe(segments);
+            }
+            else {
+                recorder = record(source, mimeType);
+            }
+        };
+        active.start();
+        return active;
+    }
+
     async function start(): Promise<void> {
         error.value = undefined;
+        let source: MediaStream;
+        let mimeType: string | undefined;
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const mimeType = PREFERRED_FORMATS.find(format => MediaRecorder.isTypeSupported(format));
-            recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+            source = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mimeType = PREFERRED_FORMATS.find(format => MediaRecorder.isTypeSupported(format));
+            stream = source;
+            segments = [];
+            finishing = false;
+            recorder = record(source, mimeType);
         }
         catch (failure) {
             error.value = new Error((failure as Error).name === DENIED ? t('Microphone access was denied') : t('No microphone is available'));
             return;
         }
-        chunks = [];
-        const active = recorder;
-        active.ondataavailable = event => chunks.push(event.data);
-        active.onstop = () => {
-            const recording = new Blob(chunks, { type: active.mimeType });
-            release();
-            void transcribe(recording);
-        };
-        active.start();
-        listen(active.stream);
+        if (provider.value === 'google') {
+            segmentTimer = setInterval(() => recorder?.stop(), GOOGLE_SEGMENT_MS);
+        }
+        listen(source);
         state.value = 'recording';
     }
 
     function stop(): void {
+        finishing = true;
+        clearInterval(segmentTimer);
         recorder?.stop();
     }
 

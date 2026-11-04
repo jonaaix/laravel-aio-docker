@@ -19,11 +19,12 @@ const PROBLEM_TEXTS: Record<KeyProblem, string> = {
     unavailable: 'Key saved, but {service} could not be reached. Choose {service} again later.',
 };
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { speechRate, setSpeechRate, speechVoiceFor, setSpeechVoice } = useAppearance();
 
 const choices: { value: VoiceChoice; label: string }[] = [
     { value: 'device', label: 'Device' },
+    { value: 'google', label: 'Google Cloud' },
     { value: 'gemini', label: 'Gemini' },
     { value: 'elevenlabs', label: 'ElevenLabs' },
     { value: 'openai', label: 'OpenAI' },
@@ -133,7 +134,7 @@ async function playSample(provider: SpeechProvider, voice: string): Promise<void
     loadingSample.value = voice;
     error.value = undefined;
     try {
-        const blob = await apiFetch<Blob>('speech/preview', { method: 'POST', body: { provider, voice, text: t('This is how I sound when I read answers to you.') }, responseType: 'blob' });
+        const blob = await apiFetch<Blob>('speech/preview', { method: 'POST', body: { provider, voice, text: t('This is how I sound when I read answers to you.'), language: locale.value }, responseType: 'blob' });
         const audio = new Audio(URL.createObjectURL(blob));
         audio.playbackRate = speechRate.value;
         audio.addEventListener('ended', stopSample);
@@ -225,7 +226,8 @@ onMounted(load);
                             @click="chooseModel(shown, model.id)"
                         >
                             <span class="flex-1 font-medium">{{ model.label }}</span>
-                            <span class="text-muted tabular-nums">{{ t('about {price} per hour', { price: formatDollars(model.dollarsPerHour) }) }}</span>
+                            <span v-if="model.freeHoursPerMonth" class="text-muted tabular-nums">{{ t('{hours} h free monthly, then {price}/h', { hours: model.freeHoursPerMonth, price: formatDollars(model.dollarsPerHour) }) }}</span>
+                            <span v-else class="text-muted tabular-nums">{{ t('about {price} per hour', { price: formatDollars(model.dollarsPerHour) }) }}</span>
                         </button>
                     </div>
                     <div class="flex flex-col gap-1.5">

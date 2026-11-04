@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { serviceFailure } from '../server/utils/speech-synthesis.ts';
+import { serviceFailure } from '../server/utils/speech-failure.ts';
 
 const answer = (status: number, body: string) => new Response(body, { status });
 

@@ -1,4 +1,5 @@
 import type { SpeechProvider } from '../../shared/utils/speech';
+import { googleLocale } from './google-speech';
 import type { SpeechService } from './speech-service';
 
 const ELEVENLABS_MODEL = 'scribe_v2';
@@ -7,6 +8,9 @@ const GEMINI_MODEL = 'gemini-3.8-flash';
 const GEMINI_API_REVISION = '2026-05-20';
 const GEMINI_PROMPT = 'Transcribe this recording exactly as spoken, in the language spoken. Reply with the transcript only.';
 const GEMINI_MEDIA_TYPES: Record<string, string> = { 'audio/mp4': 'audio/m4a', 'audio/x-m4a': 'audio/m4a' };
+
+const GOOGLE_ENCODINGS: Record<string, string> = { 'audio/webm': 'WEBM_OPUS', 'audio/ogg': 'OGG_OPUS' };
+const OPUS_SAMPLE_RATE = 48_000;
 
 export interface Recording {
     data: Buffer;
@@ -73,6 +77,26 @@ async function transcribeWithGemini(apiKey: string, recording: Recording): Promi
     return text;
 }
 
+async function transcribeWithGoogle(apiKey: string, recording: Recording, language: string): Promise<string> {
+    const encoding = GOOGLE_ENCODINGS[baseMediaType(recording.mediaType)];
+    if (!encoding) {
+        throw new SpeechServiceError('unavailable');
+    }
+    const response = await fetch('https://speech.googleapis.com/v1/speech:recognize', {
+        method: 'POST',
+        headers: { 'x-goog-api-key': apiKey, 'content-type': 'application/json' },
+        body: JSON.stringify({
+            config: { encoding, sampleRateHertz: OPUS_SAMPLE_RATE, languageCode: googleLocale(language), model: 'latest_long', enableAutomaticPunctuation: true },
+            audio: { content: recording.data.toString('base64') },
+        }),
+    });
+    if (!response.ok) {
+        throw await serviceFailure(response);
+    }
+    const { results } = await response.json() as { results?: { alternatives?: { transcript?: string }[] }[] };
+    return (results ?? []).map(result => result.alternatives?.[0]?.transcript?.trim() ?? '').filter(Boolean).join(' ');
+}
+
 async function transcribeWithOpenAI(apiKey: string, recording: Recording): Promise<string> {
     const form = new FormData();
     form.append('model', OPENAI_MODEL);
@@ -85,12 +109,13 @@ async function transcribeWithOpenAI(apiKey: string, recording: Recording): Promi
     return typeof text === 'string' ? text : '';
 }
 
-const TRANSCRIBERS: Record<SpeechProvider, (apiKey: string, recording: Recording) => Promise<string>> = {
+const TRANSCRIBERS: Record<SpeechProvider, (apiKey: string, recording: Recording, language: string) => Promise<string>> = {
+    google: transcribeWithGoogle,
     gemini: transcribeWithGemini,
     elevenlabs: transcribeWithElevenLabs,
     openai: transcribeWithOpenAI,
 };
 
-export async function transcribeSpeech(service: SpeechService, recording: Recording): Promise<string> {
-    return (await TRANSCRIBERS[service.provider](service.apiKey, recording)).trim();
+export async function transcribeSpeech(service: SpeechService, recording: Recording, language: string): Promise<string> {
+    return (await TRANSCRIBERS[service.provider](service.apiKey, recording, language)).trim();
 }

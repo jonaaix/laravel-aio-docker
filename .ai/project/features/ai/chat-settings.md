@@ -45,7 +45,7 @@ a conversation opens the same window at Agents.
   automatically", on by default, lets the changes panel open on its own beside the conversation (see
   [AI web chat](web-chat.md)); when off, it opens only through "N files changed" and only for that conversation.
 - **Read aloud** sets the person's reading speed — 1×, 1.25×, 1.5× (the default), 1.75× or 2× — and the voice
-  service of the whole chat, chosen in a strip: Device, Gemini, ElevenLabs or OpenAI. Each service keeps its own API
+  service of the whole chat, chosen in a strip: Device, Google Cloud, Gemini, ElevenLabs or OpenAI. Each service keeps its own API
   key, so several can be stored and switched between at will; choosing a service that has a key puts it to use at
   once and marks it with a check, choosing one without shows the field for its key, while the one in use keeps
   reading. The chosen service also transcribes dictation. A key is always stored, then checked with the service: if the
@@ -55,7 +55,9 @@ a conversation opens the same window at Agents.
   or remove keys, nobody can read them. Device uses the device's own voice and leaves the keys in place.
   For a service with a key, "Quality" lists its models with what an hour of reading costs about (list prices,
   shown as estimates), and the choice holds for the whole chat because it decides the cost on the shared key;
-  ElevenLabs offers only its low-cost Flash model. "Voice" lists six voices of the service; each person picks their
+  ElevenLabs offers only its low-cost Flash model. Google Cloud (its Text-to-Speech and Speech-to-Text services, taking a
+  Google Cloud API key) offers WaveNet and Chirp 3 HD and shows, besides the price, the hours of reading free each
+  month. "Voice" lists six voices of the service; each person picks their
   own, and each voice plays a short sample sentence in the person's language, which is kept so it is paid once.
 - **Agents** defines the agents, as described in [Agents in the chat](chat-agents.md).
 - **Claude account** signs the container's Claude Code in to a Claude subscription and out again, the

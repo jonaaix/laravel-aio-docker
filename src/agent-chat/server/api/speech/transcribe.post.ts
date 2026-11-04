@@ -2,7 +2,9 @@ const MAX_RECORDING_BYTES = 20 * 1024 * 1024;
 
 export default defineEventHandler(async (event) => {
     sessionUser(event);
-    const audio = (await readMultipartFormData(event))?.find(part => part.name === 'audio');
+    const parts = await readMultipartFormData(event);
+    const audio = parts?.find(part => part.name === 'audio');
+    const language = parts?.find(part => part.name === 'language')?.data.toString() ?? '';
     if (!audio?.data.length || !audio.type?.startsWith('audio/')) {
         throw createError({ statusCode: 422, statusMessage: 'An audio recording is required' });
     }
@@ -14,7 +16,7 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 404, statusMessage: 'No voice service is set up' });
     }
     try {
-        return { text: await transcribeSpeech(service, { data: audio.data, mediaType: audio.type }) };
+        return { text: await transcribeSpeech(service, { data: audio.data, mediaType: audio.type }, language) };
     }
     catch (failure) {
         if (failure instanceof SpeechServiceError) {

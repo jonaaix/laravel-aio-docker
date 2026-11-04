@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { speechVoice, type SpeechProvider } from '../../shared/utils/speech';
+import { googleLocale, googleVoice } from './google-speech';
 import type { SpeechService } from './speech-service';
 
 export interface SynthesizedAudio {
@@ -15,6 +16,7 @@ interface AudioFormat {
 }
 
 const FORMATS: Record<SpeechProvider, AudioFormat> = {
+    google: { mediaType: 'audio/mpeg', extension: 'mp3' },
     gemini: { mediaType: 'audio/wav', extension: 'wav' },
     elevenlabs: { mediaType: 'audio/mpeg', extension: 'mp3' },
     openai: { mediaType: 'audio/mpeg', extension: 'mp3' },
@@ -25,43 +27,11 @@ interface SpeechRequest {
     model: string;
     voice: string;
     text: string;
+    language: string;
 }
 
-const REJECTED_KEY = new Set([401, 403]);
-const GEMINI_INVALID_KEY = 'API_KEY_INVALID';
-
-export type SpeechFailure = 'key' | 'credit' | 'unavailable';
-
-const FAILURE_STATUS: Record<SpeechFailure, number> = { key: 422, credit: 402, unavailable: 502 };
-const FAILURE_MESSAGE: Record<SpeechFailure, string> = {
-    key: 'The voice service did not accept the key',
-    credit: 'The voice service has no credit left',
-    unavailable: 'The voice service did not answer',
-};
-const NO_CREDIT_STATUS = 402;
-const NO_CREDIT_MARKERS = ['insufficient_quota', 'quota_exceeded', 'credits are depleted'];
-
-export class SpeechServiceError extends Error {
-    constructor(readonly reason: SpeechFailure) {
-        super(FAILURE_MESSAGE[reason]);
-    }
-}
-
-export function speechServiceHttpError(failure: SpeechServiceError) {
-    return createError({ statusCode: FAILURE_STATUS[failure.reason], statusMessage: failure.message });
-}
-
+const LANGUAGE_BOUND = new Set<SpeechProvider>(['google']);
 const LOGGED_BODY_LENGTH = 600;
-
-export async function serviceFailure(response: Response): Promise<SpeechServiceError> {
-    const body = await response.text().catch(() => '');
-    console.warn(`[speech] ${response.url} answered ${response.status}: ${body.slice(0, LOGGED_BODY_LENGTH)}`);
-    if (REJECTED_KEY.has(response.status) || body.includes(GEMINI_INVALID_KEY)) {
-        return new SpeechServiceError('key');
-    }
-    const noCredit = response.status === NO_CREDIT_STATUS || NO_CREDIT_MARKERS.some(marker => body.includes(marker));
-    return new SpeechServiceError(noCredit ? 'credit' : 'unavailable');
-}
 
 function findAudioData(value: unknown): string | null {
     if (!value || typeof value !== 'object') {
@@ -103,6 +73,27 @@ async function synthesizeWithGemini({ apiKey, model, voice, text }: SpeechReques
     return Buffer.from(audio, 'base64');
 }
 
+async function synthesizeWithGoogle({ apiKey, model, voice, text, language }: SpeechRequest): Promise<Buffer> {
+    const languageCode = googleLocale(language);
+    const response = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize', {
+        method: 'POST',
+        headers: { 'x-goog-api-key': apiKey, 'content-type': 'application/json' },
+        body: JSON.stringify({
+            input: { text },
+            voice: await googleVoice(apiKey, model, voice, languageCode),
+            audioConfig: { audioEncoding: 'MP3' },
+        }),
+    });
+    if (!response.ok) {
+        throw await serviceFailure(response);
+    }
+    const { audioContent } = await response.json() as { audioContent?: unknown };
+    if (typeof audioContent !== 'string') {
+        throw new SpeechServiceError('unavailable');
+    }
+    return Buffer.from(audioContent, 'base64');
+}
+
 async function synthesizeWithElevenLabs({ apiKey, model, voice, text }: SpeechRequest): Promise<Buffer> {
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=mp3_44100_128`, {
         method: 'POST',
@@ -128,29 +119,34 @@ async function synthesizeWithOpenAI({ apiKey, model, voice, text }: SpeechReques
 }
 
 const SYNTHESIZERS: Record<SpeechProvider, (request: SpeechRequest) => Promise<Buffer>> = {
+    google: synthesizeWithGoogle,
     gemini: synthesizeWithGemini,
     elevenlabs: synthesizeWithElevenLabs,
     openai: synthesizeWithOpenAI,
 };
 
-export async function synthesizeSpeech(service: SpeechService, text: string, voice: string): Promise<SynthesizedAudio> {
-    const data = await SYNTHESIZERS[service.provider]({ apiKey: service.apiKey, model: service.model, voice: speechVoice(service.provider, voice).id, text });
+export async function synthesizeSpeech(service: SpeechService, text: string, voice: string, language: string): Promise<SynthesizedAudio> {
+    const data = await SYNTHESIZERS[service.provider]({ apiKey: service.apiKey, model: service.model, voice: speechVoice(service.provider, voice).id, text, language });
     return { data, mediaType: FORMATS[service.provider].mediaType };
 }
 
-function cachePath(service: SpeechService, voice: string, text: string): string {
+function cachePath(service: SpeechService, voice: string, text: string, language: string): string {
     const dir = join(resolveDataDir(), 'speech');
     mkdirSync(dir, { recursive: true });
-    const name = createHash('sha256').update(`${service.provider}|${service.model}|${speechVoice(service.provider, voice).id}|${text}`).digest('hex');
+    const parts = [service.provider, service.model, speechVoice(service.provider, voice).id, text];
+    if (LANGUAGE_BOUND.has(service.provider)) {
+        parts.splice(3, 0, googleLocale(language));
+    }
+    const name = createHash('sha256').update(parts.join('|')).digest('hex');
     return join(dir, `${name}.${FORMATS[service.provider].extension}`);
 }
 
-export async function cachedSpeech(service: SpeechService, text: string, voice: string): Promise<SynthesizedAudio> {
-    const path = cachePath(service, voice, text);
+export async function cachedSpeech(service: SpeechService, text: string, voice: string, language: string): Promise<SynthesizedAudio> {
+    const path = cachePath(service, voice, text, language);
     if (existsSync(path)) {
         return { data: readFileSync(path), mediaType: FORMATS[service.provider].mediaType };
     }
-    const audio = await synthesizeSpeech(service, text, voice);
+    const audio = await synthesizeSpeech(service, text, voice, language);
     writeFileSync(path, audio.data);
     return audio;
 }
