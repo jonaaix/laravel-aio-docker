@@ -151,7 +151,13 @@ export async function projectFilePath(dir: string, path: string, shadowBase: str
 }
 
 export class WorkingTree {
-    private constructor(private readonly location: GitLocation, private readonly indexFile: string) {}
+    private readonly location: GitLocation;
+    private readonly indexFile: string;
+
+    private constructor(location: GitLocation, indexFile: string) {
+        this.location = location;
+        this.indexFile = indexFile;
+    }
 
     static async open(dir: string, indexFile: string, shadowBase: string): Promise<WorkingTree | null> {
         try {
@@ -202,8 +208,15 @@ export class ChangeTracker {
     private latest: string | null = null;
     private changeOrder = new Map<string, number>();
     private changeCount = 0;
+    private readonly dir: string;
+    private readonly indexFile: string;
+    private readonly shadowBase: string;
 
-    constructor(private readonly dir: string, private readonly indexFile: string, private readonly shadowBase: string) {}
+    constructor(dir: string, indexFile: string, shadowBase: string) {
+        this.dir = dir;
+        this.indexFile = indexFile;
+        this.shadowBase = shadowBase;
+    }
 
     beginTurn(): void {
         this.tree = null;
