@@ -56,7 +56,6 @@ export interface FileChange {
 
 export interface TurnFileChanges {
     files: FileChange[];
-    recentPaths: string[];
 }
 
 export interface ChatMessageMetadata {

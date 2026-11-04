@@ -148,6 +148,8 @@ export class ChangeTracker {
     private work: Promise<void> = Promise.resolve();
     private turnStart: string | null = null;
     private latest: string | null = null;
+    private changeOrder = new Map<string, number>();
+    private changeCount = 0;
 
     constructor(private readonly dir: string, private readonly indexFile: string) {}
 
@@ -155,16 +157,20 @@ export class ChangeTracker {
         this.queue(async (tree) => {
             this.turnStart = await tree.snapshot();
             this.latest = this.turnStart;
+            this.changeOrder.clear();
         });
     }
 
-    afterStep(found: (turnChanges: FileChange[], recentPaths: string[]) => void): void {
+    afterStep(found: (turnChanges: FileChange[]) => void): void {
         this.queue(async (tree) => {
             const previous = this.latest;
             this.latest = await tree.snapshot();
             const step = previous ? await tree.changes(previous, this.latest) : [];
             if (step.length > 0 && this.turnStart) {
-                found(await tree.changes(this.turnStart, this.latest), step.map(change => change.path));
+                for (const change of step) {
+                    this.changeOrder.set(change.path, ++this.changeCount);
+                }
+                found(this.inChangeOrder(await tree.changes(this.turnStart, this.latest)));
             }
         });
     }
@@ -175,9 +181,14 @@ export class ChangeTracker {
             this.turnStart = null;
             this.latest = await tree.snapshot();
             if (start) {
-                found(await tree.changes(start, this.latest));
+                found(this.inChangeOrder(await tree.changes(start, this.latest)));
             }
         });
+    }
+
+    private inChangeOrder(changes: FileChange[]): FileChange[] {
+        const position = (change: FileChange) => this.changeOrder.get(change.path) ?? -1;
+        return [...changes].sort((a, b) => position(a) - position(b));
     }
 
     dispose(): void {

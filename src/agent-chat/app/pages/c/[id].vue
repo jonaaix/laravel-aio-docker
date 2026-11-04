@@ -544,7 +544,7 @@ const restoreConversation = () => withFlag(archiving, restore);
                         <template #content="{ message }">
                             <div v-if="message.role === 'assistant'" class="mb-3 flex flex-col empty:hidden">
                                 <ChatThinkingBlock :message="message" :streaming="isStreaming(message.id)" />
-                                <ChatWorkingBlock :message="message" :streaming="isStreaming(message.id)" />
+                                <ChatWorkingBlock :message="message" :streaming="isStreaming(message.id)" :file-changes-shown="changesPanelShown" />
                                 <ChatTurnChanges :message="message" :shown="changesShownFor(message.id)" @show="showChanges(message.id)" />
                             </div>
                             <template v-for="segment in answerSegments(message)" :key="`${segment.key}:${mentionKey}`">
@@ -634,7 +634,6 @@ const restoreConversation = () => withFlag(archiving, restore);
     <ChatChangesPanel
         v-if="changesPanelShown && changesMessage"
         :message="changesMessage"
-        :streaming="isStreaming(changesMessage.id)"
         :max-width="changesPanelRoom"
         @close="setChangesPanelHidden(true)"
     />
@@ -643,10 +642,10 @@ const restoreConversation = () => withFlag(archiving, restore);
         v-model:open="changesOverlayOpen"
         :title="t('Changes')"
         :description="changesTitle(turnFileChanges(changesMessage).files)"
-        :ui="{ content: 'sm:max-w-3xl', body: 'scrollbar-slim' }"
+        :ui="{ content: 'sm:max-w-3xl', body: 'scrollbar-slim flex flex-col-reverse' }"
     >
         <template #body>
-            <ChatChangesFiles :message="changesMessage" :streaming="isStreaming(changesMessage.id)" />
+            <ChatChangesFiles :message="changesMessage" />
         </template>
     </USlideover>
 </template>

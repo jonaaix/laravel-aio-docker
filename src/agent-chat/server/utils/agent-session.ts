@@ -260,21 +260,21 @@ export class AgentSession {
             return part?.type === 'dynamic-tool' && !READ_ONLY_TOOLS.has(part.toolName);
         });
         if (messageId && mayChangeFiles) {
-            this.changes?.afterStep((files, recentPaths) => this.showTurnChanges(messageId, files, recentPaths));
+            this.changes?.afterStep(files => this.showTurnChanges(messageId, files));
         }
     }
 
     private trackTurnChanges(messageId: string | null): void {
         this.changes?.endTurn((files: FileChange[]) => {
             if (messageId && (files.length > 0 || this.changesShownIn === messageId)) {
-                this.showTurnChanges(messageId, files, []);
+                this.showTurnChanges(messageId, files);
             }
             this.changesShownIn = null;
         });
     }
 
-    private showTurnChanges(messageId: string, files: FileChange[], recentPaths: string[]): void {
-        const part: ChatPart = { type: 'data-turn-changes', data: { files, recentPaths } };
+    private showTurnChanges(messageId: string, files: FileChange[]): void {
+        const part: ChatPart = { type: 'data-turn-changes', data: { files } };
         this.changesShownIn = messageId;
         const turn = this.turn;
         if (turn?.message?.id === messageId) {

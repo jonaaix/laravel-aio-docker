@@ -7,6 +7,7 @@ const VISIBLE_STEPS = 5;
 const props = defineProps<{
     message: ChatMessage;
     streaming: boolean;
+    fileChangesShown: boolean;
 }>();
 
 const { t } = useI18n();
@@ -25,7 +26,15 @@ const listedTools = computed(() => tools.value.filter(part => part.input !== und
 const showAll = ref(false);
 const hiddenCount = computed(() => showAll.value ? 0 : Math.max(0, listedTools.value.length - VISIBLE_STEPS));
 const visibleTools = computed(() => listedTools.value.slice(hiddenCount.value));
-const commandTool = computed(() => working.value ? listedTools.value.findLast(part => toolSummary(part.input) !== '') : undefined);
+function writesFile(part: DynamicToolUIPart): boolean {
+    const input = part.input as Record<string, unknown> | undefined;
+    return Boolean(input && ('old_string' in input || 'edits' in input || 'content' in input));
+}
+
+const commandTool = computed(() => {
+    const latest = working.value ? listedTools.value.findLast(part => toolSummary(part.input) !== '') : undefined;
+    return latest && props.fileChangesShown && writesFile(latest) ? undefined : latest;
+});
 </script>
 
 <template>

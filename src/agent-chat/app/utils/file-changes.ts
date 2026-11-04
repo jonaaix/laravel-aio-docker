@@ -28,7 +28,7 @@ export function unifiedDiffLines(lines: string[]): DiffLine[] {
 export function turnFileChanges(message: ChatMessage): TurnFileChanges {
     const part = message.parts.findLast(candidate => candidate.type === 'data-turn-changes');
     const data = part && 'data' in part ? part.data as Partial<TurnFileChanges> : {};
-    return { files: data.files ?? [], recentPaths: data.recentPaths ?? [] };
+    return { files: data.files ?? [] };
 }
 
 export function changeTotals(files: FileChange[]): { added: number; removed: number } {

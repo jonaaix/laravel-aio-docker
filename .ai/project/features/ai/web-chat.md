@@ -81,11 +81,11 @@ highlighting still sets strings, numbers, dates, links and words like "error" ap
 plain red. Every file change shows, however it was made — through the agent's file tools, a shell
 command or a script — as long as the project is a git repository. Right below
 "Worked", in the same quiet style, "N files changed · +A −R" appears with the first changed file and counts up while the
-agent works; it is a button that shows that answer's changes: all changed files stacked, each diff in full with line
-numbers, up to 1,000 lines per file. The steps themselves show no diff. Where the screen leaves the conversation
+agent works; it is a button that shows that answer's changes: all changed files stacked in the order they were changed,
+the latest at the bottom, each diff in full with line numbers, up to 1,000 lines per file. The steps themselves show no diff, and while the panel is open, "Worked" does not preview the file a running
+step writes. Where the screen leaves the conversation
 enough room, the changes stay in view in a "Changes" panel to its right, for a developer following along. It shows
-the newest answer with changes, fills live while the agent works and moves to the file changed last, unless the
-person has scrolled it themselves; "N files changed" in an older answer shows that one, and a newer answer with
+the newest answer with changes, opens at its bottom and stays there as the agent's changes come in; "N files changed" in an older answer shows that one, and a newer answer with
 changes takes over again. The panel can be closed, which each person keeps until they open it again through
 "N files changed", and its edge drags the width, as far as the conversation keeps enough room; a double click
 restores the default width. Where there is no room — a narrow window, a phone, the chat embedded in the app —
