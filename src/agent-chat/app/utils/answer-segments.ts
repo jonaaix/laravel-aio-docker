@@ -24,7 +24,7 @@ export function answerSegments(message: ChatMessage): AnswerSegment[] {
             return;
         }
         if (afterStopHook) {
-            const text = part.type === 'text' ? part.text.split('\n').filter(line => !SECTION_BAR.test(line)).join('\n').trim() : '';
+            const text = part.type === 'text' ? part.text.split('\n').filter(line => !SECTION_BAR.test(line) && line.trim()).join('\n').trim() : '';
             if (text) {
                 segments.push({ kind: 'stop-hook', key: `${message.id}-${index}`, text });
             }
