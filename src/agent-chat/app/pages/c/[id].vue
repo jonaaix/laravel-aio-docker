@@ -528,7 +528,7 @@ const restoreConversation = () => withFlag(archiving, restore);
                         :ui="{ root: 'px-0 [&>article]:scroll-mt-(--message-scroll-margin) [&>article[data-role=assistant]+article[data-role=assistant]]:mt-6' }"
                         :should-scroll-to-bottom="false"
                         :assistant="{ side: 'left', variant: 'naked', ui: { container: 'flex-col gap-1.5 pb-7 @min-[40rem]:flex-row @min-[40rem]:gap-3', leading: 'mt-0 self-start @min-[62rem]:-ms-[6.75rem]', content: 'text-base/6.5', actions: 'h-6 gap-1' } }"
-                        :user="{ side: 'right', variant: 'soft', ui: { container: 'max-w-[90%] flex-col items-end gap-1.5 pb-7 @min-[40rem]:max-w-[75%] @min-[40rem]:flex-row-reverse @min-[40rem]:items-start @min-[40rem]:justify-start @min-[40rem]:gap-3', leading: 'mt-0 self-end @min-[40rem]:self-start @min-[62rem]:-me-[6.75rem]', body: 'max-w-full', actions: 'h-6 gap-1', content: 'min-h-0 rounded-[1.125rem] bg-(--user-message) px-3.5 py-2 text-base/6.5' } }"
+                        :user="{ side: 'right', variant: 'soft', ui: { container: 'max-w-[90%] flex-col items-end gap-1.5 pb-7 @min-[40rem]:max-w-[75%] @min-[62rem]:flex-row-reverse @min-[62rem]:items-start @min-[62rem]:justify-start @min-[62rem]:gap-3', leading: 'mt-0 self-end @min-[62rem]:self-start @min-[62rem]:-me-[6.75rem]', body: 'max-w-full', actions: 'h-6 gap-1', content: 'min-h-0 rounded-[1.125rem] bg-(--user-message) px-3.5 py-2 text-base/6.5' } }"
                     >
                         <template #leading="{ message }">
                             <ChatHead :participant="messageAuthor(message)" :reverse="message.role === 'user'" />
