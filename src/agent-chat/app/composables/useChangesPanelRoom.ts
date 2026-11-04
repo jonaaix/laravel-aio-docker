@@ -1,5 +1,5 @@
-// Below this width the conversation gets too narrow to read comfortably; chat heads move above the messages earlier.
-const MIN_CONVERSATION_PX = 720;
+// Chat heads hang beside the reading column; below this width they would have to move into it.
+const MIN_CONVERSATION_PX = 1000;
 
 export const CHANGES_PANEL_MIN_PX = 384;
 
