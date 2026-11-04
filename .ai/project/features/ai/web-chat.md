@@ -84,7 +84,7 @@ command or a script — as long as the project is a git repository. Right below
 agent works; it is a button that shows that answer's changes: all changed files stacked in the order they were changed,
 the latest at the bottom, each diff in full with line numbers, up to 1,000 lines per file. The steps themselves show no diff, and while the panel is open, "Worked" does not preview the file a running
 step writes. Where the screen leaves the conversation
-enough room (from a window of about 1,400 pixels; chat heads move above the messages when the conversation narrows), the changes stay in view in a "Changes" panel to its right, for a developer following along. It shows
+enough room (from a window of about 1,400 pixels; chat heads move from beside the column to beside the message as the conversation narrows, and above it only when very narrow), the changes stay in view in a "Changes" panel to its right, for a developer following along. It shows
 the newest answer with changes, opens at its bottom and stays there as the agent's changes come in, a newly changed file unfolding smoothly
 into place; "N files changed" in an older answer shows that one, and a newer answer with
 changes takes over again. The panel can be closed, which each person keeps until they open it again through
