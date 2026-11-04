@@ -59,9 +59,9 @@ and shown is described in [People in the chat](chat-people.md).
 
 A sidebar lists the conversations, with Settings at its foot; its edge lights up under the pointer like the panel's and can be dragged to change the width. Everyone working in the same container sees all of them, each
 with the name of the person who started it: a development conversation is long-lived, and a team
-works on the same app. Each entry shows the title and, below it, whether the session is working
-(the agent is answering) or active (running and waiting) — a paused session shows no badge —, who started it and
-when something last happened. A new conversation is named
+works on the same app. Each entry shows the title and, below it, who started it and when something last happened, with a badge at the
+right end while the session is working (the agent is answering) or active (running and waiting); a paused session
+shows no badge. A new conversation is named
 after the beginning of its first message. When the user sends the third message, the agent titles
 the session from the user's first three messages, the way Claude Code titles its terminal sessions;
 that title replaces the name in the chat and also names the session in Claude Code's own history.
