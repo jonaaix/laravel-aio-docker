@@ -74,7 +74,7 @@ archived: its agent session is paused first, it leaves the sidebar, and the user
 conversation below it in the sidebar — the one above when it was the last, a new conversation when none is left. It stays stored and can be brought back from the archive, which lists archived conversations and
 finds them by title, ignoring case and accents. Each conversation is its own agent session. The agent's answer appears while it is
 being written; its tool use and reasoning are visible as separate, quieter blocks next to the
-answer rather than mixed into it, their content indented under their title. An opened step shows its command, file changes and output with
+answer rather than mixed into it, their content slightly indented under their title. An opened step shows its command, file changes and output with
 code highlighting in the language they are written in — a command's output in the language of the
 last file the command names whose language is known; where no language can be told, a basic
 highlighting still sets strings, numbers, dates, links and words like "error" apart. Errors stay
