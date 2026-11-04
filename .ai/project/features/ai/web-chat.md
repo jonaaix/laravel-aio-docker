@@ -88,6 +88,10 @@ break shows as written, the way Claude Code's terminal shows it. A very long sen
 message is shown collapsed to its beginning and can be expanded and collapsed again; it starts
 collapsed whenever the conversation is opened. Copying always takes the whole message.
 
+Text typed into a conversation's message input but not yet sent is kept per conversation in that browser: it is
+still there after switching to another conversation, reloading the page or closing the tab, and goes away once the
+message is sent or the input is emptied. The input for a new conversation keeps its own draft the same way.
+
 While a voice service is set up for reading aloud, a microphone sits in the message input: pressing it records,
 small bars beside the stop button follow the voice so it is clear the microphone hears something, and pressing stop
 has the service write down what was said. The text lands in the input at the cursor, to be checked and sent by hand.

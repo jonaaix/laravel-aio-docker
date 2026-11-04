@@ -1,11 +1,7 @@
 const DRAFT_PREFIX = 'chat-draft:';
 
-export function isEmbedded(): boolean {
-    return import.meta.client && window.top !== window.self;
-}
-
-export function useEmbeddedDraft(key: string, text: Ref<string>): void {
-    if (!isEmbedded()) {
+export function useDraft(key: string, text: Ref<string>): void {
+    if (!import.meta.client) {
         return;
     }
     const storageKey = `${DRAFT_PREFIX}${key}`;
