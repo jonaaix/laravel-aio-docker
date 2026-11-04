@@ -5,6 +5,7 @@ const SILENT_SAMPLES = 400;
 const SILENT_SAMPLE_RATE = 8000;
 
 const speakingId = ref<string | null>(null);
+const preparingId = ref<string | null>(null);
 const speechProvider = ref<SpeechProvider | null | undefined>(undefined);
 let run = 0;
 let player: HTMLAudioElement | null = null;
@@ -63,16 +64,26 @@ export function useSpeech() {
     function stop(): void {
         run++;
         speakingId.value = null;
+        preparingId.value = null;
         player?.pause();
         if ('speechSynthesis' in window) {
             speechSynthesis.cancel();
         }
     }
 
+    function started(current: number): () => void {
+        return () => {
+            if (run === current) {
+                preparingId.value = null;
+            }
+        };
+    }
+
     function finisher(current: number): () => void {
         return () => {
             if (run === current) {
                 speakingId.value = null;
+                preparingId.value = null;
             }
         };
     }
@@ -88,6 +99,9 @@ export function useSpeech() {
             utterance.voice = voice ?? null;
             utterance.rate = speechRate.value;
             utterance.onerror = finish;
+            if (index === 0) {
+                utterance.onstart = started(current);
+            }
             if (index === chunks.length - 1) {
                 utterance.onend = finish;
             }
@@ -122,6 +136,7 @@ export function useSpeech() {
             audio.src = url;
             audio.playbackRate = speechRate.value;
             await new Promise<void>((resolve) => {
+                audio.onplaying = started(current);
                 audio.onended = () => resolve();
                 audio.onerror = () => resolve();
                 audio.onpause = () => {
@@ -147,6 +162,7 @@ export function useSpeech() {
         }
         const current = run;
         speakingId.value = id;
+        preparingId.value = id;
         player ??= new Audio();
         player.preservesPitch = true;
         // Safari lets an element play later, after the fetch, only if it already played inside the click.
@@ -167,5 +183,5 @@ export function useSpeech() {
         });
     }
 
-    return { supported, speakingId: readonly(speakingId), speak, stop };
+    return { supported, speakingId: readonly(speakingId), preparingId: readonly(preparingId), speak, stop };
 }

@@ -135,7 +135,7 @@ written down piece by piece and joined. A refused microphone or a failed transcr
 voice service there is no microphone.
 
 Any message can also be read aloud: the speaker beside "Copy" starts reading and turns into a stop button until it is
-done; while it reads, the button stays visible without pointing at the message. With a voice service set up in the settings, a natural voice of that service reads, and a message read once
+done; until the voice actually starts, it shows a spinning icon instead, and pressing it already stops; while it reads, the button stays visible without pointing at the message. With a voice service set up in the settings, a natural voice of that service reads, and a message read once
 plays again without asking the service anew; if the service fails, the device's voice reads the rest. Without a
 service the device's own voice reads, chosen by the language the message is written in — one of the six chat
 languages, recognised by its common words — falling back to the person's chat language for very short texts. Only

@@ -5,9 +5,10 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
-const { supported, speakingId, speak, stop } = useSpeech();
+const { supported, speakingId, preparingId, speak, stop } = useSpeech();
 
 const speaking = computed(() => speakingId.value === props.messageId);
+const preparing = computed(() => preparingId.value === props.messageId);
 
 function toggle(): void {
     if (speaking.value) {
@@ -27,7 +28,8 @@ onBeforeUnmount(() => {
 <template>
     <UTooltip v-if="supported" :text="speaking ? t('Stop reading') : t('Read aloud')">
         <UButton
-            :icon="speaking ? 'i-heroicons-stop' : 'i-heroicons-speaker-wave'"
+            :icon="preparing ? 'i-heroicons-arrow-path' : speaking ? 'i-heroicons-stop' : 'i-heroicons-speaker-wave'"
+            :ui="{ leadingIcon: preparing ? 'animate-spin' : '' }"
             :aria-label="speaking ? t('Stop reading') : t('Read aloud')"
             size="xs"
             color="neutral"
