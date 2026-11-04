@@ -88,6 +88,9 @@ break shows as written, the way Claude Code's terminal shows it. A very long sen
 message is shown collapsed to its beginning and can be expanded and collapsed again; it starts
 collapsed whenever the conversation is opened. Copying always takes the whole message.
 
+Opening a conversation shows its history only once it is fully laid out, fading in already at the latest message,
+rather than visibly growing while messages, formatting and pictures are set.
+
 The browser keeps the last state it saw — who is signed in, the conversation list, people, agents and the latest
 messages of each conversation opened — and shows it at once on the next start, while the current state is fetched
 and replaces it a moment later. A sign-in that is no longer valid still ends in the signed-out screen.

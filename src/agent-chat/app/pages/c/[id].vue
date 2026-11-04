@@ -8,6 +8,8 @@ const EARLIER_THRESHOLD_PX = 200;
 const AT_BOTTOM_THRESHOLD_PX = 120;
 const ANSWER_GAP_PX = 32;
 const STICK_TO_BOTTOM_MS = 3000;
+const SETTLE_QUIET_MS = 120;
+const SETTLE_MAX_MS = 900;
 const PIN_SENT_MESSAGE_MS = 2000;
 const USER_SCROLL_EVENTS = ['wheel', 'touchmove', 'keydown'] as const;
 // Off for now: the streaming answer already shows that an agent is working; kept for multi-agent use.
@@ -211,6 +213,29 @@ function keepPinnedMessageInPlace(): void {
     }
 }
 
+const settled = ref(false);
+
+function settleLayout(): Promise<void> {
+    return new Promise((resolve) => {
+        const started = performance.now();
+        let height = -1;
+        let stableSince = started;
+        const check = (now: number) => {
+            const current = scroller().scrollHeight;
+            if (current !== height) {
+                height = current;
+                stableSince = now;
+            }
+            if (now - stableSince >= SETTLE_QUIET_MS || now - started >= SETTLE_MAX_MS) {
+                resolve();
+                return;
+            }
+            requestAnimationFrame(check);
+        };
+        requestAnimationFrame(check);
+    });
+}
+
 function onContentResize(): void {
     if (stickToBottom || (atBottom.value && !pinnedMessage)) {
         scroller().scrollTop = scroller().scrollHeight;
@@ -265,6 +290,9 @@ onMounted(async () => {
     window.addEventListener('resize', onResize, { passive: true });
     contentObserver = new ResizeObserver(onContentResize);
     contentObserver.observe(document.body);
+    await settleLayout();
+    scroller().scrollTop = scroller().scrollHeight;
+    settled.value = true;
     onScroll();
 });
 
@@ -450,6 +478,8 @@ const restoreConversation = () => withFlag(archiving, restore);
                     </div>
 
                     <UChatMessages
+                        class="transition-opacity duration-[260ms] ease-out"
+                        :class="settled ? 'opacity-100' : 'opacity-0'"
                         :messages="visibleMessages"
                         :status="chatStatus"
                         :auto-scroll="false"
