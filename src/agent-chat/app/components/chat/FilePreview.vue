@@ -37,12 +37,20 @@ const changedSource = computed<DiffLine[] | null>(() => {
 
 const sourceLanguage = computed(() => props.preview.kind === 'code' ? props.preview.language : 'markdown');
 
+const changeStarts = computed(() => (changedSource.value ?? []).flatMap((line, index, lines) => line.kind === 'added' && lines[index - 1]?.kind !== 'added' ? [index] : []));
+const currentChange = ref(0);
+
+function showChange(position: number, behavior: ScrollBehavior = 'smooth'): void {
+    currentChange.value = position;
+    body.value?.querySelectorAll('[data-kind]')[changeStarts.value[position]!]?.scrollIntoView({ block: 'center', behavior });
+}
+
 watch(changedSource, async (lines) => {
     if (!lines) {
         return;
     }
     await nextTick();
-    body.value?.querySelector('[data-kind="added"]')?.scrollIntoView({ block: 'center' });
+    showChange(0, 'instant');
 });
 
 const markdown = computed(() => {
@@ -98,7 +106,18 @@ watch(open, (value) => {
         </template>
 
         <template #footer>
-            <UButton :to="url" :download="filename" external icon="i-heroicons-arrow-down-tray" :label="t('Download')" color="neutral" variant="outline" />
+            <div class="flex w-full items-center justify-between gap-2">
+                <UButton :to="url" :download="filename" external icon="i-heroicons-arrow-down-tray" :label="t('Download')" color="neutral" variant="outline" />
+                <div v-if="changeStarts.length > 1" class="flex items-center gap-1">
+                    <span class="me-1 text-sm text-muted tabular-nums">{{ t('{current} of {total}', { current: currentChange + 1, total: changeStarts.length }) }}</span>
+                    <UTooltip :text="t('Previous change')">
+                        <UButton icon="i-heroicons-chevron-up" color="neutral" variant="ghost" :aria-label="t('Previous change')" :disabled="currentChange === 0" @click="showChange(currentChange - 1)" />
+                    </UTooltip>
+                    <UTooltip :text="t('Next change')">
+                        <UButton icon="i-heroicons-chevron-down" color="neutral" variant="ghost" :aria-label="t('Next change')" :disabled="currentChange === changeStarts.length - 1" @click="showChange(currentChange + 1)" />
+                    </UTooltip>
+                </div>
+            </div>
         </template>
     </USlideover>
 </template>
