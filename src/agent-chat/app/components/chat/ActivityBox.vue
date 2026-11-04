@@ -39,7 +39,7 @@ const open = computed({
         </button>
 
         <template #content>
-            <div class="pb-2.5" :class="plain ? '' : 'px-3'">
+            <div class="pb-2.5" :class="plain ? 'ps-6' : 'px-3'">
                 <slot />
             </div>
         </template>
