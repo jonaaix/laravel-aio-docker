@@ -516,7 +516,7 @@ const restoreConversation = () => withFlag(archiving, restore);
                                 <ChatImageGroup v-if="segment.kind === 'images'" :parts="segment.parts" />
                                 <p v-else-if="segment.kind === 'stop-hook'" class="-mt-2 flex items-start gap-2 pb-2 text-sm text-muted">
                                     <UTooltip :text="t('Stop hook')">
-                                        <UIcon name="i-heroicons-arrow-uturn-left" class="mt-0.5 size-4 shrink-0" />
+                                        <UIcon name="i-heroicons-shield-check" class="mt-0.5 size-4 shrink-0" />
                                     </UTooltip>
                                     <span class="sr-only">{{ t('Stop hook') }}</span>
                                     <span class="min-w-0 whitespace-pre-line">{{ segment.text }}</span>
