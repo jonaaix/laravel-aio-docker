@@ -77,7 +77,7 @@ const chatPlugins = useChatMarkdownPlugins();
                 :message-id="message.id"
                 :streaming="textStreaming && index === textSections.length - 1"
             />
-            <ChatSectionCard v-else-if="section.kind === 'summary'" :title="section.title">
+            <ChatSectionCard v-else-if="section.kind === 'summary' || section.kind === 'section'" :title="section.title">
                 <Markdown
                     :value="section.text"
                     :plugins="chatPlugins"
@@ -85,15 +85,13 @@ const chatPlugins = useChatMarkdownPlugins();
                     class="*:first:mt-0 *:last:mb-0"
                 />
             </ChatSectionCard>
-            <div v-else :class="section.kind === 'section' ? 'mt-5 mb-3 border-t border-default pt-3' : ''">
-                <ChatSectionTitle v-if="section.kind === 'section'" :title="section.title" class="mb-2 font-semibold text-highlighted" />
-                <Markdown
-                    :value="section.text"
-                    :plugins="chatPlugins"
-                    :streaming="textStreaming && index === textSections.length - 1"
-                    class="*:first:mt-0 *:last:mb-0"
-                />
-            </div>
+            <Markdown
+                v-else
+                :value="section.text"
+                :plugins="chatPlugins"
+                :streaming="textStreaming && index === textSections.length - 1"
+                class="*:first:mt-0 *:last:mb-0"
+            />
         </template>
     </template>
 

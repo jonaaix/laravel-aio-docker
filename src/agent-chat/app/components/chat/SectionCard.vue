@@ -5,12 +5,8 @@ defineProps<{
 </script>
 
 <template>
-    <div class="my-3 rounded-md bg-default ring ring-default dark:bg-elevated/40">
-        <div class="flex h-9 items-center border-b border-default px-3 text-sm font-semibold text-highlighted">
-            <ChatSectionTitle :title="title" />
-        </div>
-        <div class="px-3.5 py-3">
-            <slot />
-        </div>
+    <div class="my-3 rounded-lg bg-elevated/60 px-4 py-3 dark:bg-elevated/40">
+        <ChatSectionTitle :title="title" class="mb-1.5 font-semibold text-highlighted" />
+        <slot />
     </div>
 </template>
