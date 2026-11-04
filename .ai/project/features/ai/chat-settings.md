@@ -57,16 +57,15 @@ a conversation opens the same window at Agents.
   says "Claude is not signed in" and its "Sign in" opens this category; while a usage limit is reached,
   it says "Usage limit reached" with the time agents can answer again. Usage figures start over with
   every sign-in and sign-out, so they never show another account's usage.
-  Admins see a switch "Show account details to everyone", on by default; it sets what everyone sees unless
-  People sets a person differently. Hidden from someone, the account shows to them only as "Claude account"
-  with its session usage: no e-mail, organisation, plan or weekly usage reaches their browser. The switch
-  does not hide them from admins; People can, also from an admin themselves. Switching and signing out stay open to everyone, so a friend
-  can sign in their own account. Whoever signed in the current account always sees its details, whatever the
+  Everyone sees the account details until an admin hides them from that person under People, which works
+  for admins too, also for oneself. Hidden from someone, the account shows to them only as "Claude account"
+  with its session usage: no e-mail, organisation, plan or weekly usage reaches their browser. Switching and
+  signing out stay open to everyone, so a friend can sign in their own account. Whoever signed in the current account always sees its details, whatever the
   settings say; once someone else signs in an account or it is signed out, their own setting applies again.
 - **People** appears only for admins. It is a table of everyone who has signed in to the chat, with a tick box
   per person for Admin, AI account details and Blocked; a tick takes effect at once. An admin can make others
-  admins, take the role away again (also from themselves), show or hide the AI account details for a single
-  person apart from what everyone else sees, and block or unblock anyone but themselves. A blocked person's
+  admins, take the role away again (also from themselves), show or hide the AI account details for each
+  person, and block or unblock anyone but themselves. A blocked person's
   boxes for Admin and AI account details are greyed out, and so is the AI account details box of whoever
   signed in the current account, with "Signed in this account" on hover. A blocked person is no longer an admin, is signed out of every
   open browser at once and is refused by every later sign-in link from the Laravel app. They are not told
@@ -87,8 +86,8 @@ the name comes before the picture.
 - Jonas picks Inter under Appearance; the whole chat switches to Inter immediately. The next day he
   opens the chat on another computer and it is in Inter there too.
 - Jonas lends his Claude account to friends. He taps his picture in Profile seven times, People opens,
-  and under Claude account he switches off "Show account details to everyone"; his friends now see only
-  "Claude account" and the session usage. When one of them misbehaves, Jonas blocks them under People
+  and he removes the AI account details tick for each friend; they now see only "Claude account" and the
+  session usage. When one of them misbehaves, Jonas blocks them under People
   and their chat closes on the spot.
 - In a conversation, Jonas opens the + menu and chooses "Manage agents"; the Settings window opens
   at Agents, where he gives Peter Peer a new role.

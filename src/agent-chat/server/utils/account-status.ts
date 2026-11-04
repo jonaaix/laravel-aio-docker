@@ -6,7 +6,6 @@ import { getClaudePath } from '#claude-threads/claude/version-check';
 import type { AccountProfile, AccountStatus, UsageSnapshot, UsageWindow } from '../../shared/types/account';
 import type { UserRow } from './user-store';
 
-const DETAILS_HIDDEN_SETTING = 'account.detailsHidden';
 const SIGNED_IN_BY_SETTING = 'account.signedInBy';
 const HIDDEN_PROFILE: AccountProfile = { email: null, organization: null, plan: null };
 
@@ -72,24 +71,8 @@ export function accountSignedInBy(): string | null {
     return readSetting(SIGNED_IN_BY_SETTING);
 }
 
-export function accountDetailsHidden(): boolean {
-    return readSetting(DETAILS_HIDDEN_SETTING) === 'true';
-}
-
-export function setAccountDetailsHidden(hidden: boolean): void {
-    writeSetting(DETAILS_HIDDEN_SETTING, String(hidden));
-    publishConversationListEvent({ type: 'account' });
-}
-
-export function detailsHiddenByDefault(user: UserRow): boolean {
-    return !user.isAdmin && accountDetailsHidden();
-}
-
 export function detailsHiddenFrom(user: UserRow): boolean {
-    if (user.id === accountSignedInBy()) {
-        return false;
-    }
-    return user.accountDetails ? user.accountDetails === 'hidden' : detailsHiddenByDefault(user);
+    return user.accountDetails === 'hidden' && user.id !== accountSignedInBy();
 }
 
 export function visibleUsage(usageSnapshot: UsageSnapshot | null, user: UserRow): UsageSnapshot | null {
@@ -102,7 +85,6 @@ export async function accountStatusFor(user: UserRow): Promise<AccountStatus> {
     return {
         profile: current && detailsHiddenFrom(user) ? HIDDEN_PROFILE : current,
         usage: visibleUsage(storedUsage(), user),
-        detailsHidden: accountDetailsHidden(),
         signedInBy: accountSignedInBy(),
     };
 }

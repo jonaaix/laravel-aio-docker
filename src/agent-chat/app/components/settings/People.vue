@@ -6,7 +6,7 @@ type PersonSetting = 'admin' | 'account-details' | 'blocked';
 const { t } = useI18n();
 const { users, upsert } = useUsers();
 const { user: me } = useUserName();
-const { detailsHidden, signedInBy } = useAccount();
+const { signedInBy } = useAccount();
 
 const pending = ref<{ id: string; setting: PersonSetting; value: boolean } | null>(null);
 const error = ref<string | undefined>();
@@ -29,10 +29,7 @@ function signedInAccount(person: ChatUser, setting: PersonSetting): boolean {
 }
 
 function seesAccountDetails(person: ChatUser): boolean {
-    if (person.id === signedInBy.value) {
-        return true;
-    }
-    return person.accountDetails ? person.accountDetails === 'shown' : person.admin || !detailsHidden.value;
+    return person.accountDetails !== 'hidden' || person.id === signedInBy.value;
 }
 
 function storedValue(person: ChatUser, setting: PersonSetting): boolean {

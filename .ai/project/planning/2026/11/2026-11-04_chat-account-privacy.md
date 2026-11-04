@@ -3,8 +3,8 @@
 ## Goal
 
 A workspace whose Claude account is lent to friends must not show that account to everyone. Admins decide
-whether the others see the account details; the others then see only the session usage. Nobody can sign in under
-someone else's name. Finished when the switch works for admins, the others' browsers never receive the
+per person whether they see the account details; the others then see only the session usage. Nobody can sign in under
+someone else's name. Finished when the per-person ticks work, the others' browsers never receive the
 hidden details, and a taken name is refused.
 
 ## Milestones
@@ -15,10 +15,10 @@ hidden details, and a taken name is refused.
       (admins only): make or remove admins, block or unblock (`users.blocked_at`)
 - [x] Block enforced: every request and both live streams of a blocked person end at once, sign-in links for
       their `userRef` are refused (403), redeeming one is refused
-- [x] Switch "Show account details to everyone" (default: shown); hidden → non-admins get no email,
+- [x] Per-person tick "AI account details" (default: shown); hidden → the person gets no email,
       organisation, plan or weekly usage from the server, only the session usage
-- [x] Per person: show or hide the account details apart from the default (`users.account_details`, only stored
-      where it differs from the default at the time it is set)
+- [x] People as a table of ticks; whoever signed in the current account (`account.signedInBy`) always sees
+      its details
 - [x] Feature Book: chat settings chapter
 
 ## State
@@ -30,7 +30,8 @@ hidden details, and a taken name is refused.
 ## Decisions
 
 - Hidden details: email, organisation, plan and every usage meter except the session (user's call).
-- Default: details shown until hidden (user's call).
+- Default: details shown until hidden (user's call). No switch for everyone: hiding is per person only, also
+  for admins (user's call).
 - Admins decide. Admin is unlocked by a hidden trick without any key: the chat is not public and nobody taps
   a picture seven times by chance (user's call). A key or first-person rule was rejected.
 - Admins can make others admins, remove admins and block people; nothing else is admin-only (user's call).
