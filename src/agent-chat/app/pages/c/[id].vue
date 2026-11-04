@@ -555,7 +555,7 @@ const restoreConversation = () => withFlag(archiving, restore);
                                     </UTooltip>
                                     <span class="sr-only">{{ t('Stop hook') }}</span>
                                     <span class="flex min-w-0 flex-col gap-1.5">
-                                        <span v-for="(paragraph, line) in segment.paragraphs" :key="line" class="whitespace-pre-line">{{ paragraph }}</span>
+                                        <span v-for="(paragraph, line) in segment.paragraphs" :key="line" class="whitespace-pre-line" :class="line === 0 ? 'font-medium' : ''">{{ paragraph }}</span>
                                     </span>
                                 </p>
                                 <p v-else-if="segment.kind === 'compacted'" class="flex items-center gap-2 text-sm text-muted">
