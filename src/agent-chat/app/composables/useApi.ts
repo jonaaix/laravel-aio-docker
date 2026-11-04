@@ -77,6 +77,10 @@ export function subscribeEvents<T>(path: string, onEvent: (event: T) => void, on
         if (server) {
             await accessToken(server).catch(() => undefined);
         }
+        if (document.readyState !== 'complete') {
+            // Safari keeps its loading indicator spinning for a stream opened before the page finished loading.
+            await new Promise(resolve => window.addEventListener('load', resolve, { once: true }));
+        }
         if (closed) {
             return;
         }
