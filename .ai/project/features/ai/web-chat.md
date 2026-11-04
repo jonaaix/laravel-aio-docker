@@ -78,7 +78,11 @@ answer rather than mixed into it. An opened step shows its command, file changes
 code highlighting in the language they are written in — a command's output in the language of the
 last file the command names whose language is known; where no language can be told, a basic
 highlighting still sets strings, numbers, dates, links and words like "error" apart. Errors stay
-plain red.
+plain red. Every file change shows, however it was made — through the agent's file tools, a shell
+command or a script — as long as the project is a git repository: right under the step that made it, visible
+while the agent works, long diffs cut to their first lines and expandable; and at the end of the answer as
+"N files changed · +A −R", where each file opens its diff. Files git ignores do not show, and the project's
+own git state (staged changes, commits) is never touched.
 
 Any message can be copied with one click. To comment on specific passages, the user selects text
 in the conversation and quotes it: the passage lands in the message input as a quote with the

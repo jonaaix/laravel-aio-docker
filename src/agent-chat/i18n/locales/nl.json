@@ -240,5 +240,12 @@
     "Person": "Persoon",
     "AI account details": "AI-accountgegevens",
     "{option} for {name}": "{option} voor {name}",
-    "Signed in this account": "Heeft dit account aangemeld"
+    "Signed in this account": "Heeft dit account aangemeld",
+    "New": "Nieuw",
+    "Deleted": "Verwijderd",
+    "Renamed": "Hernoemd",
+    "Binary file": "Binair bestand",
+    "Diff shortened": "Diff ingekort",
+    "Show 1 more line | Show {count} more lines": "1 extra regel tonen | {count} extra regels tonen",
+    "1 file changed | {count} files changed": "1 bestand gewijzigd | {count} bestanden gewijzigd"
 }

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { and, desc, eq, gt, inArray, isNotNull, isNull, lt, max, ne, or } from 'drizzle-orm';
 import { conversationMutes, conversations, messages } from '../database/schema';
-import type { ChatMessage, ConversationDetail, ConversationStatus, ConversationSummary, MessagePage } from '../../shared/types/conversation';
+import type { ChatMessage, ChatPart, ConversationDetail, ConversationStatus, ConversationSummary, MessagePage } from '../../shared/types/conversation';
 import type { TurnMetrics } from './turn-metrics';
 import type { UserRow } from './user-store';
 
@@ -214,6 +214,20 @@ export function saveMessageParts(conversationId: string, messageId: string, part
         .set({ parts })
         .where(and(eq(messages.id, messageId), eq(messages.conversationId, conversationId)))
         .run();
+}
+
+export function appendMessagePart(conversationId: string, messageId: string, part: ChatPart): number | null {
+    const row = useDatabase()
+        .select({ parts: messages.parts })
+        .from(messages)
+        .where(and(eq(messages.id, messageId), eq(messages.conversationId, conversationId)))
+        .get();
+    if (!row) {
+        return null;
+    }
+    const parts = [...row.parts, part];
+    saveMessageParts(conversationId, messageId, parts);
+    return parts.length - 1;
 }
 
 export function saveTurnMetrics(conversationId: string, messageId: string, metrics: TurnMetrics): void {

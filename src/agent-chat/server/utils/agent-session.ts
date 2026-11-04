@@ -1,11 +1,14 @@
+import { join } from 'node:path';
 import { ClaudeCli, type ClaudeEvent } from '#claude-threads/claude/cli';
-import type { BackgroundTask, ChatMessage, ChatPart, QueuedMessage, TurnOutcome } from '../../shared/types/conversation';
+import type { BackgroundTask, ChatMessage, ChatPart, FileChange, QueuedMessage, TurnOutcome } from '../../shared/types/conversation';
 import { metricsFromResult, outcomeOnlyMetrics, type TurnMetrics } from './turn-metrics';
 import type { UserRow } from './user-store';
+import { ChangeTracker } from './working-tree';
 
 const TURN_EVENT_TYPES = new Set(['stream_event', 'assistant', 'user']);
 // Questions and plans happen as plain chat text; the chat has no controls for these tools.
 const DISALLOWED_TOOLS = ['AskUserQuestion', 'EnterPlanMode', 'ExitPlanMode'];
+const READ_ONLY_TOOLS = new Set(['Read', 'Grep', 'Glob', 'LS', 'WebFetch', 'WebSearch', 'ToolSearch', 'TodoWrite', 'Skill', 'Monitor', 'BashOutput', 'TaskOutput', 'ListMcpResourcesTool', 'ReadMcpResourceTool', 'mcp__chat__send_file']);
 
 interface ActiveTurn {
     message: ChatMessage | null;
@@ -46,6 +49,7 @@ export class AgentSession {
     private queue: QueuedPrompt[] = [];
     private undelivered: QueuedPrompt[] = [];
     private tasks: BackgroundTask[] = [];
+    private changes: ChangeTracker | null = null;
 
     constructor(
         private readonly conversationId: string,
@@ -101,6 +105,7 @@ export class AgentSession {
             cli.sendMessage(queued.prompt);
         }
         this.workingDir = launch.workingDir;
+        this.changes = new ChangeTracker(launch.workingDir, join(resolveDataDir(), 'git-index', `${this.conversationId}-${this.agentId}`));
         this.cli = cli;
     }
 
@@ -148,6 +153,7 @@ export class AgentSession {
         this.tasks = [];
         this.endTurn(outcomeOnlyMetrics('stopped', this.model));
         this.deferQueue();
+        this.changes?.dispose();
         await cli.kill();
     }
 
@@ -182,6 +188,7 @@ export class AgentSession {
 
     private beginTurn(): void {
         this.turn = { message: null, parts: [], liveIndex: null, stopRequested: false };
+        this.changes?.beginTurn();
     }
 
     private trackBackgroundTasks(tasks: unknown[]): void {
@@ -239,6 +246,42 @@ export class AgentSession {
         if (changed.length > 0) {
             this.recordParts(changed);
         }
+        if (event.type === 'user') {
+            this.trackStepChanges(changed);
+        }
+    }
+
+    private trackStepChanges(changed: number[]): void {
+        const turn = this.turn!;
+        const messageId = turn.message?.id;
+        for (const index of changed) {
+            const part = turn.parts[index];
+            if (!messageId || part?.type !== 'dynamic-tool' || READ_ONLY_TOOLS.has(part.toolName)) {
+                continue;
+            }
+            const toolCallId = part.toolCallId;
+            this.changes?.afterStep(files => this.attachPart(messageId, { type: 'data-file-changes', data: { toolCallId, files } }));
+        }
+    }
+
+    private attachPart(messageId: string, part: ChatPart): void {
+        const turn = this.turn;
+        if (turn?.message?.id === messageId) {
+            this.recordParts([turn.parts.push(part) - 1]);
+            return;
+        }
+        const index = appendMessagePart(this.conversationId, messageId, part);
+        if (index !== null) {
+            publishConversationEvent(this.conversationId, { type: 'part', messageId, index, part });
+        }
+    }
+
+    private trackTurnChanges(messageId: string | null): void {
+        this.changes?.endTurn((files: FileChange[]) => {
+            if (messageId) {
+                this.attachPart(messageId, { type: 'data-turn-changes', data: { files } });
+            }
+        });
     }
 
     private handleStreamEvent(event: ClaudeEvent): void {
@@ -335,6 +378,7 @@ export class AgentSession {
         saveTurnMetrics(this.conversationId, message.id, metrics);
         const finished = { ...message, parts: [...turn.parts], metadata: { ...message.metadata!, outcome: metrics.outcome, error: metrics.errorMessage ?? undefined } };
         publishConversationEvent(this.conversationId, { type: 'message', message: finished });
+        this.trackTurnChanges(turn.message ? message.id : null);
         this.hooks.turnEnded(this, turn.message ? finished : null, turn.stopRequested ? 'stopped' : metrics.outcome);
     }
 
@@ -346,6 +390,7 @@ export class AgentSession {
         this.tasks = [];
         this.endTurn(outcomeOnlyMetrics('failed', this.model, 'Claude exited unexpectedly.'));
         this.deferQueue();
+        this.changes?.dispose();
         this.hooks.exited();
     }
 }

@@ -56,9 +56,6 @@ const command = computed(() => {
 const filePath = computed(() => typeof record.value.file_path === 'string' ? record.value.file_path : '');
 
 const highlightSource = computed(() => {
-    if (diff.value.length > 0) {
-        return { code: diff.value.map(line => line.text).join('\n'), language: fileLanguage(filePath.value) };
-    }
     if (preview.value) {
         return { code: preview.value.text, language: fileLanguage(filePath.value) };
     }
@@ -70,19 +67,10 @@ const highlightSource = computed(() => {
 
 const tokens = useCodeTokens(() => highlightSource.value.code, () => highlightSource.value.language);
 const sourceLines = computed(() => highlightSource.value.code.split('\n'));
-
-const lineClass: Record<DiffLine['kind'], string> = {
-    added: 'bg-success/10 text-success',
-    removed: 'bg-error/10 text-error',
-    same: 'text-toned',
-};
-const linePrefix: Record<DiffLine['kind'], string> = { added: '+ ', removed: '- ', same: '  ' };
 </script>
 
 <template>
-    <div v-if="diff.length > 0" class="max-h-64 overflow-auto rounded-md bg-elevated py-2 font-mono text-xs/5">
-        <div v-for="(line, index) in diff" :key="index" class="px-3 whitespace-pre-wrap [overflow-wrap:anywhere]" :class="lineClass[line.kind]">{{ linePrefix[line.kind] }}<ChatCodeLine :text="line.text" :tokens="tokens?.[index]" /></div>
-    </div>
+    <ChatDiffLines v-if="diff.length > 0" :lines="diff" :language="fileLanguage(filePath)" class="max-h-64" />
     <pre v-else-if="preview" class="max-h-64 overflow-auto rounded-md bg-elevated p-3 text-xs/5 text-default whitespace-pre-wrap [overflow-wrap:anywhere]"><ChatCodeLines :lines="sourceLines" :tokens="tokens" /><span v-if="preview.hidden > 0" class="block pt-1 text-dimmed">… {{ t('1 more line | {count} more lines', { count: preview.hidden }, preview.hidden) }}</span></pre>
     <pre v-else-if="command" class="max-h-64 overflow-auto rounded-md bg-elevated p-3 text-xs/5 text-default whitespace-pre-wrap [overflow-wrap:anywhere]"><ChatCodeLines :lines="sourceLines" :tokens="tokens" /></pre>
 </template>

@@ -25,6 +25,7 @@ const listedTools = computed(() => tools.value.filter(part => part.input !== und
 const showAll = ref(false);
 const hiddenCount = computed(() => showAll.value ? 0 : Math.max(0, listedTools.value.length - VISIBLE_STEPS));
 const visibleTools = computed(() => listedTools.value.slice(hiddenCount.value));
+const stepChanges = computed(() => stepFileChanges(props.message));
 const commandTool = computed(() => working.value ? listedTools.value.findLast(part => toolSummary(part.input) !== '') : undefined);
 </script>
 
@@ -50,14 +51,17 @@ const commandTool = computed(() => working.value ? listedTools.value.findLast(pa
                 class="self-start px-0"
                 @click="showAll = !showAll"
             />
-            <ChatMessagePart
-                v-for="part in visibleTools"
-                :key="part.toolCallId"
-                :part="part"
-                :message="message"
-                :streaming="streaming"
-                :show-command="part === commandTool"
-            />
+            <template v-for="part in visibleTools" :key="part.toolCallId">
+                <ChatMessagePart
+                    :part="part"
+                    :message="message"
+                    :streaming="streaming"
+                    :show-command="part === commandTool"
+                />
+                <div v-if="stepChanges.has(part.toolCallId)" class="mb-1.5 flex flex-col gap-1.5">
+                    <ChatFileDiff v-for="change in stepChanges.get(part.toolCallId)" :key="change.path" :change="change" />
+                </div>
+            </template>
         </div>
     </ChatActivityBox>
 </template>

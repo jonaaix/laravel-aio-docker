@@ -43,6 +43,26 @@ export interface ConversationSummary {
 
 export type TurnOutcome = 'completed' | 'stopped' | 'failed';
 
+export interface FileChange {
+    path: string;
+    previousPath: string | null;
+    status: 'added' | 'modified' | 'deleted' | 'renamed';
+    added: number;
+    removed: number;
+    binary: boolean;
+    lines: string[];
+    truncated: boolean;
+}
+
+export interface StepFileChanges {
+    toolCallId: string;
+    files: FileChange[];
+}
+
+export interface TurnFileChanges {
+    files: FileChange[];
+}
+
 export interface ChatMessageMetadata {
     createdAt: number;
     senderId?: string;

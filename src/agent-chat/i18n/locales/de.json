@@ -240,5 +240,12 @@
     "Person": "Person",
     "AI account details": "KI-Account-Details",
     "{option} for {name}": "{option} für {name}",
-    "Signed in this account": "Hat dieses Konto angemeldet"
+    "Signed in this account": "Hat dieses Konto angemeldet",
+    "New": "Neu",
+    "Deleted": "Gelöscht",
+    "Renamed": "Umbenannt",
+    "Binary file": "Binärdatei",
+    "Diff shortened": "Diff gekürzt",
+    "Show 1 more line | Show {count} more lines": "1 weitere Zeile anzeigen | {count} weitere Zeilen anzeigen",
+    "1 file changed | {count} files changed": "1 Datei geändert | {count} Dateien geändert"
 }

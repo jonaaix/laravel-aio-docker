@@ -240,5 +240,12 @@
     "Person": "Person",
     "AI account details": "AI account details",
     "{option} for {name}": "{option} for {name}",
-    "Signed in this account": "Signed in this account"
+    "Signed in this account": "Signed in this account",
+    "New": "New",
+    "Deleted": "Deleted",
+    "Renamed": "Renamed",
+    "Binary file": "Binary file",
+    "Diff shortened": "Diff shortened",
+    "Show 1 more line | Show {count} more lines": "Show 1 more line | Show {count} more lines",
+    "1 file changed | {count} files changed": "1 file changed | {count} files changed"
 }

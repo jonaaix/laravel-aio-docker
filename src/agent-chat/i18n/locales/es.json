@@ -240,5 +240,12 @@
     "Person": "Persona",
     "AI account details": "Detalles de la cuenta de IA",
     "{option} for {name}": "{option} para {name}",
-    "Signed in this account": "Inició sesión con esta cuenta"
+    "Signed in this account": "Inició sesión con esta cuenta",
+    "New": "Nuevo",
+    "Deleted": "Eliminado",
+    "Renamed": "Renombrado",
+    "Binary file": "Archivo binario",
+    "Diff shortened": "Diff acortado",
+    "Show 1 more line | Show {count} more lines": "Mostrar 1 línea más | Mostrar {count} líneas más",
+    "1 file changed | {count} files changed": "1 archivo modificado | {count} archivos modificados"
 }

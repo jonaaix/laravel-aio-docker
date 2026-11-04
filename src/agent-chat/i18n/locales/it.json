@@ -240,5 +240,12 @@
     "Person": "Persona",
     "AI account details": "Dettagli dell'account IA",
     "{option} for {name}": "{option} per {name}",
-    "Signed in this account": "Ha collegato questo account"
+    "Signed in this account": "Ha collegato questo account",
+    "New": "Nuovo",
+    "Deleted": "Eliminato",
+    "Renamed": "Rinominato",
+    "Binary file": "File binario",
+    "Diff shortened": "Diff abbreviato",
+    "Show 1 more line | Show {count} more lines": "Mostra 1 altra riga | Mostra altre {count} righe",
+    "1 file changed | {count} files changed": "1 file modificato | {count} file modificati"
 }

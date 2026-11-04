@@ -527,6 +527,7 @@ const restoreConversation = () => withFlag(archiving, restore);
                                 </p>
                                 <ChatMessagePart v-else :part="segment.part" :message="message" :streaming="isStreaming(message.id)" />
                             </template>
+                            <ChatTurnChanges v-if="message.role === 'assistant'" :message="message" class="mt-3" />
                             <ChatTurnOutcome v-if="message.role === 'assistant'" :message="message" />
                         </template>
                         <template #actions="{ message }">
