@@ -78,6 +78,10 @@ export function detailsHiddenFrom(user: UserRow): boolean {
     return user.accountDetails ? user.accountDetails === 'hidden' : detailsHiddenByDefault(user);
 }
 
+export function showDetailsTo(user: UserRow): UserRow {
+    return detailsHiddenFrom(user) ? setUserAccountDetails(user, detailsHiddenByDefault(user) ? 'shown' : null) : user;
+}
+
 export function visibleUsage(usageSnapshot: UsageSnapshot | null, user: UserRow): UsageSnapshot | null {
     return usageSnapshot && detailsHiddenFrom(user) ? { ...usageSnapshot, week: null } : usageSnapshot;
 }
