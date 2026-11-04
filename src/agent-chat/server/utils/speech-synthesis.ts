@@ -36,8 +36,11 @@ export class SpeechServiceError extends Error {
     }
 }
 
+const LOGGED_BODY_LENGTH = 600;
+
 export async function serviceFailure(response: Response): Promise<SpeechServiceError> {
     const body = await response.text().catch(() => '');
+    console.warn(`[speech] ${response.url} answered ${response.status}: ${body.slice(0, LOGGED_BODY_LENGTH)}`);
     return new SpeechServiceError(REJECTED_KEY.has(response.status) || body.includes(GEMINI_INVALID_KEY));
 }
 
@@ -72,8 +75,10 @@ async function synthesizeWithGemini({ apiKey, model, voice, text }: SpeechReques
     if (!response.ok) {
         throw await serviceFailure(response);
     }
-    const audio = findAudioData(await response.json());
+    const answer = await response.json();
+    const audio = findAudioData(answer);
     if (!audio) {
+        console.warn(`[speech] Gemini answered without audio: ${JSON.stringify(answer).slice(0, LOGGED_BODY_LENGTH)}`);
         throw new SpeechServiceError(false);
     }
     return Buffer.from(audio, 'base64');
