@@ -1,6 +1,8 @@
 import type { ChatStatus } from 'ai';
 import type { BackgroundTask, ChatMessage, UploadedFile, ConversationDetail, ConversationEvent, ConversationStatus, ConversationSummary, MessagePage, QueuedMessage } from '#shared/types/conversation';
 
+const EMBEDDED_FIRST_PAGE = 10;
+
 export function useConversation(conversationId: string) {
     const title = ref('');
     const workingDir = ref('');
@@ -59,7 +61,7 @@ export function useConversation(conversationId: string) {
     }
 
     async function load(): Promise<void> {
-        const detail = await apiFetch<ConversationDetail>(`conversations/${conversationId}`);
+        const detail = await apiFetch<ConversationDetail>(`conversations/${conversationId}`, { query: { limit: isEmbedded() ? EMBEDDED_FIRST_PAGE : undefined } });
         title.value = detail.title;
         workingDir.value = detail.workingDir;
         messages.value = detail.messages;

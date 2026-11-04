@@ -81,7 +81,7 @@ export function subscribeEvents<T>(path: string, onEvent: (event: T) => void, on
             // Safari keeps its loading indicator spinning for a stream opened before the page finished loading.
             await new Promise(resolve => window.addEventListener('load', resolve, { once: true }));
         }
-        if (closed) {
+        if (closed || document.hidden || source) {
             return;
         }
         source = new EventSource(apiUrl(path));
@@ -102,10 +102,22 @@ export function subscribeEvents<T>(path: string, onEvent: (event: T) => void, on
         };
     }
 
+    // Chrome allows six connections per address; tabs in the background give theirs back and catch up on return.
+    const onVisibility = () => {
+        if (!document.hidden) {
+            void connect();
+            return;
+        }
+        clearTimeout(retry);
+        source?.close();
+        source = null;
+    };
+    document.addEventListener('visibilitychange', onVisibility);
     void connect();
     return () => {
         closed = true;
         clearTimeout(retry);
+        document.removeEventListener('visibilitychange', onVisibility);
         source?.close();
     };
 }

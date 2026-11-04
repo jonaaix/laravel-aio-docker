@@ -33,12 +33,12 @@ export function findConversation(id: string): ConversationRow | undefined {
     return useDatabase().select().from(conversations).where(eq(conversations.id, id)).get();
 }
 
-export function getConversationDetail(id: string): ConversationDetail | undefined {
+export function getConversationDetail(id: string, pageSize = MESSAGE_PAGE_SIZE): ConversationDetail | undefined {
     const row = findConversation(id);
     if (!row) {
         return undefined;
     }
-    return { ...summarize(row), workingDir: row.workingDir, ...messagePage(id, null) };
+    return { ...summarize(row), workingDir: row.workingDir, ...messagePage(id, null, pageSize) };
 }
 
 export function getMessagesBefore(conversationId: string, beforeMessageId: string): MessagePage | undefined {
@@ -50,17 +50,18 @@ export function getMessagesBefore(conversationId: string, beforeMessageId: strin
     return before ? messagePage(conversationId, before.seq) : undefined;
 }
 
-function messagePage(conversationId: string, beforeSeq: number | null): MessagePage {
+function messagePage(conversationId: string, beforeSeq: number | null, pageSize = MESSAGE_PAGE_SIZE): MessagePage {
+    const size = Math.min(Math.max(Math.trunc(pageSize), 1), MESSAGE_PAGE_SIZE);
     const rows = useDatabase()
         .select()
         .from(messages)
         .where(and(eq(messages.conversationId, conversationId), beforeSeq === null ? undefined : lt(messages.seq, beforeSeq)))
         .orderBy(desc(messages.seq))
-        .limit(MESSAGE_PAGE_SIZE + 1)
+        .limit(size + 1)
         .all();
     return {
-        messages: rows.slice(0, MESSAGE_PAGE_SIZE).reverse().map(toChatMessage),
-        hasEarlier: rows.length > MESSAGE_PAGE_SIZE,
+        messages: rows.slice(0, size).reverse().map(toChatMessage),
+        hasEarlier: rows.length > size,
     };
 }
 

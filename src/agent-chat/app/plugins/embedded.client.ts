@@ -13,6 +13,7 @@ export default defineNuxtPlugin(() => {
     if (!isEmbedded()) {
         return;
     }
+    document.documentElement.classList.add('scrollbar-slim');
     const router = useRouter();
     let first = true;
     router.beforeEach((to) => {

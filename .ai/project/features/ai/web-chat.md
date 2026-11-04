@@ -23,11 +23,16 @@ conversation remain part of the feature; Claude comes first.
 The chat can be embedded as an iframe inside the Laravel app the container hosts, so the app's
 users talk to the agent without leaving the app, or be given its own domain or port.
 
-For working on the app, the chat can also lie over any of its pages: a chat button at the bottom right opens the chat
-in a panel on the right, its width dragged at the left edge. A second button switches between overlay, where the panel
-covers the page, and split, where the page moves aside to make room. When the page reloads or the user follows a link,
-the panel comes straight back as it was — open or closed, mode, width, the open conversation and any text not yet
-sent — while the agents carry on undisturbed on the server. The chat itself only loads once the panel is first opened.
+For working on the app, the chat can also sit beside any of its pages: a chat button at the bottom right opens the chat
+in a panel on the right and moves the page aside to make room; the edge between them lights up under the pointer and
+can be dragged to change the width. Page and chat scroll with slim scrollbars while the panel is open, so two broad
+bars never stand side by side. When the page reloads or the user follows a link, the panel comes straight back as it
+was — open or closed, width, the open conversation and any text not yet sent — while the agents carry on undisturbed on
+the server. The chat only loads once the panel is first opened, and a conversation in the panel shows its last ten
+messages first, loading earlier ones on scrolling up.
+
+Chat tabs in the background let go of their live connection and catch up as soon as they are in front again, so many
+open chat tabs never hold up a page that loads the chat.
 
 Only a signed link lets someone in. The chat signs these links itself; the Laravel app is only the
 door: for its signed-in user it asks the chat for a link, proving itself with a key stored centrally in
