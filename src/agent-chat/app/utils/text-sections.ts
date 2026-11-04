@@ -34,6 +34,7 @@ export function splitTextSections(text: string): TextSection[] {
     const lines = text.split('\n');
     const sections: TextSection[] = [];
     let title: string | null = null;
+    let closesAtParagraph = false;
     let buffer: string[] = [];
     const flush = (): void => {
         const section = toSection(title, buffer);
@@ -51,14 +52,25 @@ export function splitTextSections(text: string): TextSection[] {
         }
         else if (heading) {
             flush();
-            title = heading;
-            if (SECTION_BAR.test(lines[index + 1] ?? '')) {
+            title = heading.title;
+            if (heading.text) {
+                buffer.push(heading.text);
+            }
+            const barred = SECTION_BAR.test(lines[index + 1] ?? '');
+            closesAtParagraph = !barred && sectionKind(title) !== 'section';
+            if (barred) {
                 index += 1;
             }
         }
         else if (SECTION_BAR.test(lines[index]!)) {
             flush();
             title = null;
+            closesAtParagraph = false;
+        }
+        else if (closesAtParagraph && lines[index]!.trim() === '' && buffer.some(line => line.trim())) {
+            flush();
+            title = null;
+            closesAtParagraph = false;
         }
         else {
             buffer.push(lines[index]!);
