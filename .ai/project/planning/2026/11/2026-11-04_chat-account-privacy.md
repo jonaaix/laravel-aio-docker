@@ -35,6 +35,8 @@ hidden details, and a taken name is refused.
   a picture seven times by chance (user's call). A key or first-person rule was rejected.
 - Admins can make others admins, remove admins and block people; nothing else is admin-only (user's call).
 - Everyone may still switch or sign out the Claude account, e.g. to use their own (user's call).
+- A blocked person is not told so; they see the same "Unauthorized" as anyone not signed in. A dedicated
+  "access blocked" page was rejected (user's call).
 - `userRef` is required in every link: without it a taken name could not be told apart from its owner.
 
 ## Open

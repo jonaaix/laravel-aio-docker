@@ -66,7 +66,8 @@ a conversation opens the same window at Agents.
   and the blocked, and showing a crossed-out eye beside anyone the account details are hidden from. An admin
   can show or hide the account details for a single person, apart from what everyone else sees, make others admins, take the role away again (also from themselves) and
   block or unblock anyone but themselves. A blocked person is no longer an admin, is signed out of every
-  open browser at once and is refused by every later sign-in link from the Laravel app.
+  open browser at once and is refused by every later sign-in link from the Laravel app. They are not told
+  they were blocked: the chat only answers "Unauthorized", as it does for anyone not signed in.
   Becoming an admin is hidden: tapping one's own picture in Profile seven times in quick succession makes
   that person an admin and opens People. Nothing in the chat points to it.
 - **Remote control** pairs devices with this chat through the hub, as described in [AI web chat](web-chat.md):
