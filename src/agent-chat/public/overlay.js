@@ -61,8 +61,7 @@
         <style>
             :host { all: initial; }
             * { box-sizing: border-box; }
-            .panel { position: fixed; top: 0; right: 0; bottom: 0; z-index: ${Z_INDEX}; display: none; background: #fafafa;
-                border-left: 1px solid rgb(0 0 0 / 0.1); }
+            .panel { position: fixed; top: 0; right: 0; bottom: 0; z-index: ${Z_INDEX}; display: none; }
             .panel.open { display: block; }
             iframe { display: block; width: 100%; height: 100%; border: 0; }
             .grip { position: absolute; top: 0; bottom: 0; left: -4px; width: 8px; cursor: col-resize; }
@@ -83,7 +82,6 @@
                 opacity: 0; pointer-events: none; transition: opacity 120ms ease; }
             button:hover::after, button:focus-visible::after { opacity: 1; }
             @media (prefers-color-scheme: dark) {
-                .panel { background: #1c1c1c; border-left-color: rgb(255 255 255 / 0.1); }
                 .grip:hover::after, .grip.dragging::after { background: #60a5fa; }
                 button { background: #f5f5f5; color: #171717; }
                 button::after { background: #f5f5f5; color: #171717; }
