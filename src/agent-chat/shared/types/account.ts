@@ -1,5 +1,5 @@
 export interface AccountProfile {
-    email: string;
+    email: string | null;
     organization: string | null;
     plan: string | null;
 }
@@ -19,4 +19,5 @@ export interface UsageSnapshot {
 export interface AccountStatus {
     profile: AccountProfile | null;
     usage: UsageSnapshot | null;
+    detailsHidden: boolean;
 }

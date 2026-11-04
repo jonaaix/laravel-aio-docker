@@ -12,6 +12,9 @@ export default defineEventHandler(async (event) => {
     if (!userRef) {
         throw createError({ statusCode: 422, statusMessage: 'A user reference is required' });
     }
+    if (isAppUserBlocked(userRef)) {
+        throw createError({ statusCode: 403, statusMessage: 'This person is blocked' });
+    }
     if (isNameTakenByOther(name, userRef)) {
         throw createError({ statusCode: 409, statusMessage: 'This name is already taken' });
     }

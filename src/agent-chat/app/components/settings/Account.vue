@@ -4,7 +4,9 @@ import type { AccountStatus } from '#shared/types/account';
 type Step = 'idle' | 'starting' | 'code' | 'verifying';
 
 const { t } = useI18n();
-const { profile } = useAccount();
+const { profile, detailsHidden } = useAccount();
+const { user } = useUserName();
+const visibilityBusy = ref(false);
 
 const step = ref<Step>('idle');
 const signInUrl = ref('');
@@ -73,6 +75,20 @@ async function signOut(): Promise<void> {
     }
 }
 
+async function setDetailsHidden(hidden: boolean): Promise<void> {
+    visibilityBusy.value = true;
+    error.value = undefined;
+    try {
+        detailsHidden.value = (await apiFetch<{ hidden: boolean }>('account/details', { method: 'PUT', body: { hidden } })).hidden;
+    }
+    catch (failure) {
+        error.value = failureMessage(failure, t('Could not change who sees the account'));
+    }
+    finally {
+        visibilityBusy.value = false;
+    }
+}
+
 onBeforeUnmount(() => {
     if (step.value === 'code') {
         void cancelSignIn();
@@ -84,10 +100,18 @@ onBeforeUnmount(() => {
     <div class="flex max-w-xl flex-col gap-4">
         <template v-if="profile && (step === 'idle' || step === 'starting')">
             <div class="rounded-md p-4 ring ring-default">
-                <p class="truncate font-medium text-highlighted">{{ profile.email }}</p>
+                <p class="truncate font-medium text-highlighted">{{ profile.email ?? t('Claude account') }}</p>
                 <p v-if="details" class="truncate text-sm text-muted">{{ details }}</p>
                 <UsageMeters class="mt-3" />
             </div>
+            <USwitch
+                v-if="user?.admin"
+                :model-value="!detailsHidden"
+                :label="t('Show account details to everyone')"
+                :loading="visibilityBusy"
+                :disabled="visibilityBusy"
+                @update:model-value="value => setDetailsHidden(value !== true)"
+            />
             <div class="flex flex-wrap gap-2">
                 <UButton :label="t('Switch account')" icon="i-heroicons-arrows-right-left" color="neutral" variant="outline" :loading="step === 'starting'" @click="startSignIn" />
                 <UButton :label="t('Sign out')" icon="i-heroicons-arrow-right-on-rectangle" color="neutral" variant="ghost" :loading="signingOut" @click="signOut" />

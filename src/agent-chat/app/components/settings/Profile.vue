@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import type { UploadedFile } from '#shared/types/conversation';
+import type { ChatUser } from '#shared/types/user';
 
+const UNLOCK_TAPS = 7;
+const UNLOCK_TAP_GAP_MS = 600;
+
+const emit = defineEmits<{ unlocked: [] }>();
 const { t } = useI18n();
 
 const { user, setAvatar, setAvatarSeed } = useUserName();
@@ -39,6 +44,24 @@ function removePicture(): void {
     void changePicture(Promise.resolve(null));
 }
 
+let unlockTaps = 0;
+let lastUnlockTap = 0;
+
+async function countUnlockTap(): Promise<void> {
+    if (!user.value || user.value.admin) {
+        return;
+    }
+    const now = performance.now();
+    unlockTaps = now - lastUnlockTap < UNLOCK_TAP_GAP_MS ? unlockTaps + 1 : 1;
+    lastUnlockTap = now;
+    if (unlockTaps < UNLOCK_TAPS) {
+        return;
+    }
+    unlockTaps = 0;
+    user.value = await apiFetch<ChatUser>('admin/claim', { method: 'POST' });
+    emit('unlocked');
+}
+
 function onPicked(): void {
     const file = fileInput.value?.files?.[0];
     fileInput.value!.value = '';
@@ -60,7 +83,7 @@ function onPicked(): void {
         </UFormField>
         <div v-if="user" class="flex flex-col gap-3 sm:flex-row sm:items-start">
             <div class="flex shrink-0 items-center gap-3 sm:w-28 sm:flex-col">
-                <ParticipantAvatar :participant="{ kind: 'person', name: user.name, seed: user.avatarSeed, image: user.avatarUrl }" class="size-20" />
+                <ParticipantAvatar :participant="{ kind: 'person', name: user.name, seed: user.avatarSeed, image: user.avatarUrl }" class="size-20 select-none" @click="countUnlockTap" />
                 <div v-if="!user.avatarLocked" class="flex gap-2 sm:w-full sm:flex-col">
                     <UButton :label="t('Upload')" icon="i-heroicons-arrow-up-tray" color="neutral" variant="outline" class="sm:w-full sm:justify-center" :loading="pictureBusy" @click="fileInput?.click()" />
                     <UButton v-if="user.avatarUrl" :label="t('Remove')" color="neutral" variant="ghost" class="sm:w-full sm:justify-center" :disabled="pictureBusy" @click="removePicture" />

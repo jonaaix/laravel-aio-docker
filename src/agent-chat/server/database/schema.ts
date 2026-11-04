@@ -20,6 +20,8 @@ export const users = sqliteTable('users', {
     tint: integer('tint'),
     speechRate: real('speech_rate'),
     appUserRef: text('app_user_ref'),
+    isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
+    blockedAt: integer('blocked_at'),
     createdAt: integer('created_at').notNull(),
 }, table => [uniqueIndex('users_name_unique').on(table.name), uniqueIndex('users_app_user_ref_unique').on(table.appUserRef)]);
 

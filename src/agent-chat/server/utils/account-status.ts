@@ -4,6 +4,10 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { getClaudePath } from '#claude-threads/claude/version-check';
 import type { AccountProfile, AccountStatus, UsageSnapshot, UsageWindow } from '../../shared/types/account';
+import type { UserRow } from './user-store';
+
+const DETAILS_HIDDEN_SETTING = 'account.detailsHidden';
+const HIDDEN_PROFILE: AccountProfile = { email: null, organization: null, plan: null };
 
 interface RateLimitWindow {
     utilization?: number;
@@ -57,9 +61,28 @@ export function refreshAccountProfile(): void {
     publishConversationListEvent({ type: 'account' });
 }
 
-export async function getAccountStatus(): Promise<AccountStatus> {
+export function accountDetailsHidden(): boolean {
+    return readSetting(DETAILS_HIDDEN_SETTING) === 'true';
+}
+
+export function setAccountDetailsHidden(hidden: boolean): void {
+    writeSetting(DETAILS_HIDDEN_SETTING, String(hidden));
+    publishConversationListEvent({ type: 'account' });
+}
+
+export function visibleUsage(usageSnapshot: UsageSnapshot | null, user: UserRow): UsageSnapshot | null {
+    return usageSnapshot && accountDetailsHidden() && !user.isAdmin ? { ...usageSnapshot, week: null } : usageSnapshot;
+}
+
+export async function accountStatusFor(user: UserRow): Promise<AccountStatus> {
     profile ??= readProfile();
-    return { profile: await profile, usage: storedUsage() };
+    const current = await profile;
+    const detailsHidden = accountDetailsHidden();
+    return {
+        profile: current && detailsHidden && !user.isAdmin ? HIDDEN_PROFILE : current,
+        usage: visibleUsage(storedUsage(), user),
+        detailsHidden,
+    };
 }
 
 export function recordRateLimit(info: unknown): void {

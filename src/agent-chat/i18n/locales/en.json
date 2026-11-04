@@ -231,5 +231,17 @@
     "{name} loses access right away.": "{name} loses access right away.",
     "{server} is removed from this device.": "{server} is removed from this device.",
     "{server} no longer accepts this device.": "{server} no longer accepts this device.",
-    "{service} · key saved": "{service} · key saved"
+    "{service} · key saved": "{service} · key saved",
+    "Show account details to everyone": "Show account details to everyone",
+    "Could not change who sees the account": "Could not change who sees the account",
+    "People": "People",
+    "You": "You",
+    "Admin": "Admin",
+    "Blocked": "Blocked",
+    "Remove admin": "Remove admin",
+    "Make admin": "Make admin",
+    "Unblock": "Unblock",
+    "Block": "Block",
+    "Actions for {name}": "Actions for {name}",
+    "Could not change this person": "Could not change this person"
 }

@@ -45,8 +45,12 @@ onMounted(async () => {
         else if (event.type === 'user') {
             upsertUser(event.user);
             if (event.user.id === user.value?.id) {
-                user.value = event.user;
+                const adminChanged = event.user.admin !== user.value.admin;
+                user.value = event.user.blocked ? null : event.user;
                 adoptAppearance(event.user);
+                if (adminChanged) {
+                    void loadAccount();
+                }
             }
         }
         else if (event.type === 'agents') {
@@ -66,7 +70,7 @@ onMounted(async () => {
     }, () => {
         void Promise.all([load(), loadAccount(), loadUsers(), loadAgents()]);
     });
-    await Promise.all([load(), loadAccount(), loadAgents(), loadUsers()]);
+    await Promise.all([load(), loadAccount(), loadAgents(), loadUsers()]).catch(() => undefined);
 });
 
 onBeforeUnmount(() => {

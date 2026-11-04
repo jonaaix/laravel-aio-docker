@@ -10,5 +10,5 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 422, statusMessage: (error as Error).message });
     }
     refreshAccountProfile();
-    return getAccountStatus();
+    return accountStatusFor(sessionUser(event));
 });

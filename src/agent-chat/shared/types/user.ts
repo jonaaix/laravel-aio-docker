@@ -10,4 +10,6 @@ export interface ChatUser {
     pinSentMessage: boolean;
     tint: number | null;
     speechRate: number | null;
+    admin: boolean;
+    blocked: boolean;
 }

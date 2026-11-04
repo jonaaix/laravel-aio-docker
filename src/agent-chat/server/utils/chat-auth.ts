@@ -122,6 +122,14 @@ export function sessionUser(event: H3Event): UserRow {
     return user;
 }
 
+export function adminUser(event: H3Event): UserRow {
+    const user = sessionUser(event);
+    if (!user.isAdmin) {
+        throw createError({ statusCode: 403, statusMessage: 'Only admins can do this' });
+    }
+    return user;
+}
+
 export function ownUser(event: H3Event): UserRow {
     const user = sessionUser(event);
     if (getRouterParam(event, 'id') !== user.id) {

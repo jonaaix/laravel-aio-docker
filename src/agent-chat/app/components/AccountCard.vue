@@ -6,7 +6,7 @@ const settingsWindow = useSettingsWindow();
 
 <template>
     <div v-if="profile" class="w-full rounded-md bg-default p-3 ring ring-default dark:bg-default/60">
-        <p class="truncate text-sm font-medium text-highlighted">{{ profile.email }}</p>
+        <p class="truncate text-sm font-medium text-highlighted">{{ profile.email ?? t('Claude account') }}</p>
         <p v-if="profile.organization" class="truncate text-xs text-muted">{{ profile.organization }}</p>
         <UsageMeters class="mt-2.5" />
     </div>

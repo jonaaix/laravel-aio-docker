@@ -7,19 +7,27 @@ const emit = defineEmits<{ 'after:leave': []; 'close': [] }>();
 const { t } = useI18n();
 
 const { public: { hub } } = useRuntimeConfig();
+const { user } = useUserName();
 
-const categories: { value: SettingsCategory; label: string; icon: string }[] = [
+const categories = computed<{ value: SettingsCategory; label: string; icon: string }[]>(() => [
     { value: 'appearance', label: 'Appearance', icon: 'i-heroicons-swatch' },
     { value: 'speech', label: 'Read aloud', icon: 'i-heroicons-speaker-wave' },
     { value: 'agents', label: 'Agents', icon: 'i-heroicons-cpu-chip' },
     { value: 'profile', label: 'Profile', icon: 'i-heroicons-user' },
     { value: 'account', label: 'Claude account', icon: 'i-heroicons-key' },
+    ...(user.value?.admin ? [{ value: 'people' as const, label: 'People', icon: 'i-heroicons-users' }] : []),
     hub
         ? { value: 'notifications', label: 'Notifications', icon: 'i-heroicons-bell' }
         : { value: 'remote', label: 'Remote control', icon: 'i-heroicons-device-phone-mobile' },
-];
+]);
 
 const active = ref<SettingsCategory>(props.category);
+
+watch(() => user.value?.admin, (admin) => {
+    if (!admin && active.value === 'people') {
+        active.value = 'profile';
+    }
+});
 const hasActions = computed(() => active.value === 'agents');
 </script>
 
@@ -49,8 +57,9 @@ const hasActions = computed(() => active.value === 'agents');
                     <SettingsAppearance v-if="active === 'appearance'" />
                     <SettingsReadAloud v-else-if="active === 'speech'" />
                     <SettingsAgents v-else-if="active === 'agents'" actions-target="#settings-actions" />
-                    <SettingsProfile v-else-if="active === 'profile'" />
+                    <SettingsProfile v-else-if="active === 'profile'" @unlocked="active = 'people'" />
                     <SettingsAccount v-else-if="active === 'account'" />
+                    <SettingsPeople v-else-if="active === 'people'" />
                     <SettingsNotifications v-else-if="active === 'notifications'" />
                     <SettingsRemoteControl v-else />
                 </div>

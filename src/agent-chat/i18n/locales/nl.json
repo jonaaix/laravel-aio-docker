@@ -231,5 +231,17 @@
     "{name} loses access right away.": "{name} verliest direct de toegang.",
     "{server} is removed from this device.": "{server} wordt van dit apparaat verwijderd.",
     "{server} no longer accepts this device.": "{server} accepteert dit apparaat niet meer.",
-    "{service} · key saved": "{service} · sleutel opgeslagen"
+    "{service} · key saved": "{service} · sleutel opgeslagen",
+    "Show account details to everyone": "Accountgegevens aan iedereen tonen",
+    "Could not change who sees the account": "De zichtbaarheid van het account kon niet worden gewijzigd",
+    "People": "Personen",
+    "You": "Jij",
+    "Admin": "Admin",
+    "Blocked": "Geblokkeerd",
+    "Remove admin": "Adminrechten intrekken",
+    "Make admin": "Admin maken",
+    "Unblock": "Deblokkeren",
+    "Block": "Blokkeren",
+    "Actions for {name}": "Acties voor {name}",
+    "Could not change this person": "Deze persoon kon niet worden gewijzigd"
 }

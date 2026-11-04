@@ -32,7 +32,7 @@ export default defineEventHandler((event) => {
     }
     const sessionId = sessionUserId(chatKey(), getCookie(event, SESSION_COOKIE));
     const user = (sessionId ? findUser(sessionId) : null) ?? deviceUser(event);
-    if (!user) {
+    if (!user || user.blockedAt) {
         throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
     }
     event.context.user = user;

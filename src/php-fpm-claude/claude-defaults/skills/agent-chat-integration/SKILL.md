@@ -39,6 +39,7 @@ Content-Type: application/json
 - Answer `200`: `{ "path": "/?n=…&a=…&exp=…&nonce=…&sig=…" }`. The browser opens `{AGENT_CHAT_URL}{path}`.
 - The link works once and only for about a minute. Request it at the moment the person clicks, never earlier,
   and never cache or store it.
+- `403` means the person was blocked by a chat admin: tell the user so, do not retry.
 - `401` means the key is wrong. `422` means the name or `userRef` is missing. `409` means the name already belongs
   to another person: show the user that their name is taken in the chat, never retry under another name on your own.
 

@@ -231,5 +231,17 @@
     "{name} loses access right away.": "{name} perde subito l’accesso.",
     "{server} is removed from this device.": "{server} verrà rimosso da questo dispositivo.",
     "{server} no longer accepts this device.": "{server} non accetta più questo dispositivo.",
-    "{service} · key saved": "{service} · chiave salvata"
+    "{service} · key saved": "{service} · chiave salvata",
+    "Show account details to everyone": "Mostra i dettagli dell’account a tutti",
+    "Could not change who sees the account": "Impossibile modificare la visibilità dell’account",
+    "People": "Persone",
+    "You": "Tu",
+    "Admin": "Admin",
+    "Blocked": "Bloccato",
+    "Remove admin": "Rimuovi admin",
+    "Make admin": "Rendi admin",
+    "Unblock": "Sblocca",
+    "Block": "Blocca",
+    "Actions for {name}": "Azioni per {name}",
+    "Could not change this person": "Impossibile modificare questa persona"
 }

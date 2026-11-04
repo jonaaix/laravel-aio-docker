@@ -1,1 +1,1 @@
-export default defineEventHandler(() => getAccountStatus());
+export default defineEventHandler(event => accountStatusFor(sessionUser(event)));

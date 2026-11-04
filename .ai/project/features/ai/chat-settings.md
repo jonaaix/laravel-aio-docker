@@ -14,7 +14,7 @@ take further categories as the chat grows.
 ## How does it work?
 
 Settings at the foot of the sidebar, below Archived, opens one Settings window with its categories on the left (on
-phones as tabs along the top): Appearance, Read aloud, Agents, Profile, Claude account and Remote control, opening at Appearance. "Manage agents" in the agents menu of
+phones as tabs along the top): Appearance, Read aloud, Agents, Profile, Claude account, People (admins only) and Remote control, opening at Appearance. "Manage agents" in the agents menu of
 a conversation opens the same window at Agents.
 
 - **Profile** holds the person's name and picture, as described in
@@ -57,6 +57,16 @@ a conversation opens the same window at Agents.
   says "Claude is not signed in" and its "Sign in" opens this category; while a usage limit is reached,
   it says "Usage limit reached" with the time agents can answer again. Usage figures start over with
   every sign-in and sign-out, so they never show another account's usage.
+  Admins see a switch "Show account details to everyone", on by default. Switched off, everyone but the
+  admins sees the account only as "Claude account" with its session usage: no e-mail, organisation, plan
+  or weekly usage reaches their browser. Switching and signing out stay open to everyone, so a friend
+  can sign in their own account.
+- **People** appears only for admins. It lists everyone who has signed in to the chat, marking the admins
+  and the blocked. An admin can make others admins, take the role away again (also from themselves) and
+  block or unblock anyone but themselves. A blocked person is no longer an admin, is signed out of every
+  open browser at once and is refused by every later sign-in link from the Laravel app.
+  Becoming an admin is hidden: tapping one's own picture in Profile seven times in quick succession makes
+  that person an admin and opens People. Nothing in the chat points to it.
 - **Remote control** pairs devices with this chat through the hub, as described in [AI web chat](web-chat.md):
   it shows a one-time pairing link with a copy button and the same link as a QR code, and lists the person's
   paired devices, each of which can be removed; a removed device loses access at once.
@@ -70,5 +80,9 @@ the name comes before the picture.
 
 - Jonas picks Inter under Appearance; the whole chat switches to Inter immediately. The next day he
   opens the chat on another computer and it is in Inter there too.
+- Jonas lends his Claude account to friends. He taps his picture in Profile seven times, People opens,
+  and under Claude account he switches off "Show account details to everyone"; his friends now see only
+  "Claude account" and the session usage. When one of them misbehaves, Jonas blocks them under People
+  and their chat closes on the spot.
 - In a conversation, Jonas opens the + menu and chooses "Manage agents"; the Settings window opens
   at Agents, where he gives Peter Peer a new role.
