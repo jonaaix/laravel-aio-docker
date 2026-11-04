@@ -34,7 +34,7 @@ const statusLabel = computed(() => {
 
 <template>
     <div class="flex flex-col gap-1">
-        <div class="flex min-h-7 items-center gap-2 text-xs">
+        <div class="sticky top-14 z-10 flex min-h-7 items-center gap-2 bg-default text-xs">
             <UIcon name="i-heroicons-document-text" class="size-4 shrink-0 text-muted" />
             <button
                 v-if="preview"
