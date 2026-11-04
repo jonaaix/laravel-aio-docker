@@ -31,7 +31,7 @@ a conversation opens the same window at Agents.
   typeface. It also sets the colour of the whole chat, picked from unnamed colour circles in two rows, each shown in
   the button colour it gives (the name appears only as a hint on hover): first Black, the default — plain greys with
   black and white accents, as the chat always looked — and fifteen vivid hues around the colour wheel, Gold among them, below them
-  sixteen quieter tones — Gray and muted ones such as Slate, Sage, Sand or Olive — which colour the same places more quietly. A hue colours the
+  eight further colours — Gray, and deep or bright ones such as Navy, Burgundy or Turquoise. All are clear, saturated colours. A hue colours the
   accents in the spirit of Material 3 — main buttons, chosen options, switches, focus rings, the open conversation in the sidebar, the open settings
   category and the light tint under anything the pointer rests on — buttons, menu items, list entries — take it,
   "New Code Session" shows its label and icon in it with a thin line around, and the

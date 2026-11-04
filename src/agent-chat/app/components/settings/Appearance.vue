@@ -2,7 +2,7 @@
 const { t } = useI18n();
 const { font, mode, language, pinSentMessage, tint, setColorMode, setFont, setLanguage, setPinSentMessage, setTint } = useAppearance();
 
-const tintRows = [TINT_CHOICES.filter(choice => !choice.muted), TINT_CHOICES.filter(choice => choice.muted)];
+const tintRows = [TINT_CHOICES.filter(choice => !choice.extended), TINT_CHOICES.filter(choice => choice.extended)];
 
 const languageItems = LANGUAGES.map(choice => ({ value: choice.code, label: choice.name }));
 
@@ -64,7 +64,7 @@ const modes: { value: ColorModeChoice; label: string; icon: string }[] = [
                         >
                             <span
                                 class="size-6 rounded-full"
-                                :class="choice.value === null ? 'bg-[oklch(0.205_0_0)] dark:bg-[oklch(0.922_0_0)]' : 'bg-[oklch(var(--swatch-lightness)_calc(0.14*var(--swatch-chroma))_var(--swatch-hue))] dark:bg-[oklch(0.8_calc(0.11*var(--swatch-chroma))_var(--swatch-hue))]'"
+                                :class="choice.value === null ? 'bg-[oklch(0.205_0_0)] dark:bg-[oklch(0.922_0_0)]' : 'bg-[oklch(var(--swatch-lightness)_calc(0.18*var(--swatch-chroma))_var(--swatch-hue))] dark:bg-[oklch(0.8_calc(0.14*var(--swatch-chroma))_var(--swatch-hue))]'"
                                 :style="choice.value === null ? undefined : { '--swatch-hue': choice.value, '--swatch-chroma': tintChroma(choice.value), '--swatch-lightness': tintLightness(choice.value) }"
                             />
                         </button>

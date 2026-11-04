@@ -22,7 +22,7 @@
 }
 
 .light {
-    --ui-primary: oklch(var(--tint-lightness) calc(0.14 * var(--tint-chroma)) var(--tint));
+    --ui-primary: oklch(var(--tint-lightness) calc(0.18 * var(--tint-chroma)) var(--tint));
     --user-message: oklch(0.93 calc(0.04 * var(--tint-chroma)) var(--tint));
     --ui-bg: oklch(0.985 0 0);
     --ui-bg-muted: oklch(0.965 0 0);
@@ -42,7 +42,7 @@
 }
 
 .dark {
-    --ui-primary: oklch(0.8 calc(0.11 * var(--tint-chroma)) var(--tint));
+    --ui-primary: oklch(0.8 calc(0.14 * var(--tint-chroma)) var(--tint));
     --user-message: oklch(0.3 calc(0.04 * var(--tint-chroma)) var(--tint));
     --ui-bg: oklch(0.17 0 0);
     --ui-bg-muted: oklch(0.205 0 0);
