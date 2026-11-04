@@ -87,7 +87,7 @@ onBeforeUnmount(() => {
             :min-size="14"
             :default-size="18"
             :max-size="28"
-            :ui="{ root: 'bg-muted', footer: 'pb-4', header: hub ? 'h-auto py-3' : undefined }"
+            :ui="{ root: 'peer bg-muted', footer: 'pb-4', header: hub ? 'h-auto py-3' : undefined }"
         >
             <template #header="{ collapsed }">
                 <div class="flex w-full flex-col gap-2">

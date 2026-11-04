@@ -57,7 +57,7 @@ and shown is described in [People in the chat](chat-people.md).
 
 ### Conversations
 
-A sidebar lists the conversations, with Settings at its foot. Everyone working in the same container sees all of them, each
+A sidebar lists the conversations, with Settings at its foot; its edge lights up under the pointer like the panel's and can be dragged to change the width. Everyone working in the same container sees all of them, each
 with the name of the person who started it: a development conversation is long-lived, and a team
 works on the same app. Each entry shows the title and, below it, whether the session is working
 (the agent is answering), active (running and waiting) or paused, and when something last
