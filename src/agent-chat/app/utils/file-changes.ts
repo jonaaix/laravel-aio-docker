@@ -1,4 +1,4 @@
-import type { ChatMessage, TurnFileChanges } from '#shared/types/conversation';
+import type { ChatMessage, FileChange, TurnFileChanges } from '#shared/types/conversation';
 import type { DiffLine } from './line-diff';
 
 const HUNK_START = /^@@ -(\d+)(?:,\d+)? \+(\d+)/;
@@ -29,4 +29,11 @@ export function turnFileChanges(message: ChatMessage): TurnFileChanges {
     const part = message.parts.findLast(candidate => candidate.type === 'data-turn-changes');
     const data = part && 'data' in part ? part.data as Partial<TurnFileChanges> : {};
     return { files: data.files ?? [], recentPaths: data.recentPaths ?? [] };
+}
+
+export function changeTotals(files: FileChange[]): { added: number; removed: number } {
+    return {
+        added: files.reduce((sum, file) => sum + file.added, 0),
+        removed: files.reduce((sum, file) => sum + file.removed, 0),
+    };
 }

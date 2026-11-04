@@ -17,6 +17,7 @@ export const users = sqliteTable('users', {
     font: text('font'),
     language: text('language'),
     pinSentMessage: integer('pin_sent_message', { mode: 'boolean' }).notNull().default(false),
+    changesPanelHidden: integer('changes_panel_hidden', { mode: 'boolean' }).notNull().default(false),
     tint: integer('tint'),
     speechRate: real('speech_rate'),
     appUserRef: text('app_user_ref'),

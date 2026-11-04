@@ -6,7 +6,8 @@ const props = withDefaults(defineProps<{
     change: FileChange;
     collapsible?: boolean;
     expanded?: boolean;
-}>(), { collapsible: false, expanded: false });
+    fullHeight?: boolean;
+}>(), { collapsible: false, expanded: false, fullHeight: false });
 
 const { t } = useI18n();
 const route = useRoute();
@@ -71,7 +72,7 @@ const statusLabel = computed(() => {
         <CollapsibleContent class="data-[state=closed]:animate-[collapsible-up_200ms_var(--ease-out)] data-[state=open]:animate-[collapsible-down_200ms_var(--ease-out)] data-[state=closed]:overflow-hidden">
             <div class="flex flex-col gap-1 pt-1 pb-1.5">
                 <p v-if="change.binary" class="text-xs text-muted">{{ t('Binary file') }}</p>
-                <ChatDiffLines v-else-if="lines.length > 0" :lines="lines" :language="fileLanguage(change.path)" class="max-h-96" />
+                <ChatDiffLines v-else-if="lines.length > 0" :lines="lines" :language="fileLanguage(change.path)" :class="fullHeight ? '' : 'max-h-96'" />
                 <p v-if="change.truncated" class="text-xs text-muted">{{ t('Diff shortened') }}</p>
             </div>
         </CollapsibleContent>

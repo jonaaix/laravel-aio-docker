@@ -83,7 +83,15 @@ command or a script — as long as the project is a git repository. Right below
 "Worked", in the same quiet style, "N files changed · +A −R" appears with the first changed file and counts up while the
 agent works; while it works it is open and shows the diff of the file changed last, and it closes like "Worked" once the
 answer is done. Opened, it lists the files, and each file unfolds its diff: with line numbers, up to 1,000 lines in a
-scroll area of limited height. The steps themselves show no diff. Clicking a file's name opens the whole file as it is now in the preview
+scroll area of limited height. The steps themselves show no diff.
+Where the screen leaves the conversation enough room, a "Changes" panel to its right keeps one answer's changes
+in view for a developer following along: all changed files stacked, each diff in full. It shows the newest answer
+with changes, fills live while the agent works and moves to the file changed last, unless the person has scrolled
+the panel themselves. "N files changed" in any answer then shows that answer in the panel instead of unfolding in
+place, and a newer answer with changes takes over again. The panel can be closed, which each person keeps until
+they open it again through "N files changed", and its edge drags the width, as far as the conversation keeps enough
+room; a double click restores the default width. On narrow screens and in the chat embedded in the app there is no
+panel. Clicking a file's name opens the whole file as it is now in the preview
 panel beside the conversation, unless it was deleted: with line numbers, the lines the change added marked,
 and scrolled to the first of them; with several changes, arrows next to "1 of 3" step through them. Files git ignores do not show and cannot be opened, and the project's
 own git state (staged changes, commits) is never touched.

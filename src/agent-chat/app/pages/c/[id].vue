@@ -3,6 +3,7 @@ import type { Agent } from '#shared/types/agent';
 import type { ChatMessage, ConversationSummary } from '#shared/types/conversation';
 import type { AnswerLine } from '~/utils/answer-line';
 import type { Participant } from '~/utils/avatars';
+import { CHANGES_PANEL_MIN_PX } from '~/composables/useChangesPanelRoom';
 
 const EARLIER_THRESHOLD_PX = 200;
 const AT_BOTTOM_THRESHOLD_PX = 120;
@@ -79,7 +80,7 @@ async function toggleMute(): Promise<void> {
 const leadAgent = computed<Participant>(() => ({ kind: 'agent', name: lead.value?.name ?? LEAD_AGENT_NAME, seed: lead.value ? lead.value.avatarSeed : LEAD_AGENT_AVATAR_SEED, image: lead.value?.avatarUrl }));
 
 const { participant: userParticipant } = useUsers();
-const { pinSentMessage } = useAppearance();
+const { pinSentMessage, changesPanelHidden, setChangesPanelHidden } = useAppearance();
 const { profile: account, loaded: accountLoaded } = useAccount();
 const mentionNames = useMentionNames();
 const mentionKey = computed(() => mentionNames.value.join('|'));
@@ -140,10 +141,28 @@ function isStreaming(messageId: string): boolean {
     return chatStatus.value === 'streaming' && messageId === visibleMessages.value.at(-1)?.id;
 }
 
+const header = ref<HTMLElement | null>(null);
+const changesPanelRoom = useChangesPanelRoom(header);
+const changesPanelAvailable = computed(() => !isEmbedded() && changesPanelRoom.value >= CHANGES_PANEL_MIN_PX);
+const selectedChangesId = ref<string | null>(null);
+const changedMessages = computed(() => visibleMessages.value.filter(message => message.role === 'assistant' && turnFileChanges(message).files.length > 0));
+const changesMessage = computed(() => changedMessages.value.find(message => message.id === selectedChangesId.value) ?? changedMessages.value.at(-1) ?? null);
+const changesPanelShown = computed(() => changesPanelAvailable.value && !changesPanelHidden.value && changesMessage.value !== null);
+
+watch(() => changedMessages.value.at(-1)?.id, () => {
+    selectedChangesId.value = null;
+});
+
+function showChanges(messageId: string): void {
+    selectedChangesId.value = messageId;
+    if (changesPanelHidden.value) {
+        void setChangesPanelHidden(false);
+    }
+}
+
 let unsubscribe: (() => void) | undefined;
 let contentObserver: ResizeObserver | undefined;
 
-const header = ref<HTMLElement | null>(null);
 const composerBar = ref<HTMLElement | null>(null);
 const atBottom = ref(true);
 const answerSpace = ref(0);
@@ -511,7 +530,13 @@ const restoreConversation = () => withFlag(archiving, restore);
                             <div v-if="message.role === 'assistant'" class="mb-3 flex flex-col empty:hidden">
                                 <ChatThinkingBlock :message="message" :streaming="isStreaming(message.id)" />
                                 <ChatWorkingBlock :message="message" :streaming="isStreaming(message.id)" />
-                                <ChatTurnChanges :message="message" :streaming="isStreaming(message.id)" />
+                                <ChatTurnChanges
+                                    :message="message"
+                                    :streaming="isStreaming(message.id)"
+                                    :panel-available="changesPanelAvailable"
+                                    :shown-in-panel="changesPanelShown && changesMessage?.id === message.id"
+                                    @show="showChanges(message.id)"
+                                />
                             </div>
                             <template v-for="segment in answerSegments(message)" :key="`${segment.key}:${mentionKey}`">
                                 <ChatImageGroup v-if="segment.kind === 'images'" :parts="segment.parts" />
@@ -597,4 +622,11 @@ const restoreConversation = () => withFlag(archiving, restore);
             </div>
         </template>
     </UDashboardPanel>
+    <ChatChangesPanel
+        v-if="changesPanelShown && changesMessage"
+        :message="changesMessage"
+        :streaming="isStreaming(changesMessage.id)"
+        :max-width="changesPanelRoom"
+        @close="setChangesPanelHidden(true)"
+    />
 </template>

@@ -251,5 +251,8 @@
     "Hide changes": "Änderungen ausblenden",
     "Previous change": "Vorherige Änderung",
     "Next change": "Nächste Änderung",
-    "{current} of {total}": "{current} von {total}"
+    "{current} of {total}": "{current} von {total}",
+    "Changes": "Änderungen",
+    "Close changes": "Änderungen schließen",
+    "Resize changes": "Breite der Änderungen anpassen"
 }

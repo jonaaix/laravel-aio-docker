@@ -251,5 +251,8 @@
     "Hide changes": "Hide changes",
     "Previous change": "Previous change",
     "Next change": "Next change",
-    "{current} of {total}": "{current} of {total}"
+    "{current} of {total}": "{current} of {total}",
+    "Changes": "Changes",
+    "Close changes": "Close changes",
+    "Resize changes": "Resize changes"
 }

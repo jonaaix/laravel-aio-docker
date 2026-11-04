@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `changes_panel_hidden` integer DEFAULT false NOT NULL;

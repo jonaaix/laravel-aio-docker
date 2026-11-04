@@ -225,6 +225,13 @@
       "when": 1793785625672,
       "tag": "0031_user_account_details",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1793813299640,
+      "tag": "0032_user_changes_panel",
+      "breakpoints": true
     }
   ]
 }
