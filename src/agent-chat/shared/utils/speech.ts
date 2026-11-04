@@ -1,9 +1,16 @@
-export const SPEECH_RATES = [1, 1.25, 1.5, 1.75, 2] as const;
-
+export const MIN_SPEECH_RATE = 0.5;
+export const MAX_SPEECH_RATE = 3;
+export const SPEECH_RATE_STEP = 0.05;
 export const DEFAULT_SPEECH_RATE = 1.5;
 
+const RATE_TOLERANCE = 1e-9;
+
 export function isSpeechRate(value: unknown): value is number {
-    return (SPEECH_RATES as readonly unknown[]).includes(value);
+    if (typeof value !== 'number' || value < MIN_SPEECH_RATE || value > MAX_SPEECH_RATE) {
+        return false;
+    }
+    const steps = value / SPEECH_RATE_STEP;
+    return Math.abs(steps - Math.round(steps)) < RATE_TOLERANCE;
 }
 
 export const SPEECH_PROVIDERS = ['google', 'gemini', 'elevenlabs', 'openai'] as const;

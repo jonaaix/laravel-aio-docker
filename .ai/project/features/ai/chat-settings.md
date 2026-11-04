@@ -44,7 +44,7 @@ a conversation opens the same window at Agents.
   follows the answer; when on, the sent message moves to the top with room below for the answer. "Show file changes
   automatically", on by default, lets the changes panel open on its own beside the conversation (see
   [AI web chat](web-chat.md)); when off, it opens only through "N files changed" and only for that conversation.
-- **Read aloud** sets the person's reading speed — 1×, 1.25×, 1.5× (the default), 1.75× or 2× — and the voice
+- **Read aloud** sets the person's reading speed on a slider from 0.5× to 3× in steps of 0.05× (1.5× by default) and the voice
   service of the whole chat, chosen in a strip: Device, Google Cloud, Gemini, ElevenLabs or OpenAI. Each service keeps its own API
   key, so several can be stored and switched between at will; choosing a service that has a key puts it to use at
   once and marks it with a check, choosing one without shows the field for its key, while the one in use keeps
@@ -57,8 +57,9 @@ a conversation opens the same window at Agents.
   shown as estimates), and the choice holds for the whole chat because it decides the cost on the shared key;
   ElevenLabs offers only its low-cost Flash model. Google Cloud (its Text-to-Speech and Speech-to-Text services, taking a
   Google Cloud API key) offers WaveNet and Chirp 3 HD and shows, besides the price, the hours of reading free each
-  month. "Voice" lists six voices of the service; each person picks their
-  own, and each voice plays a short sample sentence in the person's language, which is kept so it is paid once.
+  month. "Voice" lists the service's voices that really sound different in the person's chat language — six,
+  except where Google has fewer WaveNet voices for a language (two in German); a voice chosen elsewhere that is not
+  listed reads with the listed voice marked in its place. Each person picks their own, and each voice plays a short sample sentence in the person's language, which is kept so it is paid once.
 - **Agents** defines the agents, as described in [Agents in the chat](chat-agents.md).
 - **Claude account** signs the container's Claude Code in to a Claude subscription and out again, the
   same login a terminal `/login` creates. Signed in, it shows the account's e-mail, organisation,

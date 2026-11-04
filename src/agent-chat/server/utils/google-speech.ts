@@ -61,17 +61,32 @@ function voicesFor(apiKey: string, languageCode: string): Promise<GoogleVoice[]>
     return loading;
 }
 
-async function wavenetVoice(apiKey: string, voice: string, languageCode: string): Promise<GoogleVoiceSelection> {
-    const gender = VOICE_GENDERS[voice] ?? 'FEMALE';
-    const candidates = (await voicesFor(apiKey, languageCode))
+function voicesOfGender(gender: Gender): string[] {
+    return SPEECH_VOICES.google.filter(choice => VOICE_GENDERS[choice.id] === gender).map(choice => choice.id);
+}
+
+function genderOf(voice: string): Gender {
+    return VOICE_GENDERS[voice] ?? 'FEMALE';
+}
+
+function rankAmong(voice: string, available: number): number {
+    return available ? Math.max(0, voicesOfGender(genderOf(voice)).indexOf(voice)) % available : 0;
+}
+
+async function wavenetNames(apiKey: string, languageCode: string, gender: Gender): Promise<string[]> {
+    return (await voicesFor(apiKey, languageCode))
         .filter(candidate => candidate.name.includes(WAVENET_MARKER) && candidate.ssmlGender === gender)
         .map(candidate => candidate.name)
         .sort();
-    if (!candidates.length) {
+}
+
+async function wavenetVoice(apiKey: string, voice: string, languageCode: string): Promise<GoogleVoiceSelection> {
+    const gender = genderOf(voice);
+    const names = await wavenetNames(apiKey, languageCode, gender);
+    if (!names.length) {
         return { languageCode, ssmlGender: gender };
     }
-    const sameGender = SPEECH_VOICES.google.filter(choice => VOICE_GENDERS[choice.id] === gender).map(choice => choice.id);
-    return { languageCode, name: candidates[Math.max(0, sameGender.indexOf(voice)) % candidates.length] };
+    return { languageCode, name: names[rankAmong(voice, names.length)] };
 }
 
 export async function googleVoice(apiKey: string, model: string, voice: string, languageCode: string): Promise<GoogleVoiceSelection> {
@@ -79,4 +94,19 @@ export async function googleVoice(apiKey: string, model: string, voice: string, 
         return { languageCode, name: `${languageCode}-Chirp3-HD-${voice}` };
     }
     return wavenetVoice(apiKey, voice, languageCode);
+}
+
+export async function googleSoundsLike(apiKey: string, model: string, languageCode: string): Promise<Record<string, string>> {
+    const voices = SPEECH_VOICES.google.map(choice => choice.id);
+    if (model === CHIRP_MODEL) {
+        return Object.fromEntries(voices.map(voice => [voice, voice]));
+    }
+    const available: Record<Gender, number> = {
+        FEMALE: (await wavenetNames(apiKey, languageCode, 'FEMALE')).length,
+        MALE: (await wavenetNames(apiKey, languageCode, 'MALE')).length,
+    };
+    return Object.fromEntries(voices.map((voice) => {
+        const gender = genderOf(voice);
+        return [voice, voicesOfGender(gender)[rankAmong(voice, available[gender])]!];
+    }));
 }
