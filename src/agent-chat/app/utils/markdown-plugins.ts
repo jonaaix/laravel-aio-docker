@@ -119,20 +119,25 @@ const lazyHighlight = {
     },
 };
 
-const WARNING_MARK = '⚠';
-const WARNING_CLASS = 'my-3 rounded-lg bg-warning/10 px-4 py-3';
+const TONED_BLOCK = 'my-3 rounded-lg px-4 py-3';
+const PARAGRAPH_TONES: [mark: string, tone: string][] = [
+    ['⚠', 'bg-warning/10'],
+    ['❌', 'bg-error/10'],
+];
 
-function startsWithWarning(node: unknown): boolean {
+function paragraphTone(node: unknown): string | null {
     const first = Array.isArray(node) && node[0] === 'p' ? node[2] : undefined;
-    return typeof first === 'string' && first.trimStart().startsWith(WARNING_MARK);
+    const text = typeof first === 'string' ? first.trimStart() : '';
+    return PARAGRAPH_TONES.find(([mark]) => text.startsWith(mark))?.[1] ?? null;
 }
 
-const warningParagraphs = {
-    name: 'warning-paragraphs',
+const tonedParagraphs = {
+    name: 'toned-paragraphs',
     post(state: { tree: MarkdownDocument }) {
-        visit(state.tree, startsWithWarning, (node) => {
+        visit(state.tree, node => paragraphTone(node) !== null, (node) => {
+            const toned = `${TONED_BLOCK} ${paragraphTone(node)}`;
             const attributes = ((node as unknown[])[1] ?? {}) as Record<string, unknown>;
-            attributes.class = typeof attributes.class === 'string' ? `${attributes.class} ${WARNING_CLASS}` : WARNING_CLASS;
+            attributes.class = typeof attributes.class === 'string' ? `${attributes.class} ${toned}` : toned;
             (node as unknown[])[1] = attributes;
         });
     },
@@ -141,6 +146,6 @@ const warningParagraphs = {
 export const markdownPlugins = [
     breaks(),
     externalLinksInNewTab,
-    warningParagraphs,
+    tonedParagraphs,
     lazyHighlight,
 ];
