@@ -9,4 +9,5 @@ export interface ChatUser {
     language: string | null;
     pinSentMessage: boolean;
     tint: number | null;
+    speechRate: number | null;
 }

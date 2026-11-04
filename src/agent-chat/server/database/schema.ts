@@ -18,6 +18,7 @@ export const users = sqliteTable('users', {
     language: text('language'),
     pinSentMessage: integer('pin_sent_message', { mode: 'boolean' }).notNull().default(false),
     tint: integer('tint'),
+    speechRate: real('speech_rate'),
     createdAt: integer('created_at').notNull(),
 }, table => [uniqueIndex('users_name_unique').on(table.name)]);
 

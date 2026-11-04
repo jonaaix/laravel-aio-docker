@@ -37,7 +37,7 @@ a conversation opens the same window at Agents.
   category and the light tint under anything the pointer rests on — buttons, menu items, list entries — take it,
   "New Code Session" shows its label and icon in it with a thin line around, and the
   people's message bubbles a light container tone of it — while background, sidebar, surfaces, text and borders
-  stay the plain greys of Black, in light and dark alike. It also holds "Move sent message to top", off by default: when off, the conversation
+  stay the plain greys of Black, in light and dark alike. It sets the reading speed for messages read aloud — 1×, 1.25×, 1.5× (the default), 1.75× or 2×. It also holds "Move sent message to top", off by default: when off, the conversation
   stays at the bottom after sending and follows the answer; when on, the sent message moves to the
   top with room below for the answer. Every choice applies at once and belongs to the person, so it
   follows them to every device and browser.

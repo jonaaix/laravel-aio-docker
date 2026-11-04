@@ -77,6 +77,12 @@ break shows as written, the way Claude Code's terminal shows it. A very long sen
 message is shown collapsed to its beginning and can be expanded and collapsed again; it starts
 collapsed whenever the conversation is opened. Copying always takes the whole message.
 
+Any message can also be read aloud with the device's own voices: the speaker beside "Copy" starts reading and turns
+into a stop button until it is done. The voice follows the language the message is written in — one of the six chat
+languages, recognised by its common words — and falls back to the person's chat language for very short texts. Only
+the prose is read: no code blocks, tool steps, the stop hook line, markdown marks or emoji. The speed is the person's
+reading speed from the settings.
+
 When a stop hook of the project sends the agent back after its answer — a final code check, say — the answer
 still ends where the agent finished it. What the agent replies to the hook follows as a small grey line behind a
 return-arrow icon, named "Stop hook" on hover; it is left out when the message is copied, in notifications and in

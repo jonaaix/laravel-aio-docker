@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const { t } = useI18n();
-const { font, mode, language, pinSentMessage, tint, setColorMode, setFont, setLanguage, setPinSentMessage, setTint } = useAppearance();
+const { font, mode, language, pinSentMessage, tint, speechRate, setColorMode, setFont, setLanguage, setPinSentMessage, setSpeechRate, setTint } = useAppearance();
 
 const languageItems = LANGUAGES.map(choice => ({ value: choice.code, label: choice.name }));
 
@@ -74,6 +74,19 @@ const modes: { value: ColorModeChoice; label: string; icon: string }[] = [
                 :label="t('Move sent message to top')"
                 @update:model-value="value => setPinSentMessage(value === true)"
             />
+        </UFormField>
+        <UFormField :label="t('Reading speed')">
+            <div class="flex flex-wrap gap-2">
+                <UButton
+                    v-for="rate in SPEECH_RATES"
+                    :key="rate"
+                    :label="formatSpeedFactor(rate)"
+                    color="neutral"
+                    :variant="speechRate === rate ? 'solid' : 'outline'"
+                    class="tabular-nums"
+                    @click="setSpeechRate(rate)"
+                />
+            </div>
         </UFormField>
     </div>
 </template>

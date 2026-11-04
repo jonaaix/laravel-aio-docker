@@ -1,9 +1,10 @@
 import { COLOR_MODES, FONT_CHOICES, isTint, type ColorModeChoice } from '../../../../shared/utils/fonts';
 import { isLanguage } from '../../../../shared/utils/languages';
+import { isSpeechRate } from '../../../../shared/utils/speech';
 
 export default defineEventHandler(async (event) => {
     const user = ownUser(event);
-    const { colorMode, font, language, pinSentMessage, tint } = await readBody<{ colorMode?: unknown; font?: unknown; language?: unknown; pinSentMessage?: unknown; tint?: unknown }>(event);
+    const { colorMode, font, language, pinSentMessage, tint, speechRate } = await readBody<{ colorMode?: unknown; font?: unknown; language?: unknown; pinSentMessage?: unknown; tint?: unknown; speechRate?: unknown }>(event);
     const changes: Parameters<typeof setUserAppearance>[1] = {};
     if (colorMode !== undefined) {
         if (!(COLOR_MODES as readonly unknown[]).includes(colorMode)) {
@@ -28,6 +29,12 @@ export default defineEventHandler(async (event) => {
             throw createError({ statusCode: 422, statusMessage: 'Unknown colour' });
         }
         changes.tint = tint;
+    }
+    if (speechRate !== undefined) {
+        if (!isSpeechRate(speechRate)) {
+            throw createError({ statusCode: 422, statusMessage: 'Unknown reading speed' });
+        }
+        changes.speechRate = speechRate;
     }
     if (typeof pinSentMessage === 'boolean') {
         changes.pinSentMessage = pinSentMessage;

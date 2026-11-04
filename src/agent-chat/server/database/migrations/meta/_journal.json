@@ -190,6 +190,13 @@
       "when": 1793720303491,
       "tag": "0026_user_tint",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "6",
+      "when": 1793752487024,
+      "tag": "0027_user_speech_rate",
+      "breakpoints": true
     }
   ]
 }

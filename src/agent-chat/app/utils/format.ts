@@ -8,6 +8,10 @@ export function formatPercent(fraction: number): string {
     return new Intl.NumberFormat(formatLocale.value, { style: 'percent', maximumFractionDigits: 0 }).format(fraction);
 }
 
+export function formatSpeedFactor(factor: number): string {
+    return `${new Intl.NumberFormat(formatLocale.value, { maximumFractionDigits: 2 }).format(factor)}×`;
+}
+
 export function formatClockTime(timestamp: number, now = new Date()): string {
     const moment = new Date(timestamp);
     const time = new Intl.DateTimeFormat(formatLocale.value, { hour: '2-digit', minute: '2-digit', hour12: false }).format(moment);

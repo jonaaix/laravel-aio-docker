@@ -17,12 +17,12 @@ export function findOrCreateUser(name: string): UserRow {
     if (existing) {
         return existing;
     }
-    const row: UserRow = { id: randomUUID(), name, avatarSeed: null, avatarFile: null, avatarSource: null, avatarUpdatedAt: null, colorMode: null, font: null, language: null, pinSentMessage: false, tint: null, createdAt: Date.now() };
+    const row: UserRow = { id: randomUUID(), name, avatarSeed: null, avatarFile: null, avatarSource: null, avatarUpdatedAt: null, colorMode: null, font: null, language: null, pinSentMessage: false, tint: null, speechRate: null, createdAt: Date.now() };
     useDatabase().insert(users).values(row).run();
     return announce(row);
 }
 
-export function setUserAppearance(row: UserRow, changes: Partial<Pick<UserRow, 'colorMode' | 'font' | 'language' | 'pinSentMessage' | 'tint'>>): UserRow {
+export function setUserAppearance(row: UserRow, changes: Partial<Pick<UserRow, 'colorMode' | 'font' | 'language' | 'pinSentMessage' | 'tint' | 'speechRate'>>): UserRow {
     useDatabase().update(users).set(changes).where(eq(users.id, row.id)).run();
     return announce({ ...row, ...changes });
 }
@@ -37,7 +37,7 @@ function announce(row: UserRow): UserRow {
 }
 
 export function toChatUser(row: UserRow): ChatUser {
-    return { id: row.id, name: row.name, avatarSeed: row.avatarSeed, avatarUrl: avatarUrl(row.avatarFile, row.avatarUpdatedAt), avatarLocked: row.avatarSource !== null, colorMode: row.colorMode, font: row.font, language: row.language, pinSentMessage: row.pinSentMessage, tint: row.tint };
+    return { id: row.id, name: row.name, avatarSeed: row.avatarSeed, avatarUrl: avatarUrl(row.avatarFile, row.avatarUpdatedAt), avatarLocked: row.avatarSource !== null, colorMode: row.colorMode, font: row.font, language: row.language, pinSentMessage: row.pinSentMessage, tint: row.tint, speechRate: row.speechRate };
 }
 
 function userAvatarBase(row: UserRow): string {

@@ -60,6 +60,7 @@ export function useAppearance() {
     const pinSentMessage = computed(() => user.value?.pinSentMessage ?? false);
     const language = computed(() => locale.value);
     const tint = computed(() => isTint(user.value?.tint) ? user.value?.tint ?? null : DEFAULT_TINT);
+    const speechRate = computed(() => isSpeechRate(user.value?.speechRate) ? user.value.speechRate : DEFAULT_SPEECH_RATE);
 
     function adopt(chatUser: ChatUser): void {
         if (chatUser.colorMode) {
@@ -72,7 +73,7 @@ export function useAppearance() {
         }
     }
 
-    async function save(changes: { colorMode?: ColorModeChoice; font?: string; language?: string; pinSentMessage?: boolean; tint?: number | null }): Promise<void> {
+    async function save(changes: { colorMode?: ColorModeChoice; font?: string; language?: string; pinSentMessage?: boolean; tint?: number | null; speechRate?: number }): Promise<void> {
         if (!user.value) {
             return;
         }
@@ -100,9 +101,13 @@ export function useAppearance() {
         return save({ tint: value });
     }
 
+    function setSpeechRate(value: number): Promise<void> {
+        return save({ speechRate: value });
+    }
+
     function setPinSentMessage(value: boolean): Promise<void> {
         return save({ pinSentMessage: value });
     }
 
-    return { font, mode, language, pinSentMessage, tint, adopt, setColorMode, setFont, setLanguage, setPinSentMessage, setTint };
+    return { font, mode, language, pinSentMessage, tint, speechRate, adopt, setColorMode, setFont, setLanguage, setPinSentMessage, setSpeechRate, setTint };
 }

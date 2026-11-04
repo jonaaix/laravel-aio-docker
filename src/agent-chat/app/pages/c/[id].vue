@@ -500,6 +500,7 @@ const session = computed(() => sessionState(status.value, turnActive.value));
                         <template #actions="{ message }">
                             <template v-if="!isStreaming(message.id)">
                                 <ChatCopyButton v-if="messageText(message)" :text="messageText(message)" />
+                                <ChatSpeakButton v-if="messageText(message)" :text="messageText(message)" :message-id="message.id" />
                                 <span class="px-1 text-xs text-muted tabular-nums">{{ formatClockTime(message.metadata!.createdAt) }}</span>
                             </template>
                         </template>
