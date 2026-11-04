@@ -80,8 +80,8 @@ last file the command names whose language is known; where no language can be to
 highlighting still sets strings, numbers, dates, links and words like "error" apart. Errors stay
 plain red. Every file change shows, however it was made — through the agent's file tools, a shell
 command or a script — as long as the project is a git repository: right under the step that made it, visible
-while the agent works, with line numbers, each file's diff in full up to 1,000 lines, its name and counts staying in view while it scrolls by; and at the end of the answer as
-"N files changed · +A −R", where each file opens its diff. Clicking a file's name opens the whole file as it is now in the preview
+while the agent works, with line numbers, each file's diff in full up to 1,000 lines, its name and counts staying in view while it scrolls by; and once the answer is done, right below
+"Worked" in the same quiet style, as "N files changed · +A −R": opened, it lists the files, and each file opens its diff. Clicking a file's name opens the whole file as it is now in the preview
 panel beside the conversation, unless it was deleted: with line numbers, the lines the change added marked,
 and scrolled to the first of them; with several changes, arrows next to "1 of 3" step through them. Files git ignores do not show and cannot be opened, and the project's
 own git state (staged changes, commits) is never touched.

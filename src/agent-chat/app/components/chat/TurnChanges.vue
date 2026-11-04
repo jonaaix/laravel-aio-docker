@@ -16,7 +16,7 @@ const title = computed(() => {
 </script>
 
 <template>
-    <ChatActivityBox v-if="files.length > 0" :title="title" :active="false" :auto-open="false" icon="i-heroicons-document-duplicate">
+    <ChatActivityBox v-if="files.length > 0" :title="title" :active="false" :auto-open="false" icon="i-heroicons-document-duplicate" plain>
         <div class="flex flex-col gap-1.5">
             <ChatFileDiff v-for="file in files" :key="file.path" :change="file" collapsible />
         </div>

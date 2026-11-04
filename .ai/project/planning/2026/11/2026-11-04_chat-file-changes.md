@@ -13,8 +13,8 @@ list of changed files and their diffs.
       turn and one after every step that can change files; diff per step and for the whole turn
 - [x] Parts: `data-file-changes` (per step, keyed by tool call) and `data-turn-changes` (end of turn),
       attached to the message the step belongs to, also after the turn has ended
-- [x] Client: diff under its step in the working block, visible while working; summary block at the end
-      of the answer with per-file expansion; shared diff renderer with the Edit tool view
+- [x] Client: diff under its step in the working block, visible while working; summary below the working block
+      in its style, with per-file expansion; shared diff renderer with the Edit tool view
 - [x] Feature Book: web chat chapter
 
 ## State
