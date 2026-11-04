@@ -47,11 +47,13 @@ function storedUsage(): UsageSnapshot | null {
     return usage;
 }
 
+const LIMIT_REACHED = 'rejected';
+
 function toUsageWindow(limit: RateLimitWindow | undefined): UsageWindow | null {
     if (typeof limit?.utilization !== 'number' || typeof limit.resetsAt !== 'number') {
         return null;
     }
-    return { utilization: limit.utilization, resetsAt: limit.resetsAt * 1000, limited: limit.status !== 'allowed' };
+    return { utilization: limit.utilization, resetsAt: limit.resetsAt * 1000, limited: limit.status === LIMIT_REACHED };
 }
 
 export function refreshAccountProfile(signedInBy: UserRow | null): void {
