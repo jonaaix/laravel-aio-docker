@@ -124,7 +124,8 @@ reading speed from the settings (Read aloud).
 
 When a stop hook of the project sends the agent back after its answer — a final code check, say — the answer
 still ends where the agent finished it. What the agent replies to the hook follows as a small grey line behind a
-shield-with-check icon, named "Stop hook" on hover; it is left out when the message is copied, in notifications and in
+shield-with-check icon, named "Stop hook" on hover, without section bars; a reply that is nothing but a bar
+shows no line. The line is left out when the message is copied, in notifications and in
 what other agents read. When Claude summarizes a long conversation to make room, a small grey line "Conversation
 summarized" marks the spot in the answer where it happened, since the agent remembers less detail from before it.
 
