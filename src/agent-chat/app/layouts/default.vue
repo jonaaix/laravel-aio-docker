@@ -30,6 +30,7 @@ const items = computed<NavigationMenuItem[][]>(() => groupByRecency(conversation
         id: conversation.id,
         to: `/c/${conversation.id}`,
         session: sessionState(conversation.status, conversation.turnActive),
+        paused: conversation.status !== 'running' && !conversation.turnActive,
         creatorName: chatName(conversation.creatorId),
         lastActivityAt: conversation.lastActivityAt,
     })),
@@ -133,12 +134,14 @@ onBeforeUnmount(() => {
                                 <span v-if="hubUnread?.isUnread(item.id)" class="size-2 shrink-0 rounded-full bg-primary" :aria-label="t('Unread')" />
                             </span>
                             <span class="mt-0.5 flex items-center gap-1.5 text-xs font-normal text-muted">
-                                <ChatSessionPill :state="item.session" />
-                                <template v-if="item.creatorName">
+                                <template v-if="!item.paused">
+                                    <ChatSessionPill :state="item.session" />
                                     <span aria-hidden="true">·</span>
-                                    <span class="truncate">{{ item.creatorName }}</span>
                                 </template>
-                                <span aria-hidden="true">·</span>
+                                <template v-if="item.creatorName">
+                                    <span class="truncate">{{ item.creatorName }}</span>
+                                    <span aria-hidden="true">·</span>
+                                </template>
                                 <span class="truncate tabular-nums">{{ formatRelativeTime(item.lastActivityAt, now) }}</span>
                             </span>
                         </template>
