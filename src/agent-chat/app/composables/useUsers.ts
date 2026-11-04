@@ -14,10 +14,16 @@ export function useUsers() {
         users.value = { ...users.value, [user.id]: user };
     }
 
-    function participant(id: string | null | undefined): Participant {
-        const user = id ? users.value[id] : undefined;
-        return { kind: 'person', name: user?.name ?? '', seed: user?.avatarSeed, image: user?.avatarUrl };
+    const names = computed(() => chatNames(Object.values(users.value)));
+
+    function chatName(id: string | null | undefined): string | null {
+        return id ? names.value[id] ?? null : null;
     }
 
-    return { users, load, upsert, participant };
+    function participant(id: string | null | undefined): Participant {
+        const user = id ? users.value[id] : undefined;
+        return { kind: 'person', name: chatName(id) ?? '', seed: user?.avatarSeed, image: user?.avatarUrl };
+    }
+
+    return { users, names, load, upsert, chatName, participant };
 }

@@ -71,6 +71,10 @@ export function setUserAccountDetails(row: UserRow, accountDetails: UserRow['acc
     return announce({ ...row, accountDetails });
 }
 
+export function chatNameOf(id: unknown): string | null {
+    return typeof id === 'string' ? chatNames(useDatabase().select({ id: users.id, name: users.name }).from(users).all())[id] ?? null : null;
+}
+
 export function listUsers(): ChatUser[] {
     return useDatabase().select().from(users).all().map(toChatUser);
 }

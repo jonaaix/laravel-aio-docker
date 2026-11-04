@@ -181,7 +181,7 @@ class ConversationRuntime {
             return null;
         }
         const previous = queuedSenderId === undefined ? lastUserSenderId(this.conversationId, agent.id) : queuedSenderId;
-        return { name: sender.name, changed: sender.id !== previous, person: true };
+        return { name: chatNameOf(sender.id) ?? sender.name, changed: sender.id !== previous, person: true };
     }
 
     private buildPrompt(agent: AgentRow, body: string, author: PromptAuthor | null, excludedMessageId: string | null): string {
@@ -214,7 +214,7 @@ class ConversationRuntime {
     }
 
     private peopleNames(currentSender: string | null): string[] {
-        const names = conversationSenderIds(this.conversationId).map(id => findUser(id)?.name).filter((name): name is string => Boolean(name));
+        const names = conversationSenderIds(this.conversationId).map(chatNameOf).filter((name): name is string => Boolean(name));
         return currentSender && !names.includes(currentSender) ? [...names, currentSender] : names;
     }
 
@@ -222,7 +222,7 @@ class ConversationRuntime {
         if (message.role === 'assistant') {
             return findAgent(message.metadata?.agentId)?.name ?? leadAgent().name;
         }
-        return findUser(message.metadata?.senderId)?.name ?? 'Someone';
+        return chatNameOf(message.metadata?.senderId) ?? 'Someone';
     }
 
     private sessionFor(agent: AgentRow): AgentSession {

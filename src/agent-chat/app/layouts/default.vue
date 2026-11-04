@@ -6,7 +6,7 @@ const { t } = useI18n();
 const { conversations, upsert, load } = useConversations();
 const { usage, load: loadAccount } = useAccount();
 const { load: loadAgents } = useAgents();
-const { users, load: loadUsers, upsert: upsertUser } = useUsers();
+const { load: loadUsers, upsert: upsertUser, chatName } = useUsers();
 const { baseURL } = useRuntimeConfig().app;
 
 const { user } = useUserName();
@@ -30,7 +30,7 @@ const items = computed<NavigationMenuItem[][]>(() => groupByRecency(conversation
         id: conversation.id,
         to: `/c/${conversation.id}`,
         session: sessionState(conversation.status, conversation.turnActive),
-        creatorName: conversation.creatorId ? users.value[conversation.creatorId]?.name ?? null : null,
+        creatorName: chatName(conversation.creatorId),
         lastActivityAt: conversation.lastActivityAt,
     })),
 ]));

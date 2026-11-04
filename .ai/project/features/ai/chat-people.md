@@ -20,7 +20,12 @@ A person's name and picture come from the signed link they signed in with (see [
 the name is taken over as it is and cannot be changed in the chat, and the chat never asks for one. Along with
 the name the Laravel app passes on who the person is in the app; that person is always the same person in the
 chat, from any browser. A name already belonging to another person of the app is refused, so nobody can sign in
-under someone else's name. Someone known from before this rule takes their name over on their next sign-in. A new picture shows on all their earlier messages too, for
+under someone else's name. Someone known from before this rule takes their name over on their next sign-in.
+
+The Laravel app usually sends first and last name. Conversations show only the first name: beside messages,
+among the participants, in the sidebar, in the `@` suggestions and in what the agents are told. When two
+people share a first name, both carry the initial of their last name ("Jonas G.", "Jonas M."); if that still
+matches, the full name. A name without a last name stays as it is. Profile and People keep the full name. A new picture shows on all their earlier messages too, for
 everyone, right away. Each new conversation keeps the name of the person
 who started it, and every message keeps the name of the person who sent it. The agent learns who is
 writing: the first message of a conversation, and every message from someone other than the previous
@@ -48,8 +53,9 @@ in it; typing `@` suggests them, and mentions stand out in the conversation.
 
 ## Examples
 
-- The Laravel app opens the chat for Jonas with his name and profile photo in the address. The chat
-  shows his photo next to his messages; the profile shows name and photo but does not let him change
+- The Laravel app opens the chat for Jonas Gnioui with his name and profile photo in the address. The chat
+  shows his photo and "Jonas" next to his messages; once Jonas Müller joins, they read "Jonas G." and
+  "Jonas M."; the profile shows name and photo but does not let him change
   them.
 - Someone opens the chat directly for the first time and is asked for a name before anything else.
   They type "Mira" and pick one of the drawn pictures; from then on Mira's messages carry that
