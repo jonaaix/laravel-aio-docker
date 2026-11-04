@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const { t } = useI18n();
 const input = ref('');
+useEmbeddedDraft('new', input);
 const sending = ref(false);
 const { start } = useConversations();
 const { attachments, uploading, ready, add: attach, remove: removeAttachment, take: takeAttachments } = useAttachments();

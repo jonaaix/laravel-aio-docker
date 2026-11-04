@@ -47,6 +47,7 @@ const {
 provide(workingDirKey, workingDir);
 
 const input = ref('');
+useEmbeddedDraft(conversationId, input);
 const { attachments, uploading, ready, add: attach, remove: removeAttachment, take: takeAttachments } = useAttachments();
 const pausing = ref(false);
 const archiving = ref(false);
