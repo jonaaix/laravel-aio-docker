@@ -4,12 +4,16 @@ import type { FileChange } from '#shared/types/conversation';
 const props = withDefaults(defineProps<{
     change: FileChange;
     collapsible?: boolean;
-}>(), { collapsible: false });
+    expanded?: boolean;
+}>(), { collapsible: false, expanded: false });
 
 const { t } = useI18n();
 const route = useRoute();
 
-const open = ref(!props.collapsible);
+const open = ref(!props.collapsible || props.expanded);
+watch(() => props.expanded, (expanded) => {
+    open.value = expanded;
+});
 const previewOpen = ref(false);
 const preview = computed(() => props.change.status === 'deleted' ? null : filePreview(props.change.path));
 const fileName = computed(() => props.change.path.split('/').at(-1) ?? props.change.path);

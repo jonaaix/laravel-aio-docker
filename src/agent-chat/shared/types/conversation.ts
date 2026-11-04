@@ -54,13 +54,9 @@ export interface FileChange {
     truncated: boolean;
 }
 
-export interface StepFileChanges {
-    toolCallId: string;
-    files: FileChange[];
-}
-
 export interface TurnFileChanges {
     files: FileChange[];
+    recentPaths: string[];
 }
 
 export interface ChatMessageMetadata {

@@ -511,7 +511,7 @@ const restoreConversation = () => withFlag(archiving, restore);
                             <div v-if="message.role === 'assistant'" class="mb-3 flex flex-col empty:hidden">
                                 <ChatThinkingBlock :message="message" :streaming="isStreaming(message.id)" />
                                 <ChatWorkingBlock :message="message" :streaming="isStreaming(message.id)" />
-                                <ChatTurnChanges :message="message" />
+                                <ChatTurnChanges :message="message" :streaming="isStreaming(message.id)" />
                             </div>
                             <template v-for="segment in answerSegments(message)" :key="`${segment.key}:${mentionKey}`">
                                 <ChatImageGroup v-if="segment.kind === 'images'" :parts="segment.parts" />

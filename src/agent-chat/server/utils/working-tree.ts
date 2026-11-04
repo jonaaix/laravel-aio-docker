@@ -158,25 +158,24 @@ export class ChangeTracker {
         });
     }
 
-    afterStep(found: (changes: FileChange[]) => void): void {
+    afterStep(found: (turnChanges: FileChange[], recentPaths: string[]) => void): void {
         this.queue(async (tree) => {
             const previous = this.latest;
             this.latest = await tree.snapshot();
-            const changes = previous ? await tree.changes(previous, this.latest) : [];
-            if (changes.length > 0) {
-                found(changes);
+            const step = previous ? await tree.changes(previous, this.latest) : [];
+            if (step.length > 0 && this.turnStart) {
+                found(await tree.changes(this.turnStart, this.latest), step.map(change => change.path));
             }
         });
     }
 
-    endTurn(found: (changes: FileChange[]) => void): void {
+    endTurn(found: (turnChanges: FileChange[]) => void): void {
         this.queue(async (tree) => {
             const start = this.turnStart;
             this.turnStart = null;
             this.latest = await tree.snapshot();
-            const changes = start ? await tree.changes(start, this.latest) : [];
-            if (changes.length > 0) {
-                found(changes);
+            if (start) {
+                found(await tree.changes(start, this.latest));
             }
         });
     }

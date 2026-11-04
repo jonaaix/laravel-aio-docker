@@ -1,4 +1,4 @@
-import type { ChatMessage, FileChange, StepFileChanges, TurnFileChanges } from '#shared/types/conversation';
+import type { ChatMessage, TurnFileChanges } from '#shared/types/conversation';
 import type { DiffLine } from './line-diff';
 
 const HUNK_START = /^@@ -(\d+)(?:,\d+)? \+(\d+)/;
@@ -25,18 +25,8 @@ export function unifiedDiffLines(lines: string[]): DiffLine[] {
     return result.filter((line, index) => index > 0 || line.kind !== 'gap');
 }
 
-export function stepFileChanges(message: ChatMessage): Map<string, FileChange[]> {
-    const steps = new Map<string, FileChange[]>();
-    for (const part of message.parts) {
-        if (part.type === 'data-file-changes') {
-            const { toolCallId, files } = part.data as StepFileChanges;
-            steps.set(toolCallId, [...steps.get(toolCallId) ?? [], ...files]);
-        }
-    }
-    return steps;
-}
-
-export function turnFileChanges(message: ChatMessage): FileChange[] {
+export function turnFileChanges(message: ChatMessage): TurnFileChanges {
     const part = message.parts.findLast(candidate => candidate.type === 'data-turn-changes');
-    return part && 'data' in part ? (part.data as TurnFileChanges).files : [];
+    const data = part && 'data' in part ? part.data as Partial<TurnFileChanges> : {};
+    return { files: data.files ?? [], recentPaths: data.recentPaths ?? [] };
 }

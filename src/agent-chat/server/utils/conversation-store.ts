@@ -216,7 +216,7 @@ export function saveMessageParts(conversationId: string, messageId: string, part
         .run();
 }
 
-export function appendMessagePart(conversationId: string, messageId: string, part: ChatPart): number | null {
+export function putMessagePart(conversationId: string, messageId: string, part: ChatPart): number | null {
     const row = useDatabase()
         .select({ parts: messages.parts })
         .from(messages)
@@ -225,9 +225,12 @@ export function appendMessagePart(conversationId: string, messageId: string, par
     if (!row) {
         return null;
     }
-    const parts = [...row.parts, part];
+    const parts = [...row.parts];
+    const existing = parts.findIndex(candidate => candidate.type === part.type);
+    const index = existing === -1 ? parts.push(part) - 1 : existing;
+    parts[index] = part;
     saveMessageParts(conversationId, messageId, parts);
-    return parts.length - 1;
+    return index;
 }
 
 export function saveTurnMetrics(conversationId: string, messageId: string, metrics: TurnMetrics): void {

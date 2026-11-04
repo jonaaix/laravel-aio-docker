@@ -50,6 +50,7 @@ export class AgentSession {
     private undelivered: QueuedPrompt[] = [];
     private tasks: BackgroundTask[] = [];
     private changes: ChangeTracker | null = null;
+    private changesShownIn: string | null = null;
 
     constructor(
         private readonly conversationId: string,
@@ -254,34 +255,39 @@ export class AgentSession {
     private trackStepChanges(changed: number[]): void {
         const turn = this.turn!;
         const messageId = turn.message?.id;
-        for (const index of changed) {
+        const mayChangeFiles = changed.some((index) => {
             const part = turn.parts[index];
-            if (!messageId || part?.type !== 'dynamic-tool' || READ_ONLY_TOOLS.has(part.toolName)) {
-                continue;
-            }
-            const toolCallId = part.toolCallId;
-            this.changes?.afterStep(files => this.attachPart(messageId, { type: 'data-file-changes', data: { toolCallId, files } }));
-        }
-    }
-
-    private attachPart(messageId: string, part: ChatPart): void {
-        const turn = this.turn;
-        if (turn?.message?.id === messageId) {
-            this.recordParts([turn.parts.push(part) - 1]);
-            return;
-        }
-        const index = appendMessagePart(this.conversationId, messageId, part);
-        if (index !== null) {
-            publishConversationEvent(this.conversationId, { type: 'part', messageId, index, part });
+            return part?.type === 'dynamic-tool' && !READ_ONLY_TOOLS.has(part.toolName);
+        });
+        if (messageId && mayChangeFiles) {
+            this.changes?.afterStep((files, recentPaths) => this.showTurnChanges(messageId, files, recentPaths));
         }
     }
 
     private trackTurnChanges(messageId: string | null): void {
         this.changes?.endTurn((files: FileChange[]) => {
-            if (messageId) {
-                this.attachPart(messageId, { type: 'data-turn-changes', data: { files } });
+            if (messageId && (files.length > 0 || this.changesShownIn === messageId)) {
+                this.showTurnChanges(messageId, files, []);
             }
+            this.changesShownIn = null;
         });
+    }
+
+    private showTurnChanges(messageId: string, files: FileChange[], recentPaths: string[]): void {
+        const part: ChatPart = { type: 'data-turn-changes', data: { files, recentPaths } };
+        this.changesShownIn = messageId;
+        const turn = this.turn;
+        if (turn?.message?.id === messageId) {
+            const existing = turn.parts.findIndex(candidate => candidate.type === part.type);
+            const index = existing === -1 ? turn.parts.push(part) - 1 : existing;
+            turn.parts[index] = part;
+            this.recordParts([index]);
+            return;
+        }
+        const index = putMessagePart(this.conversationId, messageId, part);
+        if (index !== null) {
+            publishConversationEvent(this.conversationId, { type: 'part', messageId, index, part });
+        }
     }
 
     private handleStreamEvent(event: ClaudeEvent): void {
