@@ -67,11 +67,8 @@ export function speechService(): SpeechService | null {
     return provider ? speechServiceFor(provider) : null;
 }
 
-export function storeSpeechKey(service: Omit<SpeechService, 'model'>, activate: boolean): void {
+export function storeSpeechKey(service: Omit<SpeechService, 'model'>): void {
     writeSetting(keySetting(service.provider), sealSecret(chatKey(), service.apiKey));
-    if (activate) {
-        writeSetting(ACTIVE_SETTING, service.provider);
-    }
 }
 
 export function setActiveSpeechProvider(provider: SpeechProvider | null): void {

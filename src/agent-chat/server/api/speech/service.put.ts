@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 422, statusMessage: 'An API key is required' });
     }
     const service = { provider, apiKey: apiKey.trim() };
-    storeSpeechKey(service, false);
+    storeSpeechKey(service);
     try {
         await synthesizeSpeech({ ...service, model: chosenSpeechModel(provider) }, KEY_CHECK_TEXT, '');
     }

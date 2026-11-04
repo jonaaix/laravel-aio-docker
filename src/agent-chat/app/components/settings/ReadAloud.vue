@@ -10,7 +10,10 @@ interface SpeechServices {
 }
 
 const NO_CREDIT = 402;
-const PROBLEM_TEXTS: Record<'key' | 'credit' | 'unavailable', string> = {
+
+type KeyProblem = 'key' | 'credit' | 'unavailable';
+
+const PROBLEM_TEXTS: Record<KeyProblem, string> = {
     key: 'Key saved, but {service} did not accept it. Check it and save it again.',
     credit: '{service} has no credit left on this account. Add credit there, then choose {service} again.',
     unavailable: 'Key saved, but {service} could not be reached. Choose {service} again later.',
@@ -34,8 +37,6 @@ const apiKey = ref('');
 const saving = ref(false);
 const switching = ref(false);
 const error = ref<string>();
-type KeyProblem = 'key' | 'credit' | 'unavailable';
-
 const problem = ref<{ provider: SpeechProvider; reason: KeyProblem } | null>(null);
 const confirmingRemove = ref(false);
 const playing = ref<string | null>(null);
