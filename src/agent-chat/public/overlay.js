@@ -104,7 +104,7 @@
 
     function render() {
         state.width = clampWidth(state.width);
-        if (state.open && !frame && document.readyState === 'complete') {
+        if (state.open && !frame) {
             frame = document.createElement('iframe');
             frame.src = chatUrl;
             frame.allow = 'microphone; clipboard-write; autoplay';
@@ -147,7 +147,6 @@
     });
 
     window.addEventListener('resize', render);
-    window.addEventListener('load', render, { once: true });
 
     document.head.append(pageShift);
     document.body.append(host);

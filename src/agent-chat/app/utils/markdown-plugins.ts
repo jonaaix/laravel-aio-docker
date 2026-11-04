@@ -1,22 +1,5 @@
 import breaks from '@comark/nuxt/plugins/breaks';
-import highlight from '@comark/nuxt/plugins/shiki';
 import { visit } from '@comark/nuxt/utils';
-import blade from 'shiki/dist/langs/blade.mjs';
-import css from 'shiki/dist/langs/css.mjs';
-import diff from 'shiki/dist/langs/diff.mjs';
-import dockerfile from 'shiki/dist/langs/dockerfile.mjs';
-import html from 'shiki/dist/langs/html.mjs';
-import ini from 'shiki/dist/langs/ini.mjs';
-import markdown from 'shiki/dist/langs/markdown.mjs';
-import nginx from 'shiki/dist/langs/nginx.mjs';
-import php from 'shiki/dist/langs/php.mjs';
-import python from 'shiki/dist/langs/python.mjs';
-import sql from 'shiki/dist/langs/sql.mjs';
-import xml from 'shiki/dist/langs/xml.mjs';
-import githubLight from 'shiki/dist/themes/github-light.mjs';
-import materialPalenight from 'shiki/dist/themes/material-theme-palenight.mjs';
-
-export const codeThemes = { light: githubLight, dark: materialPalenight };
 
 const EXTERNAL_LINK = /^https?:\/\//i;
 
@@ -85,13 +68,38 @@ export function mentionHighlight(names: () => string[]) {
     };
 }
 
+function isHighlightable(node: unknown): boolean {
+    if (!Array.isArray(node)) {
+        return false;
+    }
+    const attributes = (node[1] ?? {}) as Record<string, unknown>;
+    return node[0] === 'pre' || (node[0] === 'code' && Boolean(attributes.lang ?? attributes.language));
+}
+
+function hasHighlightableCode(tree: MarkdownDocument): boolean {
+    let found = false;
+    visit(tree, isHighlightable, () => {
+        found = true;
+    });
+    return found;
+}
+
+const lazyHighlight = {
+    name: 'shiki',
+    async post(state: { tree: MarkdownDocument }) {
+        if (!hasHighlightableCode(state.tree)) {
+            return;
+        }
+        const [{ highlightCodeBlocks }, { codeLanguages, codeThemes }] = await Promise.all([
+            import('@comark/nuxt/plugins/shiki'),
+            import('./code-languages'),
+        ]);
+        state.tree = await highlightCodeBlocks(state.tree, { preStyles: false, registerDefaultThemes: false, themes: codeThemes, languages: codeLanguages });
+    },
+};
+
 export const markdownPlugins = [
     breaks(),
     externalLinksInNewTab,
-    highlight({
-        preStyles: false,
-        registerDefaultThemes: false,
-        themes: codeThemes,
-        languages: [blade, css, diff, dockerfile, html, ini, markdown, nginx, php, python, sql, xml],
-    }),
+    lazyHighlight,
 ];

@@ -94,6 +94,7 @@ export default defineNuxtConfig({
 
     nitro: {
         output: hub ? { dir: '.output-hub' } : undefined,
+        compressPublicAssets: true,
         typescript: {
             tsConfig: {
                 compilerOptions: {

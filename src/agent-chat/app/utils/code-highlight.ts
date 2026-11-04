@@ -3,7 +3,7 @@ import { codeToTokens } from 'shiki/core';
 import type { ThemedToken } from 'shiki/core';
 import { bundledLanguages, bundledLanguagesInfo } from 'shiki/langs';
 import type { BundledLanguage } from 'shiki/langs';
-import { codeThemes } from './markdown-plugins';
+import { codeThemes } from './code-languages';
 
 function resolveLanguage(name: string): BundledLanguage | null {
     const info = bundledLanguagesInfo.find(language => language.id === name || language.aliases?.includes(name));
