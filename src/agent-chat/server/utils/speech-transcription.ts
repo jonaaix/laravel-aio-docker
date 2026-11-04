@@ -68,7 +68,7 @@ async function transcribeWithGemini(apiKey: string, recording: Recording): Promi
     }
     const text = outputText(await response.json() as Record<string, unknown>);
     if (text === null) {
-        throw new SpeechServiceError(false);
+        throw new SpeechServiceError('unavailable');
     }
     return text;
 }

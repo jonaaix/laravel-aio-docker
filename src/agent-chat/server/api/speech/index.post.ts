@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
     }
     catch (failure) {
         if (failure instanceof SpeechServiceError) {
-            throw createError({ statusCode: 502, statusMessage: failure.message });
+            throw speechServiceHttpError(failure);
         }
         throw failure;
     }

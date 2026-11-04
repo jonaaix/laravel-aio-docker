@@ -10,6 +10,7 @@ interface SpeechServices {
 }
 
 const KEY_REJECTED = 422;
+const NO_CREDIT = 402;
 
 const { t } = useI18n();
 const { speechRate, setSpeechRate, speechVoiceFor, setSpeechVoice } = useAppearance();
@@ -29,6 +30,7 @@ const apiKey = ref('');
 const saving = ref(false);
 const switching = ref(false);
 const error = ref<string>();
+const noCredit = ref<SpeechProvider | null>(null);
 const confirmingRemove = ref(false);
 const playing = ref<string | null>(null);
 const loadingSample = ref<string | null>(null);
@@ -84,7 +86,9 @@ async function save(): Promise<void> {
     saving.value = true;
     error.value = undefined;
     try {
-        apply(await apiFetch<SpeechServices>('speech/service', { method: 'PUT', body: { provider: shown.value, apiKey: apiKey.value } }));
+        const result = await apiFetch<SpeechServices & { noCredit?: boolean }>('speech/service', { method: 'PUT', body: { provider: shown.value, apiKey: apiKey.value } });
+        apply(result);
+        noCredit.value = result.noCredit && shown.value !== 'device' ? shown.value : null;
         apiKey.value = '';
         replacing.value = false;
     }
@@ -131,8 +135,13 @@ async function playSample(provider: SpeechProvider, voice: string): Promise<void
         playing.value = voice;
         await audio.play();
     }
-    catch {
-        error.value = t('The voice service could not be reached');
+    catch (failure) {
+        if ((failure as { statusCode?: number }).statusCode === NO_CREDIT) {
+            noCredit.value = provider;
+        }
+        else {
+            error.value = t('The voice service could not be reached');
+        }
         stopSample();
     }
     finally {
@@ -194,6 +203,10 @@ onMounted(load);
                     <UButton :label="t('Replace key')" color="neutral" variant="outline" @click="replacing = true" />
                     <UButton :label="t('Remove')" color="neutral" variant="ghost" @click="confirmingRemove = true" />
                 </div>
+                <p v-if="shown !== 'device' && noCredit === shown" class="flex items-start gap-2 rounded-lg bg-warning/10 px-3 py-2 text-sm">
+                    <UIcon name="i-heroicons-exclamation-triangle" class="mt-0.5 size-4 shrink-0 text-warning" />
+                    <span>{{ t('{service} has no credit left on this account. Reading aloud starts once credit is added there.', { service: shownLabel }) }}</span>
+                </p>
                 <template v-if="shown !== 'device' && !showForm">
                     <div class="flex flex-col gap-1.5">
                         <p class="text-sm font-medium text-highlighted">{{ t('Quality') }}</p>

@@ -16,8 +16,12 @@ export default defineEventHandler(async (event) => {
         await synthesizeSpeech({ ...service, model: chosenSpeechModel(provider) }, KEY_CHECK_TEXT, '');
     }
     catch (failure) {
+        if (failure instanceof SpeechServiceError && failure.reason === 'credit') {
+            storeSpeechKey(service);
+            return { ...speechServices(), noCredit: true };
+        }
         if (failure instanceof SpeechServiceError) {
-            throw createError({ statusCode: failure.keyRejected ? 422 : 502, statusMessage: failure.message });
+            throw speechServiceHttpError(failure);
         }
         throw failure;
     }

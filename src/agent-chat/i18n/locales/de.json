@@ -263,5 +263,6 @@
     "Play sample": "Hörprobe abspielen",
     "Stop sample": "Hörprobe stoppen",
     "This is how I sound when I read answers to you.": "So klinge ich, wenn ich dir Antworten vorlese.",
-    "Could not change the quality": "Die Qualität konnte nicht geändert werden"
+    "Could not change the quality": "Die Qualität konnte nicht geändert werden",
+    "{service} has no credit left on this account. Reading aloud starts once credit is added there.": "{service} hat auf diesem Konto kein Guthaben mehr. Das Vorlesen klappt, sobald dort Guthaben aufgeladen ist."
 }

@@ -263,5 +263,6 @@
     "Play sample": "Ascolta un esempio",
     "Stop sample": "Ferma l'esempio",
     "This is how I sound when I read answers to you.": "Ecco come suono quando ti leggo le risposte.",
-    "Could not change the quality": "Impossibile cambiare la qualità"
+    "Could not change the quality": "Impossibile cambiare la qualità",
+    "{service} has no credit left on this account. Reading aloud starts once credit is added there.": "{service} non ha più credito su questo account. La lettura riprende appena viene aggiunto credito."
 }
