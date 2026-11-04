@@ -20,11 +20,12 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - [x] Port upstream CLI-compatibility fixes into the core (upstream 1.21–1.37)
 - [x] History store for evaluation: tool output cut to its first 2,000 characters, per-turn metrics
       (model, tokens, cost, duration, outcome), archive instead of delete, paged message loading
-- [ ] Auth: short-lived signed iframe link from the Laravel app carrying the user, password for
-      standalone access — blocks image integration (separate from the name below)
+- [x] Auth: signed links only → `2026/11/2026-11-03_chat-hub-multi-server.md`; the Laravel side is a guide for
+      the app's agent (`src/php-fpm-claude/claude-defaults/skills/agent-chat-integration`), installed in the beta image
 - [ ] Image integration: supervisor program, nginx sub-path proxy for the iframe, optional own
       port/domain, env (`NUXT_WORKING_DIR=/app`, `NUXT_DATA_DIR=/home/laravel/.config/agent-chat`);
-      app code under `/opt`, never `/home/laravel` (the home volume is seeded once, then frozen)
+      app code under `/opt`, never `/home/laravel` (the home volume is seeded once, then frozen); then fill in the
+      chat's address and key in the guide's "Not settled yet"
 - [x] In-process HTTP MCP for Claude with `send_file` → attachment stored with the conversation
 - [x] Token-level streaming (`--include-partial-messages` + `stream_event` deltas)
 - [x] Turn markers: show "stopped" on interrupted turns, errors inline
@@ -236,8 +237,8 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - Tool output is stored as its first 2,000 characters plus success/error — Mattermost level plus the
   reason a call failed (same simulation: 1.9 GB instead of 3.3 GB). Tool input, including the full
   content of edits, stays complete.
-- Access: the Laravel app hands out a short-lived signed link for the iframe that carries the user;
-  standalone access is protected by a password. Each user sees only their own conversations.
+- The Laravel side of signing in is not shipped as code: each app's agent writes it from the guide the beta
+  image installs as a skill, because every app has its own users, layout and routes.
 - No permission prompts: Claude runs in `bypass` on purpose, so work is never held up by approvals
   (user's call). The container is the sandbox; access to the chat is what needs protecting.
 - Questions and plans stay in chat mode: `AskUserQuestion`, `EnterPlanMode` and `ExitPlanMode` are
@@ -252,5 +253,4 @@ container restart with its full history and attachments, and no Mattermost/Slack
 
 ## Open
 
-- Standalone access: whose conversations someone sees after logging in with the password.
-- How the Laravel app produces the signed link (helper shipped with the image vs. code in each app).
+- Nothing.

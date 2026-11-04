@@ -85,6 +85,13 @@ claude_init() {
    _ai_nontech_enabled && _claude_append CLAUDE.nontech.md
    _ai_softdev_enabled && _claude_append CLAUDE.softdev.md
 
+   # Only the beta image serves the agent chat, so only there the agent learns how to connect the app to it.
+   if [ "$IMAGE_BETA" = "1" ] && [ -d /opt/claude-defaults/skills/agent-chat-integration ]; then
+      mkdir -p /home/laravel/.claude/skills
+      rm -rf /home/laravel/.claude/skills/agent-chat-integration
+      cp -r /opt/claude-defaults/skills/agent-chat-integration /home/laravel/.claude/skills/
+   fi
+
    # Layer a user-supplied persona on top, if one is mounted. Appended LAST so it takes
    # precedence over the shipped defaults — this is how an operator tailors a single
    # image into a purpose-built agent (its role, tone, domain rules, guardrails).
