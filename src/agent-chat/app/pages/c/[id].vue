@@ -8,7 +8,8 @@ const EARLIER_THRESHOLD_PX = 200;
 const AT_BOTTOM_THRESHOLD_PX = 120;
 const ANSWER_GAP_PX = 32;
 const STICK_TO_BOTTOM_MS = 3000;
-const SETTLE_QUIET_MS = 120;
+const SETTLE_QUIET_MS = 100;
+const SKELETON_DELAY_MS = 300;
 const SETTLE_MAX_MS = 900;
 const PIN_SENT_MESSAGE_MS = 2000;
 const USER_SCROLL_EVENTS = ['wheel', 'touchmove', 'keydown'] as const;
@@ -214,6 +215,10 @@ function keepPinnedMessageInPlace(): void {
 }
 
 const settled = ref(false);
+const skeletonDue = ref(false);
+const skeletonTimer = setTimeout(() => {
+    skeletonDue.value = true;
+}, SKELETON_DELAY_MS);
 
 function settleLayout(): Promise<void> {
     return new Promise((resolve) => {
@@ -302,6 +307,7 @@ onBeforeUnmount(() => {
     window.removeEventListener('scroll', onScroll);
     window.removeEventListener('scrollend', keepPinnedMessageInPlace);
     clearTimeout(unpinTimer);
+    clearTimeout(skeletonTimer);
     window.removeEventListener('resize', onResize);
     contentObserver?.disconnect();
 });
@@ -465,7 +471,7 @@ const restoreConversation = () => withFlag(archiving, restore);
             <UContainer class="flex-1">
                 <div ref="timeline" />
                 <ChatQuoteButton v-if="loaded && archivedAt === null" :root="timeline?.parentElement ?? null" @quote="quote" />
-                <div v-if="!loaded" class="flex flex-col gap-6 py-4">
+                <div v-if="!loaded && skeletonDue" class="flex flex-col gap-6 py-4">
                     <USkeleton class="ms-auto h-10 w-2/5 rounded-md" />
                     <USkeleton class="h-24 w-4/5 rounded-md" />
                     <USkeleton class="ms-auto h-10 w-1/3 rounded-md" />
@@ -478,8 +484,7 @@ const restoreConversation = () => withFlag(archiving, restore);
                     </div>
 
                     <UChatMessages
-                        class="transition-opacity duration-[260ms] ease-out"
-                        :class="settled ? 'opacity-100' : 'opacity-0'"
+                        :class="{ invisible: !settled }"
                         :messages="visibleMessages"
                         :status="chatStatus"
                         :auto-scroll="false"
