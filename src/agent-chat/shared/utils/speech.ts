@@ -54,7 +54,7 @@ export const SPEECH_VOICES: Record<SpeechProvider, SpeechVoice[]> = {
         { id: 'JBFqnCBsd6RMkjVDRZzb', label: 'George' },
         { id: 'EXAVITQu4vr4xnSDxMaL', label: 'Sarah' },
         { id: 'onwK4e9ZLuTAKqWW03F9', label: 'Daniel' },
-        { id: 'XB0fDUnXU5powFXDhCwa', label: 'Charlotte' },
+        { id: 'Xb7hH8MSUJpSbSDYk0k2', label: 'Alice' },
         { id: 'pNInz6obpgDQGcFmaJgB', label: 'Adam' },
         { id: 'pFZP5JQG7iQjIQuC4Bku', label: 'Lily' },
     ],
