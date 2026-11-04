@@ -39,7 +39,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
 
 <template>
     <div class="me-2 flex items-center">
-        <div class="flex items-center -space-x-2.5 lg:space-x-1">
+        <div class="flex items-center -space-x-4 lg:space-x-1">
             <UTooltip
                 v-for="(participant, index) in participants"
                 :key="`${participant.kind}:${participant.name}`"
