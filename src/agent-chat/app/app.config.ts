@@ -13,7 +13,7 @@ export default defineAppConfig({
             ],
         },
         dashboardResizeHandle: {
-            base: 'z-10 after:absolute after:inset-y-0 after:-left-px after:w-[3px] after:bg-transparent after:transition-colors after:duration-150 after:ease-out hover:after:bg-primary peer-data-[dragging=true]:after:bg-primary',
+            base: 'z-40 after:absolute after:inset-y-0 after:-left-px after:w-[3px] after:bg-transparent after:transition-colors after:duration-150 after:ease-out hover:after:bg-primary peer-data-[dragging=true]:after:bg-primary',
         },
         dropdownMenu: {
             defaultVariants: { size: 'lg' },
