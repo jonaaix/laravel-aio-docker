@@ -57,60 +57,17 @@ and shown is described in [People in the chat](chat-people.md).
 
 ### Conversations
 
-A sidebar lists the conversations, with Settings at its foot; its edge lights up under the pointer like the panel's and can be dragged to change the width. Everyone working in the same container sees all of them, each
-with the name of the person who started it: a development conversation is long-lived, and a team
-works on the same app. Each entry shows the title and, below it, who started it and when something last happened, and its state at the
-right end: while the agent is answering, three softly bouncing dots, the title turns grey like the line below it, and a narrow light
-streak in a soft accent colour runs across both lines in step; while the session is running and waiting, a "Ready" badge; a paused session shows nothing. A conversation with an answer the person has not seen shows its title in bold with a dot after it, by the same rule as in
-the Orbit app (see [Orbit](chat-hub.md#unread)), and the browser tab shows how many there are, as "(2) AI Chat". When an answer
-finishes in a conversation the person has written in but is not looking at — another conversation is open, or the
-tab is in the background — a short, low double drum beat sounds, once per answer even with several tabs open; the
-browser lets it sound only after the person has clicked or typed in the page since loading it. It can be switched
-off in the settings (Chat). A new conversation is named
-after the beginning of its first message. When the user sends the third message, the agent titles
-the session from the user's first three messages, the way Claude Code titles its terminal sessions;
-that title replaces the name in the chat and also names the session in Claude Code's own history.
-Conversations that were already past their third message keep their name. The user can rename a
-conversation at any time by editing its title in place. A name the user gave is kept: no title is
-generated for that conversation anymore, and the name also reaches Claude Code's session history —
-right away while the session runs, otherwise when it resumes. Someone can start a new
-conversation, open an earlier one and continue it. A conversation that is no longer needed can be
-archived: its agent session is paused first, it leaves the sidebar, and the user lands on the
-conversation below it in the sidebar — the one above when it was the last, a new conversation when none is left. It stays stored and can be brought back from the archive, which lists archived conversations and
-finds them by title, ignoring case and accents. Each conversation is its own agent session. The agent's answer appears while it is
+The conversations are listed in a sidebar, described in [Conversations in the sidebar](chat-sidebar.md).
+Each conversation is its own agent session. The agent's answer appears while it is
 being written; its tool use and reasoning are visible as separate, quieter blocks next to the
 answer rather than mixed into it, their content slightly indented under their title. An opened step shows its command, file changes and output with
 code highlighting in the language they are written in — a command's output in the language of the
 last file the command names whose language is known; where no language can be told, a basic
 highlighting still sets strings, numbers, dates, links and words like "error" apart. Errors stay
-plain red. Every file change shows, however it was made — through the agent's file tools, a shell
-command or a script. In a git repository the chat compares through git itself, leaving the project's git state
-untouched; a folder without git gets a private archive in the chat's own data folder instead, which never takes in
-secrets (`.env` files, keys, certificates, `.ssh`) or bulky folders (`node_modules`, `vendor`, `storage`, `dist`,
-`build`), and is removed once the folder becomes a git repository. Right below
-"Worked", in the same quiet style, "N files changed · +A −R" appears with the first changed file and counts up while the
-agent works; it is a button that shows that answer's changes: all changed files stacked in the order they were changed,
-the latest at the bottom, each diff in full with line numbers, up to 1,000 lines per file. The steps themselves show no diff, and while the panel is open, "Worked" does not preview the file a running
-step writes. Where the screen leaves the conversation
-enough room (from a window of about 1,670 pixels, so that the chat heads keep hanging beside the reading column), the changes stay in view in a "Changes" panel to its right, for a developer following along. It shows
-the newest answer with changes, opens at its bottom and stays there as the agent's changes come in, a newly changed file unfolding smoothly
-into place; "N files changed" in an older answer shows that one, and a newer answer with
-changes takes over again. Whoever turned off "Show file changes automatically" in the settings gets the panel only
-through "N files changed", for that conversation. The panel can be closed, which each person keeps until they open it again through
-"N files changed", and its edge drags the width, as far as the conversation keeps enough room; a double click
-restores the default width. Where there is no room — a narrow window, a phone, the chat embedded in the app —
-"N files changed" opens the same view as an overlay from the right, which turns into the panel when the window
-grows wide enough. Clicking a file's name opens the whole file as it is now in the preview
-panel beside the conversation, any text file in any language, unless it was deleted: with line numbers, the lines the change added marked,
-and scrolled to the first of them; with several changes, arrows next to "1 of 3" step through them. Files git ignores, or that the private archive leaves out, do not show and cannot be opened.
+plain red. What the agent changed in files is described in
+[File changes in the chat](chat-file-changes.md).
 Code blocks in answers are highlighted in the language they name, any language highlighting knows; a block
 that names none, or one highlighting does not know, still gets the basic highlighting rather than none.
-
-Each conversation has a small round picture of its own (an abstract "Slice" image that stays the same for that
-conversation), shown before its entry. Folded to its icon strip, the sidebar still lists the conversations by that
-picture, with the name on hover; an unseen answer shows a dot
-on the picture, a working conversation the three bouncing dots below it, and the conversation being read shows the
-level bars instead.
 
 Any message can be copied with one click. To comment on specific passages, the user selects text
 in the conversation and quotes it: the passage lands in the message input as a quote with the
@@ -133,31 +90,7 @@ Text typed into a conversation's message input but not yet sent is kept per conv
 still there after switching to another conversation, reloading the page or closing the tab, and goes away once the
 message is sent or the input is emptied. The input for a new conversation keeps its own draft the same way.
 
-While a voice service is set up for reading aloud, a microphone sits in the message input: pressing it records,
-small bars beside the stop button follow the voice so it is clear the microphone hears something, and pressing stop
-has the service write down what was said. The text lands in the input at the cursor, to be checked and sent by hand.
-Google Cloud expects the person's chat language and handles about a minute per request, so a longer dictation is
-written down piece by piece and joined. A refused microphone or a failed transcript is said at the input. Without a
-voice service there is no microphone.
-
-Any message can also be read aloud: the speaker beside "Copy" starts reading and turns into a pause button, and into a
-resume button while paused, until it is done; until the voice actually starts, it shows a spinning icon instead.
-Reading ends only when it is through or the player is closed; while it reads, the button stays visible without pointing at the message. With a voice service set up in the settings, a natural voice of that service reads, and a message read once
-plays again without asking the service anew; if the service fails, the device's voice reads the rest. Without a
-service the device's own voice reads, chosen by the language the message is written in — one of the six chat
-languages, recognised by its common words — falling back to the person's chat language for very short texts. Only
-the prose is read: no code blocks, tool steps, the stop hook line, markdown marks or emoji. The speed is the person's
-reading speed from the settings (Read aloud). Reading goes on when the person moves to another conversation. While a
-message is read, a small player shows the beginning of the message — its first heading, or else its first line — as a link back
-to its conversation, a progress bar along the text
-— a jump lands on the start of the passage at that spot —, pause and resume (resuming carries on where it paused) with
-"Back 10 seconds" and "Forward 10 seconds" on either side, the reading speed as a menu from 0.5× to 3× in steps of
-0.25× and a button to stop; it sits at the foot of the sidebar right above the account card, and above the message
-input where the sidebar is folded away. With the sidebar folded to its icon strip, the player shrinks to one button there that pauses and resumes. Inside the
-message, the passage being read is softly tinted, and while that message is read, clicking one of its paragraphs
-carries on reading from there. The conversation being read shows moving level bars at the right end of its sidebar
-entry, standing still while paused. Google Cloud voices belong to one language, so it reads in the
-language recognised the same way.
+Messages can be dictated and read aloud, as described in [Voice in the chat](chat-voice.md).
 
 When a stop hook of the project sends the agent back after its answer — a final code check, say — the answer
 still ends where the agent finished it. What the agent replies to the hook follows as a small grey line behind a

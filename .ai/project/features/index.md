@@ -7,3 +7,6 @@
 | ai-chat-agents | [ai/chat-agents.md](ai/chat-agents.md) | Several agents in one conversation: switching in, taking turns, handovers, write limits |
 | ai-chat-settings | [ai/chat-settings.md](ai/chat-settings.md) | Settings window with profile, appearance (theme, font) and agents |
 | ai-chat-hub | [ai/chat-hub.md](ai/chat-hub.md) | Orbit: the chat as an installable app that pairs with several containers' chats, with unread, notifications and offline reading |
+| ai-chat-sidebar | [ai/chat-sidebar.md](ai/chat-sidebar.md) | Conversation list: states, unread, done sound, naming, archive, avatars, folded strip |
+| ai-chat-file-changes | [ai/chat-file-changes.md](ai/chat-file-changes.md) | Live file changes of an answer: diffs, Changes panel, whole-file preview |
+| ai-chat-voice | [ai/chat-voice.md](ai/chat-voice.md) | Dictation, reading aloud, the mini player and read-along |
