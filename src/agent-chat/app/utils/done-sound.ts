@@ -19,9 +19,19 @@ const SECOND_HIT: DrumHit = { from: 155, to: 70, length: 0.55, level: 1 };
 
 let context: AudioContext | null = null;
 
-function unlock(): void {
+const UNLOCK_IDLE_TIMEOUT_MS = 2000;
+
+function createContext(): void {
     context ??= new AudioContext();
     void context.resume();
+}
+
+function unlock(): void {
+    if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(createContext, { timeout: UNLOCK_IDLE_TIMEOUT_MS });
+        return;
+    }
+    setTimeout(createContext);
 }
 
 export function armDoneSound(): void {

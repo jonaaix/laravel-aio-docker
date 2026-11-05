@@ -44,10 +44,14 @@ export function useProgressiveDrawing(messages: Ref<ChatMessage[]>, scroller: ()
         whenIdle(() => void drawEarlier().then(drawRestWhenIdle));
     }
 
+    function drawRestAfterPaint(): void {
+        requestAnimationFrame(() => setTimeout(drawRestWhenIdle));
+    }
+
     async function drawAll(): Promise<void> {
         firstDrawnId.value = null;
         await nextTick();
     }
 
-    return { drawnMessages, fullyDrawn, anchorDrawing, drawEarlier, drawAll, drawRestWhenIdle };
+    return { drawnMessages, fullyDrawn, anchorDrawing, drawEarlier, drawAll, drawRestAfterPaint };
 }

@@ -9,7 +9,7 @@ const EARLIER_THRESHOLD_PX = 200;
 const AT_BOTTOM_THRESHOLD_PX = 120;
 const ANSWER_GAP_PX = 32;
 const STICK_TO_BOTTOM_MS = 3000;
-const SETTLE_QUIET_MS = 100;
+const SETTLE_QUIET_MS = 32;
 const SKELETON_DELAY_MS = 300;
 const SETTLE_MAX_MS = 900;
 const PIN_SENT_MESSAGE_MS = 2000;
@@ -63,7 +63,7 @@ const visibleMessages = computed(() => messages.value.filter(message => message.
     || message.metadata?.outcome === 'stopped'
     || message.metadata?.outcome === 'failed'));
 
-const { drawnMessages, fullyDrawn, anchorDrawing, drawEarlier, drawAll, drawRestWhenIdle } = useProgressiveDrawing(visibleMessages, () => scroller());
+const { drawnMessages, fullyDrawn, anchorDrawing, drawEarlier, drawAll, drawRestAfterPaint } = useProgressiveDrawing(visibleMessages, () => scroller());
 
 const { agents, lead } = useAgents();
 const { conversations, upsert: upsertConversation } = useConversations();
@@ -370,7 +370,7 @@ onMounted(async () => {
     }
     readAlong.mark();
     readAlong.revealIfRequested(releaseBottom);
-    drawRestWhenIdle();
+    drawRestAfterPaint();
 });
 
 USER_SCROLL_EVENTS.forEach(name => useActiveListener(() => window, name, releaseBottom, { passive: true }));
