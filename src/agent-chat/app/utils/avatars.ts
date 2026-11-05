@@ -3,7 +3,7 @@ import { joinURL } from 'ufo';
 import dylan from '@dicebear/styles/dylan.json';
 import glyphs from '@dicebear/styles/glyphs.json';
 import notionists from '@dicebear/styles/notionists.json';
-import identicon from '@dicebear/styles/identicon.json';
+import shapeGrid from '@dicebear/styles/shape-grid.json';
 import voxelBot from '@dicebear/styles/voxel-bot.json';
 
 export type ParticipantKind = 'person' | 'agent';
@@ -47,13 +47,15 @@ const PRESET_DESIGNS = ['smiley', 'wow'];
 export const AGENT_PRESET_ROWS = PRESET_DESIGNS.map(design => SMILEY_COLORS.map(color => `${PRESET_PREFIX}${design}-${color}`));
 
 const cache = new Map<string, string>();
-const chatStyle = new Style(identicon);
+const CHAT_SHAPE_SCALE = 0.75;
+// Shape Grid sizes each shape at random, which reads as sloppiness when a chat picture holds a single shape.
+const chatStyle = new Style({ ...shapeGrid, components: { ...shapeGrid.components, shape: { ...shapeGrid.components.shape, scale: { min: CHAT_SHAPE_SCALE, max: CHAT_SHAPE_SCALE } } } });
 
 export function chatAvatarUri(conversationId: string): string {
     const key = `chat:${conversationId}`;
     let uri = cache.get(key);
     if (!uri) {
-        uri = new Avatar(chatStyle, { seed: conversationId }).toDataUri();
+        uri = new Avatar(chatStyle, { seed: conversationId, rowsVariant: ['rows01'] }).toDataUri();
         cache.set(key, uri);
     }
     return uri;

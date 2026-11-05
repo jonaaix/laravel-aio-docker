@@ -37,8 +37,7 @@ archived: its agent session is paused first, it leaves the sidebar, and the user
 conversation below it in the sidebar — the one above when it was the last, a new conversation when none is left. It stays stored and can be brought back from the archive, which lists archived conversations and
 finds them by title, ignoring case and accents.
 
-Each conversation has a small round picture of its own (a pixel pattern ("Identicon") that stays the same for that
-conversation), shown before its entry. Folded to its icon strip, the sidebar still lists the conversations by that
+Each conversation has a small round picture of its own (a single geometric shape — circle, triangle, hexagon, star or square — on a coloured ground, the same for that conversation every time), shown before its entry. Folded to its icon strip, the sidebar still lists the conversations by that
 picture, with the name on hover; an unseen answer shows a dot
 on the picture, a working conversation a slowly turning ring of light around it, and the conversation being read — folded or not — has a fine band
 close around its picture, in a slowly turning, glowing gradient drawn from the accent colour (with Black: black — white in dark mode — with violet and cyan), that billows with the voice actually being heard — its pitches spread around the circle —
