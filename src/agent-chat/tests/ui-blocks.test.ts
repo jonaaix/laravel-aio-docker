@@ -7,10 +7,11 @@ const twoOptions = [{ title: 'Compact list' }, { title: 'Cards', description: 'R
 
 test('variants are lettered in order and keep the recommendation', () => {
     const block = uiBlockFor('show_variants', { path: 'design.html', variants: twoOptions, recommended: 'B)' }, storePage);
-    assert.deepEqual(block, {
+    assert.ok(block.kind === 'variants' && block.page.createdAt > 0);
+    assert.deepEqual({ ...block, page: { ...block.page, createdAt: 0 } }, {
         kind: 'variants',
         title: null,
-        page: { url: 'pages/design.html', fileUrl: 'files/design.html', filename: 'design.html', height: 560 },
+        page: { url: 'pages/design.html', fileUrl: 'files/design.html', filename: 'design.html', height: 560, createdAt: 0 },
         options: [{ letter: 'a', title: 'Compact list', description: null }, { letter: 'b', title: 'Cards', description: 'Roomier' }],
         recommended: 'b',
     });

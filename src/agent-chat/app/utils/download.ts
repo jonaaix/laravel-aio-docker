@@ -3,7 +3,7 @@ function fileStamp(date: Date): string {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}_${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
 }
 
-export function withTimestamp(filename: string, date = new Date()): string {
+export function withTimestamp(filename: string, date: Date): string {
     const dot = filename.lastIndexOf('.');
     const stamp = fileStamp(date);
     return dot > 0 ? `${filename.slice(0, dot)}-${stamp}${filename.slice(dot)}` : `${filename}-${stamp}`;

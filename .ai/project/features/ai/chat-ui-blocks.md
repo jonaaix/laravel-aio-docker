@@ -34,7 +34,8 @@ each with a symbol; a size larger than the window is shown scaled down to fit, w
 well, so neither needs the window closed first; the code opens on top of the large window. "View code" opens the HTML in
 the preview column beside the conversation, where it can be copied or downloaded. The "More actions" menu opens the
 page on its own in a new tab, still shut off the same way, or downloads it; a downloaded page carries the date and
-time of the download in its name, such as "landing-2026-11-05_143207.html", so repeated downloads never collide.
+time the agent showed it in its name, such as "landing-2026-11-05_143207.html": downloading the same page again gives
+the same name, while the versions of a draft line up in order in the download folder.
 
 ### Variants
 

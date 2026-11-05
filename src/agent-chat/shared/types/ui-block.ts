@@ -11,6 +11,7 @@ export interface UiPage {
     fileUrl: string;
     filename: string;
     height: number;
+    createdAt: number;
 }
 
 export type UiCardStatus = 'good' | 'warning' | 'bad';

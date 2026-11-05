@@ -17,7 +17,7 @@ const codeOpen = ref(false);
 
 const moreItems = computed<DropdownMenuItem[]>(() => [
     { label: t('Open in new tab'), icon: 'i-heroicons-arrow-top-right-on-square', to: src.value, target: '_blank', external: true },
-    { label: t('Download'), icon: 'i-heroicons-arrow-down-tray', onSelect: () => downloadFile(fileUrl.value, withTimestamp(filename.value)) },
+    { label: t('Download'), icon: 'i-heroicons-arrow-down-tray', onSelect: () => downloadFile(fileUrl.value, withTimestamp(filename.value, new Date(props.page.createdAt))) },
 ]);
 </script>
 
@@ -50,7 +50,7 @@ const moreItems = computed<DropdownMenuItem[]>(() => [
         />
     </div>
 
-    <ChatPageViewer v-model:open="viewerOpen" :src="src" :file-url="fileUrl" :filename="filename" :title="title ?? filename" />
+    <ChatPageViewer v-model:open="viewerOpen" :src="src" :file-url="fileUrl" :filename="filename" :created-at="page.createdAt" :title="title ?? filename" />
     <ChatFilePreview
         v-model:open="codeOpen"
         :url="fileUrl"

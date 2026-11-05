@@ -121,7 +121,7 @@ function pageOf(args: Record<string, unknown>, storePage: PageStore): UiPage {
     if (typeof height !== 'number' || !Number.isInteger(height) || height < PAGE_HEIGHT.min || height > PAGE_HEIGHT.max) {
         throw new Error(`height must be a whole number from ${PAGE_HEIGHT.min} to ${PAGE_HEIGHT.max}.`);
     }
-    return { ...storePage(path), height };
+    return { ...storePage(path), height, createdAt: Date.now() };
 }
 
 function optionsOf(value: unknown, name: string): UiOption[] {
