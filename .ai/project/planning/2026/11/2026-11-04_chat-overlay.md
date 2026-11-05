@@ -5,7 +5,7 @@
 A small script puts the chat into any page of the Laravel app: a chat button bottom right opens the chat in a panel on
 the right, beside the page with the page pushed aside. The panel survives page
 reloads by coming back as it was: open or closed, width, the open conversation and the unsent text. Finished when
-this works on a test site with several linked pages, and the image can switch the script on for its Laravel app.
+this works on a test site with several linked pages, and the Laravel app can add it to the pages it chooses.
 
 ## Milestones
 
@@ -13,8 +13,8 @@ this works on a test site with several linked pages, and the image can switch th
       at a pointer-reactive edge, slim scrollbars on both sides, state kept in the page's local storage, the chat only loaded on first opening
 - [x] Chat inside the panel: reopens the last conversation and keeps unsent text per conversation
 - [x] Test site with linked pages, checked in the browser
-- [ ] Image: nginx puts the script into every HTML page when switched on (`ENABLE_CHAT_OVERLAY`) — depends on the
-      chat's image integration (supervisor program, sub-path proxy) in `2026/10/2026-10-31_claude-threads-web-ui.md`
+- [x] Laravel side: the app adds the script tag itself where the chat should appear — guide
+      `src/php-fpm-claude/claude-defaults/skills/agent-chat-integration`
 - [x] Feature Book: web chat chapter
 
 ## State
@@ -27,7 +27,6 @@ this works on a test site with several linked pages, and the image can switch th
 - Load time (production build, measured on a copy at :3300): messages after ~220 ms; transfer cut from 3.6 MB to
   676 KB by compressed assets and by loading code colours only for messages with code. The panel starts loading the
   chat at once instead of after the page's own load.
-- Missing: nginx putting the script into the Laravel app's pages — waits for the chat's image integration.
 
 ## Decisions
 
@@ -37,6 +36,8 @@ this works on a test site with several linked pages, and the image can switch th
   Full reloads from Laravel's Vite refresh are accepted (user's call); no part of a page survives a full reload.
 - Turning the layout around (chat outside, app in an iframe) or injecting through the image's nginx was rejected:
   projects that bring their own nginx config would break it (user's call). A Chrome side-panel extension was offered.
+- The app adds the script tag in its own layouts, like a dev tool such as Debugbar; it decides in code which pages
+  get the chat, so no path setting exists in the image (user, 253b).
 - Always split, no overlay mode: the panel is too wide to lie over the page (user's call). The page moves by a right
   margin; fixed elements of the app and its breakpoints do not follow — accepted for a development aid.
 - The script lives in a shadow root, so the app's CSS and the overlay's CSS cannot touch each other.
@@ -44,4 +45,5 @@ this works on a test site with several linked pages, and the image can switch th
 
 ## Open
 
-- Nothing.
+- What the panel does before its first sign-in: sign in through the app's existing chat route on its own, a
+  sign-in button, or "Unauthorized" as now (question 251).

@@ -73,17 +73,33 @@ The chat serves a script that adds a chat button at the bottom right of a page. 
 panel on the right and pushes the page aside. The panel comes back after every page load the way it was left:
 open or closed, its width, the open conversation and any unsent text.
 
-Add it once to the main layout, right before `</body>`, for local development only:
+The panel appears on exactly the pages whose HTML contains the script tag, so the app decides in its own code where
+the chat is available. Put the tag right before `</body>` in the layout of the area that should have the chat,
+usually the admin layout:
 
 ```blade
-@if (app()->environment('local'))
+{{-- resources/views/layouts/admin.blade.php --}}
+    @auth
+        <script src="{{ config('services.agent_chat.url') }}/overlay.js" defer></script>
+    @endauth
+</body>
+```
+
+If all pages share one layout, wrap the tag in a condition instead — any route name, role, permission or environment
+check the app already has:
+
+```blade
+@if (request()->routeIs('admin.*') && auth()->user()?->can('viewAdmin'))
     <script src="{{ config('services.agent_chat.url') }}/overlay.js" defer></script>
 @endif
 ```
 
+If it is not clear which area should get the chat, ask the user before adding the tag.
+
 - The script takes care of itself: no build step, no styles, no Vite entry. It does nothing inside an iframe and
   never loads twice.
-- The panel only loads the chat once it is opened.
+- The panel only loads the chat once it is opened. Moving between pages with and without the tag hides the panel
+  and brings it back as it was on the next page that has it.
 - Someone who has never signed in sees "Unauthorized" in the panel. Signing in once through the route above fixes
   that for good in this browser.
 - If the app sends a `Content-Security-Policy`, allow `AGENT_CHAT_URL` in `script-src` and `frame-src`.
