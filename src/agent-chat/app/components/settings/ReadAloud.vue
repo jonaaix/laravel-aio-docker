@@ -225,7 +225,6 @@ onMounted(load);
                     class="self-start"
                     @update:model-value="value => choose(value)"
                 />
-                <p v-if="shown === 'google'" class="text-sm text-muted">{{ t('Best value of all services: the most free hours and natural voices.') }}</p>
                 <p v-if="shown === 'device'" class="text-sm text-muted">{{ t('Your device\'s own voice reads aloud.') }}</p>
                 <div v-else-if="!showForm" class="flex flex-wrap items-center gap-3">
                     <span class="flex h-9 items-center gap-2 text-sm">
