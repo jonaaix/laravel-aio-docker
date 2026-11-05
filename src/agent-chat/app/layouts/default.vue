@@ -144,7 +144,7 @@ onBeforeUnmount(() => {
                     <template #item-label="{ item }">
                         <template v-if="item.session">
                             <span class="flex items-center gap-1.5">
-                                <span class="block truncate" :class="[unread.isUnread(item.id) ? 'font-semibold text-highlighted' : '', { 'light-streak': item.session.live }]">{{ item.label }}</span>
+                                <span class="block truncate" :class="[unread.isUnread(item.id) ? 'font-semibold text-highlighted' : '', { 'light-streak text-muted!': item.session.live }]">{{ item.label }}</span>
                                 <span v-if="unread.isUnread(item.id)" class="size-2 shrink-0 rounded-full bg-primary" :aria-label="t('Unread')" />
                             </span>
                             <span class="mt-0.5 flex items-center gap-1.5 text-xs font-normal text-muted">
