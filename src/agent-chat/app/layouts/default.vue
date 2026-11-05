@@ -140,9 +140,20 @@ onBeforeUnmount(() => {
                 <UNavigationMenu
                     :items="items"
                     :collapsed="collapsed"
+                    tooltip
                     orientation="vertical"
-                    :ui="{ link: 'overflow-hidden py-1.5 before:transition-colors before:duration-500 before:ease-out hover:before:bg-primary/8 aria-[current=page]:before:bg-primary/12 aria-[current=page]:text-(--nav-current)', linkLabel: 'min-w-0 flex-1' }"
+                    :ui="{ link: ['overflow-hidden py-1.5 before:transition-colors before:duration-500 before:ease-out hover:before:bg-primary/8 aria-[current=page]:before:bg-primary/12 aria-[current=page]:text-(--nav-current)', collapsed ? 'justify-center px-0.5' : ''], linkLabel: 'min-w-0 flex-1' }"
                 >
+                    <template #item-leading="{ item }">
+                        <span
+                            v-if="collapsed && item.session"
+                            class="relative flex size-8 shrink-0 items-center justify-center rounded-lg bg-default text-xs font-semibold ring ring-default dark:bg-elevated/50"
+                        >
+                            <AudioLevelBars v-if="speech.speakingId.value && speech.conversationId.value === item.id" :playing="!speech.paused.value" :label="t('Reading aloud')" />
+                            <span v-else :class="item.session.live ? 'light-streak text-muted' : 'text-toned'">{{ chatInitials(item.label ?? '') }}</span>
+                            <span v-if="unread.isUnread(item.id)" class="absolute -end-0.5 -top-0.5 size-2 rounded-full bg-primary ring-2 ring-(--ui-bg-muted)" :aria-label="t('Unread')" />
+                        </span>
+                    </template>
                     <template #item-label="{ item }">
                         <template v-if="item.session">
                             <span class="flex items-center gap-1.5">

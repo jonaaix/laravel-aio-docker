@@ -106,6 +106,10 @@ and scrolled to the first of them; with several changes, arrows next to "1 of 3"
 Code blocks in answers are highlighted in the language they name, any language highlighting knows; a block
 that names none, or one highlighting does not know, still gets the basic highlighting rather than none.
 
+Folded to its icon strip, the sidebar still lists the conversations, each as a small tile with the first letters of its
+title and its name on hover; an unseen answer shows a dot on the tile, a working conversation runs the light streak
+through its letters, and the conversation being read shows the level bars instead.
+
 Any message can be copied with one click. To comment on specific passages, the user selects text
 in the conversation and quotes it: the passage lands in the message input as a quote with the
 cursor below it, ready for a comment. Quoting again appends the next passage below what is already
