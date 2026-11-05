@@ -10,8 +10,6 @@ const NAME_END = '(?![\\p{L}\\p{N}_-])';
 const SHOW_RESULT = `## Show the result
 When you finish something substantial that people can see, such as a new page, screen or feature, and you can run it, show the result without being asked: send screenshots of the key views with \`send_file\`, one after another with no text in between so they form a gallery, each with a short caption naming what it shows. Small tweaks, such as a colour or a label, need no screenshot.`;
 
-const STOP_HOOK_REPLIES = 'Your replies to stop hook feedback are shown to the people only as a quiet note under your answer; their next message refers to your answer, not to that note.';
-
 const BUILDING_BLOCKS = `## Building blocks
 When people should compare, choose, look or take stock rather than read, use the chat's \`show_*\` and \`ask_choice\` tools.`;
 
@@ -57,8 +55,6 @@ ${SHOW_RESULT}
 
 ${BUILDING_BLOCKS}
 
-${STOP_HOOK_REPLIES}
-
 ${chatLanguageLine(chatLanguage)}`;
     }
     return `You are ${introduction(agent)}, an agent in a web chat led by ${lead.name}. ${turnRules(agent)}
@@ -69,8 +65,6 @@ You may create, edit, move or delete files only in your own folder ${ownDir} and
 ${SHOW_RESULT}
 
 ${BUILDING_BLOCKS}
-
-${STOP_HOOK_REPLIES}
 
 ${chatLanguageLine(chatLanguage)}`;
 }
