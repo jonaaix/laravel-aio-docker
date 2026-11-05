@@ -11,6 +11,7 @@ export interface ChatUser {
     changesPanelHidden: boolean;
     changesPanelAuto: boolean;
     doneSound: boolean;
+    scaledPreviews: boolean;
     tint: number | null;
     speechVoices: Partial<Record<string, string>>;
     speechRate: number | null;

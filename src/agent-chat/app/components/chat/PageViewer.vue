@@ -181,7 +181,7 @@ const frameStyle = computed(() => {
         :content="{ onOpenAutoFocus: focusWindow }"
         @after:enter="frameReady = true"
         @after:leave="frameReady = false"
-        :ui="{ content: 'w-[min(96vw,1600px)] max-w-none h-[calc(100vh-1rem)] max-h-none sm:max-h-none max-sm:h-dvh max-sm:w-screen max-sm:rounded-none max-sm:ring-0', body: 'flex flex-1 p-0 sm:p-0 overflow-hidden', footer: 'justify-between' }"
+        :ui="{ content: 'w-[min(96vw,1600px)] max-w-none h-[calc(100dvh-2rem)] max-h-none sm:max-h-none max-sm:h-dvh max-sm:w-screen max-sm:rounded-none max-sm:ring-0', body: 'flex flex-1 p-0 sm:p-0 overflow-hidden', footer: 'justify-between' }"
     >
         <template #actions>
             <template v-if="hasPrevious || hasNext">

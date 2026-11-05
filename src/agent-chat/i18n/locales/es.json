@@ -297,5 +297,6 @@
     "Window": "Ventana",
     "Phone": "Móvil",
     "Previous": "Anterior",
-    "Next": "Siguiente"
+    "Next": "Siguiente",
+    "Scale down variant previews": "Reducir las vistas previas de variantes"
 }

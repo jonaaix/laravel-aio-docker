@@ -4,11 +4,20 @@ const props = defineProps<{
     title: string;
     width: number;
     height: number;
+    scaled: boolean;
 }>();
 
 const box = ref<HTMLElement | null>(null);
 const boxWidth = ref(0);
-const scale = computed(() => (boxWidth.value > 0 ? Math.min(1, boxWidth.value / props.width) : 0));
+const scale = computed(() => {
+    if (!props.scaled) {
+        return 1;
+    }
+    return boxWidth.value > 0 ? Math.min(1, boxWidth.value / props.width) : 0;
+});
+const frameStyle = computed(() => (props.scaled
+    ? { width: `${props.width}px`, height: `${props.height}px`, transform: `scale(${scale.value})` }
+    : { width: '100%', height: `${props.height}px` }));
 
 let observer: ResizeObserver | undefined;
 
@@ -32,7 +41,7 @@ onBeforeUnmount(() => observer?.disconnect());
             sandbox="allow-scripts"
             loading="lazy"
             class="absolute start-0 top-0 origin-top-left"
-            :style="{ width: `${width}px`, height: `${height}px`, transform: `scale(${scale})` }"
+            :style="frameStyle"
         />
     </div>
 </template>

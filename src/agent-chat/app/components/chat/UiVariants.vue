@@ -12,6 +12,7 @@ const props = defineProps<{
 
 const { t } = useI18n();
 const chatPlugins = useChatMarkdownPlugins();
+const { scaledPreviews } = useAppearance();
 const { active, isChosen, pick } = useOptionPick(() => props.options, () => props.messageId);
 
 const viewedIndex = ref<number | null>(null);
@@ -65,7 +66,7 @@ function choose(index: number): void {
                     <UButton icon="i-heroicons-arrows-pointing-out" color="neutral" variant="ghost" class="size-7 shrink-0 justify-center p-0" :aria-label="t('View larger')" @click.stop="viewedIndex = index" />
                 </UTooltip>
             </div>
-            <ChatScaledFrame :src="apiUrl(option.page.url)" :title="option.title" :width="viewport.width" :height="viewport.height" class="rounded-sm ring ring-default" @click.stop />
+            <ChatPreviewFrame :src="apiUrl(option.page.url)" :title="option.title" :width="viewport.width" :height="viewport.height" :scaled="scaledPreviews" class="rounded-sm ring ring-default" @click.stop />
         </div>
     </div>
 

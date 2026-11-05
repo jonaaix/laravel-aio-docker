@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const { t } = useI18n();
-const { pinSentMessage, changesPanelAuto, doneSound, setPinSentMessage, setChangesPanelAuto, setDoneSound } = useAppearance();
+const { pinSentMessage, changesPanelAuto, doneSound, scaledPreviews, setPinSentMessage, setChangesPanelAuto, setDoneSound, setScaledPreviews } = useAppearance();
 </script>
 
 <template>
@@ -22,6 +22,12 @@ const { pinSentMessage, changesPanelAuto, doneSound, setPinSentMessage, setChang
             :model-value="doneSound"
             :label="t('Sound when a chat is done')"
             @update:model-value="value => setDoneSound(value === true)"
+        />
+        <USwitch
+            id="setting-scaled-previews"
+            :model-value="scaledPreviews"
+            :label="t('Scale down variant previews')"
+            @update:model-value="value => setScaledPreviews(value === true)"
         />
     </div>
 </template>

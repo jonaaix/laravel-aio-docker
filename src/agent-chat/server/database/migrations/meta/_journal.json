@@ -267,6 +267,13 @@
       "when": 1793888220053,
       "tag": "0037_message_posted_at",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "6",
+      "when": 1793904790100,
+      "tag": "0038_user_scaled_previews",
+      "breakpoints": true
     }
   ]
 }
