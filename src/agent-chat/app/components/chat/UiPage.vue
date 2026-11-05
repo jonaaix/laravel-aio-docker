@@ -33,7 +33,7 @@ const moreItems = computed<DropdownMenuItem[]>(() => [
             <UTooltip :text="t('View code')">
                 <UButton icon="i-heroicons-code-bracket" color="neutral" variant="ghost" class="size-9 justify-center" :aria-label="t('View code')" @click="codeOpen = true" />
             </UTooltip>
-            <UDropdownMenu :items="moreItems" :content="{ align: 'end' }">
+            <UDropdownMenu :items="moreItems" :content="{ align: 'end' }" :external-icon="false">
                 <UTooltip :text="t('More actions')">
                     <UButton icon="i-heroicons-ellipsis-horizontal" color="neutral" variant="ghost" class="size-9 justify-center" :aria-label="t('More actions')" />
                 </UTooltip>
