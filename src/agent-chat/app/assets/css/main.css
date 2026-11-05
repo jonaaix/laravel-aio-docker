@@ -29,6 +29,11 @@
     --ui-primary: oklch(var(--tint-lightness) calc(0.18 * var(--tint-chroma)) var(--tint));
     --light-streak: oklch(0.55 calc(0.14 * var(--tint-chroma)) var(--tint));
     --nav-current: oklch(var(--tint-lightness) calc(0.09 * var(--tint-chroma)) var(--tint));
+    --diff-added: oklch(0.97 0.035 150);
+    --diff-added-gutter: oklch(0.92 0.075 150);
+    --diff-removed: oklch(0.965 0.025 20);
+    --diff-removed-gutter: oklch(0.91 0.055 20);
+    --diff-gap: oklch(0.96 0.015 250);
     --user-message: oklch(0.93 calc(0.04 * var(--tint-chroma)) var(--tint));
     --ui-bg: oklch(0.985 0 0);
     --ui-bg-muted: oklch(0.965 0 0);
@@ -51,6 +56,11 @@
     --ui-primary: oklch(var(--tint-dark-lightness) calc(0.14 * var(--tint-chroma)) var(--tint));
     --light-streak: oklch(0.92 calc(0.06 * var(--tint-chroma)) var(--tint));
     --nav-current: oklch(var(--tint-dark-lightness) calc(0.07 * var(--tint-chroma)) var(--tint));
+    --diff-added: oklch(0.65 0.15 150 / 15%);
+    --diff-added-gutter: oklch(0.7 0.15 150 / 30%);
+    --diff-removed: oklch(0.65 0.19 25 / 12%);
+    --diff-removed-gutter: oklch(0.65 0.19 25 / 28%);
+    --diff-gap: oklch(0.6 0.04 250 / 12%);
     --user-message: oklch(0.3 calc(0.04 * var(--tint-chroma)) var(--tint));
     --ui-bg: oklch(0.17 0 0);
     --ui-bg-muted: oklch(0.205 0 0);
