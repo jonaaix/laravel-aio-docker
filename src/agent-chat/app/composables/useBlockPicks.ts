@@ -39,8 +39,10 @@ export function useOptionPick(options: () => UiOption[], messageId: () => string
 
     const ownsLine: OwnsLine = line => chosenIn(line).length > 0;
 
+    const reply = computed(() => (active.value ? undefined : picks.reply(messageId())));
+    const answered = computed(() => reply.value !== undefined);
     const chosen = computed(() => {
-        const text = active.value ? picks.draft.value : picks.reply(messageId());
+        const text = active.value ? picks.draft.value : reply.value;
         return text === undefined ? [] : chosenIn(firstLine(text));
     });
 
@@ -59,5 +61,5 @@ export function useOptionPick(options: () => UiOption[], messageId: () => string
         picks.pick(next.map(other => lines.value[other]).join(PICK_SEPARATOR), ownsLine);
     }
 
-    return { active, isChosen, pick };
+    return { active, answered, chosen, isChosen, pick };
 }

@@ -77,7 +77,8 @@ In variants and choices, clicking an option — for variants anywhere on its car
 "b) Compact list", on the first line; anything the person has already written stays below it, clicking another
 option of the same block replaces the line, and clicking the chosen option again takes it out. Nothing is sent until the person sends the message, so they can add to it.
 Options can only be picked on the latest answer while the agent is not working; once the person has answered, the
-option they sent stays marked.
+option they sent stays marked. A choice card then folds to the options that were sent — or says "Not answered" when
+none was — with "Show all options" to unfold it, as the question cards do.
 
 ### When an agent describes a block wrongly
 
