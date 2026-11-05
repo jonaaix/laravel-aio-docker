@@ -185,7 +185,7 @@ onBeforeUnmount(() => {
                         </UTooltip>
                         <SettingsButton :collapsed="collapsed" />
                     </div>
-                    <SpeechPlayer v-if="!collapsed" class="max-lg:hidden" />
+                    <SpeechPlayer :collapsed="collapsed" class="max-lg:hidden" />
                     <AccountCard v-if="!collapsed" />
                 </div>
             </template>

@@ -14,6 +14,9 @@ stopped, rewound and jumped through without starting over.
 - [x] Level bars in the sidebar row of the chat being read (still while paused)
 - [x] Player in the sidebar foot (desktop) and above the message input (narrow screens)
 - [x] Reading speed slider shared between settings and player
+- [x] Pause as the main button, slim progress bar, speed menu opens at the current speed
+- [x] Read-along: the passage being read is tinted in the message; clicking a paragraph jumps there
+- [x] One-button player in the folded sidebar
 - [x] Feature Book: web chat chapter
 
 ## State
@@ -31,6 +34,9 @@ stopped, rewound and jumped through without starting over.
   slider stays in the settings.
 - Progress follows the text, not minutes: pieces are generated one after another, so total time is unknown. A jump lands
   on the start of the piece at that spot.
+- Read-along finds the spoken piece in the rendered message by its opening and closing words and marks it with the
+  CSS Custom Highlight API, so the message markup stays untouched; where a piece is not found, nothing is marked.
+- Paragraph clicks jump only while that message is read, so normal clicks and text selection stay unaffected.
 - Level bars take the place of the working dots while a chat is read.
 - Device voices cannot seek inside an utterance: back restarts the current piece, or the previous one right after a
   piece began.

@@ -2,6 +2,8 @@
 import type { DropdownMenuItem } from '@nuxt/ui';
 import { SPEECH_RATE_MENU } from '#shared/utils/speech';
 
+defineProps<{ collapsed?: boolean }>();
+
 const SEEK_DELAY_MS = 300;
 const PROGRESS_STEPS = 1000;
 
@@ -51,7 +53,13 @@ function togglePause(): void {
 </script>
 
 <template>
-    <div v-if="speakingId" class="flex flex-col gap-2 rounded-md bg-default p-3 ring ring-default dark:bg-default/60">
+    <UTooltip v-if="speakingId && collapsed" :text="paused ? t('Resume') : t('Pause')">
+        <UButton color="neutral" variant="ghost" square :aria-label="paused ? t('Resume') : t('Pause')" class="justify-center" @click="togglePause">
+            <UIcon v-if="paused" name="i-heroicons-play" class="size-5" />
+            <AudioLevelBars v-else :playing="true" :label="t('Reading aloud')" />
+        </UButton>
+    </UTooltip>
+    <div v-else-if="speakingId" class="flex flex-col gap-2 rounded-md bg-default p-3 ring ring-default dark:bg-default/60">
         <div class="flex min-w-0 items-center gap-2">
             <AudioLevelBars :playing="!paused" :label="paused ? t('Paused') : t('Reading aloud')" />
             <NuxtLink v-if="conversationId" :to="`/c/${conversationId}`" class="min-w-0 flex-1 truncate text-sm font-medium text-highlighted hover:underline">{{ label }}</NuxtLink>
@@ -65,6 +73,8 @@ function togglePause(): void {
             :min="0"
             :max="PROGRESS_STEPS"
             size="xs"
+            class="group"
+            :ui="{ track: 'h-1', thumb: 'size-3 opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-visible:opacity-100' }"
             :aria-label="t('Reading position')"
             @update:model-value="moveProgress"
         />
@@ -75,7 +85,7 @@ function togglePause(): void {
                     <UButton trailing-icon="i-heroicons-arrow-uturn-left" label="10s" color="neutral" variant="ghost" size="sm" class="items-end gap-0.5 text-[0.625rem]/none font-semibold tabular-nums" :aria-label="t('Back 10 seconds')" @click="back" />
                 </UTooltip>
                 <UTooltip :text="paused ? t('Resume') : t('Pause')">
-                    <UButton :icon="paused ? 'i-heroicons-play' : 'i-heroicons-pause'" color="neutral" variant="ghost" size="sm" :aria-label="paused ? t('Resume') : t('Pause')" @click="togglePause" />
+                    <UButton :icon="paused ? 'i-heroicons-play' : 'i-heroicons-pause'" color="primary" variant="solid" size="sm" square class="rounded-full" :aria-label="paused ? t('Resume') : t('Pause')" @click="togglePause" />
                 </UTooltip>
                 <UTooltip :text="t('Forward 10 seconds')">
                     <UButton icon="i-heroicons-arrow-uturn-right" label="10s" color="neutral" variant="ghost" size="sm" class="items-end gap-0.5 text-[0.625rem]/none font-semibold tabular-nums" :aria-label="t('Forward 10 seconds')" @click="forward" />

@@ -20,6 +20,8 @@ const SHOW_TYPING_LINE = false;
 const { t } = useI18n();
 const route = useRoute();
 const conversationId = route.params.id as string;
+const readAlong = useReadAlong();
+readAlong.follow();
 const {
     title,
     workingDir,
@@ -359,6 +361,7 @@ onMounted(async () => {
     scroller().scrollTop = scroller().scrollHeight;
     settled.value = true;
     onScroll();
+    readAlong.mark();
 });
 
 onBeforeUnmount(() => {
@@ -573,6 +576,12 @@ const restoreConversation = () => withFlag(archiving, restore);
                             </div>
                         </template>
                         <template #content="{ message }">
+                            <div
+                                class="contents"
+                                :data-read-along="message.id"
+                                :data-reading="readAlong.readingId.value === message.id || undefined"
+                                @click="event => readAlong.jumpToClicked(event, message.id)"
+                            >
                             <div v-if="message.role === 'assistant'" class="mb-3 flex flex-col empty:hidden">
                                 <ChatThinkingBlock :message="message" :streaming="isStreaming(message.id)" />
                                 <ChatWorkingBlock :message="message" :streaming="isStreaming(message.id)" :file-changes-shown="changesPanelShown" />
@@ -596,6 +605,7 @@ const restoreConversation = () => withFlag(archiving, restore);
                                 <ChatMessagePart v-else :part="segment.part" :message="message" :streaming="isStreaming(message.id)" />
                             </template>
                             <ChatTurnOutcome v-if="message.role === 'assistant'" :message="message" />
+                            </div>
                         </template>
                         <template #actions="{ message }">
                             <template v-if="!isStreaming(message.id)">

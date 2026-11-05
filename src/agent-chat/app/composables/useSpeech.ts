@@ -15,6 +15,8 @@ const sourceConversationId = ref<string | null>(null);
 const sourceLabel = ref('');
 const paused = ref(false);
 const progress = ref(0);
+const currentChunk = ref(0);
+const chunkTexts = shallowRef<string[]>([]);
 const speechProvider = ref<SpeechProvider | null | undefined>(undefined);
 let run = 0;
 let player: HTMLAudioElement | null = null;
@@ -112,6 +114,7 @@ function speakWithDevice(from: number, current: number): void {
             }
             preparingId.value = null;
             chunkIndex = index;
+            currentChunk.value = index;
             deviceChunkStartedAt = Date.now();
             setProgress(index, 0);
         };
@@ -169,6 +172,7 @@ async function speakWithService(from: number, startAt: number, current: number, 
             clip(index + 1).catch(() => undefined);
         }
         chunkIndex = index;
+        currentChunk.value = index;
         const url = URL.createObjectURL(blob);
         audio.src = url;
         audio.playbackRate = rate;
@@ -292,6 +296,10 @@ export function useSpeechPlayer() {
         playFrom(index);
     }
 
+    function jumpTo(index: number): void {
+        playFrom(Math.min(Math.max(0, index), chunks.length - 1));
+    }
+
     function stop(): void {
         const current = run + 1;
         halt();
@@ -304,6 +312,9 @@ export function useSpeechPlayer() {
         label: readonly(sourceLabel),
         paused: readonly(paused),
         progress: readonly(progress),
+        chunkTexts: readonly(chunkTexts),
+        currentChunk: readonly(currentChunk),
+        jumpTo,
         pause,
         resume,
         back,
@@ -352,6 +363,8 @@ export function useSpeech() {
             totalLength = Math.max(1, position);
             clips = new Map();
             chunkIndex = 0;
+            currentChunk.value = 0;
+            chunkTexts.value = chunks;
             progress.value = 0;
             if (resolved && player) {
                 void speakWithService(0, 0, current, player);

@@ -147,8 +147,10 @@ to its conversation, a progress bar along the text
 — a jump lands on the start of the passage at that spot —, pause and resume (resuming carries on where it paused) with
 "Back 10 seconds" and "Forward 10 seconds" on either side, the reading speed as a menu from 0.5× to 3× in steps of
 0.25× and a button to stop; it sits at the foot of the sidebar right above the account card, and above the message
-input where the sidebar is folded away. The conversation being read shows moving level bars at the right end of its
-sidebar entry, standing still while paused. Google Cloud voices belong to one language, so it reads in the
+input where the sidebar is folded away. With the sidebar folded to its icon strip, the player shrinks to one button there that pauses and resumes. Inside the
+message, the passage being read is softly tinted, and while that message is read, clicking one of its paragraphs
+carries on reading from there. The conversation being read shows moving level bars at the right end of its sidebar
+entry, standing still while paused. Google Cloud voices belong to one language, so it reads in the
 language recognised the same way.
 
 When a stop hook of the project sends the agent back after its answer — a final code check, say — the answer
