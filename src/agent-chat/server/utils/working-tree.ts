@@ -80,6 +80,11 @@ const COMMIT_LIMIT = 50;
 const FIELD = '\x1f';
 const RECORD = '\x1e';
 
+function commitStat(line: string): { files: number; added: number; removed: number } {
+    const count = (pattern: RegExp) => Number(line.match(pattern)?.[1] ?? 0);
+    return { files: count(/(\d+) files? changed/), added: count(/(\d+) insertions?\(\+\)/), removed: count(/(\d+) deletions?\(-\)/) };
+}
+
 interface GitLocation {
     root: string;
     env: Record<string, string>;
@@ -203,10 +208,10 @@ export class WorkingTree {
 
     async commitsSince(base: string | null): Promise<Omit<TurnCommit, 'order'>[]> {
         const range = base ? [`${base}..HEAD`] : ['HEAD'];
-        const log = await this.git(['log', '--reverse', `--max-count=${COMMIT_LIMIT}`, `--format=%H${FIELD}%s${FIELD}%b${RECORD}`, ...range]);
+        const log = await this.git(['log', '--reverse', '--shortstat', `--max-count=${COMMIT_LIMIT}`, `--format=${RECORD}%H${FIELD}%s${FIELD}%b${FIELD}`, ...range]);
         return log.split(RECORD).map(entry => entry.trim()).filter(Boolean).map((entry) => {
-            const [hash = '', title = '', body = ''] = entry.split(FIELD);
-            return { hash, title, body: body.trim() };
+            const [hash = '', title = '', body = '', stat = ''] = entry.split(FIELD);
+            return { hash, title, body: body.trim(), ...commitStat(stat) };
         });
     }
 

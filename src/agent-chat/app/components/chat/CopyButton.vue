@@ -3,6 +3,7 @@ const CONFIRM_MS = 2000;
 
 const props = defineProps<{
     text: string;
+    label?: string;
 }>();
 
 const { t } = useI18n();
@@ -25,11 +26,14 @@ onBeforeUnmount(() => clearTimeout(reset));
 <template>
     <UTooltip :text="copied ? t('Copied') : t('Copy')">
         <UButton
-            :icon="copied ? 'i-heroicons-check' : 'i-heroicons-square-2-stack'"
+            :icon="label ? undefined : copied ? 'i-heroicons-check' : 'i-heroicons-square-2-stack'"
+            :trailing-icon="label && copied ? 'i-heroicons-check' : undefined"
+            :label="label"
             :aria-label="copied ? t('Copied') : t('Copy')"
             size="xs"
             color="neutral"
             variant="ghost"
+            :class="label ? 'font-mono font-normal text-muted' : ''"
             @click="copy"
         />
     </UTooltip>

@@ -60,6 +60,9 @@ export interface TurnCommit {
     title: string;
     body: string;
     order: number;
+    files?: number;
+    added?: number;
+    removed?: number;
 }
 
 export interface TurnFileChanges {

@@ -35,8 +35,9 @@ panel beside the conversation, any text file in any language, unless it was dele
 and scrolled to the first of them; with several changes, arrows next to "1 of 3" step through them. Files git ignores, or that the private archive leaves out, do not show and cannot be opened.
 
 When the agent commits in a git repository, the commit shows in the same view at the moment it happens, between the
-files changed before and after it, headed like a file — "Git commit" with the short id — above a card framed by a fine AI
-colour gradient: a ring-shaped point, the commit title in the same gradient, and — when the commit has a description — a thin line running down
+files changed before and after it, headed like a file — "Git commit" with the short id, which copies the full id on a click — above
+a card framed by a fine AI colour gradient: a ring-shaped point, the commit title in the same gradient, the commit's
+size on the right ("3 files changed +40 −12"), and — when the commit has a description — a thin line running down
 from the point beside its first three lines, the rest behind "Show more". Several commits in one answer each appear at their
 own place.
 

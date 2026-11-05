@@ -116,6 +116,7 @@ test('a commit made during a turn is reported with its title, body and place amo
     assert.equal(last.commits?.length, 1);
     assert.equal(last.commits![0]!.title, 'Fix the second line');
     assert.equal(last.commits![0]!.body, 'It was lower case.');
+    assert.deepEqual([last.commits![0]!.files, last.commits![0]!.added, last.commits![0]!.removed], [1, 1, 1]);
     assert.ok(last.commits![0]!.order > last.files[0]!.order!);
     tracker.dispose();
     rmSync(dir, { recursive: true, force: true });
