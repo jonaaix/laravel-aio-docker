@@ -34,6 +34,11 @@ grows wide enough. Clicking a file's name opens the whole file as it is now in t
 panel beside the conversation, any text file in any language, unless it was deleted: with line numbers, the lines the change added marked,
 and scrolled to the first of them; with several changes, arrows next to "1 of 3" step through them. Files git ignores, or that the private archive leaves out, do not show and cannot be opened.
 
+When the agent commits in a git repository, the commit shows in the same view at the moment it happens, between the
+files changed before and after it, as a card of its own: "Committed" with the short id, the commit title and the
+first three lines of its description, the rest behind "Show more". Several commits in one answer each appear at their
+own place.
+
 ## Examples
 
 - On a wide screen the agent edits three files; the Changes panel beside the conversation shows each diff as it

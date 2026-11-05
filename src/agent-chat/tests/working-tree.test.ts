@@ -4,7 +4,10 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { WorkingTree, parsePatch, projectFilePath } from '../server/utils/working-tree.ts';
+import { ChangeTracker, WorkingTree, parsePatch, projectFilePath } from '../server/utils/working-tree.ts';
+import type { TurnFileChanges } from '../shared/types/conversation.ts';
+
+const TURN_START_MS = 500;
 
 function shadowBase(): string {
     return join(tmpdir(), 'working-tree-shadow');
@@ -91,5 +94,29 @@ test('a folder without git shows changes but never secrets or bulky folders, and
     execFileSync('git', ['init', '-q'], { cwd: dir });
     assert.ok(await WorkingTree.open(dir, join(dir, '..', `${Date.now()}-git.index`), shadowBase()));
     assert.equal(archives(), count - 1);
+    rmSync(dir, { recursive: true, force: true });
+});
+
+test('a commit made during a turn is reported with its title, body and place among the file changes', async () => {
+    const dir = repository();
+    const git = (...args: string[]) => execFileSync('git', args, { cwd: dir, stdio: 'ignore' });
+    const tracker = new ChangeTracker(dir, join(dir, '..', `${Date.now()}-tracker.index`), shadowBase());
+    const reports: TurnFileChanges[] = [];
+    const settled = () => new Promise<void>(resolve => tracker.afterStep((changes) => {
+        reports.push(changes);
+        resolve();
+    }));
+    tracker.beginTurn();
+    await new Promise(resolve => setTimeout(resolve, TURN_START_MS));
+    writeFileSync(join(dir, 'app.php'), 'one\nTWO\nthree\n');
+    await settled();
+    git('commit', '-qam', 'Fix the second line', '-m', 'It was lower case.');
+    await settled();
+    const last = reports.at(-1)!;
+    assert.equal(last.commits?.length, 1);
+    assert.equal(last.commits![0]!.title, 'Fix the second line');
+    assert.equal(last.commits![0]!.body, 'It was lower case.');
+    assert.ok(last.commits![0]!.order > last.files[0]!.order!);
+    tracker.dispose();
     rmSync(dir, { recursive: true, force: true });
 });

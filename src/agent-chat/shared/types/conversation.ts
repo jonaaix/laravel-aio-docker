@@ -52,10 +52,19 @@ export interface FileChange {
     binary: boolean;
     lines: string[];
     truncated: boolean;
+    order?: number;
+}
+
+export interface TurnCommit {
+    hash: string;
+    title: string;
+    body: string;
+    order: number;
 }
 
 export interface TurnFileChanges {
     files: FileChange[];
+    commits?: TurnCommit[];
 }
 
 export interface ChatMessageMetadata {

@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { copyFileSync, existsSync, mkdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { promisify } from 'node:util';
-import type { FileChange } from '../../shared/types/conversation';
+import type { FileChange, TurnCommit, TurnFileChanges } from '../../shared/types/conversation';
 
 const run = promisify(execFile);
 const GIT_OUTPUT_LIMIT = 64 * 1024 * 1024;
@@ -75,6 +75,10 @@ export function parsePatch(patch: string): FileChange[] {
 
 // Without a project .gitignore these would land in the chat's own archive and in diffs: secrets and bulky folders.
 const SHADOW_EXCLUDES = ['.git/', '.env', '.env.*', '*.key', '*.pem', '*.p12', '*.pfx', 'id_rsa*', 'id_ed25519*', '.ssh/', 'node_modules/', 'vendor/', 'storage/', 'dist/', 'build/'];
+
+const COMMIT_LIMIT = 50;
+const FIELD = '\x1f';
+const RECORD = '\x1e';
 
 interface GitLocation {
     root: string;
@@ -184,6 +188,28 @@ export class WorkingTree {
         return (await this.git(['write-tree'])).trim();
     }
 
+    get tracksCommits(): boolean {
+        return this.location.index !== null;
+    }
+
+    async head(): Promise<string | null> {
+        try {
+            return (await this.git(['rev-parse', '--verify', '--quiet', 'HEAD'])).trim() || null;
+        }
+        catch {
+            return null;
+        }
+    }
+
+    async commitsSince(base: string | null): Promise<Omit<TurnCommit, 'order'>[]> {
+        const range = base ? [`${base}..HEAD`] : ['HEAD'];
+        const log = await this.git(['log', '--reverse', `--max-count=${COMMIT_LIMIT}`, `--format=%H${FIELD}%s${FIELD}%b${RECORD}`, ...range]);
+        return log.split(RECORD).map(entry => entry.trim()).filter(Boolean).map((entry) => {
+            const [hash = '', title = '', body = ''] = entry.split(FIELD);
+            return { hash, title, body: body.trim() };
+        });
+    }
+
     async changes(from: string, to: string): Promise<FileChange[]> {
         if (from === to) {
             return [];
@@ -208,6 +234,8 @@ export class ChangeTracker {
     private latest: string | null = null;
     private changeOrder = new Map<string, number>();
     private changeCount = 0;
+    private turnHead: string | null = null;
+    private commits: TurnCommit[] = [];
     private readonly dir: string;
     private readonly indexFile: string;
     private readonly shadowBase: string;
@@ -224,37 +252,54 @@ export class ChangeTracker {
             this.turnStart = await tree.snapshot();
             this.latest = this.turnStart;
             this.changeOrder.clear();
+            this.commits = [];
+            this.turnHead = tree.tracksCommits ? await tree.head() : null;
         });
     }
 
-    afterStep(found: (turnChanges: FileChange[]) => void): void {
+    afterStep(found: (turnChanges: TurnFileChanges) => void): void {
         this.queue(async (tree) => {
             const previous = this.latest;
             this.latest = await tree.snapshot();
             const step = previous ? await tree.changes(previous, this.latest) : [];
-            if (step.length > 0 && this.turnStart) {
-                for (const change of step) {
-                    this.changeOrder.set(change.path, ++this.changeCount);
-                }
-                found(this.inChangeOrder(await tree.changes(this.turnStart, this.latest)));
+            for (const change of step) {
+                this.changeOrder.set(change.path, ++this.changeCount);
+            }
+            const committed = await this.collectCommits(tree);
+            if ((step.length > 0 || committed) && this.turnStart) {
+                found(this.turnChanges(await tree.changes(this.turnStart, this.latest)));
             }
         });
     }
 
-    endTurn(found: (turnChanges: FileChange[]) => void): void {
+    endTurn(found: (turnChanges: TurnFileChanges) => void): void {
         this.queue(async (tree) => {
             const start = this.turnStart;
             this.turnStart = null;
             this.latest = await tree.snapshot();
+            await this.collectCommits(tree);
             if (start) {
-                found(this.inChangeOrder(await tree.changes(start, this.latest)));
+                found(this.turnChanges(await tree.changes(start, this.latest)));
             }
         });
     }
 
-    private inChangeOrder(changes: FileChange[]): FileChange[] {
+    private async collectCommits(tree: WorkingTree): Promise<boolean> {
+        if (!tree.tracksCommits || !this.turnStart) {
+            return false;
+        }
+        const known = new Set(this.commits.map(commit => commit.hash));
+        const fresh = (await tree.commitsSince(this.turnHead)).filter(commit => !known.has(commit.hash));
+        for (const commit of fresh) {
+            this.commits.push({ ...commit, order: ++this.changeCount });
+        }
+        return fresh.length > 0;
+    }
+
+    private turnChanges(changes: FileChange[]): TurnFileChanges {
         const position = (change: FileChange) => this.changeOrder.get(change.path) ?? -1;
-        return [...changes].sort((a, b) => position(a) - position(b));
+        const files = [...changes].sort((a, b) => position(a) - position(b)).map(change => ({ ...change, order: position(change) }));
+        return { files, commits: [...this.commits] };
     }
 
     dispose(): void {

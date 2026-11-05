@@ -248,6 +248,7 @@
     "Deleted": "Eliminato",
     "Renamed": "Rinominato",
     "Binary file": "File binario",
+    "Committed": "Commit eseguito",
     "Diff shortened": "Diff abbreviato",
     "1 file changed | {count} files changed": "1 file modificato | {count} file modificati",
     "Previous change": "Modifica precedente",

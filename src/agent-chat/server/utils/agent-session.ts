@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { ClaudeCli, type ClaudeEvent } from '#claude-threads/claude/cli';
-import type { BackgroundTask, ChatMessage, ChatPart, FileChange, QueuedMessage, TurnOutcome } from '../../shared/types/conversation';
+import type { BackgroundTask, ChatMessage, ChatPart, QueuedMessage, TurnFileChanges, TurnOutcome } from '../../shared/types/conversation';
 import { metricsFromResult, outcomeOnlyMetrics, type TurnMetrics } from './turn-metrics';
 import type { UserRow } from './user-store';
 import { ChangeTracker } from './working-tree';
@@ -268,21 +268,21 @@ export class AgentSession {
             return part?.type === 'dynamic-tool' && !READ_ONLY_TOOLS.has(part.toolName);
         });
         if (messageId && mayChangeFiles) {
-            this.changes?.afterStep(files => this.showTurnChanges(messageId, files));
+            this.changes?.afterStep(changes => this.showTurnChanges(messageId, changes));
         }
     }
 
     private trackTurnChanges(messageId: string | null): void {
-        this.changes?.endTurn((files: FileChange[]) => {
-            if (messageId && (files.length > 0 || this.changesShownIn === messageId)) {
-                this.showTurnChanges(messageId, files);
+        this.changes?.endTurn((changes: TurnFileChanges) => {
+            if (messageId && (changes.files.length > 0 || (changes.commits?.length ?? 0) > 0 || this.changesShownIn === messageId)) {
+                this.showTurnChanges(messageId, changes);
             }
             this.changesShownIn = null;
         });
     }
 
-    private showTurnChanges(messageId: string, files: FileChange[]): void {
-        const part: ChatPart = { type: 'data-turn-changes', data: { files } };
+    private showTurnChanges(messageId: string, changes: TurnFileChanges): void {
+        const part: ChatPart = { type: 'data-turn-changes', data: changes };
         this.changesShownIn = messageId;
         const turn = this.turn;
         if (turn?.message?.id === messageId) {

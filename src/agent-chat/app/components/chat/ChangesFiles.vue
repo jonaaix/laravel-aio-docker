@@ -1,12 +1,20 @@
 <script setup lang="ts">
-import type { ChatMessage } from '#shared/types/conversation';
+import type { ChatMessage, FileChange, TurnCommit } from '#shared/types/conversation';
+
+type ChangeEntry = { key: string; file: FileChange; commit?: never; order: number } | { key: string; commit: TurnCommit; file?: never; order: number };
 
 const props = defineProps<{
     message: ChatMessage;
     live: boolean;
 }>();
 
-const files = computed(() => turnFileChanges(props.message).files);
+const entries = computed<ChangeEntry[]>(() => {
+    const { files, commits } = turnFileChanges(props.message);
+    return [
+        ...files.map((file, index) => ({ key: `file:${file.path}`, file, order: file.order ?? index })),
+        ...(commits ?? []).map(commit => ({ key: `commit:${commit.hash}`, commit, order: commit.order })),
+    ].sort((a, b) => a.order - b.order);
+});
 </script>
 
 <template>
@@ -21,9 +29,10 @@ const files = computed(() => turnFileChanges(props.message).files);
         leave-to-class="[--rows:0fr] opacity-0"
         move-class="transition-transform duration-350 ease-[cubic-bezier(0.22,1,0.36,1)]"
     >
-        <div v-for="(file, index) in files" :key="file.path" class="grid grid-rows-[var(--rows,1fr)]">
-            <div class="min-h-0 overflow-hidden">
-                <ChatFileDiff :change="file" :class="index > 0 ? 'pt-4' : ''" />
+        <div v-for="(entry, index) in entries" :key="entry.key" class="grid grid-rows-[var(--rows,1fr)]">
+            <div class="min-h-0 overflow-hidden" :class="index > 0 ? 'pt-4' : ''">
+                <ChatCommitCard v-if="entry.commit" :commit="entry.commit" />
+                <ChatFileDiff v-else :change="entry.file" />
             </div>
         </div>
     </TransitionGroup>
