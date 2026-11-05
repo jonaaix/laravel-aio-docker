@@ -71,6 +71,9 @@ const frameStyle = computed(() => (frameWidth.value === null ? { width: '100%' }
         :title="title"
         :ui="{ content: 'w-[min(96vw,1600px)] max-w-none h-[calc(100vh-1rem)] max-h-none sm:max-h-none', body: 'flex flex-1 p-0 sm:p-0 overflow-hidden', footer: 'justify-start' }"
     >
+        <template #actions>
+            <slot name="actions" />
+        </template>
         <template #body>
             <div ref="stage" class="flex flex-1 justify-center bg-muted px-4">
                 <div class="relative h-full" :style="frameStyle">

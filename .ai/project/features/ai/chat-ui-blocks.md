@@ -28,7 +28,8 @@ Its scrollbar is drawn thin and quiet.
 
 Above the page sit its title and three actions. "View larger" opens it in a large window over the chat; a handle at
 the page's edge drags its width narrower or wider, with the current width shown below, so the page can be checked at
-phone and tablet widths — a double click on the handle gives it the full width again. "View code" opens the HTML in
+phone and tablet widths — a double click on the handle gives it the full width again. The large window's title bar offers "View code" and "Open in new tab" as
+well, so neither needs the window closed first. "View code" opens the HTML in
 the preview column beside the conversation, where it can be copied or downloaded. The "More actions" menu opens the
 page on its own in a new tab, still shut off the same way, or downloads it.
 
