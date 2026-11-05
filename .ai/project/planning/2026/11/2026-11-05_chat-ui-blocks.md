@@ -35,6 +35,7 @@ message field.
 - Page, variants and choice first, cards second (user, 185a).
 - The "❓ Questions" question cards stay; the choice block is an addition, used when the prompt asks for it (user, 186a).
 - One tool per block instead of one tool with a kind field: each schema stays small and exact for the model.
+- Screen sizes in the larger view use the device's full screen, not the browser's visible area (user, 196b).
 - Names by intent: `show_…` for what is looked at, `ask_choice` for the block that waits for a reply (user, 188a).
 - Pages are served with `Content-Security-Policy: sandbox allow-scripts`, so even opened directly they never run with
   the chat's origin. Only the HTML file is copied: pages must be self-contained (inline or CDN).
