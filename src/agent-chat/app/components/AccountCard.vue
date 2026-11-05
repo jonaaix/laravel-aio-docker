@@ -30,7 +30,7 @@ const menu = computed<DropdownMenuItem[][]>(() => [
 </script>
 
 <template>
-    <UDropdownMenu v-if="profile" :items="menu" :content="{ side: 'top', align: 'start' }" :ui="{ content: 'w-(--reka-dropdown-menu-trigger-width) min-w-64' }">
+    <UDropdownMenu v-if="profile" :items="menu" :content="{ side: 'top', align: 'start' }" :ui="{ content: 'w-(--reka-dropdown-menu-trigger-width) min-w-64', itemLabel: 'font-medium', itemDescription: 'text-xs tabular-nums' }">
         <button type="button" class="w-full rounded-md bg-default p-3 text-start ring ring-default transition-colors duration-500 ease-out hover:bg-primary/10 dark:bg-default/60 dark:hover:bg-primary/10">
             <span class="flex items-center gap-2">
                 <span class="min-w-0 flex-1 truncate text-sm font-medium text-highlighted">{{ profile.email ?? t('Claude account') }}</span>
