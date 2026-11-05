@@ -14,7 +14,7 @@ interface Spike {
 const SIZE = 40;
 const CENTER = SIZE / 2;
 const BASE_RADIUS = 16.6;
-const WAVE_MAX = 3.5;
+const WAVE_MAX = 3;
 const INNER_CAP = 0.5;
 const REST_WIDTH = 0.6;
 const BINS = 96;
@@ -25,6 +25,7 @@ const SPIKE_OUT = 0.25;
 const SPIKE_LIFE = SPIKE_IN + SPIKE_HOLD + SPIKE_OUT;
 const SPIKE_RATE = 7;
 const ROTATION_SPEED = 0.7;
+const GRADIENT_SPEED = 90;
 const WAVE_SPEED = 2.6;
 const SPECTRUM_GAIN = 1.3;
 const SPECTRUM_CONTRAST = 1.8;
@@ -36,6 +37,8 @@ const spikes: Spike[] = [];
 let lastTime = 0;
 
 const path = ref('');
+const gradientId = useId();
+const gradientTurn = computed(() => `rotate(${(time.value * GRADIENT_SPEED) % 360} 0.5 0.5)`);
 
 function clamp(value: number, min: number, max: number): number {
     return Math.max(min, Math.min(max, value));
@@ -142,7 +145,14 @@ watch(time, draw, { immediate: true });
 </script>
 
 <template>
-    <svg :viewBox="`0 0 ${SIZE} ${SIZE}`" class="pointer-events-none overflow-visible text-primary" aria-hidden="true">
-        <path :d="path" fill="currentColor" fill-rule="evenodd" fill-opacity="0.85" />
+    <svg :viewBox="`0 0 ${SIZE} ${SIZE}`" class="pointer-events-none overflow-visible" aria-hidden="true">
+        <defs>
+            <linearGradient :id="gradientId" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox" :gradientTransform="gradientTurn">
+                <stop offset="0" style="stop-color: var(--ai-gradient-from)" />
+                <stop offset="0.5" style="stop-color: var(--ai-gradient-via)" />
+                <stop offset="1" style="stop-color: var(--ai-gradient-to)" />
+            </linearGradient>
+        </defs>
+        <path :d="path" :fill="`url(#${gradientId})`" fill-rule="evenodd" />
     </svg>
 </template>

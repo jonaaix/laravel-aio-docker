@@ -20,6 +20,9 @@
     --font-scale: 1;
     --ui-radius: 0.5rem;
     --ui-container: 52rem;
+    --ai-gradient-from: var(--ui-primary);
+    --ai-gradient-via: oklch(from var(--ui-primary) calc(l + 0.06) c calc(h + 55));
+    --ai-gradient-to: oklch(from var(--ui-primary) calc(l + 0.1) c calc(h - 70));
 }
 
 .light {

@@ -39,7 +39,7 @@ Each conversation has a small round picture of its own (an abstract "Slice" imag
 conversation), shown before its entry. Folded to its icon strip, the sidebar still lists the conversations by that
 picture, with the name on hover; an unseen answer shows a dot
 on the picture, a working conversation a slowly turning ring of light around it, and the conversation being read has a fine band
-close around its picture that billows with the voice actually being heard — its pitches spread around the circle —
+close around its picture, in a slowly turning gradient drawn from the accent colour, that billows with the voice actually being heard — its pitches spread around the circle —
 and lies as a thin, still ring while paused.
 
 ## Examples
