@@ -8,7 +8,7 @@ import { ChangeTracker } from './working-tree';
 const TURN_EVENT_TYPES = new Set(['stream_event', 'assistant', 'user']);
 // Questions and plans happen as plain chat text; the chat has no controls for these tools.
 const DISALLOWED_TOOLS = ['AskUserQuestion', 'EnterPlanMode', 'ExitPlanMode'];
-const READ_ONLY_TOOLS = new Set(['Read', 'Grep', 'Glob', 'LS', 'WebFetch', 'WebSearch', 'ToolSearch', 'TodoWrite', 'Skill', 'Monitor', 'BashOutput', 'TaskOutput', 'ListMcpResourcesTool', 'ReadMcpResourceTool', 'mcp__chat__send_file', 'mcp__chat__show_page', 'mcp__chat__show_variants', 'mcp__chat__ask_choice', 'mcp__chat__show_cards']);
+const READ_ONLY_TOOLS = new Set(['Read', 'Grep', 'Glob', 'LS', 'WebFetch', 'WebSearch', 'ToolSearch', 'TodoWrite', 'Skill', 'Monitor', 'BashOutput', 'TaskOutput', 'ListMcpResourcesTool', 'ReadMcpResourceTool', 'mcp__chat__send_file', 'mcp__chat__show_page', 'mcp__chat__ask_variants', 'mcp__chat__ask_choice', 'mcp__chat__show_cards']);
 
 interface ActiveTurn {
     message: ChatMessage | null;

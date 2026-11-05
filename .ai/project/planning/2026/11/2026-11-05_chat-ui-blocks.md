@@ -10,7 +10,7 @@ message field.
 ## Milestones
 
 - [x] Shared type `data-ui-block` part (page, variants, choice)
-- [x] Server: tools `show_page`, `show_variants`, `ask_choice` in the chat MCP server; validation with clear errors;
+- [x] Server: tools `show_page`, `ask_variants`, `ask_choice` in the chat MCP server; validation with clear errors;
       page HTML stored as a frozen copy; page route serving it sandboxed with scripts allowed
 - [x] Client: page block (embedded, full width, fixed height), variants block (page + option rows), choice block
       (section card + option rows); option row extracted from the question card; picks into the message field
