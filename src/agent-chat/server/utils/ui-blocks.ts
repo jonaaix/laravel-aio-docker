@@ -78,8 +78,7 @@ export const UI_BLOCK_TOOLS = [
     },
     {
         name: 'ask_choice',
-        description: 'Ask the user to choose between options in a card they can click. '
-            + 'Use it where a plain question in the text would not do, such as options that need a description each. '
+        description: 'Ask the user a question with options to click, each with an optional description. '
             + 'End your answer right after it and wait for the reply.',
         inputSchema: {
             type: 'object',
