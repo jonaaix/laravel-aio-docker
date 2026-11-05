@@ -60,20 +60,21 @@ function togglePause(): void {
             :aria-label="t('Reading position')"
             @update:model-value="moveProgress"
         />
-        <div class="flex items-center justify-end gap-1">
+        <div class="grid grid-cols-[1fr_auto_1fr] items-center">
+            <span />
             <div class="flex items-center gap-1">
                 <UTooltip :text="t('Back 10 seconds')">
-                    <UButton trailing-icon="i-heroicons-arrow-uturn-left" label="10s" color="neutral" variant="ghost" size="sm" class="gap-0.5 text-[0.625rem] font-semibold tabular-nums" :aria-label="t('Back 10 seconds')" @click="back" />
+                    <UButton trailing-icon="i-heroicons-arrow-uturn-left" label="10s" color="neutral" variant="ghost" size="sm" class="items-end gap-0.5 text-[0.625rem]/none font-semibold tabular-nums" :aria-label="t('Back 10 seconds')" @click="back" />
                 </UTooltip>
                 <UTooltip :text="paused ? t('Resume') : t('Pause')">
                     <UButton :icon="paused ? 'i-heroicons-play' : 'i-heroicons-pause'" color="neutral" variant="ghost" size="sm" :aria-label="paused ? t('Resume') : t('Pause')" @click="togglePause" />
                 </UTooltip>
                 <UTooltip :text="t('Forward 10 seconds')">
-                    <UButton icon="i-heroicons-arrow-uturn-right" label="10s" color="neutral" variant="ghost" size="sm" class="gap-0.5 text-[0.625rem] font-semibold tabular-nums" :aria-label="t('Forward 10 seconds')" @click="forward" />
+                    <UButton icon="i-heroicons-arrow-uturn-right" label="10s" color="neutral" variant="ghost" size="sm" class="items-end gap-0.5 text-[0.625rem]/none font-semibold tabular-nums" :aria-label="t('Forward 10 seconds')" @click="forward" />
                 </UTooltip>
             </div>
             <UDropdownMenu :items="rateItems" :content="{ side: 'top', align: 'end' }" :ui="{ content: 'max-h-56 overflow-y-auto scrollbar-slim', itemLabel: 'tabular-nums' }">
-                <UButton :label="formatSpeedFactor(speechRate)" color="neutral" variant="ghost" size="sm" class="tabular-nums" :aria-label="t('Reading speed')" />
+                <UButton :label="formatSpeedFactor(speechRate)" color="neutral" variant="ghost" size="sm" class="justify-self-end tabular-nums" :aria-label="t('Reading speed')" />
             </UDropdownMenu>
         </div>
     </div>
