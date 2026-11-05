@@ -17,6 +17,7 @@ unread.track();
 useDoneSound().track();
 followSpeechRate();
 const speech = useSpeechPlayer();
+const speechLevel = useSpeechLevel();
 const hubUnread = hub ? useHubUnread() : null;
 hubUnread?.track();
 const { load: loadReads, apply: applyRead } = useReads();
@@ -157,11 +158,12 @@ onBeforeUnmount(() => {
                             <template v-if="collapsed">
                                 <template v-if="speech.speakingId.value && speech.conversationId.value === item.id">
                                     <span
-                                        v-for="echo in 2"
-                                        :key="echo"
-                                        class="audio-pulse pointer-events-none absolute inset-0 rounded-full"
-                                        :class="{ 'audio-pulse-paused': speech.paused.value }"
-                                        :style="{ animationDelay: `${(echo - 1) * 0.8}s` }"
+                                        class="audio-ring pointer-events-none absolute inset-0 rounded-full"
+                                        :style="{ transform: `scale(${1.08 + speechLevel.level.value * 0.3})`, opacity: 0.35 + speechLevel.level.value * 0.65 }"
+                                    />
+                                    <span
+                                        class="audio-ring pointer-events-none absolute inset-0 rounded-full"
+                                        :style="{ transform: `scale(${1.08 + speechLevel.echo.value * 0.7})`, opacity: speechLevel.echo.value * 0.6 }"
                                     />
                                     <span class="sr-only">{{ t('Reading aloud') }}</span>
                                 </template>

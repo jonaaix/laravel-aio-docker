@@ -89,6 +89,7 @@ function finish(current: number): void {
     sourceConversationId.value = null;
     paused.value = false;
     progress.value = 0;
+    stopSpeechLevel();
 }
 
 function halt(): void {
@@ -120,6 +121,7 @@ function speakWithDevice(from: number, current: number): void {
         };
         utterance.onboundary = (event) => {
             if (run === current) {
+                pulseSpokenWord();
                 setProgress(index, event.charIndex / Math.max(1, chunk.length));
             }
         };
@@ -343,6 +345,7 @@ export function useSpeech() {
         sourceLabel.value = speakableText(/^#{1,6}\s+(.+)$/m.exec(markdown)?.[1] ?? '') || text.split('\n')[0]!;
         player ??= new Audio();
         player.preservesPitch = true;
+        meterSpeechAudio(player);
         // Safari lets an element play later, after the fetch, only if it already played inside the click.
         player.src = silentClip();
         player.play().catch(() => undefined);
