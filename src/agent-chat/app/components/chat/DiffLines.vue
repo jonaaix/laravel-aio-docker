@@ -29,7 +29,7 @@ const linePrefix: Record<DiffLine['kind'], string> = { added: '+', removed: '−
 </script>
 
 <template>
-    <div class="overflow-auto rounded-md bg-default font-mono text-xs/5 ring ring-default">
+    <div class="overflow-auto rounded-md border border-default bg-default font-mono text-xs/5">
         <div v-for="(line, index) in lines" :key="index" class="flex" :class="lineClass[line.kind]" :data-kind="line.kind">
             <span v-if="numberWidth" class="shrink-0 px-2 text-end text-dimmed tabular-nums select-none" :class="gutterClass[line.kind]" :style="{ width: `calc(${numberWidth} + 0.25rem)` }">{{ line.number }}</span>
             <span class="w-5 shrink-0 ps-2 select-none text-muted">{{ linePrefix[line.kind] }}</span>
