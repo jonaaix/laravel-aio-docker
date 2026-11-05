@@ -93,9 +93,10 @@ export const UI_BLOCK_TOOLS = [
     {
         name: 'show_cards',
         description: 'Show a grid of cards: a comparison, a summary, the state of several parts. '
-            + 'Structure it in cards with a heading: most important first, related things together. '
-            + 'A card shows its message visibly, the more strongly the more important it is; without a message it stays neutral. '
-            + 'A status tints the whole card green, amber or red.',
+            + 'Group content into sections, each with its own heading, sorted by importance in descending order. '
+            + 'Within a section everything looks the same; between sections the appearance differs by importance. '
+            + 'Sections without a message stay neutral. '
+            + 'One call shows one section. For several sections, send several calls one after another, each with the section heading as its title.',
         inputSchema: {
             type: 'object',
             properties: {
