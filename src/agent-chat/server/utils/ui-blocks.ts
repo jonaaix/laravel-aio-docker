@@ -5,7 +5,8 @@ const MIN_OPTIONS = 2;
 const PAGE_HEIGHT = { min: 240, max: 1200, fallback: 560 };
 const PAGE_FILE = /\.html?$/i;
 const MAX_CARDS = 12;
-const VARIANT_COLUMNS: UiVariantColumns[] = [1, 2];
+const CANVAS_COLUMNS: Record<string, UiVariantColumns> = { small: 2, large: 1 };
+const CANVASES = Object.keys(CANVAS_COLUMNS);
 const VIEWPORT_WIDTH = { min: 320, max: 2560, fallback: 1280 };
 const VIEWPORT_HEIGHT = { min: 240, max: 1600, fallback: 800 };
 const CARD_STATUSES: UiCardStatus[] = ['good', 'warning', 'bad'];
@@ -53,7 +54,7 @@ export const UI_BLOCK_TOOLS = [
             type: 'object',
             properties: {
                 title: { type: 'string', description: 'Optional short title shown above the cards.' },
-                columns: { type: 'integer', enum: VARIANT_COLUMNS, description: '1 or 2. Use 2 only for small elements such as buttons or icons. A preview is about 740 px wide with 1 column, 350 px with 2.' },
+                canvas: { type: 'string', enum: CANVASES, description: 'Choose the best suitable between small canvas (350px) and large canvas (740px).' },
                 viewport_width: { type: 'integer', description: `Only used when previews are scaled down: the width the variants are designed for, ${VIEWPORT_WIDTH.min}–${VIEWPORT_WIDTH.max}. Default ${VIEWPORT_WIDTH.fallback}.` },
                 viewport_height: { type: 'integer', description: `How tall each preview is at that width, ${VIEWPORT_HEIGHT.min}–${VIEWPORT_HEIGHT.max}. Default ${VIEWPORT_HEIGHT.fallback}.` },
                 variants: {
@@ -73,7 +74,7 @@ export const UI_BLOCK_TOOLS = [
                 },
                 recommended: RECOMMENDED_PROPERTY,
             },
-            required: ['columns', 'variants'],
+            required: ['canvas', 'variants'],
         },
     },
     {
@@ -167,11 +168,12 @@ function variantsOf(args: Record<string, unknown>, viewport: UiViewport, storePa
     }));
 }
 
-function columnsOf(value: unknown): UiVariantColumns {
-    if (!VARIANT_COLUMNS.includes(value as UiVariantColumns)) {
-        throw new Error('columns must be 1 or 2.');
+function columnsOf(canvas: unknown): UiVariantColumns {
+    const columns = typeof canvas === 'string' ? CANVAS_COLUMNS[canvas] : undefined;
+    if (!columns) {
+        throw new Error(`canvas must be ${CANVASES.join(' or ')}.`);
     }
-    return value as UiVariantColumns;
+    return columns;
 }
 
 function optionsOf(value: unknown, name: string): UiOption[] {
@@ -225,7 +227,7 @@ export function uiBlockFor(tool: string, args: Record<string, unknown>, storePag
         return { kind: 'cards', title, cards: cardsOf(args.cards) };
     }
     if (tool === 'show_variants') {
-        const columns = columnsOf(args.columns);
+        const columns = columnsOf(args.canvas);
         const viewport = { width: wholeNumber(args.viewport_width, 'viewport_width', VIEWPORT_WIDTH), height: wholeNumber(args.viewport_height, 'viewport_height', VIEWPORT_HEIGHT) };
         const options = variantsOf(args, viewport, storePage);
         return { kind: 'variants', title, columns, viewport, options, recommended: recommendedOf(args.recommended, options) };

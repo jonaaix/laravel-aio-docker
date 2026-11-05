@@ -6,7 +6,7 @@ const storePage = (path: string) => ({ url: `pages/${path}`, fileUrl: `files/${p
 const twoOptions = [{ title: 'Compact list' }, { title: 'Cards', description: 'Roomier' }];
 
 test('variants are lettered in order, each with its own page, and keep the recommendation', () => {
-    const block = uiBlockFor('show_variants', { columns: 2, variants: [{ path: 'a.html', title: 'Cards' }, { path: 'b.html', title: 'Table', description: 'Dense' }], recommended: true }, storePage);
+    const block = uiBlockFor('show_variants', { canvas: 'small', variants: [{ path: 'a.html', title: 'Cards' }, { path: 'b.html', title: 'Table', description: 'Dense' }], recommended: true }, storePage);
     assert.ok(block.kind === 'variants');
     assert.equal(block.columns, 2);
     assert.deepEqual(block.viewport, { width: 1280, height: 800 });
@@ -14,9 +14,9 @@ test('variants are lettered in order, each with its own page, and keep the recom
     assert.equal(block.recommended, 'a');
 });
 
-test('variants need one or two columns and a page each', () => {
-    assert.throws(() => uiBlockFor('show_variants', { columns: 3, variants: [{ path: 'a.html', title: 'A' }, { path: 'b.html', title: 'B' }] }, storePage), /columns must be 1 or 2/);
-    assert.throws(() => uiBlockFor('show_variants', { columns: 1, variants: [{ path: 'a.html', title: 'A' }, { title: 'B' }] }, storePage), /variants\[1\]\.path is required/);
+test('variants need a small or large canvas and a page each', () => {
+    assert.throws(() => uiBlockFor('show_variants', { canvas: 'huge', variants: [{ path: 'a.html', title: 'A' }, { path: 'b.html', title: 'B' }] }, storePage), /canvas must be small or large/);
+    assert.throws(() => uiBlockFor('show_variants', { canvas: 'large', variants: [{ path: 'a.html', title: 'A' }, { title: 'B' }] }, storePage), /variants\[1\]\.path is required/);
 });
 
 test('a page must be an html file', () => {

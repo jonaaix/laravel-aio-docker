@@ -52,8 +52,8 @@ name, an
 optional short description beneath the name, and a live preview of the variant at the card's full width and the
 height the agent gives it, laid out for that width as a real page would be. Under Settings → Chat the previews can
 instead be scaled down from the screen width the agent designed the variants for. The preview can be used like the page itself — clicked, scrolled, text selected; selecting the
-variant takes a click on the card outside the preview. The agent puts two cards side by
-side only for small elements such as icons, buttons or badges, and one per row for anything larger; on a phone they always stand one
+variant takes a click on the card outside the preview. The agent chooses a small canvas
+(about 350 px, two cards side by side) or a large one (about 740 px, one card per row); on a phone they always stand one
 per row. A button on each card opens that variant in the large window with its screen sizes, code and download; there
 the arrow keys ← and → and two arrow buttons in the title bar step to the previous or next variant.
 
