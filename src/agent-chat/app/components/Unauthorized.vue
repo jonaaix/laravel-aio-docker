@@ -1,5 +1,11 @@
 <script setup lang="ts">
 const { t } = useI18n();
+
+onMounted(() => {
+    if (isEmbedded()) {
+        window.parent.postMessage({ type: 'agent-chat:unauthorized' }, '*');
+    }
+});
 </script>
 
 <template>

@@ -25,6 +25,8 @@
     };
 
     const chatUrl = new URL('./?embedded', document.currentScript.src).href;
+    const chatOrigin = new URL(chatUrl).origin;
+    const signInUrl = document.currentScript.dataset.signIn ? new URL(document.currentScript.dataset.signIn, location.href).href : null;
 
     function readState() {
         try {
@@ -114,6 +116,15 @@
     const toggleButton = root.querySelector('.toggle');
     const pageShift = document.createElement('style');
     let frame = null;
+    let signInTried = false;
+
+    window.addEventListener('message', (event) => {
+        if (!signInUrl || signInTried || !frame || event.origin !== chatOrigin || event.source !== frame.contentWindow || event.data?.type !== 'agent-chat:unauthorized') {
+            return;
+        }
+        signInTried = true;
+        frame.src = signInUrl;
+    });
 
     function render() {
         state.width = clampWidth(state.width);

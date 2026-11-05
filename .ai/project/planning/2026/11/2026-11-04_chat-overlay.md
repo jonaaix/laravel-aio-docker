@@ -38,6 +38,9 @@ this works on a test site with several linked pages, and the Laravel app can add
   projects that bring their own nginx config would break it (user's call). A Chrome side-panel extension was offered.
 - The app adds the script tag in its own layouts, like a dev tool such as Debugbar; it decides in code which pages
   get the chat, so no path setting exists in the image (user, 253b).
+- Before its first sign-in the panel signs in by itself through the app's existing chat route (`data-sign-in` on
+  the script tag): the unauthorized chat tells the overlay, which loads the route once in the frame. No extra
+  route in the app; works across domains because the sign-in happens inside the frame (user, 251a).
 - Always split, no overlay mode: the panel is too wide to lie over the page (user's call). The page moves by a right
   margin; fixed elements of the app and its breakpoints do not follow — accepted for a development aid.
 - The script lives in a shadow root, so the app's CSS and the overlay's CSS cannot touch each other.
@@ -45,5 +48,4 @@ this works on a test site with several linked pages, and the Laravel app can add
 
 ## Open
 
-- What the panel does before its first sign-in: sign in through the app's existing chat route on its own, a
-  sign-in button, or "Unauthorized" as now (question 251).
+- Nothing.

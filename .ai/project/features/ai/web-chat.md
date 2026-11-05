@@ -30,7 +30,9 @@ can be dragged to change the width. Page and chat scroll with slim scrollbars wh
 bars never stand side by side. When the page reloads or the user follows a link, the panel comes straight back as it
 was — open or closed, width, the open conversation and any text not yet sent — while the agents carry on undisturbed on
 the server. The chat only loads once the panel is first opened, and a conversation in the panel shows its last ten
-messages first, loading earlier ones on scrolling up.
+messages first, loading earlier ones on scrolling up. The app shows the panel only to its signed-in users and tells
+it its own way into the chat; a panel that finds its person not yet signed in to the chat goes that way once by
+itself, so they are signed in inside the panel without a separate step.
 
 Chat tabs in the background let go of their live connection and catch up as soon as they are in front again, so many
 open chat tabs never hold up a page that loads the chat.

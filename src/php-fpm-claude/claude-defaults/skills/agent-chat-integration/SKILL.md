@@ -80,7 +80,7 @@ usually the admin layout:
 ```blade
 {{-- resources/views/layouts/admin.blade.php --}}
     @auth
-        <script src="{{ config('services.agent_chat.url') }}/overlay.js" defer></script>
+        <script src="{{ config('services.agent_chat.url') }}/overlay.js" data-sign-in="{{ route('agent-chat') }}" defer></script>
     @endauth
 </body>
 ```
@@ -90,7 +90,7 @@ check the app already has:
 
 ```blade
 @if (request()->routeIs('admin.*') && auth()->user()?->can('viewAdmin'))
-    <script src="{{ config('services.agent_chat.url') }}/overlay.js" defer></script>
+    <script src="{{ config('services.agent_chat.url') }}/overlay.js" data-sign-in="{{ route('agent-chat') }}" defer></script>
 @endif
 ```
 
@@ -100,8 +100,8 @@ If it is not clear which area should get the chat, ask the user before adding th
   never loads twice.
 - The panel only loads the chat once it is opened. Moving between pages with and without the tag hides the panel
   and brings it back as it was on the next page that has it.
-- Someone who has never signed in sees "Unauthorized" in the panel. Signing in once through the route above fixes
-  that for good in this browser.
+- `data-sign-in` points to the route above. When the panel finds the person not yet signed in to the chat, it opens
+  that route once inside the panel and signs them in there, so render the tag only for signed-in users.
 - If the app sends a `Content-Security-Policy`, allow `AGENT_CHAT_URL` in `script-src` and `frame-src`.
 - Fixed elements of the app (sticky headers, toasts) do not move with the page when the panel opens. That is
   accepted; do not rework the app's layout for it.
@@ -110,6 +110,3 @@ If it is not clear which area should get the chat, ask the user before adding th
 
 - The chat's address inside this container and where its key is kept are not fixed yet. Until they are, ask the
   user for both and put them into `.env` as above.
-- Signing in through the route only reaches the panel while the chat and the app share a site (same host,
-  different ports count as the same site). On separate domains the panel cannot see that sign-in; tell the user
-  instead of working around it.
