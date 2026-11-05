@@ -45,8 +45,9 @@ the same name, while the versions of a draft line up in order in the download fo
 ### Variants
 
 For visual design or UX alternatives — never for plain questions — the agent shows two to six variants as selectable
-cards, each variant its own HTML page holding only that variant. Each card carries a radio button at its top left that holds
-the variant's letter — filled in the accent colour once chosen — followed by the variant's name, option a) — always the recommendation when there is one — marked by a filled "Recommended" badge right after the
+cards, each variant its own HTML page holding only that variant. Each card carries at its top left the variant's letter on a
+small key cap that works as its radio button — filled in the accent colour once chosen — followed by the variant's
+name, option a) — always the recommendation when there is one — marked by a filled "Recommended" badge right after the
 name, an
 optional short description beneath the name, and a live preview of the variant at the card's full width and the
 height the agent gives it, laid out for that width as a real page would be. Under Settings → Chat the previews can

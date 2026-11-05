@@ -53,8 +53,8 @@ function choose(index: number): void {
         >
             <div class="flex items-start gap-2">
                 <span
-                    class="flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors duration-500 ease-out"
-                    :class="isChosen(index) ? 'bg-primary text-inverted' : 'text-muted ring ring-accented'"
+                    class="flex size-6 shrink-0 items-center justify-center rounded-[0.375rem] text-xs font-semibold uppercase transition-colors duration-500 ease-out"
+                    :class="isChosen(index) ? 'bg-primary text-inverted' : 'bg-default text-muted shadow-[0_1px_0_var(--ui-border-accented)] ring ring-accented'"
                 >{{ option.letter }}</span>
                 <div class="flex min-w-0 flex-1 flex-col gap-0.5">
                     <div class="flex items-start gap-2">
