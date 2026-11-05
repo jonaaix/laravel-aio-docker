@@ -24,7 +24,7 @@
 
 .light {
     --ui-primary: oklch(var(--tint-lightness) calc(0.18 * var(--tint-chroma)) var(--tint));
-    --light-streak: var(--ui-primary);
+    --light-streak: oklch(0.62 calc(0.1 * var(--tint-chroma)) var(--tint));
     --user-message: oklch(0.93 calc(0.04 * var(--tint-chroma)) var(--tint));
     --ui-bg: oklch(0.985 0 0);
     --ui-bg-muted: oklch(0.965 0 0);
@@ -45,7 +45,7 @@
 
 .dark {
     --ui-primary: oklch(var(--tint-dark-lightness) calc(0.14 * var(--tint-chroma)) var(--tint));
-    --light-streak: oklch(0.78 calc(0.17 * var(--tint-chroma)) var(--tint));
+    --light-streak: oklch(0.86 calc(0.08 * var(--tint-chroma)) var(--tint));
     --user-message: oklch(0.3 calc(0.04 * var(--tint-chroma)) var(--tint));
     --ui-bg: oklch(0.17 0 0);
     --ui-bg-muted: oklch(0.205 0 0);
@@ -154,7 +154,7 @@ html[data-embedded] {
 }
 
 @utility light-streak {
-    background-image: linear-gradient(100deg, currentColor 0%, currentColor 38%, var(--light-streak) 47%, var(--light-streak) 53%, currentColor 62%, currentColor 100%);
+    background-image: linear-gradient(100deg, currentColor 0%, currentColor 36%, var(--light-streak) 50%, currentColor 64%, currentColor 100%);
     background-size: 40rem 100%;
     background-repeat: no-repeat;
     background-clip: text;
