@@ -286,5 +286,6 @@
     "Key saved, but {service} did not accept it. Check it and save it again.": "Key saved, but {service} did not accept it. Check it and save it again.",
     "Key saved, but {service} could not be reached. Choose {service} again later.": "Key saved, but {service} could not be reached. Choose {service} again later.",
     "The key could not be saved": "The key could not be saved",
-    "Recommended": "Recommended"
+    "Recommended": "Recommended",
+    "Summarizing conversation…": "Summarizing conversation…"
 }

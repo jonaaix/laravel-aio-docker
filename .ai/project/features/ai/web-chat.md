@@ -97,7 +97,9 @@ still ends where the agent finished it. What the agent replies to the hook follo
 shield-with-check icon, named "Stop hook" on hover, without section bars; a reply that is nothing but a bar
 shows no line. The line is left out when the message is copied, in notifications and in
 what other agents read. When Claude summarizes a long conversation to make room, a small grey line "Conversation
-summarized" marks the spot in the answer where it happened, since the agent remembers less detail from before it.
+summarized" marks the spot in the answer where it happened, since the agent remembers less detail from before it. While the
+summary is being written, the same line reads "Summarizing conversation…" with a gently pulsing symbol and turns into
+the finished line in place; a summary that fails leaves no line.
 
 Every conversation keeps its full history — messages, tool activity, and the files and images
 exchanged — and comes back complete after a page reload or a container restart. A newer version

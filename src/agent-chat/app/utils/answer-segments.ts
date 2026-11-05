@@ -7,7 +7,7 @@ export type AnswerSegment =
     | { kind: 'part'; key: string; part: ChatPart }
     | { kind: 'images'; key: string; parts: FileUIPart[] }
     | { kind: 'stop-hook'; key: string; paragraphs: string[] }
-    | { kind: 'compacted'; key: string }
+    | { kind: 'compacted'; key: string; running: boolean }
     | { kind: 'ui-block'; key: string; block: UiBlock };
 
 function isImage(part: ChatPart): part is FileUIPart {
@@ -19,7 +19,10 @@ export function answerSegments(message: ChatMessage): AnswerSegment[] {
     let afterStopHook = false;
     message.parts.forEach((part, index) => {
         if (isCompactionMark(part)) {
-            segments.push({ kind: 'compacted', key: `${message.id}-${index}` });
+            const state = compactionState(part);
+            if (state !== 'failed') {
+                segments.push({ kind: 'compacted', key: `${message.id}-${index}`, running: state === 'running' });
+            }
             return;
         }
         if (isStopHookMark(part)) {

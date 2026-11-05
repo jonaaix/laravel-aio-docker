@@ -1,6 +1,6 @@
 import type { ClaudeEvent } from '#claude-threads/claude/cli';
 import type { ChatPart } from '../../shared/types/conversation';
-import { COMPACTION_PART, STOP_HOOK_FEEDBACK, STOP_HOOK_PART } from '../../shared/utils/turn-marks';
+import { COMPACTION_PART, compactionPart, compactionState, isCompactionMark, STOP_HOOK_FEEDBACK, STOP_HOOK_PART } from '../../shared/utils/turn-marks';
 
 interface ClaudeContentBlock {
     type: string;
@@ -102,14 +102,43 @@ export function streamDeltaText(event: ClaudeEvent): string | null {
     return inner.delta?.text ?? inner.delta?.thinking ?? null;
 }
 
+function runningCompactionIndex(parts: ChatPart[]): number {
+    return parts.findLastIndex(part => isCompactionMark(part) && compactionState(part) === 'running');
+}
+
+function settleCompaction(parts: ChatPart[], settled: ChatPart): number[] {
+    const running = runningCompactionIndex(parts);
+    if (running === -1) {
+        return settled === COMPACTION_PART ? [parts.push({ ...COMPACTION_PART }) - 1] : [];
+    }
+    parts[running] = { ...settled };
+    return [running];
+}
+
+function applyCompactionEvent(parts: ChatPart[], event: ClaudeEvent): number[] {
+    if (event.subtype === 'compact_boundary') {
+        return settleCompaction(parts, COMPACTION_PART);
+    }
+    if (event.subtype !== 'status') {
+        return [];
+    }
+    if (event.compact_result === 'failed') {
+        return settleCompaction(parts, compactionPart('failed'));
+    }
+    if (event.status === 'compacting' && runningCompactionIndex(parts) === -1) {
+        return [parts.push(compactionPart('running')) - 1];
+    }
+    return [];
+}
+
 export function applyClaudeEvent(parts: ChatPart[], event: ClaudeEvent): number[] {
     // Subagent sidechains are not rendered yet; their outcome still reaches the parent tool part.
     if (event.parent_tool_use_id) {
         return [];
     }
     const changed: number[] = [];
-    if (event.type === 'system' && event.subtype === 'compact_boundary') {
-        changed.push(parts.push({ ...COMPACTION_PART }) - 1);
+    if (event.type === 'system') {
+        changed.push(...applyCompactionEvent(parts, event));
     }
     if (event.type === 'assistant') {
         for (const block of contentBlocks(event)) {

@@ -6,6 +6,17 @@ export const STOP_HOOK_PART: ChatPart = { type: 'data-stop-hook', data: null };
 
 export const COMPACTION_PART: ChatPart = { type: 'data-compacted', data: null };
 
+export type CompactionState = 'running' | 'done' | 'failed';
+
+export function compactionPart(state: Exclude<CompactionState, 'done'>): ChatPart {
+    return { type: COMPACTION_PART.type, data: { state } };
+}
+
+export function compactionState(part: ChatPart): CompactionState {
+    const data = (part as { data?: { state?: CompactionState } | null }).data;
+    return data?.state ?? 'done';
+}
+
 export function isStopHookMark(part: ChatPart): boolean {
     return part.type === STOP_HOOK_PART.type;
 }

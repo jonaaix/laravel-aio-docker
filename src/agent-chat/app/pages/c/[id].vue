@@ -614,10 +614,12 @@ const restoreConversation = () => withFlag(archiving, restore);
                                             <span v-for="(paragraph, line) in segment.paragraphs" :key="line" class="whitespace-pre-line" :class="line === 0 ? 'font-medium' : ''">{{ paragraph }}</span>
                                         </span>
                                     </p>
-                                    <p v-else-if="segment.kind === 'compacted'" class="flex items-center gap-2 text-sm text-muted">
-                                        <UIcon name="i-heroicons-arrows-pointing-in" class="size-4 shrink-0" />
-                                        {{ t('Conversation summarized') }}
-                                    </p>
+                                    <template v-else-if="segment.kind === 'compacted'">
+                                        <p v-if="!segment.running || isStreaming(message.id)" class="flex items-center gap-2 text-sm text-muted" :role="segment.running ? 'status' : undefined">
+                                            <UIcon name="i-heroicons-arrows-pointing-in" class="size-4 shrink-0" :class="{ 'motion-safe:animate-pulse': segment.running }" />
+                                            {{ segment.running ? t('Summarizing conversation…') : t('Conversation summarized') }}
+                                        </p>
+                                    </template>
                                     <ChatUiBlock v-else-if="segment.kind === 'ui-block'" :block="segment.block" :message-id="message.id" />
                                     <ChatMessagePart v-else :part="segment.part" :message="message" :streaming="isStreaming(message.id)" />
                                 </template>

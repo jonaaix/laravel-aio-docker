@@ -286,5 +286,6 @@
     "Key saved, but {service} did not accept it. Check it and save it again.": "Clave guardada, pero {service} no la aceptó. Revísala y guárdala de nuevo.",
     "Key saved, but {service} could not be reached. Choose {service} again later.": "Clave guardada, pero no se pudo contactar con {service}. Vuelve a elegir {service} más tarde.",
     "The key could not be saved": "No se pudo guardar la clave",
-    "Recommended": "Recomendado"
+    "Recommended": "Recomendado",
+    "Summarizing conversation…": "Resumiendo la conversación…"
 }

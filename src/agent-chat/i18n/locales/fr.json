@@ -286,5 +286,6 @@
     "Key saved, but {service} did not accept it. Check it and save it again.": "Clé enregistrée, mais {service} ne l'a pas acceptée. Vérifiez-la et enregistrez-la à nouveau.",
     "Key saved, but {service} could not be reached. Choose {service} again later.": "Clé enregistrée, mais {service} est injoignable. Choisissez {service} plus tard.",
     "The key could not be saved": "La clé n'a pas pu être enregistrée",
-    "Recommended": "Recommandé"
+    "Recommended": "Recommandé",
+    "Summarizing conversation…": "Résumé de la conversation…"
 }
