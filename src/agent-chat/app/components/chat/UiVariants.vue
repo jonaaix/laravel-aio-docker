@@ -52,13 +52,14 @@ function choose(index: number): void {
             @keydown.space.prevent="choose(index)"
         >
             <div class="flex items-start gap-2">
-                <span class="mt-1 flex size-4 shrink-0 items-center justify-center rounded-full ring" :class="isChosen(index) ? 'ring-primary' : 'ring-accented'" aria-hidden="true">
-                    <span v-if="isChosen(index)" class="size-2 rounded-full bg-primary" />
-                </span>
+                <span
+                    class="flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors duration-500 ease-out"
+                    :class="isChosen(index) ? 'bg-primary text-inverted' : 'text-muted ring ring-accented'"
+                >{{ option.letter }}</span>
                 <div class="flex min-w-0 flex-1 flex-col gap-0.5">
                     <div class="flex items-start gap-2">
                         <span class="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 font-medium text-highlighted">
-                            <span><span class="text-muted">{{ option.letter }})</span> {{ option.title }}</span>
+                            <span>{{ option.title }}</span>
                             <UBadge v-if="option.letter === recommended" :label="t('Recommended')" icon="i-heroicons-star-solid" color="primary" variant="solid" size="sm" />
                         </span>
                         <UTooltip :text="t('View larger')">
