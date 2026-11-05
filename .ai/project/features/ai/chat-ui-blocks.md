@@ -43,8 +43,8 @@ the same name, while the versions of a draft line up in order in the download fo
 For visual design or UX alternatives — never for plain questions — the agent shows two to six variants as selectable
 cards, each variant its own HTML page holding only that variant. Each card carries a radio button at its top left with
 the variant's letter and name, the recommended one marked "Recommended", a live preview of the variant scaled down
-from the screen width the agent designed it for, and an optional short description. The agent decides whether the
-cards stand one per row, for variants that need the full width, or two side by side; on a phone they always stand one
+from the screen width the agent designed it for, and an optional short description. The agent puts two cards side by
+side only for small elements such as icons, buttons or badges, and one per row for anything larger; on a phone they always stand one
 per row. A button on each card opens that variant in the large window with its screen sizes, code and download.
 
 ### Choice

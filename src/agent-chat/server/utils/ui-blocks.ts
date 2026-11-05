@@ -51,7 +51,7 @@ export const UI_BLOCK_TOOLS = [
             type: 'object',
             properties: {
                 title: { type: 'string', description: 'Optional short title shown above the cards.' },
-                columns: { type: 'integer', enum: VARIANT_COLUMNS, description: 'Cards per row, 1 or 2: 1 when each variant needs the full width to be judged, such as whole pages; 2 for narrower parts.' },
+                columns: { type: 'integer', enum: VARIANT_COLUMNS, description: 'Cards per row: 2 only for small elements such as icons, buttons, badges or single inputs; 1 for everything larger, such as cards, tables, forms, sections or whole pages.' },
                 viewport_width: { type: 'integer', description: `The screen width in pixels the variants are designed for, ${VIEWPORT_WIDTH.min}–${VIEWPORT_WIDTH.max}; previews are scaled down from it. Default ${VIEWPORT_WIDTH.fallback}.` },
                 viewport_height: { type: 'integer', description: `How tall each preview is at that width, ${VIEWPORT_HEIGHT.min}–${VIEWPORT_HEIGHT.max}. Default ${VIEWPORT_HEIGHT.fallback}.` },
                 variants: {
