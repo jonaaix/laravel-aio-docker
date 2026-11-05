@@ -140,7 +140,12 @@ plays again without asking the service anew; if the service fails, the device's 
 service the device's own voice reads, chosen by the language the message is written in — one of the six chat
 languages, recognised by its common words — falling back to the person's chat language for very short texts. Only
 the prose is read: no code blocks, tool steps, the stop hook line, markdown marks or emoji. The speed is the person's
-reading speed from the settings (Read aloud). Google Cloud voices belong to one language, so it reads in the
+reading speed from the settings (Read aloud). Reading goes on when the person moves to another conversation. While a
+message is read, a small player shows the conversation it comes from (a link back to it), a progress bar along the text
+— a jump lands on the start of the passage at that spot —, "Back 10 seconds", pause and resume (resuming carries on
+where it paused), the reading speed and a button to stop; it sits at the foot of the sidebar, and above the message
+input where the sidebar is folded away. The conversation being read shows moving level bars at the right end of its
+sidebar entry, standing still while paused. Google Cloud voices belong to one language, so it reads in the
 language recognised the same way.
 
 When a stop hook of the project sends the agent back after its answer — a final code check, say — the answer

@@ -181,3 +181,15 @@ html[data-embedded] {
         background-position: -2rem 0;
     }
 }
+
+@keyframes audio-level {
+    0%, 100% {
+        transform: scaleY(0.25);
+        opacity: 0.55;
+    }
+
+    50% {
+        transform: scaleY(1);
+        opacity: 1;
+    }
+}

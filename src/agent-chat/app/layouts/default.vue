@@ -15,6 +15,8 @@ const { public: { hub } } = useRuntimeConfig();
 const unread = useUnread();
 unread.track();
 useDoneSound().track();
+followSpeechRate();
+const speech = useSpeechPlayer();
 const hubUnread = hub ? useHubUnread() : null;
 hubUnread?.track();
 const { load: loadReads, apply: applyRead } = useReads();
@@ -155,7 +157,8 @@ onBeforeUnmount(() => {
                                     </template>
                                     <span class="shrink-0 tabular-nums">{{ formatRelativeTime(item.lastActivityAt, now) }}</span>
                                 </span>
-                                <ChatWorkingDots v-if="item.session.live" :label="t(item.session.label)" class="ms-auto" />
+                                <AudioLevelBars v-if="speech.speakingId.value && speech.conversationId.value === item.id" :playing="!speech.paused.value" :label="t('Reading aloud')" class="ms-auto" />
+                                <ChatWorkingDots v-else-if="item.session.live" :label="t(item.session.label)" class="ms-auto" />
                                 <ChatSessionPill v-else-if="!item.paused" :state="item.session" class="ms-auto" />
                             </span>
                         </template>
@@ -166,6 +169,7 @@ onBeforeUnmount(() => {
 
             <template #footer="{ collapsed }">
                 <div class="flex w-full flex-col gap-2">
+                    <SpeechPlayer v-if="!collapsed" class="max-lg:hidden" />
                     <div class="flex flex-col">
                         <UTooltip :text="t('Archived')" :disabled="!collapsed">
                             <UButton

@@ -651,6 +651,7 @@ const restoreConversation = () => withFlag(archiving, restore);
                             <p v-if="stopArmed" class="pointer-events-none absolute inset-x-0 -top-6 text-center text-xs text-muted">{{ t('Press Esc again to stop') }}</p>
                         </Transition>
                     </div>
+                    <SpeechPlayer class="mb-2 lg:hidden" />
                     <ChatComposer
                         v-model="input"
                         :placeholder="t('Send a message…')"

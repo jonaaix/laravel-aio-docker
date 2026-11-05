@@ -17,12 +17,6 @@ function toggle(): void {
     }
     speak(props.messageId, props.text);
 }
-
-onBeforeUnmount(() => {
-    if (speaking.value) {
-        stop();
-    }
-});
 </script>
 
 <template>

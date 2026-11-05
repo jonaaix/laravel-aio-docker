@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { MAX_SPEECH_RATE, MIN_SPEECH_RATE, SPEECH_MODELS, SPEECH_RATE_STEP, SPEECH_VOICES, type SpeechProvider } from '#shared/utils/speech';
+import { SPEECH_MODELS, SPEECH_VOICES, type SpeechProvider } from '#shared/utils/speech';
 
 type VoiceChoice = SpeechProvider | 'device';
 
@@ -10,7 +10,6 @@ interface SpeechServices {
 }
 
 const NO_CREDIT = 402;
-const RATE_SAVE_DELAY_MS = 400;
 
 type KeyProblem = 'key' | 'credit' | 'unavailable';
 
@@ -21,7 +20,7 @@ const PROBLEM_TEXTS: Record<KeyProblem, string> = {
 };
 
 const { t, locale } = useI18n();
-const { speechRate, setSpeechRate, speechVoiceFor, setSpeechVoice } = useAppearance();
+const { speechRate, speechVoiceFor, setSpeechVoice } = useAppearance();
 
 const choices: { value: VoiceChoice; label: string }[] = [
     { value: 'device', label: 'Device' },
@@ -45,15 +44,12 @@ const playing = ref<string | null>(null);
 const loadingSample = ref<string | null>(null);
 const soundsLike = ref<Record<string, string> | null>(null);
 const loadingVoices = ref(false);
-const draftRate = ref<number | null>(null);
 let sampleAudio: HTMLAudioElement | undefined;
-let rateTimer: ReturnType<typeof setTimeout> | undefined;
 
 const active = computed<VoiceChoice>(() => services.value?.provider ?? 'device');
 const shownLabel = computed(() => choices.find(choice => choice.value === shown.value)?.label ?? '');
 const shownHasKey = computed(() => shown.value !== 'device' && (services.value?.stored.includes(shown.value) ?? false));
 const showForm = computed(() => shown.value !== 'device' && (!shownHasKey.value || replacing.value));
-const shownRate = computed(() => draftRate.value ?? speechRate.value);
 const distinctVoices = computed(() => shown.value === 'device' ? [] : SPEECH_VOICES[shown.value].filter(voice => !soundsLike.value || soundsLike.value[voice.id] === voice.id));
 const chosenVoice = computed(() => {
     if (shown.value === 'device') {
@@ -62,31 +58,6 @@ const chosenVoice = computed(() => {
     const voice = speechVoiceFor(shown.value);
     return soundsLike.value?.[voice] ?? voice;
 });
-
-function snapRate(rate: number): number {
-    return Number((Math.round(rate / SPEECH_RATE_STEP) * SPEECH_RATE_STEP).toFixed(2));
-}
-
-async function saveRate(rate: number): Promise<void> {
-    try {
-        await setSpeechRate(rate);
-    }
-    finally {
-        if (draftRate.value === rate) {
-            draftRate.value = null;
-        }
-    }
-}
-
-function moveRate(rate: number | undefined): void {
-    if (rate === undefined) {
-        return;
-    }
-    const snapped = snapRate(rate);
-    draftRate.value = snapped;
-    clearTimeout(rateTimer);
-    rateTimer = setTimeout(() => void saveRate(snapped), RATE_SAVE_DELAY_MS);
-}
 
 async function loadVoices(): Promise<void> {
     const provider = shown.value;
@@ -231,18 +202,7 @@ onMounted(load);
 <template>
     <div class="flex flex-col gap-6">
         <UFormField :label="t('Reading speed')">
-            <div class="flex h-9 items-center gap-4 sm:w-96">
-                <USlider
-                    :model-value="shownRate"
-                    :min="MIN_SPEECH_RATE"
-                    :max="MAX_SPEECH_RATE"
-                    :step="SPEECH_RATE_STEP"
-                    :aria-label="t('Reading speed')"
-                    class="flex-1"
-                    @update:model-value="moveRate"
-                />
-                <span class="w-12 text-end text-sm font-medium tabular-nums">{{ formatSpeedFactor(snapRate(shownRate)) }}</span>
-            </div>
+            <SpeechRateSlider :label="t('Reading speed')" class="sm:w-96" />
         </UFormField>
 
         <UFormField :label="t('Voice service')" :error="error">
