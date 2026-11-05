@@ -42,8 +42,7 @@ function resolvedColor(css: string): string {
 }
 
 function hoverShade(rgba: string): string {
-    const shift = colorMode.value === 'dark' ? HOVER_LIGHTNESS_SHIFT : -HOVER_LIGHTNESS_SHIFT;
-    return resolvedColor(`oklch(from ${rgba} calc(l + ${shift}) c h)`);
+    return resolvedColor(`oklch(from ${rgba} calc(l - ${HOVER_LIGHTNESS_SHIFT}) c h)`);
 }
 
 function seriesColor(index: number): string {
