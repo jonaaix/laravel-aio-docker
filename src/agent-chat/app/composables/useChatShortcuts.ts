@@ -32,12 +32,12 @@ export function useChatShortcuts(conversationIds: Ref<string[]>) {
             held.value = true;
             return;
         }
-        if (event.altKey && !event.metaKey && !event.ctrlKey && !event.shiftKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
+        const modifier = apple ? event.metaKey : event.ctrlKey;
+        if (modifier && !event.altKey && !event.shiftKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
             event.preventDefault();
             stepTo(event.key === 'ArrowDown' ? 1 : -1);
             return;
         }
-        const modifier = apple ? event.metaKey : event.ctrlKey;
         const number = Number(event.key);
         if (!modifier || event.shiftKey || event.altKey || !Number.isInteger(number) || number < 1 || number > SHORTCUT_COUNT) {
             return;

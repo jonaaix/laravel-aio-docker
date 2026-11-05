@@ -50,8 +50,8 @@ on a Mac and Ctrl+1 to Ctrl+9 elsewhere; the chat takes these keys over from the
 browser allows it. As soon as Cmd or Ctrl is pressed, each of those nine entries shows its shortcut in plain small text at
 its top right corner, on a softly blurred patch that hides what lies beneath — on the picture when the sidebar is
 folded; the unread counts step aside meanwhile, and everything returns when the key is let go. Conversations further
-down have no number, but Alt+↑ and Alt+↓ step to the conversation above or below the open one, through the whole
-list; with none open, Alt+↓ opens the first and Alt+↑ the last.
+down have no number, but the same key with ↑ or ↓ steps to the conversation above or below the open one, through the
+whole list, also while typing in the message field; with none open, ↓ opens the first and ↑ the last.
 
 ## Examples
 
