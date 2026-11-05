@@ -48,7 +48,7 @@ a conversation opens the same window at Agents. The open window and its category
   "Sound when a chat is done", on by default, plays the drum beat when an answer finishes out of sight (see
   [Conversations in the sidebar](chat-sidebar.md)).
 - **Read aloud** (how reading and dictation work is in [Voice in the chat](chat-voice.md)) sets the person's reading speed on a slider from 0.5× to 3× in steps of 0.05× (1.5× by default) and the voice
-  service of the whole chat, chosen in a strip: Device, Google Cloud, Gemini, ElevenLabs or OpenAI. Each service keeps its own API
+  service of the whole chat, chosen in a strip: Google Cloud (the recommended one, first), Gemini, ElevenLabs, OpenAI or Device (last). Each service keeps its own API
   key, so several can be stored and switched between at will; choosing a service that has a key puts it to use at
   once and marks it with a check, choosing one without shows the field for its key, while the one in use keeps
   reading. The chosen service also transcribes dictation. A key is always stored, then checked with the service: if the

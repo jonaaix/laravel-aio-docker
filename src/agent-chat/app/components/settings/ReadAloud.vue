@@ -23,11 +23,11 @@ const { t, locale } = useI18n();
 const { speechRate, speechVoiceFor, setSpeechVoice } = useAppearance();
 
 const choices: { value: VoiceChoice; label: string }[] = [
-    { value: 'device', label: 'Device' },
     { value: 'google', label: 'Google Cloud' },
     { value: 'gemini', label: 'Gemini' },
     { value: 'elevenlabs', label: 'ElevenLabs' },
     { value: 'openai', label: 'OpenAI' },
+    { value: 'device', label: 'Device' },
 ];
 
 const services = ref<SpeechServices | null>(null);
@@ -47,6 +47,11 @@ const loadingVoices = ref(false);
 let sampleAudio: HTMLAudioElement | undefined;
 
 const active = computed<VoiceChoice>(() => services.value?.provider ?? 'device');
+const serviceTabs = computed(() => choices.map(choice => ({
+    value: choice.value,
+    label: t(choice.label),
+    icon: active.value === choice.value ? (switching.value ? 'i-heroicons-arrow-path' : 'i-heroicons-check-circle') : undefined,
+})));
 const shownLabel = computed(() => choices.find(choice => choice.value === shown.value)?.label ?? '');
 const shownHasKey = computed(() => shown.value !== 'device' && (services.value?.stored.includes(shown.value) ?? false));
 const showForm = computed(() => shown.value !== 'device' && (!shownHasKey.value || replacing.value));
@@ -202,28 +207,26 @@ onMounted(load);
 <template>
     <div class="flex flex-col gap-6">
         <UFormField :label="t('Reading speed')">
-            <SpeechRateSlider :label="t('Reading speed')" class="sm:w-96" />
+            <SpeechRateSlider :label="t('Reading speed')" class="max-w-3xl" />
         </UFormField>
 
         <UFormField :label="t('Voice service')" :error="error">
-            <USkeleton v-if="services === null && !loadFailed" class="h-9 w-full sm:w-96" />
+            <USkeleton v-if="services === null && !loadFailed" class="h-9 w-full max-w-3xl" />
             <div v-else-if="loadFailed" class="flex items-center gap-3 text-sm">
                 <span class="text-muted">{{ t('Could not load the voice service') }}</span>
                 <UButton :label="t('Retry')" color="neutral" variant="outline" @click="load" />
             </div>
-            <div v-else class="flex flex-col gap-3 sm:w-96">
-                <div class="flex flex-wrap gap-2">
-                    <UButton
-                        v-for="choice in choices"
-                        :key="choice.value"
-                        :label="t(choice.label)"
-                        color="neutral"
-                        :variant="shown === choice.value ? 'solid' : 'outline'"
-                        :trailing-icon="active === choice.value ? 'i-heroicons-check' : undefined"
-                        :loading="switching && shown === choice.value"
-                        @click="choose(choice.value)"
-                    />
-                </div>
+            <div v-else class="flex max-w-3xl flex-col gap-4">
+                <UTabs
+                    :model-value="shown"
+                    :items="serviceTabs"
+                    :content="false"
+                    variant="link"
+                    color="neutral"
+                    class="w-full"
+                    :ui="{ list: 'overflow-x-auto', trigger: 'flex-1 shrink-0 justify-center px-3', label: 'overflow-visible' }"
+                    @update:model-value="value => choose(value as VoiceChoice)"
+                />
                 <p v-if="shown === 'device'" class="text-sm text-muted">{{ t('Your device\'s own voice reads aloud.') }}</p>
                 <div v-else-if="!showForm" class="flex flex-wrap items-center gap-3">
                     <span class="flex h-9 items-center gap-2 text-sm">
@@ -237,7 +240,7 @@ onMounted(load);
                     <UIcon name="i-heroicons-exclamation-triangle" class="mt-0.5 size-4 shrink-0 text-warning" />
                     <span>{{ t(PROBLEM_TEXTS[problem.reason], { service: shownLabel }) }}</span>
                 </p>
-                <template v-if="shown !== 'device' && !showForm">
+                <div v-if="shown !== 'device' && !showForm" class="grid gap-6 sm:grid-cols-2">
                     <div class="flex flex-col gap-1.5">
                         <p class="text-sm font-medium text-highlighted">{{ t('Quality') }}</p>
                         <button
@@ -280,8 +283,8 @@ onMounted(load);
                             </UTooltip>
                         </div>
                     </div>
-                </template>
-                <form v-if="showForm" class="flex flex-col gap-3" @submit.prevent="save">
+                </div>
+                <form v-if="showForm" class="flex flex-col gap-3 sm:max-w-md" @submit.prevent="save">
                     <UInput v-model="apiKey" type="password" autocomplete="off" :placeholder="t('{service} API key', { service: shownLabel })" class="w-full" />
                     <div class="flex gap-2">
                         <UButton v-if="replacing" :label="t('Cancel')" color="neutral" variant="outline" @click="replacing = false" />
