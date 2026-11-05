@@ -155,11 +155,11 @@ onBeforeUnmount(() => {
                             :class="collapsed ? 'size-8' : 'size-7'"
                         >
                             <img :src="chatAvatarUri(item.id)" alt="" class="size-full rounded-full">
+                            <template v-if="item.reading">
+                                <VoiceRing class="absolute -inset-1" />
+                                <span class="sr-only">{{ t('Reading aloud') }}</span>
+                            </template>
                             <template v-if="collapsed">
-                                <template v-if="item.reading">
-                                    <VoiceRing class="absolute -inset-1" />
-                                    <span class="sr-only">{{ t('Reading aloud') }}</span>
-                                </template>
                                 <span v-if="unread.isUnread(item.id)" class="absolute -end-0.5 -top-0.5 size-2 rounded-full bg-primary ring-2 ring-(--ui-bg-muted)" :aria-label="t('Unread')" />
                                 <span v-if="item.session.live" class="light-ring pointer-events-none absolute -inset-[3px] rounded-full" role="status" :aria-label="t(item.session.label)" />
                             </template>
@@ -179,8 +179,7 @@ onBeforeUnmount(() => {
                                     </template>
                                     <span class="shrink-0 tabular-nums">{{ formatRelativeTime(item.lastActivityAt, now) }}</span>
                                 </span>
-                                <AudioLevelBars v-if="item.reading" :playing="!speech.paused.value" :label="t('Reading aloud')" class="ms-auto" />
-                                <ChatWorkingDots v-else-if="item.session.live" :label="t(item.session.label)" class="ms-auto" />
+                                <ChatWorkingDots v-if="item.session.live" :label="t(item.session.label)" class="ms-auto" />
                                 <ChatSessionPill v-else-if="!item.paused" :state="item.session" class="ms-auto" />
                             </span>
                         </template>
