@@ -192,18 +192,6 @@ html[data-embedded] {
     }
 }
 
-@keyframes audio-level {
-    0%, 100% {
-        transform: scaleY(0.25);
-        opacity: 0.55;
-    }
-
-    50% {
-        transform: scaleY(1);
-        opacity: 1;
-    }
-}
-
 ::highlight(speech-current) {
     background-color: color-mix(in oklch, var(--ui-primary) 12%, transparent);
 }
