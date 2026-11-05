@@ -148,7 +148,7 @@ onBeforeUnmount(() => {
                     :collapsed="collapsed"
                     tooltip
                     orientation="vertical"
-                    :ui="{ link: ['overflow-hidden py-1.5 before:transition-colors before:duration-500 before:ease-out hover:before:bg-primary/8 aria-[current=page]:before:bg-primary/12 aria-[current=page]:text-(--nav-current)', collapsed ? 'mx-auto size-10 justify-center overflow-visible p-0 before:inset-0 before:rounded-full' : 'gap-3'], linkLabel: 'min-w-0 flex-1' }"
+                    :ui="{ link: ['overflow-hidden py-1.5 before:transition-colors before:duration-500 before:ease-out hover:before:bg-primary/8 aria-[current=page]:before:bg-primary/12 aria-[current=page]:text-(--nav-current)', collapsed ? 'mx-auto size-10 justify-center overflow-visible p-0 before:inset-0 before:rounded-full aria-[current=page]:before:ring-2 aria-[current=page]:before:ring-inset aria-[current=page]:before:ring-primary' : 'gap-3'], linkLabel: 'min-w-0 flex-1' }"
                 >
                     <template #item-leading="{ item }">
                         <span
