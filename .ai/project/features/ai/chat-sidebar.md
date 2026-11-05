@@ -17,7 +17,7 @@ A sidebar lists the conversations, with Settings at its foot; its edge lights up
 with the name of the person who started it: a development conversation is long-lived, and a team
 works on the same app. Each entry shows the title and, below it, who started it and when something last happened, and its state at the
 right end: while the agent is answering, three softly bouncing dots, the title turns grey like the line below it, and a narrow light
-streak of white light runs across both lines in step; while the session is running and waiting, a "Ready" badge, joined — while tasks the agent
+streak of white light runs across the title; while the session is running and waiting, a "Ready" badge, joined — while tasks the agent
 started in the background are still running — by a small badge with a slowly turning symbol and the number of those
 tasks, "Running in the background" on hover; a paused session shows nothing. A conversation with messages the person has not seen shows its title in bold and, at the right end of the title line, how many there are ("99+" from 100), by the same rule as in
 the Orbit app (see [Orbit](chat-hub.md#unread)), and the browser tab shows how many there are, as "(2) AI Chat". When an answer

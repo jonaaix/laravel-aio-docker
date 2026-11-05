@@ -20,7 +20,7 @@ const unread = computed(() => props.unreadCount > 0);
         <span v-if="unread" class="ms-auto flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-primary px-1 text-[0.625rem]/none font-semibold text-inverted tabular-nums" :aria-label="t('Unread')">{{ formatBadgeCount(unreadCount) }}</span>
     </span>
     <span class="mt-0.5 flex items-center gap-1.5 text-xs font-normal text-muted">
-        <span class="flex min-w-0 items-center gap-1.5" :class="{ 'light-streak': session.live }">
+        <span class="flex min-w-0 items-center gap-1.5">
             <template v-if="creatorName">
                 <span class="min-w-0 truncate">{{ creatorName }}</span>
                 <span aria-hidden="true">·</span>
