@@ -69,7 +69,7 @@ const frameStyle = computed(() => (frameWidth.value === null ? { width: '100%' }
     <UModal
         v-model:open="open"
         :title="title"
-        :ui="{ content: 'w-[min(96vw,1600px)] max-w-none h-[calc(100dvh-2rem)] max-h-none', body: 'flex flex-1 p-0 sm:p-0 overflow-hidden', footer: 'justify-between' }"
+        :ui="{ content: 'w-[min(96vw,1600px)] max-w-none h-[calc(100vh-1rem)] max-h-none', body: 'flex flex-1 p-0 sm:p-0 overflow-hidden', footer: 'justify-between' }"
     >
         <template #body>
             <div ref="stage" class="flex flex-1 justify-center bg-muted px-4">
