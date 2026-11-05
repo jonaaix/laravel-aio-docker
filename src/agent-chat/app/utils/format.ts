@@ -18,6 +18,11 @@ export function formatScreenSize(width: number, height: number): string {
     return `${format.format(width)} × ${format.format(height)} px`;
 }
 
+export function formatAmount(value: number, unit: string | null = null): string {
+    const number = new Intl.NumberFormat(formatLocale.value, { maximumFractionDigits: 2 }).format(value);
+    return unit ? `${number} ${unit}` : number;
+}
+
 export function formatSpeedFactor(factor: number): string {
     return `${new Intl.NumberFormat(formatLocale.value, { maximumFractionDigits: 2 }).format(factor)}×`;
 }

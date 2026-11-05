@@ -49,3 +49,11 @@ test('cards come in sections, each with its own status', () => {
     assert.throws(() => uiBlockFor('show_cards', { sections: [{ heading: 'X', status: 'green', cards: [{ title: 'API' }] }] }, storePage), /good, warning, bad/);
     assert.throws(() => uiBlockFor('show_cards', { sections: [{ cards: [{ title: 'API' }] }] }, storePage), /sections\[0\]\.heading is required/);
 });
+
+test('a chart needs one number per label and one series for a pie', () => {
+    const block = uiBlockFor('show_chart', { type: 'bar', labels: ['Mon', 'Tue'], series: [{ name: 'Orders', values: [3, 5] }], unit: '€' }, storePage);
+    assert.deepEqual(block, { kind: 'chart', title: null, chartType: 'bar', labels: ['Mon', 'Tue'], series: [{ name: 'Orders', values: [3, 5] }], unit: '€' });
+    assert.throws(() => uiBlockFor('show_chart', { type: 'line', labels: ['Mon', 'Tue'], series: [{ name: 'A', values: [1] }] }, storePage), /one number per label \(2\)/);
+    assert.throws(() => uiBlockFor('show_chart', { type: 'pie', labels: ['A', 'B'], series: [{ name: 'X', values: [1, 2] }, { name: 'Y', values: [1, 2] }] }, storePage), /exactly one series/);
+    assert.throws(() => uiBlockFor('show_chart', { type: 'radar', labels: ['A'], series: [{ name: 'X', values: [1] }] }, storePage), /type must be one of/);
+});

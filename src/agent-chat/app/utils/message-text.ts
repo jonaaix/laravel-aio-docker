@@ -16,7 +16,7 @@ function blockSpeech(block: UiBlock): string[] {
     if (block.kind === 'cards') {
         return block.sections.map(section => [sentence(section.heading), ...section.cards.map(card => sentence(card.text ? `${card.title}: ${card.text}` : card.title))].join(' '));
     }
-    if (block.kind === 'page') {
+    if (block.kind === 'page' || block.kind === 'chart') {
         return block.title ? [sentence(block.title)] : [];
     }
     const options = block.options.map(option => sentence(`${option.letter.toUpperCase()}, ${option.title}${option.description ? `: ${option.description}` : ''}`));

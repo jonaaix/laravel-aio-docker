@@ -71,6 +71,13 @@ same; a section can carry a message — good tints all its cards green, warning 
 beside its heading — and a section without one stays neutral. Cards stand two per row, the agent can make a card wide
 so it takes the whole row, and on a phone they stand one per row. Cards in a row share their height.
 
+### Charts
+
+For numbers the agent shows a chart — a line, bars (also stacked), a pie or a doughnut — from labels and one or more
+named series, with an optional title and unit. The chat draws it at a fixed height in its own look: colours derived
+from the accent colour, the legend on top, the values with their unit on hover, following light and dark mode and a
+change of the accent colour. Reading aloud names only its title.
+
 ### Picking
 
 In variants and choices, clicking an option — for variants anywhere on its card — puts it into the message field as its letter and name, such as

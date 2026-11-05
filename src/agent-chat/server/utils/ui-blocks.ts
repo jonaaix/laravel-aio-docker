@@ -1,4 +1,4 @@
-import type { UiBlock, UiCard, UiCardSection, UiCardStatus, UiOption, UiPage, UiVariant, UiVariantColumns, UiViewport } from '../../shared/types/ui-block';
+import type { UiBlock, UiCard, UiCardSection, UiCardStatus, UiChartSeries, UiChartType, UiOption, UiPage, UiVariant, UiVariantColumns, UiViewport } from '../../shared/types/ui-block';
 
 const LETTERS = 'abcdef';
 const MIN_OPTIONS = 2;
@@ -6,6 +6,9 @@ const PAGE_HEIGHT = { min: 240, max: 1200, fallback: 560 };
 const PAGE_FILE = /\.html?$/i;
 const MAX_CARDS = 12;
 const MAX_SECTIONS = 6;
+const MAX_LABELS = 100;
+const CHART_TYPES: UiChartType[] = ['line', 'bar', 'stacked_bar', 'pie', 'doughnut'];
+const MAX_SERIES = 8;
 const CANVAS_COLUMNS: Record<string, UiVariantColumns> = { small: 2, large: 1 };
 const CANVASES = Object.keys(CANVAS_COLUMNS);
 const VIEWPORT_WIDTH = { min: 320, max: 2560, fallback: 1280 };
@@ -136,6 +139,33 @@ export const UI_BLOCK_TOOLS = [
             required: ['sections'],
         },
     },
+    {
+        name: 'show_chart',
+        description: 'Show numbers as a chart: a development over time, a comparison or a share of a whole.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                title: { type: 'string', description: 'Optional short title shown above the chart.' },
+                type: { type: 'string', enum: CHART_TYPES, description: 'pie and doughnut take exactly one series.' },
+                labels: { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: MAX_LABELS, description: 'Labels along the axis, or the slices of a pie.' },
+                series: {
+                    type: 'array',
+                    minItems: 1,
+                    maxItems: MAX_SERIES,
+                    items: {
+                        type: 'object',
+                        properties: {
+                            name: { type: 'string' },
+                            values: { type: 'array', items: { type: 'number' }, description: 'One number per label.' },
+                        },
+                        required: ['name', 'values'],
+                    },
+                },
+                unit: { type: 'string', description: 'Optional unit shown with the values, such as "€" or "ms".' },
+            },
+            required: ['type', 'labels', 'series'],
+        },
+    },
 ];
 
 export const UI_BLOCK_TOOL_NAMES = new Set(UI_BLOCK_TOOLS.map(tool => tool.name));
@@ -257,6 +287,35 @@ function sectionsOf(value: unknown): UiCardSection[] {
     });
 }
 
+function chartSeriesOf(value: unknown, labelCount: number): UiChartSeries[] {
+    if (!Array.isArray(value) || value.length < 1 || value.length > MAX_SERIES) {
+        throw new Error(`series must list 1 to ${MAX_SERIES} series.`);
+    }
+    return value.map((series: unknown, index) => {
+        const { name, values } = (typeof series === 'object' && series !== null ? series : {}) as Record<string, unknown>;
+        if (!Array.isArray(values) || values.length !== labelCount || !values.every(number => typeof number === 'number' && Number.isFinite(number))) {
+            throw new Error(`series[${index}].values must hold one number per label (${labelCount}).`);
+        }
+        return { name: requiredText(name, `series[${index}].name`), values: values as number[] };
+    });
+}
+
+function chartOf(args: Record<string, unknown>): UiBlock {
+    const chartType = args.type as UiChartType;
+    if (!CHART_TYPES.includes(chartType)) {
+        throw new Error(`type must be one of ${CHART_TYPES.join(', ')}.`);
+    }
+    if (!Array.isArray(args.labels) || args.labels.length < 1 || args.labels.length > MAX_LABELS) {
+        throw new Error(`labels must list 1 to ${MAX_LABELS} labels.`);
+    }
+    const labels = args.labels.map((label: unknown, index) => requiredText(typeof label === 'number' ? String(label) : label, `labels[${index}]`));
+    const series = chartSeriesOf(args.series, labels.length);
+    if ((chartType === 'pie' || chartType === 'doughnut') && series.length !== 1) {
+        throw new Error(`${chartType} takes exactly one series.`);
+    }
+    return { kind: 'chart', title: optionalText(args.title, 'title'), chartType, labels, series, unit: optionalText(args.unit, 'unit') };
+}
+
 export function uiBlockFor(tool: string, args: Record<string, unknown>, storePage: PageStore): UiBlock {
     if (tool === 'ask_choice') {
         const question = requiredText(args.question, 'question');
@@ -264,6 +323,9 @@ export function uiBlockFor(tool: string, args: Record<string, unknown>, storePag
         return { kind: 'choice', question, options, recommended: recommendedOf(args.recommended, options), multiple: multipleOf(args.multiple) };
     }
     const title = optionalText(args.title, 'title');
+    if (tool === 'show_chart') {
+        return chartOf(args);
+    }
     if (tool === 'show_cards') {
         return { kind: 'cards', sections: sectionsOf(args.sections) };
     }

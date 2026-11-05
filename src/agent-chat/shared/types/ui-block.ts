@@ -39,8 +39,16 @@ export interface UiCardSection {
     cards: UiCard[];
 }
 
+export type UiChartType = 'line' | 'bar' | 'stacked_bar' | 'pie' | 'doughnut';
+
+export interface UiChartSeries {
+    name: string;
+    values: number[];
+}
+
 export type UiBlock =
     | { kind: 'page'; title: string | null; page: UiPage }
     | { kind: 'variants'; title: string | null; columns: UiVariantColumns; viewport: UiViewport; options: UiVariant[]; recommended: string | null; multiple?: boolean }
     | { kind: 'choice'; question: string; options: UiOption[]; recommended: string | null; multiple?: boolean }
-    | { kind: 'cards'; sections: UiCardSection[] };
+    | { kind: 'cards'; sections: UiCardSection[] }
+    | { kind: 'chart'; title: string | null; chartType: UiChartType; labels: string[]; series: UiChartSeries[]; unit: string | null };
