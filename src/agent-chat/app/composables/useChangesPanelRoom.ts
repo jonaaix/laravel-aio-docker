@@ -14,12 +14,10 @@ export function useChangesPanelRoom(conversation: Ref<HTMLElement | null>): Read
         if (conversation.value) {
             observer.observe(conversation.value);
         }
-        window.addEventListener('resize', measure);
         measure();
     });
-    onBeforeUnmount(() => {
-        observer?.disconnect();
-        window.removeEventListener('resize', measure);
-    });
+    useActiveListener(() => window, 'resize', measure);
+    onActivated(measure);
+    onBeforeUnmount(() => observer?.disconnect());
     return readonly(room);
 }

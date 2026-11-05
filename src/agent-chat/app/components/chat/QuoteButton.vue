@@ -75,22 +75,15 @@ function quote(): void {
     position.value = null;
 }
 
-onMounted(() => {
-    document.addEventListener('selectionchange', onSelectionChange);
-    document.addEventListener('pointerdown', onPointerDown);
-    document.addEventListener('pointerup', onPointerUp);
-    document.addEventListener('pointercancel', onPointerUp);
-    window.addEventListener('scroll', onScroll, { passive: true });
+useActiveListener(() => document, 'selectionchange', onSelectionChange);
+useActiveListener(() => document, 'pointerdown', onPointerDown);
+useActiveListener(() => document, 'pointerup', onPointerUp);
+useActiveListener(() => document, 'pointercancel', onPointerUp);
+useActiveListener(() => window, 'scroll', onScroll, { passive: true });
+onDeactivated(() => {
+    position.value = null;
 });
-
-onBeforeUnmount(() => {
-    clearTimeout(settle);
-    document.removeEventListener('selectionchange', onSelectionChange);
-    document.removeEventListener('pointerdown', onPointerDown);
-    document.removeEventListener('pointerup', onPointerUp);
-    document.removeEventListener('pointercancel', onPointerUp);
-    window.removeEventListener('scroll', onScroll);
-});
+onBeforeUnmount(() => clearTimeout(settle));
 </script>
 
 <template>

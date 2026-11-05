@@ -27,7 +27,6 @@ let observer: ResizeObserver | undefined;
 onMounted(() => {
     observer = new ResizeObserver(measure);
     observer.observe(content.value!);
-    measure();
 });
 
 onBeforeUnmount(() => observer?.disconnect());

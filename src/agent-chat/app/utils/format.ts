@@ -22,13 +22,25 @@ export function formatSpeedFactor(factor: number): string {
     return `${new Intl.NumberFormat(formatLocale.value, { maximumFractionDigits: 2 }).format(factor)}×`;
 }
 
+const dateFormats = new Map<string, Intl.DateTimeFormat>();
+
+function dateFormat(name: string, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+    const key = `${formatLocale.value ?? ''}|${name}`;
+    let format = dateFormats.get(key);
+    if (!format) {
+        format = new Intl.DateTimeFormat(formatLocale.value, options);
+        dateFormats.set(key, format);
+    }
+    return format;
+}
+
 export function formatClockTime(timestamp: number, now = new Date()): string {
     const moment = new Date(timestamp);
-    const time = new Intl.DateTimeFormat(formatLocale.value, { hour: '2-digit', minute: '2-digit', hour12: false }).format(moment);
+    const time = dateFormat('clock', { hour: '2-digit', minute: '2-digit', hour12: false }).format(moment);
     if (moment.toDateString() === now.toDateString()) {
         return time;
     }
-    return `${new Intl.DateTimeFormat(formatLocale.value, { weekday: 'short' }).format(moment)} ${time}`;
+    return `${dateFormat('weekday', { weekday: 'short' }).format(moment)} ${time}`;
 }
 
 const BYTE_UNITS = ['byte', 'kilobyte', 'megabyte', 'gigabyte'] as const;

@@ -28,10 +28,8 @@ export function useEscapeToStop(running: () => boolean, stop: () => void): Reado
             disarm();
         }
     });
-    onMounted(() => window.addEventListener('keydown', onKeydown));
-    onBeforeUnmount(() => {
-        window.removeEventListener('keydown', onKeydown);
-        clearTimeout(timer);
-    });
+    useActiveListener(() => window, 'keydown', onKeydown);
+    onDeactivated(disarm);
+    onBeforeUnmount(() => clearTimeout(timer));
     return readonly(armed);
 }

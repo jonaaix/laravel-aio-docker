@@ -36,7 +36,7 @@ useHead({
             <HubWelcome v-if="hub && (pairing || reconnecting || !activeServer)" :pairing="pairing" @cancel="pairing = null; reconnecting = false" />
             <HubDeviceRemoved v-else-if="hub && removed" @reconnect="reconnecting = true" />
             <NuxtLayout v-else-if="user">
-                <NuxtPage />
+                <NuxtPage :keepalive="{ max: 10 }" />
             </NuxtLayout>
             <Unauthorized v-else />
         </template>

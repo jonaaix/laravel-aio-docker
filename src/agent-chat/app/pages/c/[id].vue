@@ -351,10 +351,6 @@ onMounted(async () => {
     stickToBottom = true;
     scroller().scrollTop = scroller().scrollHeight;
     setTimeout(releaseBottom, STICK_TO_BOTTOM_MS);
-    USER_SCROLL_EVENTS.forEach(name => window.addEventListener(name, releaseBottom, { passive: true }));
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('scrollend', keepPinnedMessageInPlace, { passive: true });
-    window.addEventListener('resize', onResize, { passive: true });
     contentObserver = new ResizeObserver(onContentResize);
     contentObserver.observe(document.body);
     await settleLayout();
@@ -365,14 +361,39 @@ onMounted(async () => {
     readAlong.revealIfRequested(releaseBottom);
 });
 
+USER_SCROLL_EVENTS.forEach(name => useActiveListener(() => window, name, releaseBottom, { passive: true }));
+useActiveListener(() => window, 'scroll', onScroll, { passive: true });
+useActiveListener(() => window, 'scrollend', keepPinnedMessageInPlace, { passive: true });
+useActiveListener(() => window, 'resize', onResize, { passive: true });
+
+let leftAtScrollTop: number | null = null;
+
+const forgetLeaveGuard = useRouter().beforeEach((_, from) => {
+    if (from.params.id === conversationId) {
+        leftAtScrollTop = scroller().scrollTop;
+    }
+});
+
+onDeactivated(() => {
+    contentObserver?.disconnect();
+});
+
+onActivated(() => {
+    if (leftAtScrollTop === null) {
+        return;
+    }
+    contentObserver?.observe(document.body);
+    updateAnswerSpace();
+    scroller().scrollTop = leftAtScrollTop;
+    leftAtScrollTop = null;
+    updateAtBottom();
+});
+
 onBeforeUnmount(() => {
+    forgetLeaveGuard();
     unsubscribe?.();
-    USER_SCROLL_EVENTS.forEach(name => window.removeEventListener(name, releaseBottom));
-    window.removeEventListener('scroll', onScroll);
-    window.removeEventListener('scrollend', keepPinnedMessageInPlace);
     clearTimeout(unpinTimer);
     clearTimeout(skeletonTimer);
-    window.removeEventListener('resize', onResize);
     contentObserver?.disconnect();
 });
 

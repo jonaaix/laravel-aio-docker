@@ -46,19 +46,10 @@ function onDrop(event: DragEvent): void {
     }
 }
 
-onMounted(() => {
-    window.addEventListener('dragenter', onDragEnter);
-    window.addEventListener('dragover', onDragOver);
-    window.addEventListener('dragleave', onDragLeave);
-    window.addEventListener('drop', onDrop);
-});
-
-onBeforeUnmount(() => {
-    window.removeEventListener('dragenter', onDragEnter);
-    window.removeEventListener('dragover', onDragOver);
-    window.removeEventListener('dragleave', onDragLeave);
-    window.removeEventListener('drop', onDrop);
-});
+useActiveListener(() => window, 'dragenter', onDragEnter);
+useActiveListener(() => window, 'dragover', onDragOver);
+useActiveListener(() => window, 'dragleave', onDragLeave);
+useActiveListener(() => window, 'drop', onDrop);
 </script>
 
 <template>
