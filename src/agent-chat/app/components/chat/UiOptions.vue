@@ -21,7 +21,7 @@ const shownIndexes = computed(() => props.options.flatMap((_, index) => !collaps
     <p v-if="collapsed && chosen.length === 0" class="text-sm text-muted">
         {{ t('Not answered') }}
     </p>
-    <div v-if="shownIndexes.length > 0" class="-mx-2 flex flex-col">
+    <div v-if="shownIndexes.length > 0" class="-mx-2 flex flex-col gap-px">
         <ChatOptionRow
             v-for="index in shownIndexes"
             :key="options[index]!.letter"
