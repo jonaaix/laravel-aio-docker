@@ -8,12 +8,13 @@ const props = defineProps<{
     viewport: UiViewport;
     recommended: string | null;
     messageId: string;
+    multiple?: boolean;
 }>();
 
 const { t } = useI18n();
 const chatPlugins = useChatMarkdownPlugins();
 const { scaledPreviews } = useAppearance();
-const { active, isChosen, pick } = useOptionPick(() => props.options, () => props.messageId);
+const { active, isChosen, pick } = useOptionPick(() => props.options, () => props.messageId, () => props.multiple);
 
 const viewedIndex = ref<number | null>(null);
 const viewed = computed(() => (viewedIndex.value === null ? null : props.options[viewedIndex.value] ?? null));
@@ -34,11 +35,11 @@ function choose(index: number): void {
 </script>
 
 <template>
-    <div role="radiogroup" :aria-label="title ?? undefined" class="grid gap-3" :class="{ 'sm:grid-cols-2': columns === 2 }">
+    <div :role="multiple ? 'group' : 'radiogroup'" :aria-label="title ?? undefined" class="grid gap-3" :class="{ 'sm:grid-cols-2': columns === 2 }">
         <div
             v-for="(option, index) in options"
             :key="option.letter"
-            role="radio"
+            :role="multiple ? 'checkbox' : 'radio'"
             :aria-checked="isChosen(index)"
             :aria-disabled="!active"
             :tabindex="active ? 0 : -1"

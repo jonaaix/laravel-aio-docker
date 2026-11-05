@@ -23,6 +23,7 @@ const chatPlugins = useChatMarkdownPlugins();
             :columns="block.columns"
             :viewport="block.viewport"
             :recommended="block.recommended"
+            :multiple="block.multiple"
             :message-id="messageId"
         />
         <div v-if="block.kind === 'choice'" class="flex flex-col gap-2 rounded-md bg-elevated/60 px-4 py-3 dark:bg-elevated/40">

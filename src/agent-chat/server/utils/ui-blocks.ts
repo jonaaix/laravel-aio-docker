@@ -35,6 +35,8 @@ const OPTIONS_PROPERTY = {
     },
 };
 
+const MULTIPLE_PROPERTY = { type: 'boolean', description: 'Optional: true lets the user pick several options.' };
+
 const RECOMMENDED_PROPERTY = { type: 'boolean', description: 'Whether a) is marked as recommended; false when there is no recommendation.' };
 
 export const UI_BLOCK_TOOLS = [
@@ -72,6 +74,7 @@ export const UI_BLOCK_TOOLS = [
                     },
                 },
                 recommended: RECOMMENDED_PROPERTY,
+                multiple: MULTIPLE_PROPERTY,
             },
             required: ['canvas', 'variants'],
         },
@@ -86,7 +89,7 @@ export const UI_BLOCK_TOOLS = [
                 question: { type: 'string', description: 'The question; Markdown allowed.' },
                 options: OPTIONS_PROPERTY,
                 recommended: RECOMMENDED_PROPERTY,
-                multiple: { type: 'boolean', description: 'Optional: true lets the user pick several options.' },
+                multiple: MULTIPLE_PROPERTY,
             },
             required: ['question', 'options'],
         },
@@ -183,6 +186,13 @@ function variantsOf(args: Record<string, unknown>, viewport: UiViewport, storePa
     }));
 }
 
+function multipleOf(value: unknown): boolean {
+    if (value !== undefined && typeof value !== 'boolean') {
+        throw new TypeError('multiple must be true or false.');
+    }
+    return value === true;
+}
+
 function columnsOf(canvas: unknown): UiVariantColumns {
     const columns = typeof canvas === 'string' && Object.hasOwn(CANVAS_COLUMNS, canvas) ? CANVAS_COLUMNS[canvas] : undefined;
     if (!columns) {
@@ -251,10 +261,7 @@ export function uiBlockFor(tool: string, args: Record<string, unknown>, storePag
     if (tool === 'ask_choice') {
         const question = requiredText(args.question, 'question');
         const options = optionsOf(args.options, 'options');
-        if (args.multiple !== undefined && typeof args.multiple !== 'boolean') {
-            throw new TypeError('multiple must be true or false.');
-        }
-        return { kind: 'choice', question, options, recommended: recommendedOf(args.recommended, options), multiple: args.multiple === true };
+        return { kind: 'choice', question, options, recommended: recommendedOf(args.recommended, options), multiple: multipleOf(args.multiple) };
     }
     const title = optionalText(args.title, 'title');
     if (tool === 'show_cards') {
@@ -264,7 +271,7 @@ export function uiBlockFor(tool: string, args: Record<string, unknown>, storePag
         const columns = columnsOf(args.canvas);
         const viewport = { width: wholeNumber(args.viewport_width, 'viewport_width', VIEWPORT_WIDTH), height: wholeNumber(args.viewport_height, 'viewport_height', VIEWPORT_HEIGHT) };
         const options = variantsOf(args, viewport, storePage);
-        return { kind: 'variants', title, columns, viewport, options, recommended: recommendedOf(args.recommended, options) };
+        return { kind: 'variants', title, columns, viewport, options, recommended: recommendedOf(args.recommended, options), multiple: multipleOf(args.multiple) };
     }
     return { kind: 'page', title, page: pageOf(args, storePage) };
 }
