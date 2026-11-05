@@ -20,13 +20,22 @@ export function useProgressiveDrawing(messages: Ref<ChatMessage[]>, scroller: ()
         firstDrawnId.value = all.length > FIRST_DRAWN_MESSAGES ? all.at(-FIRST_DRAWN_MESSAGES)!.id : null;
     }
 
+    function messageTop(messageId: string | undefined): number | null {
+        const marker = messageId ? document.querySelector(`[data-read-along="${CSS.escape(messageId)}"]`) : null;
+        return marker?.closest('article')?.getBoundingClientRect().top ?? null;
+    }
+
     async function drawEarlier(): Promise<void> {
         const all = messages.value;
         const start = all.length - drawnMessages.value.length - DRAW_STEP;
-        const distanceFromBottom = scroller().scrollHeight - scroller().scrollTop;
+        const keptId = drawnMessages.value[0]?.id;
+        const keptTop = messageTop(keptId);
         firstDrawnId.value = start <= 0 ? null : all[start]!.id;
         await nextTick();
-        scroller().scrollTop = scroller().scrollHeight - distanceFromBottom;
+        const movedTop = messageTop(keptId);
+        if (keptTop !== null && movedTop !== null) {
+            scroller().scrollTop += movedTop - keptTop;
+        }
     }
 
     function whenIdle(callback: () => void): void {

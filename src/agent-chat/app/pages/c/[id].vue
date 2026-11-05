@@ -235,6 +235,9 @@ async function loadEarlierKeepingPosition(): Promise<void> {
 function updateAtBottom(): void {
     const element = scroller();
     atBottom.value = element.scrollHeight - element.scrollTop - element.clientHeight < AT_BOTTOM_THRESHOLD_PX;
+    if (settled.value) {
+        scrollAnchor.remember(atBottom.value);
+    }
 }
 
 function updateAnswerSpace(): void {
@@ -356,13 +359,22 @@ onMounted(async () => {
     anchorDrawing();
     await nextTick();
     updateAnswerSpace();
-    stickToBottom = true;
-    scroller().scrollTop = scroller().scrollHeight;
-    setTimeout(releaseBottom, STICK_TO_BOTTOM_MS);
+    const anchor = scrollAnchor.read();
+    const anchored = anchor !== null && visibleMessages.value.some(message => message.id === anchor.messageId);
+    if (anchored && !drawnMessages.value.some(message => message.id === anchor.messageId)) {
+        await drawAll();
+    }
+    if (!anchored) {
+        stickToBottom = true;
+        scroller().scrollTop = scroller().scrollHeight;
+        setTimeout(releaseBottom, STICK_TO_BOTTOM_MS);
+    }
     contentObserver = new ResizeObserver(onContentResize);
     contentObserver.observe(document.body);
     await settleLayout();
-    scroller().scrollTop = scroller().scrollHeight;
+    if (!anchored || !scrollAnchor.apply(anchor)) {
+        scroller().scrollTop = scroller().scrollHeight;
+    }
     settled.value = true;
     onScroll();
     const readingId = readAlong.playingId.value;
@@ -380,6 +392,8 @@ useActiveListener(() => window, 'scrollend', keepPinnedMessageInPlace, { passive
 useActiveListener(() => window, 'resize', onResize, { passive: true });
 
 let leftAtScrollTop: number | null = null;
+
+const scrollAnchor = useScrollAnchor(conversationId, () => headerHeight());
 
 const forgetLeaveGuard = useRouter().beforeEach((_, from) => {
     if (from.params.id === conversationId) {
