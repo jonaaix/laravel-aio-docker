@@ -1,14 +1,18 @@
 export function useUnread() {
     const { conversations } = useConversations();
     const { userId } = useUserName();
-    const { reads, markRead } = useReads();
+    const { reads, counts, markRead, refreshCounts } = useReads();
     const route = useRoute();
     const openId = computed(() => typeof route.params.id === 'string' ? route.params.id : null);
 
-    const unreadIds = computed(() => reads.value ? unreadConversationIds(conversations.value, userId.value, reads.value, openId.value) : []);
+    const unreadIds = computed(() => counts.value ? unreadConversationIds(conversations.value, userId.value, counts.value, openId.value) : []);
 
     function isUnread(conversationId: string): boolean {
         return unreadIds.value.includes(conversationId);
+    }
+
+    function unreadCount(conversationId: string): number {
+        return isUnread(conversationId) ? counts.value?.[conversationId] ?? 0 : 0;
     }
 
     function track(): void {
@@ -18,7 +22,12 @@ export function useUnread() {
                 markRead(open);
             }
         }, { immediate: true });
+        watch(() => conversations.value.map(conversation => `${conversation.id}:${conversation.lastPostedAt ?? 0}`).join(), (_, previous) => {
+            if (previous) {
+                refreshCounts();
+            }
+        });
     }
 
-    return { unreadIds, isUnread, track };
+    return { unreadIds, isUnread, unreadCount, track };
 }

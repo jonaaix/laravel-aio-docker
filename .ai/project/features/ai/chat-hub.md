@@ -38,10 +38,11 @@ profile follow that person. Remote control is not part of Orbit's settings; Noti
 
 ### Unread
 
-A conversation counts as unread for a person who has written in it when an agent finished an answer there
-since the person last opened it — the same people a notification goes to. Unread conversations carry a dot in
-the sidebar; the chat switcher shows the count of the other chats, and the app icon shows the total where the
-system supports it. A conversation that is open counts as read. Muting does not hide the dot. What a person has
+A conversation counts as unread for a person who has written in it when others posted there since the person
+last opened it — an agent finished an answer, or another person sent a message. An agent's answer counts from the
+moment it is finished, so one still being written when the person leaves arrives as unread. Unread conversations
+carry the number of those messages in the sidebar; the chat switcher shows the count of the other chats, and the app icon shows the total where the
+system supports it. A conversation that is open counts as read. Muting does not hide the number. What a person has
 read is kept per person by the chat itself, so reading on one device clears the dot on all of them, in the app and
 in the web chat alike; the first time a person's reads are asked for, all existing conversations count as read.
 

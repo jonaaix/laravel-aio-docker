@@ -470,6 +470,7 @@ export function summarize(row: NonNullable<ReturnType<typeof findConversation>>)
         participantIds: conversationParticipantIds(row.id, row.creatorId),
         mutedUserIds: conversationMutedUserIds(row.id),
         lastAnswerAt: row.lastAnswerAt,
+        lastPostedAt: row.lastPostedAt,
         agentIds: conversationAgentIds(row.id),
         status: row.status,
         turnActive: isTurnActive(row.id),

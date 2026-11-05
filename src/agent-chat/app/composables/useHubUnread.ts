@@ -13,11 +13,11 @@ async function countOtherServers(): Promise<void> {
     await Promise.all(hubServers.value.filter(server => server.id !== activeServerId.value).map(async (server) => {
         try {
             const headers = { authorization: `Bearer ${await accessToken(server)}` };
-            const [conversations, reads] = await Promise.all([
+            const [conversations, unread] = await Promise.all([
                 $fetch<ConversationSummary[]>(serverApiUrl(server, 'conversations'), { headers }),
-                $fetch<Record<string, number>>(serverApiUrl(server, 'reads'), { headers }),
+                $fetch<Record<string, number>>(serverApiUrl(server, 'unread'), { headers }),
             ]);
-            counts[server.id] = unreadConversationIds(conversations, serverUserId(server.id), reads, null).length;
+            counts[server.id] = unreadConversationIds(conversations, serverUserId(server.id), unread, null).length;
         }
         catch {
             counts[server.id] = otherUnread.value[server.id] ?? 0;

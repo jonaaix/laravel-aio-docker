@@ -31,6 +31,7 @@ export interface ConversationSummary {
     participantIds: string[];
     mutedUserIds: string[];
     lastAnswerAt: number | null;
+    lastPostedAt: number | null;
     agentIds: string[];
     status: ConversationStatus;
     turnActive: boolean;

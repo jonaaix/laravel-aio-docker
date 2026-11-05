@@ -1,11 +1,12 @@
-import { and, eq } from 'drizzle-orm';
-import { conversationReads, conversations } from '../database/schema';
+import { and, count, eq, gt, ne, or, sql } from 'drizzle-orm';
+import { conversationReads, conversations, messages } from '../database/schema';
 
 export type ReadMap = Record<string, number>;
+export type UnreadCounts = Record<string, number>;
 
 function baseline(userId: string): ReadMap {
     const rows = useDatabase()
-        .select({ conversationId: conversations.id, seenAnswerAt: conversations.lastAnswerAt })
+        .select({ conversationId: conversations.id, seenAnswerAt: conversations.lastPostedAt })
         .from(conversations)
         .all()
         .map(row => ({ conversationId: row.conversationId, userId, seenAnswerAt: row.seenAnswerAt ?? 0 }));
@@ -31,4 +32,19 @@ export function markRead(userId: string, conversationId: string, seenAnswerAt: n
         .onConflictDoUpdate({ target: [conversationReads.conversationId, conversationReads.userId], set: { seenAnswerAt: latest } })
         .run();
     return latest;
+}
+
+export function unreadCountsFor(userId: string): UnreadCounts {
+    readsFor(userId);
+    const rows = useDatabase()
+        .select({ conversationId: messages.conversationId, unread: count() })
+        .from(messages)
+        .leftJoin(conversationReads, and(eq(conversationReads.conversationId, messages.conversationId), eq(conversationReads.userId, userId)))
+        .where(and(
+            gt(messages.postedAt, sql`coalesce(${conversationReads.seenAnswerAt}, 0)`),
+            or(eq(messages.role, 'assistant'), and(eq(messages.role, 'user'), ne(sql`coalesce(${messages.senderId}, '')`, userId))),
+        ))
+        .groupBy(messages.conversationId)
+        .all();
+    return Object.fromEntries(rows.map(row => [row.conversationId, row.unread]));
 }

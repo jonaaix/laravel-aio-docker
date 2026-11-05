@@ -19,7 +19,7 @@ works on the same app. Each entry shows the title and, below it, who started it 
 right end: while the agent is answering, three softly bouncing dots, the title turns grey like the line below it, and a narrow light
 streak in a soft accent colour runs across both lines in step; while the session is running and waiting, a "Ready" badge, joined — while tasks the agent
 started in the background are still running — by a small badge with a slowly turning symbol and the number of those
-tasks, "Running in the background" on hover; a paused session shows nothing. A conversation with an answer the person has not seen shows its title in bold with a dot after it, by the same rule as in
+tasks, "Running in the background" on hover; a paused session shows nothing. A conversation with messages the person has not seen shows its title in bold and, at the right end of the title line, how many there are ("99+" from 100), by the same rule as in
 the Orbit app (see [Orbit](chat-hub.md#unread)), and the browser tab shows how many there are, as "(2) AI Chat". When an answer
 finishes in a conversation the person has written in but is not looking at — another conversation is open, or the
 tab is in the background — a short, low double drum beat sounds, once per answer even with several tabs open; the
@@ -38,8 +38,8 @@ conversation below it in the sidebar — the one above when it was the last, a n
 finds them by title, ignoring case and accents.
 
 Each conversation has a small round picture of its own (a single geometric shape — circle, triangle, hexagon, star or square — on a coloured ground, the same for that conversation every time), shown before its entry. Folded to its icon strip, the sidebar still lists the conversations by that
-picture; resting on a picture opens a small card beside it (at once when moving straight on from another picture) showing the full entry as the unfolded list shows it — picture, name, creator, last activity and state; the open conversation is circled in the accent colour unless it is being read, an unseen answer shows a dot
-on the picture, a working conversation a slowly turning ring of light around it, and the conversation being read — folded or not — has a fine band
+picture; resting on a picture opens a small card beside it (at once when moving straight on from another picture) showing the full entry as the unfolded list shows it — picture, name, creator, last activity and state; the open conversation is circled in the accent colour unless it is being read, unseen messages show their number on the
+picture's corner, the pictures spaced so it fits, a working conversation a slowly turning ring of light around it, and the conversation being read — folded or not — has a fine band
 close around its picture, in a slowly turning, glowing gradient drawn from the accent colour (with Black: black — white in dark mode — with violet and cyan), that billows with the voice actually being heard — its pitches spread around the circle —
 and lies as a thin, still ring while paused.
 

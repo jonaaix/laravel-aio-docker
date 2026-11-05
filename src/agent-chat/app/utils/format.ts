@@ -8,6 +8,11 @@ export function formatPercent(fraction: number): string {
     return new Intl.NumberFormat(formatLocale.value, { style: 'percent', maximumFractionDigits: 0 }).format(fraction);
 }
 
+export function formatBadgeCount(count: number, cap = 99): string {
+    const format = new Intl.NumberFormat(formatLocale.value);
+    return count > cap ? `${format.format(cap)}+` : format.format(count);
+}
+
 export function formatSpeedFactor(factor: number): string {
     return `${new Intl.NumberFormat(formatLocale.value, { maximumFractionDigits: 2 }).format(factor)}×`;
 }

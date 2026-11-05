@@ -171,7 +171,7 @@ onBeforeUnmount(() => {
                     :collapsed="collapsed"
                     tooltip
                     orientation="vertical"
-                    :ui="{ link: ['overflow-hidden py-1.5 before:transition-colors before:duration-500 before:ease-out hover:before:bg-primary/8 aria-[current=page]:before:bg-primary/12 aria-[current=page]:text-(--nav-current)', collapsed ? 'mx-auto size-10 justify-center overflow-visible p-0 before:inset-0 before:rounded-full aria-[current=page]:before:ring-2 aria-[current=page]:before:ring-inset aria-[current=page]:before:ring-primary' : 'gap-3'], linkLabel: 'min-w-0 flex-1' }"
+                    :ui="{ link: ['overflow-hidden py-1.5 before:transition-colors before:duration-500 before:ease-out hover:before:bg-primary/8 aria-[current=page]:before:bg-primary/12 aria-[current=page]:text-(--nav-current)', collapsed ? 'mx-auto my-2 size-10 justify-center overflow-visible p-0 before:inset-0 before:rounded-full aria-[current=page]:before:ring-2 aria-[current=page]:before:ring-inset aria-[current=page]:before:ring-primary' : 'gap-3'], linkLabel: 'min-w-0 flex-1' }"
                 >
                     <template #item-leading="{ item }">
                         <UPopover
@@ -193,7 +193,7 @@ onBeforeUnmount(() => {
                                     <span class="sr-only">{{ t('Reading aloud') }}</span>
                                 </template>
                                 <template v-if="collapsed">
-                                    <span v-if="unread.isUnread(item.id)" class="absolute -end-0.5 -top-0.5 size-2 rounded-full bg-primary ring-2 ring-(--ui-bg-muted)" :aria-label="t('Unread')" />
+                                    <span v-if="unread.isUnread(item.id)" class="absolute -end-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[0.625rem]/none font-semibold text-inverted tabular-nums ring-2 ring-(--ui-bg-muted)" :aria-label="t('Unread')">{{ formatBadgeCount(unread.unreadCount(item.id)) }}</span>
                                     <span v-if="item.session.live" class="light-ring pointer-events-none absolute -inset-[3px] rounded-full" role="status" :aria-label="t(item.session.label)" />
                                 </template>
                             </span>
@@ -206,7 +206,7 @@ onBeforeUnmount(() => {
                                         :last-activity-at="item.lastActivityAt"
                                         :session="item.session"
                                         :paused="item.paused"
-                                        :unread="unread.isUnread(item.id)"
+                                        :unread-count="unread.unreadCount(item.id)"
                                         :now="now"
                                         wrap-title
                                     />
@@ -222,7 +222,7 @@ onBeforeUnmount(() => {
                             :last-activity-at="item.lastActivityAt"
                             :session="item.session"
                             :paused="item.paused"
-                            :unread="unread.isUnread(item.id)"
+                            :unread-count="unread.unreadCount(item.id)"
                             :now="now"
                         />
                         <span v-else class="block truncate">{{ item.label }}</span>

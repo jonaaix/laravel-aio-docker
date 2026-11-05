@@ -118,8 +118,9 @@ export function appendMessage(conversationId: string, role: ChatMessage['role'],
         agentId,
         createdAt: Date.now(),
     } satisfies typeof messages.$inferInsert;
-    db.insert(messages).values(row).run();
-    updateConversation(conversationId, { lastActivityAt: row.createdAt });
+    const postedAt = role === 'user' ? row.createdAt : null;
+    db.insert(messages).values({ ...row, postedAt }).run();
+    updateConversation(conversationId, postedAt ? { lastActivityAt: row.createdAt, lastPostedAt: postedAt } : { lastActivityAt: row.createdAt });
     return toChatMessage(row);
 }
 
@@ -234,11 +235,13 @@ export function putMessagePart(conversationId: string, messageId: string, part: 
 }
 
 export function saveTurnMetrics(conversationId: string, messageId: string, metrics: TurnMetrics): void {
+    const postedAt = Date.now();
     useDatabase()
         .update(messages)
-        .set(metrics)
+        .set({ ...metrics, postedAt })
         .where(and(eq(messages.id, messageId), eq(messages.conversationId, conversationId)))
         .run();
+    updateConversation(conversationId, { lastPostedAt: postedAt });
 }
 
 export function markRunningConversationsPaused(): void {

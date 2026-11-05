@@ -63,6 +63,7 @@ export const conversations = sqliteTable('conversations', {
     createdAt: integer('created_at').notNull(),
     lastActivityAt: integer('last_activity_at').notNull(),
     lastAnswerAt: integer('last_answer_at'),
+    lastPostedAt: integer('last_posted_at'),
     archivedAt: integer('archived_at'),
 });
 
@@ -106,6 +107,7 @@ export const messages = sqliteTable('messages', {
     // The database column lacks this delete rule (added by ALTER TABLE), so deleteAgent clears it first.
     agentId: text('agent_id').references(() => agents.id, { onDelete: 'set null' }),
     createdAt: integer('created_at').notNull(),
+    postedAt: integer('posted_at'),
     model: text('model'),
     inputTokens: integer('input_tokens'),
     outputTokens: integer('output_tokens'),
