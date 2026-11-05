@@ -39,13 +39,12 @@ const moreItems = computed<DropdownMenuItem[]>(() => [
                 </UTooltip>
             </UDropdownMenu>
         </div>
-        <!-- White in dark mode too: a page without its own background is written for a white canvas. -->
         <iframe
             :src="src"
             :title="title ?? filename"
             sandbox="allow-scripts"
             loading="lazy"
-            class="block w-full rounded-md bg-white ring ring-default"
+            class="block w-full rounded-md bg-default ring ring-default"
             :style="{ height: `${page.height}px` }"
         />
     </div>

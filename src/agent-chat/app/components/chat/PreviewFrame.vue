@@ -32,8 +32,7 @@ onBeforeUnmount(() => observer?.disconnect());
 </script>
 
 <template>
-    <!-- White in dark mode too: it stands in for the page, which is written for a white canvas. -->
-    <div ref="box" class="relative w-full overflow-hidden bg-white" :style="{ height: `${height * scale}px` }">
+    <div ref="box" class="relative w-full overflow-hidden bg-default" :style="{ height: `${height * scale}px` }">
         <iframe
             v-if="scale > 0"
             :src="src"
