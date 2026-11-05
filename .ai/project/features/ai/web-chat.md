@@ -142,8 +142,9 @@ languages, recognised by its common words — falling back to the person's chat 
 the prose is read: no code blocks, tool steps, the stop hook line, markdown marks or emoji. The speed is the person's
 reading speed from the settings (Read aloud). Reading goes on when the person moves to another conversation. While a
 message is read, a small player shows the conversation it comes from (a link back to it), a progress bar along the text
-— a jump lands on the start of the passage at that spot —, "Back 10 seconds", pause and resume (resuming carries on
-where it paused), the reading speed and a button to stop; it sits at the foot of the sidebar, and above the message
+— a jump lands on the start of the passage at that spot —, pause and resume (resuming carries on where it paused) with
+"Back 10 seconds" and "Forward 10 seconds" on either side, the reading speed as a menu from 0.5× to 3× in steps of
+0.25× and a button to stop; it sits at the foot of the sidebar, and above the message
 input where the sidebar is folded away. The conversation being read shows moving level bars at the right end of its
 sidebar entry, standing still while paused. Google Cloud voices belong to one language, so it reads in the
 language recognised the same way.

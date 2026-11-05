@@ -1,16 +1,25 @@
 <script setup lang="ts">
+import type { DropdownMenuItem } from '@nuxt/ui';
+import { SPEECH_RATE_MENU } from '#shared/utils/speech';
+
 const SEEK_DELAY_MS = 300;
 const PROGRESS_STEPS = 1000;
 
 const { t } = useI18n();
 const { conversations } = useConversations();
-const { speechRate } = useAppearance();
-const { speakingId, conversationId, paused, progress, pause, resume, back, seek, stop } = useSpeechPlayer();
+const { speechRate, setSpeechRate } = useAppearance();
+const { speakingId, conversationId, paused, progress, pause, resume, back, forward, seek, stop } = useSpeechPlayer();
 
 const draftProgress = ref<number | null>(null);
 let seekTimer: ReturnType<typeof setTimeout> | undefined;
 
 const title = computed(() => conversations.value.find(conversation => conversation.id === conversationId.value)?.title ?? t('Read aloud'));
+const rateItems = computed<DropdownMenuItem[]>(() => SPEECH_RATE_MENU.map(rate => ({
+    label: formatSpeedFactor(rate),
+    type: 'checkbox',
+    checked: rate === speechRate.value,
+    onSelect: () => void setSpeechRate(rate),
+})));
 const shownProgress = computed(() => draftProgress.value ?? Math.round(progress.value * PROGRESS_STEPS));
 
 function moveProgress(value: number | undefined): void {
@@ -53,19 +62,22 @@ function togglePause(): void {
             :aria-label="t('Reading position')"
             @update:model-value="moveProgress"
         />
-        <div class="flex items-center gap-1">
-            <UTooltip :text="t('Back 10 seconds')">
-                <UButton icon="i-heroicons-backward" color="neutral" variant="ghost" size="sm" :aria-label="t('Back 10 seconds')" @click="back" />
-            </UTooltip>
-            <UTooltip :text="paused ? t('Resume') : t('Pause')">
-                <UButton :icon="paused ? 'i-heroicons-play' : 'i-heroicons-pause'" color="neutral" variant="ghost" size="sm" :aria-label="paused ? t('Resume') : t('Pause')" @click="togglePause" />
-            </UTooltip>
-            <UPopover :content="{ side: 'top', align: 'end' }">
-                <UButton :label="formatSpeedFactor(speechRate)" color="neutral" variant="ghost" size="sm" class="ms-auto tabular-nums" :aria-label="t('Reading speed')" />
-                <template #content>
-                    <SpeechRateSlider :label="t('Reading speed')" class="w-64 px-3" />
-                </template>
-            </UPopover>
+        <div class="grid grid-cols-[1fr_auto_1fr] items-center">
+            <span />
+            <div class="flex items-center gap-1">
+                <UTooltip :text="t('Back 10 seconds')">
+                    <UButton icon="i-heroicons-backward" color="neutral" variant="ghost" size="sm" :aria-label="t('Back 10 seconds')" @click="back" />
+                </UTooltip>
+                <UTooltip :text="paused ? t('Resume') : t('Pause')">
+                    <UButton :icon="paused ? 'i-heroicons-play' : 'i-heroicons-pause'" color="neutral" variant="ghost" size="sm" :aria-label="paused ? t('Resume') : t('Pause')" @click="togglePause" />
+                </UTooltip>
+                <UTooltip :text="t('Forward 10 seconds')">
+                    <UButton icon="i-heroicons-forward" color="neutral" variant="ghost" size="sm" :aria-label="t('Forward 10 seconds')" @click="forward" />
+                </UTooltip>
+            </div>
+            <UDropdownMenu :items="rateItems" :content="{ side: 'top', align: 'end' }" :ui="{ content: 'max-h-56 overflow-y-auto scrollbar-slim', itemLabel: 'tabular-nums' }">
+                <UButton :label="formatSpeedFactor(speechRate)" color="neutral" variant="ghost" size="sm" class="justify-self-end tabular-nums" :aria-label="t('Reading speed')" />
+            </UDropdownMenu>
         </div>
     </div>
 </template>

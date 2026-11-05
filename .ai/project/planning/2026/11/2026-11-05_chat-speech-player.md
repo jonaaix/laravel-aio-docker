@@ -24,7 +24,9 @@ stopped, rewound and jumped through without starting over.
 ## Decisions
 
 - Player in the sidebar foot, floating above the input on narrow screens (user's call, question 150a).
-- Back button jumps 10 seconds (question 151a); progress bar, speed in the player and stop (question 152b, c).
+- Back and forward 10 seconds on either side of pause (user's call, replacing back-only); progress bar and stop
+  (question 152b). Speed in the player is a menu in 0.25× steps with a capped, scrolling height (user's call); the fine
+  slider stays in the settings.
 - Progress follows the text, not minutes: pieces are generated one after another, so total time is unknown. A jump lands
   on the start of the piece at that spot.
 - Level bars take the place of the working dots while a chat is read.

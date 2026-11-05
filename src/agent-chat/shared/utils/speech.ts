@@ -2,6 +2,8 @@ export const MIN_SPEECH_RATE = 0.5;
 export const MAX_SPEECH_RATE = 3;
 export const SPEECH_RATE_STEP = 0.05;
 export const DEFAULT_SPEECH_RATE = 1.5;
+export const SPEECH_RATE_MENU_STEP = 0.25;
+export const SPEECH_RATE_MENU = Array.from({ length: Math.round((MAX_SPEECH_RATE - MIN_SPEECH_RATE) / SPEECH_RATE_MENU_STEP) + 1 }, (_, index) => MIN_SPEECH_RATE + index * SPEECH_RATE_MENU_STEP);
 
 const RATE_TOLERANCE = 1e-9;
 

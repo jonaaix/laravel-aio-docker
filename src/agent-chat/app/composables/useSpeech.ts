@@ -4,7 +4,7 @@ const SERVICE_CHUNK_LENGTH = 400;
 const SERVICE_FIRST_CHUNK_LENGTH = 120;
 const SILENT_SAMPLES = 400;
 const SILENT_SAMPLE_RATE = 8000;
-const BACK_SECONDS = 10;
+const SKIP_SECONDS = 10;
 const DEVICE_RESTART_GRACE_MS = 2000;
 
 type SpeechMode = 'service' | 'device';
@@ -258,15 +258,31 @@ export function useSpeechPlayer() {
 
     function back(): void {
         if (mode === 'service' && player) {
-            if (player.currentTime >= BACK_SECONDS || chunkIndex === 0) {
-                player.currentTime = Math.max(0, player.currentTime - BACK_SECONDS);
+            if (player.currentTime >= SKIP_SECONDS || chunkIndex === 0) {
+                player.currentTime = Math.max(0, player.currentTime - SKIP_SECONDS);
                 return;
             }
-            playFrom(chunkIndex - 1, player.currentTime - BACK_SECONDS);
+            playFrom(chunkIndex - 1, player.currentTime - SKIP_SECONDS);
             return;
         }
         const justStarted = Date.now() - deviceChunkStartedAt < DEVICE_RESTART_GRACE_MS;
         playFrom(justStarted ? Math.max(0, chunkIndex - 1) : chunkIndex);
+    }
+
+    function forward(): void {
+        const last = chunkIndex >= chunks.length - 1;
+        if (mode === 'service' && player) {
+            const target = player.currentTime + SKIP_SECONDS;
+            if (target < player.duration || last) {
+                player.currentTime = Math.min(target, player.duration || target);
+                return;
+            }
+            playFrom(chunkIndex + 1, target - player.duration);
+            return;
+        }
+        if (!last) {
+            playFrom(chunkIndex + 1);
+        }
     }
 
     function seek(fraction: number): void {
@@ -289,6 +305,7 @@ export function useSpeechPlayer() {
         pause,
         resume,
         back,
+        forward,
         seek,
         stop,
     };
