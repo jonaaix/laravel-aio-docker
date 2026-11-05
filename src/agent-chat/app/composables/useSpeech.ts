@@ -12,6 +12,7 @@ type SpeechMode = 'service' | 'device';
 const speakingId = ref<string | null>(null);
 const preparingId = ref<string | null>(null);
 const sourceConversationId = ref<string | null>(null);
+const sourceLabel = ref('');
 const paused = ref(false);
 const progress = ref(0);
 const speechProvider = ref<SpeechProvider | null | undefined>(undefined);
@@ -300,6 +301,7 @@ export function useSpeechPlayer() {
     return {
         speakingId: readonly(speakingId),
         conversationId: readonly(sourceConversationId),
+        label: readonly(sourceLabel),
         paused: readonly(paused),
         progress: readonly(progress),
         pause,
@@ -327,6 +329,7 @@ export function useSpeech() {
         speakingId.value = id;
         preparingId.value = id;
         sourceConversationId.value = typeof route.params.id === 'string' ? route.params.id : null;
+        sourceLabel.value = speakableText(/^#{1,6}\s+(.+)$/m.exec(markdown)?.[1] ?? '') || text.split('\n')[0]!;
         player ??= new Audio();
         player.preservesPitch = true;
         // Safari lets an element play later, after the fetch, only if it already played inside the click.

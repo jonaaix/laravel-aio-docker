@@ -6,14 +6,12 @@ const SEEK_DELAY_MS = 300;
 const PROGRESS_STEPS = 1000;
 
 const { t } = useI18n();
-const { conversations } = useConversations();
 const { speechRate, setSpeechRate } = useAppearance();
-const { speakingId, conversationId, paused, progress, pause, resume, back, forward, seek, stop } = useSpeechPlayer();
+const { speakingId, conversationId, label, paused, progress, pause, resume, back, forward, seek, stop } = useSpeechPlayer();
 
 const draftProgress = ref<number | null>(null);
 let seekTimer: ReturnType<typeof setTimeout> | undefined;
 
-const title = computed(() => conversations.value.find(conversation => conversation.id === conversationId.value)?.title ?? t('Read aloud'));
 const rateItems = computed<DropdownMenuItem[]>(() => SPEECH_RATE_MENU.map(rate => ({
     label: formatSpeedFactor(rate),
     type: 'checkbox',
@@ -48,8 +46,8 @@ function togglePause(): void {
     <div v-if="speakingId" class="flex flex-col gap-2 rounded-xl bg-default p-3 ring ring-default">
         <div class="flex min-w-0 items-center gap-2">
             <AudioLevelBars :playing="!paused" :label="paused ? t('Paused') : t('Reading aloud')" />
-            <NuxtLink v-if="conversationId" :to="`/c/${conversationId}`" class="min-w-0 flex-1 truncate text-sm font-medium text-highlighted hover:underline">{{ title }}</NuxtLink>
-            <span v-else class="min-w-0 flex-1 truncate text-sm font-medium text-highlighted">{{ title }}</span>
+            <NuxtLink v-if="conversationId" :to="`/c/${conversationId}`" class="min-w-0 flex-1 truncate text-sm font-medium text-highlighted hover:underline">{{ label }}</NuxtLink>
+            <span v-else class="min-w-0 flex-1 truncate text-sm font-medium text-highlighted">{{ label }}</span>
             <UTooltip :text="t('Stop reading')">
                 <UButton icon="i-heroicons-x-mark" color="neutral" variant="ghost" size="xs" :aria-label="t('Stop reading')" @click="stop" />
             </UTooltip>
@@ -66,13 +64,13 @@ function togglePause(): void {
             <span />
             <div class="flex items-center gap-1">
                 <UTooltip :text="t('Back 10 seconds')">
-                    <UButton icon="i-heroicons-backward" color="neutral" variant="ghost" size="sm" :aria-label="t('Back 10 seconds')" @click="back" />
+                    <UButton icon="i-heroicons-arrow-uturn-left" label="10" color="neutral" variant="ghost" size="sm" class="gap-0.5 text-xs font-semibold tabular-nums" :aria-label="t('Back 10 seconds')" @click="back" />
                 </UTooltip>
                 <UTooltip :text="paused ? t('Resume') : t('Pause')">
                     <UButton :icon="paused ? 'i-heroicons-play' : 'i-heroicons-pause'" color="neutral" variant="ghost" size="sm" :aria-label="paused ? t('Resume') : t('Pause')" @click="togglePause" />
                 </UTooltip>
                 <UTooltip :text="t('Forward 10 seconds')">
-                    <UButton icon="i-heroicons-forward" color="neutral" variant="ghost" size="sm" :aria-label="t('Forward 10 seconds')" @click="forward" />
+                    <UButton trailing-icon="i-heroicons-arrow-uturn-right" label="10" color="neutral" variant="ghost" size="sm" class="gap-0.5 text-xs font-semibold tabular-nums" :aria-label="t('Forward 10 seconds')" @click="forward" />
                 </UTooltip>
             </div>
             <UDropdownMenu :items="rateItems" :content="{ side: 'top', align: 'end' }" :ui="{ content: 'max-h-56 overflow-y-auto scrollbar-slim', itemLabel: 'tabular-nums' }">
