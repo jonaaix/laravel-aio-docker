@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import type { OptionStripItem } from '~/components/OptionStrip.vue';
 
-defineProps<{
+const props = defineProps<{
     src: string;
     fileUrl: string;
     filename: string;
     createdAt: number;
     title: string;
+    hasPrevious?: boolean;
+    hasNext?: boolean;
 }>();
+
+const emit = defineEmits<{ previous: []; next: [] }>();
 
 const open = defineModel<boolean>('open', { required: true });
 
@@ -92,7 +96,33 @@ watch(open, (isOpen) => {
     }
 });
 
-onBeforeUnmount(() => observer?.disconnect());
+function onArrow(event: KeyboardEvent): void {
+    if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) {
+        return;
+    }
+    if (event.key === 'ArrowLeft' && props.hasPrevious) {
+        event.preventDefault();
+        emit('previous');
+    }
+    else if (event.key === 'ArrowRight' && props.hasNext) {
+        event.preventDefault();
+        emit('next');
+    }
+}
+
+watch(open, (isOpen) => {
+    if (isOpen) {
+        window.addEventListener('keydown', onArrow);
+    }
+    else {
+        window.removeEventListener('keydown', onArrow);
+    }
+}, { immediate: true });
+
+onBeforeUnmount(() => {
+    observer?.disconnect();
+    window.removeEventListener('keydown', onArrow);
+});
 
 function startResize(event: PointerEvent): void {
     const startX = event.clientX;
@@ -154,6 +184,14 @@ const frameStyle = computed(() => {
         :ui="{ content: 'w-[min(96vw,1600px)] max-w-none h-[calc(100vh-1rem)] max-h-none sm:max-h-none max-sm:h-dvh max-sm:w-screen max-sm:rounded-none max-sm:ring-0', body: 'flex flex-1 p-0 sm:p-0 overflow-hidden', footer: 'justify-between' }"
     >
         <template #actions>
+            <template v-if="hasPrevious || hasNext">
+                <UTooltip :text="t('Previous')">
+                    <UButton icon="i-heroicons-chevron-left" color="neutral" variant="ghost" class="size-7 justify-center p-0" :aria-label="t('Previous')" :disabled="!hasPrevious" @click="emit('previous')" />
+                </UTooltip>
+                <UTooltip :text="t('Next')">
+                    <UButton icon="i-heroicons-chevron-right" color="neutral" variant="ghost" class="size-7 justify-center p-0" :aria-label="t('Next')" :disabled="!hasNext" @click="emit('next')" />
+                </UTooltip>
+            </template>
             <UTooltip :text="t('View code')">
                 <UButton icon="i-heroicons-code-bracket" color="neutral" variant="ghost" class="size-7 justify-center p-0" :aria-label="t('View code')" @click="showCode" />
             </UTooltip>

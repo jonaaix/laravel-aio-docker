@@ -78,5 +78,9 @@ function choose(index: number): void {
         :filename="viewed.page.filename"
         :created-at="viewed.page.createdAt"
         :title="`${viewed.letter}) ${viewed.title}`"
+        :has-previous="viewedIndex! > 0"
+        :has-next="viewedIndex! < options.length - 1"
+        @previous="viewedIndex = viewedIndex! - 1"
+        @next="viewedIndex = viewedIndex! + 1"
     />
 </template>

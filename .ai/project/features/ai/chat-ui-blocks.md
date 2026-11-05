@@ -45,7 +45,8 @@ cards, each variant its own HTML page holding only that variant. Each card carri
 the variant's letter and name, the recommended one marked "Recommended", a live preview of the variant scaled down
 from the screen width the agent designed it for, and an optional short description. The agent puts two cards side by
 side only for small elements such as icons, buttons or badges, and one per row for anything larger; on a phone they always stand one
-per row. A button on each card opens that variant in the large window with its screen sizes, code and download.
+per row. A button on each card opens that variant in the large window with its screen sizes, code and download; there
+the arrow keys ← and → and two arrow buttons in the title bar step to the previous or next variant.
 
 ### Choice
 
