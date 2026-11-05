@@ -30,8 +30,8 @@ Above the page sit its title and three actions. "View larger" opens it in a larg
 the page's edge drags its width narrower or wider, with the current size shown below, so the page can be checked at
 phone and tablet widths — a double click on the handle gives it the full width again. Beside the size readout, a strip switches it in one click: Window (filling
 the window, as it opens), Phone (402 × 874), 13″ (1470 × 956), 24″ (1920 × 1080) and 27″ (2560 × 1440),
-each with a symbol; a size larger than the window is shown scaled down to fit, with the scale beside the size. On a phone the strip
-is left out and the page simply fills the window. The large window's title bar offers "View code" and "Open in new tab" as
+each with a symbol; a size larger than the window is shown scaled down to fit, with the scale beside the size. On a phone the large
+window takes the whole screen, without the strip or the width handle. The large window's title bar offers "View code" and "Open in new tab" as
 well, so neither needs the window closed first; the code opens on top of the large window. "View code" opens the HTML in
 the preview column beside the conversation, where it can be copied or downloaded. The "More actions" menu opens the
 page on its own in a new tab, still shut off the same way, or downloads it; a downloaded page carries the date and

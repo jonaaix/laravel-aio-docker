@@ -142,7 +142,7 @@ const frameStyle = computed(() => {
     <UModal
         v-model:open="open"
         :title="title"
-        :ui="{ content: 'w-[min(96vw,1600px)] max-w-none h-[calc(100vh-1rem)] max-h-none sm:max-h-none', body: 'flex flex-1 p-0 sm:p-0 overflow-hidden', footer: 'justify-between' }"
+        :ui="{ content: 'w-[min(96vw,1600px)] max-w-none h-[calc(100vh-1rem)] max-h-none sm:max-h-none max-sm:h-dvh max-sm:w-screen max-sm:rounded-none max-sm:ring-0', body: 'flex flex-1 p-0 sm:p-0 overflow-hidden', footer: 'justify-between' }"
     >
         <template #actions>
             <UTooltip :text="t('View code')">
@@ -156,7 +156,7 @@ const frameStyle = computed(() => {
             </UTooltip>
         </template>
         <template #body>
-            <div ref="stage" class="flex flex-1 items-center justify-center overflow-hidden bg-muted px-4" :class="{ 'py-4': frameHeight !== null }">
+            <div ref="stage" class="flex flex-1 items-center justify-center overflow-hidden bg-muted sm:px-4" :class="{ 'py-4': frameHeight !== null }">
                 <div class="relative" :style="frameBoxStyle">
                     <iframe
                         :src="src"
@@ -170,7 +170,7 @@ const frameStyle = computed(() => {
                         role="separator"
                         aria-orientation="vertical"
                         :aria-label="t('Width')"
-                        class="group absolute inset-y-0 -end-3 flex w-3 cursor-ew-resize touch-none items-center justify-center"
+                        class="group absolute inset-y-0 -end-3 flex w-3 cursor-ew-resize touch-none items-center justify-center max-sm:hidden"
                         @pointerdown.prevent="startResize"
                         @dblclick="resetSize"
                     >
