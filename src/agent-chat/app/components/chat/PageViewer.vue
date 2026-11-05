@@ -166,6 +166,7 @@ const frameStyle = computed(() => {
         </template>
         <template #body>
             <div ref="stage" class="flex flex-1 items-center justify-center overflow-hidden bg-muted sm:px-4" :class="{ 'py-4': frameHeight !== null }">
+                <!-- White in dark mode too: it stands in for the page, which is written for a white canvas. -->
                 <div class="relative bg-white" :style="frameBoxStyle">
                     <iframe
                         v-if="frameReady"
