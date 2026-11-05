@@ -17,5 +17,5 @@ const choice = computed<ColorModeChoice>({
 </script>
 
 <template>
-    <OptionStrip v-model="choice" :items="items" :label="t('Theme')" size="sm" />
+    <OptionStrip v-model="choice" :items="items" :label="t('Theme')" size="sm" block />
 </template>
