@@ -57,16 +57,7 @@ const moreItems = computed<DropdownMenuItem[]>(() => [
         />
     </div>
 
-    <ChatPageViewer v-model:open="viewerOpen" :src="src" :title="title ?? filename">
-        <template #actions>
-            <UTooltip :text="t('View code')">
-                <UButton icon="i-heroicons-code-bracket" color="neutral" variant="ghost" class="size-7 justify-center p-0" :aria-label="t('View code')" @click="codeOpen = true" />
-            </UTooltip>
-            <UTooltip :text="t('Open in new tab')">
-                <UButton icon="i-heroicons-arrow-top-right-on-square" color="neutral" variant="ghost" class="size-7 justify-center p-0" :aria-label="t('Open in new tab')" :to="src" target="_blank" external />
-            </UTooltip>
-        </template>
-    </ChatPageViewer>
+    <ChatPageViewer v-model:open="viewerOpen" :src="src" :file-url="fileUrl" :filename="filename" :title="title ?? filename" />
     <ChatFilePreview
         v-model:open="codeOpen"
         :url="fileUrl"
