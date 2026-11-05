@@ -87,7 +87,7 @@ function span(entry: ScheduleEntry): string {
                         <p class="text-xs text-muted tabular-nums">
                             {{ span(entry) }}
                         </p>
-                        <Markdown v-if="entry.item.text" :value="entry.item.text" :plugins="chatPlugins" class="mt-0.5 text-xs/4 text-muted *:my-0 *:leading-4" />
+                        <Markdown v-if="entry.item.text" :value="entry.item.text" :plugins="chatPlugins" class="mt-0.5 text-xs/4 text-muted [&_*]:my-0 [&_*]:leading-4 [&_ol]:ps-4 [&_ul]:ps-3.5" />
                     </div>
                 </div>
             </div>
