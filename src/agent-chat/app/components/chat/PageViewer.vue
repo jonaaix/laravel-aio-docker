@@ -44,6 +44,7 @@ const frameHeight = ref<number | null>(null);
 const dragging = ref(false);
 const codeOpen = ref(false);
 const codeMounted = ref(false);
+const frameReady = ref(false);
 
 const shownWidth = computed(() => frameWidth.value ?? stageSize.width);
 const shownHeight = computed(() => frameHeight.value ?? stageSize.height);
@@ -148,6 +149,8 @@ const frameStyle = computed(() => {
         v-model:open="open"
         :title="title"
         :content="{ onOpenAutoFocus: focusWindow }"
+        @after:enter="frameReady = true"
+        @after:leave="frameReady = false"
         :ui="{ content: 'w-[min(96vw,1600px)] max-w-none h-[calc(100vh-1rem)] max-h-none sm:max-h-none max-sm:h-dvh max-sm:w-screen max-sm:rounded-none max-sm:ring-0', body: 'flex flex-1 p-0 sm:p-0 overflow-hidden', footer: 'justify-between' }"
     >
         <template #actions>
@@ -163,8 +166,9 @@ const frameStyle = computed(() => {
         </template>
         <template #body>
             <div ref="stage" class="flex flex-1 items-center justify-center overflow-hidden bg-muted sm:px-4" :class="{ 'py-4': frameHeight !== null }">
-                <div class="relative" :style="frameBoxStyle">
+                <div class="relative bg-white" :style="frameBoxStyle">
                     <iframe
+                        v-if="frameReady"
                         :src="src"
                         :title="title"
                         sandbox="allow-scripts"
