@@ -148,12 +148,15 @@ onBeforeUnmount(() => {
                                 <span v-if="unread.isUnread(item.id)" class="size-2 shrink-0 rounded-full bg-primary" :aria-label="t('Unread')" />
                             </span>
                             <span class="mt-0.5 flex items-center gap-1.5 text-xs font-normal text-muted">
-                                <template v-if="item.creatorName">
-                                    <span class="min-w-0 truncate">{{ item.creatorName }}</span>
-                                    <span aria-hidden="true">·</span>
-                                </template>
-                                <span class="shrink-0 tabular-nums">{{ formatRelativeTime(item.lastActivityAt, now) }}</span>
-                                <ChatSessionPill v-if="!item.paused" :state="item.session" class="ms-auto" />
+                                <span class="flex min-w-0 items-center gap-1.5" :class="{ 'light-streak': item.session.live }">
+                                    <template v-if="item.creatorName">
+                                        <span class="min-w-0 truncate">{{ item.creatorName }}</span>
+                                        <span aria-hidden="true">·</span>
+                                    </template>
+                                    <span class="shrink-0 tabular-nums">{{ formatRelativeTime(item.lastActivityAt, now) }}</span>
+                                </span>
+                                <ChatWorkingDots v-if="item.session.live" :label="t(item.session.label)" class="ms-auto" />
+                                <ChatSessionPill v-else-if="!item.paused" :state="item.session" class="ms-auto" />
                             </span>
                         </template>
                         <span v-else class="block truncate">{{ item.label }}</span>
