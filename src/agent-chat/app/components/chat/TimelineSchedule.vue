@@ -13,12 +13,17 @@ const MINUTES_PER_DAY = 1440;
 const chatPlugins = useChatMarkdownPlugins();
 
 const expanded = ref<string | null>(null);
+const expandedShift = ref(0);
 
 function expandWhenClipped(key: string, event: MouseEvent): void {
     const card = event.currentTarget as HTMLElement;
-    if (card.scrollHeight > card.clientHeight + 1) {
-        expanded.value = key;
+    const entry = card.parentElement!;
+    if (card.scrollHeight <= card.clientHeight + 1) {
+        return;
     }
+    const roomBelow = entry.parentElement!.clientHeight - entry.offsetTop - EDGE_PX;
+    expandedShift.value = Math.min(Math.max(0, card.scrollHeight - roomBelow), entry.offsetTop);
+    expanded.value = key;
 }
 
 const layout = computed(() => scheduleLayout(props.group));
@@ -93,8 +98,9 @@ function span(entry: ScheduleEntry): string {
                     </div>
                     <div
                         v-else
-                        class="relative flex min-h-full flex-col overflow-hidden rounded-sm px-2 py-1 ring ring-inset transition-[height,box-shadow] duration-500 ease-out [interpolate-size:allow-keywords]"
+                        class="relative flex min-h-full flex-col overflow-hidden rounded-sm px-2 py-1 ring ring-inset transition-[height,box-shadow,translate] duration-500 ease-out [interpolate-size:allow-keywords]"
                         :class="[timelineBlockLook(entry.item.state), expanded === `${laneIndex}-${index}` ? 'h-auto shadow-lg' : 'h-full']"
+                        :style="expanded === `${laneIndex}-${index}` ? { translate: `0 -${expandedShift}px` } : undefined"
                         @mouseenter="expandWhenClipped(`${laneIndex}-${index}`, $event)"
                         @mouseleave="expanded = null"
                     >
