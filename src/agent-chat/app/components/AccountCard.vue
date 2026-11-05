@@ -9,7 +9,7 @@ const settingsWindow = useSettingsWindow();
 function usageLine(account: AccountSummary): string | undefined {
     const parts = [['Session', account.usage?.session], ['Week', account.usage?.week]]
         .filter((entry): entry is [string, UsageWindow] => Boolean(entry[1]))
-        .map(([label, limit]) => `${t(label)} ${limit.limited ? t('Limit reached') : formatPercent(limit.utilization)}`);
+        .map(([label, limit]) => `${t(label)} ${formatPercent(limit.utilization)}`);
     return parts.length > 0 ? parts.join(' · ') : undefined;
 }
 

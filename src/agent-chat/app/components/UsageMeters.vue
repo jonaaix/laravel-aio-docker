@@ -38,7 +38,7 @@ function meterColor(limit: UsageWindow): 'error' | 'warning' | 'neutral' {
                     {{ expired(meter.limit) ? t('Reset since last update') : t('Resets {time}', { time: formatClockTime(meter.limit.resetsAt) }) }}
                 </span>
                 <span class="text-muted tabular-nums" :class="meter.limit.limited ? 'text-error' : ''">
-                    {{ meter.limit.limited ? t('Limit reached') : formatPercent(meter.limit.utilization) }}
+                    {{ formatPercent(meter.limit.utilization) }}
                 </span>
             </div>
             <UProgress :model-value="Math.round(meter.limit.utilization * 100)" :color="meterColor(meter.limit)" size="xs" :class="expired(meter.limit) ? 'opacity-50' : ''" />
