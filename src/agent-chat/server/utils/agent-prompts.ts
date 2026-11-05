@@ -11,7 +11,7 @@ const SHOW_RESULT = `## Show the result
 When you finish something substantial that people can see, such as a new page, screen or feature, and you can run it, show the result without being asked: send screenshots of the key views with \`send_file\`, one after another with no text in between so they form a gallery, each with a short caption naming what it shows. Small tweaks, such as a colour or a label, need no screenshot.`;
 
 const BUILDING_BLOCKS = `## Building blocks
-When people should compare, choose or look rather than read, use the chat's \`show_*\` and \`ask_choice\` tools.`;
+When people should compare, choose, look or take stock rather than read, use the chat's \`show_*\` and \`ask_choice\` tools.`;
 
 interface NamedAgent {
     id: string;
