@@ -46,9 +46,24 @@ export interface UiChartSeries {
     values: number[];
 }
 
+export type UiTimelineState = 'done' | 'active' | 'open';
+
+export interface UiTimelineItem {
+    title: string;
+    marker: string | null;
+    text: string | null;
+    state: UiTimelineState | null;
+}
+
+export interface UiTimelineGroup {
+    heading: string | null;
+    items: UiTimelineItem[];
+}
+
 export type UiBlock =
     | { kind: 'page'; title: string | null; page: UiPage }
     | { kind: 'variants'; title: string | null; columns: UiVariantColumns; viewport: UiViewport; options: UiVariant[]; recommended: string | null; multiple?: boolean }
     | { kind: 'choice'; question: string; options: UiOption[]; recommended: string | null; multiple?: boolean }
     | { kind: 'cards'; sections: UiCardSection[] }
-    | { kind: 'chart'; title: string | null; chartType: UiChartType; labels: string[]; series: UiChartSeries[]; unit: string | null };
+    | { kind: 'chart'; title: string | null; chartType: UiChartType; labels: string[]; series: UiChartSeries[]; unit: string | null }
+    | { kind: 'timeline'; groups: UiTimelineGroup[] };

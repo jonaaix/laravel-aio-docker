@@ -1,4 +1,4 @@
-import type { UiBlock, UiCard, UiCardSection, UiCardStatus, UiChartSeries, UiChartType, UiOption, UiPage, UiVariant, UiVariantColumns, UiViewport } from '../../shared/types/ui-block';
+import type { UiBlock, UiCard, UiCardSection, UiCardStatus, UiChartSeries, UiChartType, UiTimelineGroup, UiTimelineState, UiOption, UiPage, UiVariant, UiVariantColumns, UiViewport } from '../../shared/types/ui-block';
 
 const LETTERS = 'abcdef';
 const MIN_OPTIONS = 2;
@@ -9,6 +9,9 @@ const MAX_SECTIONS = 6;
 const MAX_LABELS = 100;
 const CHART_TYPES: UiChartType[] = ['line', 'bar', 'stacked_bar', 'pie', 'doughnut'];
 const MAX_SERIES = 8;
+const MAX_GROUPS = 8;
+const MAX_ITEMS = 30;
+const TIMELINE_STATES: UiTimelineState[] = ['done', 'active', 'open'];
 const CANVAS_COLUMNS: Record<string, UiVariantColumns> = { small: 2, large: 1 };
 const CANVASES = Object.keys(CANVAS_COLUMNS);
 const VIEWPORT_WIDTH = { min: 320, max: 2560, fallback: 1280 };
@@ -166,6 +169,43 @@ export const UI_BLOCK_TOOLS = [
             required: ['type', 'labels', 'series'],
         },
     },
+    {
+        name: 'show_timeline',
+        description: 'Show a sequence as a timeline: the steps of a plan or task, the course of events, or a grouped list.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                groups: {
+                    type: 'array',
+                    minItems: 1,
+                    maxItems: MAX_GROUPS,
+                    items: {
+                        type: 'object',
+                        properties: {
+                            heading: { type: 'string', description: 'Optional heading of the group, such as a day or a phase.' },
+                            items: {
+                                type: 'array',
+                                minItems: 1,
+                                maxItems: MAX_ITEMS,
+                                items: {
+                                    type: 'object',
+                                    properties: {
+                                        title: { type: 'string' },
+                                        marker: { type: 'string', description: 'Optional short mark beside the line, such as a time, a date or "Step 2".' },
+                                        text: { type: 'string', description: 'Optional short text; Markdown allowed.' },
+                                        state: { type: 'string', enum: TIMELINE_STATES, description: 'Optional: done, active or open.' },
+                                    },
+                                    required: ['title'],
+                                },
+                            },
+                        },
+                        required: ['items'],
+                    },
+                },
+            },
+            required: ['groups'],
+        },
+    },
 ];
 
 export const UI_BLOCK_TOOL_NAMES = new Set(UI_BLOCK_TOOLS.map(tool => tool.name));
@@ -316,6 +356,30 @@ function chartOf(args: Record<string, unknown>): UiBlock {
     return { kind: 'chart', title: optionalText(args.title, 'title'), chartType, labels, series, unit: optionalText(args.unit, 'unit') };
 }
 
+function timelineOf(value: unknown): UiTimelineGroup[] {
+    if (!Array.isArray(value) || value.length < 1 || value.length > MAX_GROUPS) {
+        throw new Error(`groups must list 1 to ${MAX_GROUPS} groups.`);
+    }
+    return value.map((group: unknown, groupIndex) => {
+        const { heading, items } = (typeof group === 'object' && group !== null ? group : {}) as Record<string, unknown>;
+        if (!Array.isArray(items) || items.length < 1 || items.length > MAX_ITEMS) {
+            throw new Error(`groups[${groupIndex}].items must list 1 to ${MAX_ITEMS} items.`);
+        }
+        return {
+            heading: optionalText(heading, `groups[${groupIndex}].heading`),
+            items: items.map((item: unknown, index) => {
+                const name = `groups[${groupIndex}].items[${index}]`;
+                const { title, marker, text, state } = (typeof item === 'object' && item !== null ? item : {}) as Record<string, unknown>;
+                const named = optionalText(state, `${name}.state`);
+                if (named !== null && !TIMELINE_STATES.includes(named as UiTimelineState)) {
+                    throw new Error(`${name}.state must be one of ${TIMELINE_STATES.join(', ')}.`);
+                }
+                return { title: requiredText(title, `${name}.title`), marker: optionalText(marker, `${name}.marker`), text: optionalText(text, `${name}.text`), state: named as UiTimelineState | null };
+            }),
+        };
+    });
+}
+
 export function uiBlockFor(tool: string, args: Record<string, unknown>, storePage: PageStore): UiBlock {
     if (tool === 'ask_choice') {
         const question = requiredText(args.question, 'question');
@@ -323,6 +387,9 @@ export function uiBlockFor(tool: string, args: Record<string, unknown>, storePag
         return { kind: 'choice', question, options, recommended: recommendedOf(args.recommended, options), multiple: multipleOf(args.multiple) };
     }
     const title = optionalText(args.title, 'title');
+    if (tool === 'show_timeline') {
+        return { kind: 'timeline', groups: timelineOf(args.groups) };
+    }
     if (tool === 'show_chart') {
         return chartOf(args);
     }

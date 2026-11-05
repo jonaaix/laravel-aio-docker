@@ -57,3 +57,11 @@ test('a chart needs one number per label and one series for a pie', () => {
     assert.throws(() => uiBlockFor('show_chart', { type: 'pie', labels: ['A', 'B'], series: [{ name: 'X', values: [1, 2] }, { name: 'Y', values: [1, 2] }] }, storePage), /exactly one series/);
     assert.throws(() => uiBlockFor('show_chart', { type: 'radar', labels: ['A'], series: [{ name: 'X', values: [1] }] }, storePage), /type must be one of/);
 });
+
+test('a timeline keeps groups, markers and states', () => {
+    assert.deepEqual(uiBlockFor('show_timeline', { groups: [{ heading: 'Today', items: [{ title: 'Deploy', marker: '09:30', state: 'done' }, { title: 'Review' }] }] }, storePage), {
+        kind: 'timeline',
+        groups: [{ heading: 'Today', items: [{ title: 'Deploy', marker: '09:30', text: null, state: 'done' }, { title: 'Review', marker: null, text: null, state: null }] }],
+    });
+    assert.throws(() => uiBlockFor('show_timeline', { groups: [{ items: [{ title: 'X', state: 'late' }] }] }, storePage), /done, active, open/);
+});

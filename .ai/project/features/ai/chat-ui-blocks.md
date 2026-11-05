@@ -1,7 +1,7 @@
 ---
 id: ai-chat-ui-blocks
 created: 2026-11-05
-tags: [chat, agents, mcp, design-alternatives, choices]
+tags: [chat, agents, mcp, design-alternatives, choices, timeline]
 ---
 
 # Building blocks agents place in the chat
@@ -78,6 +78,14 @@ named series, with an optional title and unit. The chat draws it at a fixed heig
 from the accent colour, the legend on top, the values with their unit on hover, following light and dark mode and a
 change of the accent colour. Reading aloud names only its title.
 
+### Timeline
+
+For a sequence — the steps of a plan or task, the course of events, or a grouped list — the agent shows a timeline: a
+vertical line with one dot per entry. Entries can be grouped, each group under its own heading, and all groups come in
+one block. An entry has a title, optionally a short mark beside the line (a time, a date, "Step 2") and a short text.
+It can carry a state: done shows a filled dot in the accent colour, running a pulsing one, open a hollow one; without a
+state the dot stays neutral. Marks line up in one column across all groups. Reading aloud reads headings and entries in order.
+
 ### Picking
 
 In variants and choices, clicking an option — for variants anywhere on its card — puts it into the message field as its letter and name, such as
@@ -101,5 +109,7 @@ Nothing half-built reaches the chat.
   page below its next answer, while the first one still shows the old state.
 - Checking a deployment, the agent shows a red section "Problem" with the mail card ("No SMTP host set") above a green
   section "Fine" with database, queue and storage.
+- Reporting a release, the agent shows a timeline "Today" with two done steps at 09:30 and 09:42 and a running
+  meeting at 10:00, and "Tomorrow" with the open review at 14:00.
 - The agent asks in a choice card which of three export formats to use, each with a one-line description; the person
   clicks b), which appears as "b) CSV" in the message field.

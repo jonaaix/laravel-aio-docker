@@ -16,6 +16,9 @@ function blockSpeech(block: UiBlock): string[] {
     if (block.kind === 'cards') {
         return block.sections.map(section => [sentence(section.heading), ...section.cards.map(card => sentence(card.text ? `${card.title}: ${card.text}` : card.title))].join(' '));
     }
+    if (block.kind === 'timeline') {
+        return block.groups.map(group => [group.heading ? sentence(group.heading) : '', ...group.items.map(item => sentence([item.marker, item.title].filter(Boolean).join(' ') + (item.text ? `: ${item.text}` : '')))].filter(Boolean).join(' '));
+    }
     if (block.kind === 'page' || block.kind === 'chart') {
         return block.title ? [sentence(block.title)] : [];
     }

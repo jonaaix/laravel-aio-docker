@@ -16,6 +16,7 @@ const chatPlugins = useChatMarkdownPlugins();
         </figcaption>
         <ChatUiPage v-if="block.kind === 'page'" :page="block.page" :title="block.title" />
         <ChatUiCards v-if="block.kind === 'cards'" :sections="block.sections" />
+        <ChatUiTimeline v-if="block.kind === 'timeline'" :groups="block.groups" />
         <ChatUiChart v-if="block.kind === 'chart'" :chart-type="block.chartType" :labels="block.labels" :series="block.series" :unit="block.unit" />
         <ChatUiVariants
             v-if="block.kind === 'variants'"

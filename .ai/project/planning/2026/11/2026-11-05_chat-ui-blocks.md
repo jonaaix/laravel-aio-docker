@@ -19,11 +19,12 @@ message field.
       thin scrollbar injected by the page route
 - [ ] User check: a new conversation (tools load at session start) asked for design alternatives
 - [x] Second step: cards (`show_cards`, up to 12, optional status good / warning / bad tinting the whole card)
+- [x] Timeline (`show_timeline`): groups with optional heading, entries with mark, text and state done / active / open
 
 ## State
 
 - Built: tools in `server/utils/ui-blocks.ts` (validation tested in `tests/ui-blocks.test.ts`), page route
-  `conversations/[id]/pages/[name]`, components `UiBlock`, `UiPage`, `UiOptions`, `UiCards`, `OptionRow` (shared with the question
+  `conversations/[id]/pages/[name]`, components `UiBlock`, `UiPage`, `UiOptions`, `UiCards`, `UiChart`, `UiTimeline`, `OptionRow` (shared with the question
   card), pick bridge `useBlockPicks`.
 - Not yet seen with a real agent answer.
 
@@ -35,6 +36,7 @@ message field.
 - Page, variants and choice first, cards second (user, 185a).
 - The "❓ Questions" question cards stay; the choice block is an addition, used when the prompt asks for it (user, 186a).
 - One tool per block instead of one tool with a kind field: each schema stays small and exact for the model.
+- Timeline replaces the step-list idea: states done / running / open as dots, marks in a narrow column left of the line (user, 240a, 241a).
 - Screen sizes in the larger view use the device's full screen, not the browser's visible area (user, 196b).
 - Variants: each its own HTML file shown as a selectable card with a scaled live preview, radio button top left; the
   agent picks a small (350 px, two per row) or large (740 px, one per row) canvas (user). One page for all variants was no different from show_page.
