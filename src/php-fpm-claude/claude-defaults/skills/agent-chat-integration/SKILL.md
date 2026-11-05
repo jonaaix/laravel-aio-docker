@@ -10,16 +10,15 @@ signs these links. The Laravel app is the door: for its signed-in user it asks t
 sends the browser there. Opening the link signs that person in to that browser for good, until the
 chat's key changes.
 
-Two values connect the app to the chat: its address and its key. The chat creates its key on its first start and
-keeps it in `/home/laravel/.config/agent-chat/chat-key`; the app reads it from there, so it never needs copying.
-Only a chat that runs somewhere else is given the key through `AGENT_CHAT_KEY` in `.env`, the same value that chat
-runs with as `NUXT_CHAT_KEY`.
+The app reaches the chat at `http://localhost:3000` inside this container; that never changes. The browser reaches
+it at the chat's public address, `AGENT_CHAT_URL` in `.env` — ask the user for it if it is not set. The chat creates
+its key on its first start and keeps it in `/home/laravel/.config/agent-chat/chat-key`; the app reads it from there.
 
 ```php
 // config/services.php
 'agent_chat' => [
-    'url' => env('AGENT_CHAT_URL', 'http://localhost:3000'),
-    'key' => env('AGENT_CHAT_KEY') ?: trim((string) @file_get_contents('/home/laravel/.config/agent-chat/chat-key')),
+    'url' => env('AGENT_CHAT_URL'),
+    'key' => trim((string) @file_get_contents('/home/laravel/.config/agent-chat/chat-key')),
 ],
 ```
 
@@ -30,8 +29,8 @@ The key is a secret. It never reaches the browser and is never committed, logged
 Server-side only:
 
 ```http
-POST {AGENT_CHAT_URL}/api/auth/links
-Authorization: Bearer {AGENT_CHAT_KEY}
+POST http://localhost:3000/api/auth/links
+Authorization: Bearer {chat key}
 Content-Type: application/json
 
 { "name": "Ada Lovelace", "userRef": "42", "avatarUrl": "https://example.com/ada.png" }
@@ -57,7 +56,7 @@ Route::get('/agent-chat', function (Request $request) {
 
     $link = Http::withToken($chat['key'])
         ->acceptJson()
-        ->post("{$chat['url']}/api/auth/links", array_filter([
+        ->post('http://localhost:3000/api/auth/links', array_filter([
             'name' => $user->name,
             'userRef' => (string) $user->getKey(),
             'avatarUrl' => $user->avatar_url,
@@ -112,8 +111,3 @@ If it is not clear which area should get the chat, ask the user before adding th
   `frame-ancestors 'self'` allow that; `DENY` or `frame-ancestors 'none'` on that route make the sign-in fail.
 - Fixed elements of the app (sticky headers, toasts) do not move with the page when the panel opens. That is
   accepted; do not rework the app's layout for it.
-
-## Not settled yet
-
-- The chat's address inside this container is not fixed yet. Until it is, ask the user for it and put it into
-  `.env` as `AGENT_CHAT_URL`.
