@@ -38,17 +38,24 @@ const sidebarCollapsed = ref(false);
 
 const items = computed<NavigationMenuItem[][]>(() => groupByRecency(conversations.value).map(group => [
     { label: t(group.label), type: 'label' },
-    ...group.conversations.map(conversation => ({
-        label: conversation.title,
-        id: conversation.id,
-        to: `/c/${conversation.id}`,
-        session: sessionState(conversation.status, conversation.turnActive, conversation.backgroundTasks.length),
-        paused: conversation.status !== 'running' && !conversation.turnActive,
-        creatorName: chatName(conversation.creatorId),
-        lastActivityAt: conversation.lastActivityAt,
-        reading: speech.speakingId.value !== null && speech.conversationId.value === conversation.id,
-    })).map(item => ({ ...item, class: item.reading ? 'aria-[current=page]:before:ring-0' : undefined })),
+    ...group.conversations.map((conversation) => {
+        const reading = speech.speakingId.value !== null && speech.conversationId.value === conversation.id;
+        return {
+            label: conversation.title,
+            id: conversation.id,
+            to: `/c/${conversation.id}`,
+            session: sessionState(conversation.status, conversation.turnActive, conversation.backgroundTasks.length),
+            paused: conversation.status !== 'running' && !conversation.turnActive,
+            creatorName: chatName(conversation.creatorId),
+            lastActivityAt: conversation.lastActivityAt,
+            reading,
+            class: reading ? 'aria-[current=page]:before:ring-0' : undefined,
+            tooltip: { disabled: true },
+        };
+    }),
 ]));
+
+const entryCardId = ref<string | null>(null);
 
 let unsubscribe: (() => void) | undefined;
 
@@ -151,40 +158,57 @@ onBeforeUnmount(() => {
                     :ui="{ link: ['overflow-hidden py-1.5 before:transition-colors before:duration-500 before:ease-out hover:before:bg-primary/8 aria-[current=page]:before:bg-primary/12 aria-[current=page]:text-(--nav-current)', collapsed ? 'mx-auto size-10 justify-center overflow-visible p-0 before:inset-0 before:rounded-full aria-[current=page]:before:ring-2 aria-[current=page]:before:ring-inset aria-[current=page]:before:ring-primary' : 'gap-3'], linkLabel: 'min-w-0 flex-1' }"
                 >
                     <template #item-leading="{ item }">
-                        <span
+                        <UPopover
                             v-if="item.session"
-                            class="relative flex shrink-0 items-center justify-center self-center rounded-full bg-default ring ring-default dark:bg-elevated/50"
-                            :class="collapsed ? 'size-8' : 'size-7'"
+                            mode="hover"
+                            :open="collapsed && entryCardId === item.id"
+                            :open-delay="300"
+                            :content="{ side: 'right', sideOffset: 10 }"
+                            :ui="{ content: 'flex w-72 gap-3 rounded-xl p-3' }"
+                            @update:open="open => entryCardId = open && collapsed ? item.id : null"
                         >
-                            <img :src="chatAvatarUri(item.id)" alt="" class="size-full rounded-full">
-                            <template v-if="item.reading">
-                                <VoiceRing class="absolute -inset-1" />
-                                <span class="sr-only">{{ t('Reading aloud') }}</span>
+                            <span
+                                class="relative flex shrink-0 items-center justify-center self-center rounded-full bg-default ring ring-default after:absolute after:-inset-1 after:rounded-full dark:bg-elevated/50"
+                                :class="collapsed ? 'size-8' : 'size-7'"
+                            >
+                                <img :src="chatAvatarUri(item.id)" alt="" class="size-full rounded-full">
+                                <template v-if="item.reading">
+                                    <VoiceRing class="absolute -inset-1" />
+                                    <span class="sr-only">{{ t('Reading aloud') }}</span>
+                                </template>
+                                <template v-if="collapsed">
+                                    <span v-if="unread.isUnread(item.id)" class="absolute -end-0.5 -top-0.5 size-2 rounded-full bg-primary ring-2 ring-(--ui-bg-muted)" :aria-label="t('Unread')" />
+                                    <span v-if="item.session.live" class="light-ring pointer-events-none absolute -inset-[3px] rounded-full" role="status" :aria-label="t(item.session.label)" />
+                                </template>
+                            </span>
+                            <template #content>
+                                <img :src="chatAvatarUri(item.id)" alt="" class="size-7 shrink-0 self-center rounded-full ring ring-default">
+                                <span class="min-w-0 flex-1 text-sm font-medium text-default">
+                                    <ChatConversationEntry
+                                        :title="item.label"
+                                        :creator-name="item.creatorName"
+                                        :last-activity-at="item.lastActivityAt"
+                                        :session="item.session"
+                                        :paused="item.paused"
+                                        :unread="unread.isUnread(item.id)"
+                                        :now="now"
+                                        wrap-title
+                                    />
+                                </span>
                             </template>
-                            <template v-if="collapsed">
-                                <span v-if="unread.isUnread(item.id)" class="absolute -end-0.5 -top-0.5 size-2 rounded-full bg-primary ring-2 ring-(--ui-bg-muted)" :aria-label="t('Unread')" />
-                                <span v-if="item.session.live" class="light-ring pointer-events-none absolute -inset-[3px] rounded-full" role="status" :aria-label="t(item.session.label)" />
-                            </template>
-                        </span>
+                        </UPopover>
                     </template>
                     <template #item-label="{ item }">
-                        <template v-if="item.session">
-                            <span class="flex items-center gap-1.5">
-                                <span class="block truncate" :class="[unread.isUnread(item.id) ? 'font-semibold text-highlighted' : '', { 'light-streak text-muted!': item.session.live }]">{{ item.label }}</span>
-                                <span v-if="unread.isUnread(item.id)" class="size-2 shrink-0 rounded-full bg-primary" :aria-label="t('Unread')" />
-                            </span>
-                            <span class="mt-0.5 flex items-center gap-1.5 text-xs font-normal text-muted">
-                                <span class="flex min-w-0 items-center gap-1.5" :class="{ 'light-streak': item.session.live }">
-                                    <template v-if="item.creatorName">
-                                        <span class="min-w-0 truncate">{{ item.creatorName }}</span>
-                                        <span aria-hidden="true">·</span>
-                                    </template>
-                                    <span class="shrink-0 tabular-nums">{{ formatRelativeTime(item.lastActivityAt, now) }}</span>
-                                </span>
-                                <ChatWorkingDots v-if="item.session.live" :label="t(item.session.label)" class="ms-auto" />
-                                <ChatSessionPill v-else-if="!item.paused" :state="item.session" class="ms-auto" />
-                            </span>
-                        </template>
+                        <ChatConversationEntry
+                            v-if="item.session"
+                            :title="item.label"
+                            :creator-name="item.creatorName"
+                            :last-activity-at="item.lastActivityAt"
+                            :session="item.session"
+                            :paused="item.paused"
+                            :unread="unread.isUnread(item.id)"
+                            :now="now"
+                        />
                         <span v-else class="block truncate">{{ item.label }}</span>
                     </template>
                 </UNavigationMenu>
