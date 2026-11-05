@@ -615,9 +615,16 @@ const restoreConversation = () => withFlag(archiving, restore);
                                         </span>
                                     </p>
                                     <template v-else-if="segment.kind === 'compacted'">
-                                        <p v-if="!segment.running || isStreaming(message.id)" class="flex items-center gap-2 text-sm text-muted" :role="segment.running ? 'status' : undefined">
-                                            <UIcon name="i-heroicons-arrows-pointing-in" class="size-4 shrink-0" :class="{ 'motion-safe:animate-pulse': segment.running }" />
-                                            {{ segment.running ? t('Summarizing conversation…') : t('Conversation summarized') }}
+                                        <p v-if="!segment.running || isStreaming(message.id)" class="mb-3 flex items-center gap-2 text-sm text-muted" :role="segment.running ? 'status' : undefined">
+                                            <span v-if="segment.running" class="relative flex size-4 shrink-0 items-center justify-center" aria-hidden="true">
+                                                <span class="absolute inline-flex size-2 rounded-full bg-primary opacity-75 motion-safe:animate-ping" />
+                                                <span class="relative inline-flex size-2 rounded-full bg-primary shadow-[0_0_6px_1px_var(--ui-primary)]" />
+                                            </span>
+                                            <UIcon v-else name="i-heroicons-arrows-pointing-in" class="size-4 shrink-0" />
+                                            <span v-if="segment.running" class="light-streak [--light-streak:white]">{{ t('Summarizing conversation…') }}</span>
+                                            <template v-else>
+                                                {{ t('Conversation summarized') }}
+                                            </template>
                                         </p>
                                     </template>
                                     <ChatUiBlock v-else-if="segment.kind === 'ui-block'" :block="segment.block" :message-id="message.id" />
