@@ -186,7 +186,28 @@ async function pickMention(participant: Participant): Promise<void> {
     updateCaret();
 }
 
+function isNewlineShortcut(event: KeyboardEvent): boolean {
+    return event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && event.code === 'KeyJ';
+}
+
+async function insertNewline(): Promise<void> {
+    const field = textarea();
+    if (!field) {
+        return;
+    }
+    const start = field.selectionStart;
+    text.value = `${text.value.slice(0, start)}\n${text.value.slice(field.selectionEnd)}`;
+    await nextTick();
+    field.setSelectionRange(start + 1, start + 1);
+    updateCaret();
+}
+
 function onKeydown(event: KeyboardEvent): void {
+    if (isNewlineShortcut(event)) {
+        event.preventDefault();
+        void insertNewline();
+        return;
+    }
     if (suggestions.value.length === 0) {
         return;
     }

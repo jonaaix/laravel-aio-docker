@@ -73,6 +73,8 @@ plain red. What the agent changed in files is described in
 Code blocks in answers are highlighted in the language they name, any language highlighting knows; a block
 that names none, or one highlighting does not know, still gets the basic highlighting rather than none.
 
+In the message input, Ctrl+J starts a new line, as Shift+Enter does.
+
 Any message can be copied with one click. To comment on specific passages, the user selects text
 in the conversation and quotes it: the passage lands in the message input as a quote with the
 cursor below it, ready for a comment. Quoting again appends the next passage below what is already
