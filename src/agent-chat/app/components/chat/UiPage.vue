@@ -10,6 +10,7 @@ const src = computed(() => apiUrl(props.page.url));
 </script>
 
 <template>
+    <!-- White in dark mode too: a page without its own background is written for a white canvas. -->
     <iframe
         :src="src"
         :title="title ?? undefined"
