@@ -44,8 +44,8 @@ function choose(index: number): void {
             :tabindex="active ? 0 : -1"
             class="flex min-w-0 flex-col gap-2.5 rounded-md p-3 transition-colors duration-500 ease-out"
             :class="[
-                isChosen(index) ? 'bg-primary/5 ring-2 ring-primary' : 'ring ring-default',
-                active ? 'cursor-pointer hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary' : '',
+                isChosen(index) ? 'bg-primary/5 ring-2 ring-primary dark:bg-primary/15' : 'ring ring-default',
+                active ? 'cursor-pointer hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary dark:hover:bg-primary/10' : '',
             ]"
             @click="choose(index)"
             @keydown.enter.prevent="choose(index)"
