@@ -20,7 +20,6 @@ export const users = sqliteTable('users', {
     changesPanelHidden: integer('changes_panel_hidden', { mode: 'boolean' }).notNull().default(false),
     changesPanelAuto: integer('changes_panel_auto', { mode: 'boolean' }).notNull().default(true),
     doneSound: integer('done_sound', { mode: 'boolean' }).notNull().default(true),
-    scaledPreviews: integer('scaled_previews', { mode: 'boolean' }).notNull().default(false),
     thinkingAutoOpen: integer('thinking_auto_open', { mode: 'boolean' }).notNull().default(true),
     workingAutoOpen: integer('working_auto_open', { mode: 'boolean' }).notNull().default(true),
     tint: integer('tint'),

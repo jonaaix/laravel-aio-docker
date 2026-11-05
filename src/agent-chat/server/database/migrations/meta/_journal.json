@@ -281,6 +281,13 @@
       "when": 1793919873850,
       "tag": "0039_user_auto_open_blocks",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "6",
+      "when": 1793920544556,
+      "tag": "0040_drop_user_scaled_previews",
+      "breakpoints": true
     }
   ]
 }

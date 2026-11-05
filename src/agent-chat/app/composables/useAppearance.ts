@@ -62,7 +62,6 @@ export function useAppearance() {
     const changesPanelHidden = computed(() => user.value?.changesPanelHidden ?? false);
     const changesPanelAuto = computed(() => user.value?.changesPanelAuto ?? true);
     const doneSound = computed(() => user.value?.doneSound ?? true);
-    const scaledPreviews = computed(() => user.value?.scaledPreviews ?? false);
     const thinkingAutoOpen = computed(() => user.value?.thinkingAutoOpen ?? true);
     const workingAutoOpen = computed(() => user.value?.workingAutoOpen ?? true);
     const language = computed(() => locale.value);
@@ -80,7 +79,7 @@ export function useAppearance() {
         }
     }
 
-    async function save(changes: { colorMode?: ColorModeChoice; font?: string; language?: string; pinSentMessage?: boolean; changesPanelHidden?: boolean; changesPanelAuto?: boolean; doneSound?: boolean; scaledPreviews?: boolean; thinkingAutoOpen?: boolean; workingAutoOpen?: boolean; tint?: number | null; speechRate?: number; speechVoice?: { provider: SpeechProvider; voice: string } }): Promise<void> {
+    async function save(changes: { colorMode?: ColorModeChoice; font?: string; language?: string; pinSentMessage?: boolean; changesPanelHidden?: boolean; changesPanelAuto?: boolean; doneSound?: boolean; thinkingAutoOpen?: boolean; workingAutoOpen?: boolean; tint?: number | null; speechRate?: number; speechVoice?: { provider: SpeechProvider; voice: string } }): Promise<void> {
         if (!user.value) {
             return;
         }
@@ -142,10 +141,6 @@ export function useAppearance() {
         return save({ doneSound: value });
     }
 
-    function setScaledPreviews(value: boolean): Promise<void> {
-        return save({ scaledPreviews: value });
-    }
-
     function setThinkingAutoOpen(value: boolean): Promise<void> {
         return save({ thinkingAutoOpen: value });
     }
@@ -154,5 +149,5 @@ export function useAppearance() {
         return save({ workingAutoOpen: value });
     }
 
-    return { font, mode, language, pinSentMessage, changesPanelHidden, changesPanelAuto, doneSound, scaledPreviews, thinkingAutoOpen, workingAutoOpen, tint, speechRate, adopt, setColorMode, setFont, setLanguage, setPinSentMessage, setChangesPanelHidden, setChangesPanelAuto, setDoneSound, setScaledPreviews, setThinkingAutoOpen, setWorkingAutoOpen, setSpeechRate, speechVoiceFor, setSpeechVoice, setTint };
+    return { font, mode, language, pinSentMessage, changesPanelHidden, changesPanelAuto, doneSound, thinkingAutoOpen, workingAutoOpen, tint, speechRate, adopt, setColorMode, setFont, setLanguage, setPinSentMessage, setChangesPanelHidden, setChangesPanelAuto, setDoneSound, setThinkingAutoOpen, setWorkingAutoOpen, setSpeechRate, speechVoiceFor, setSpeechVoice, setTint };
 }

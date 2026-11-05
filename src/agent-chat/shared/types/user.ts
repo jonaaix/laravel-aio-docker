@@ -11,7 +11,6 @@ export interface ChatUser {
     changesPanelHidden: boolean;
     changesPanelAuto: boolean;
     doneSound: boolean;
-    scaledPreviews: boolean;
     thinkingAutoOpen: boolean;
     workingAutoOpen: boolean;
     tint: number | null;

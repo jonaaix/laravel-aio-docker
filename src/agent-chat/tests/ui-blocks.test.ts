@@ -9,7 +9,7 @@ test('variants are lettered in order, each with its own page, and keep the recom
     const block = uiBlockFor('ask_visual_choice', { canvas: 'small', variants: [{ path: 'a.html', title: 'Cards' }, { path: 'b.html', title: 'Table', description: 'Dense' }], recommended: true }, storePage);
     assert.ok(block.kind === 'variants');
     assert.equal(block.columns, 2);
-    assert.deepEqual(block.viewport, { width: 1280, height: 800 });
+    assert.deepEqual(block.viewport, { height: 800 });
     assert.deepEqual(block.options.map(option => [option.letter, option.title, option.description, option.page.url]), [['a', 'Cards', null, 'pages/a.html'], ['b', 'Table', 'Dense', 'pages/b.html']]);
     assert.equal(block.recommended, 'a');
 });

@@ -49,8 +49,7 @@ small key cap that works as its radio button — filled in the accent colour onc
 name, option a) — always the recommendation when there is one — marked by a filled "Recommended" badge right after the
 name, an
 optional short description beneath the name, and a live preview of the variant at the card's full width and the
-height the agent gives it, laid out for that width as a real page would be. Under Settings → Chat the previews can
-instead be scaled down from the screen width the agent designed the variants for. The preview can be used like the page itself — clicked, scrolled, text selected; selecting the
+height the agent gives it, laid out for that width as a real page would be, one pixel per pixel and never scaled. The preview can be used like the page itself — clicked, scrolled, text selected; selecting the
 variant takes a click on the card outside the preview. The agent chooses a small canvas
 (about 350 px, two cards side by side) or a large one (about 740 px, one card per row); on a phone they always stand one
 per row. A button on each card opens that variant in the large window with its screen sizes, code and download; there

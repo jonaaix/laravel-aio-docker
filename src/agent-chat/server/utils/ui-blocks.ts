@@ -18,7 +18,6 @@ const DATED_TIME = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{1,2}):(\d{2})$/;
 const TIMELINE_STATES: UiTimelineState[] = ['done', 'active', 'open'];
 const CANVAS_COLUMNS: Record<string, UiVariantColumns> = { small: 2, large: 1 };
 const CANVASES = Object.keys(CANVAS_COLUMNS);
-const VIEWPORT_WIDTH = { min: 320, max: 2560, fallback: 1280 };
 const VIEWPORT_HEIGHT = { min: 240, max: 1600, fallback: 800 };
 const CARD_STATUSES: UiCardStatus[] = ['good', 'warning', 'bad'];
 
@@ -66,8 +65,7 @@ export const UI_BLOCK_TOOLS = [
             properties: {
                 title: { type: 'string', description: 'Optional short title shown above the cards.' },
                 canvas: { type: 'string', enum: CANVASES, description: 'Choose the best suitable between small canvas (350px), e.g. buttons, radios, icons, and large canvas (740px), e.g. cards, tables, forms, pages.' },
-                viewport_width: { type: 'integer', description: `Only used when previews are scaled down: the width the variants are designed for, ${VIEWPORT_WIDTH.min}–${VIEWPORT_WIDTH.max}. Default ${VIEWPORT_WIDTH.fallback}.` },
-                viewport_height: { type: 'integer', description: `How tall each preview is at that width, ${VIEWPORT_HEIGHT.min}–${VIEWPORT_HEIGHT.max}. Default ${VIEWPORT_HEIGHT.fallback}.` },
+                viewport_height: { type: 'integer', description: `How tall each preview is, ${VIEWPORT_HEIGHT.min}–${VIEWPORT_HEIGHT.max}. Default ${VIEWPORT_HEIGHT.fallback}.` },
                 variants: {
                     type: 'array',
                     minItems: MIN_OPTIONS,
@@ -477,7 +475,7 @@ export function uiBlockFor(tool: string, args: Record<string, unknown>, storePag
     }
     if (tool === 'ask_visual_choice') {
         const columns = columnsOf(args.canvas);
-        const viewport = { width: wholeNumber(args.viewport_width, 'viewport_width', VIEWPORT_WIDTH), height: wholeNumber(args.viewport_height, 'viewport_height', VIEWPORT_HEIGHT) };
+        const viewport = { height: wholeNumber(args.viewport_height, 'viewport_height', VIEWPORT_HEIGHT) };
         const options = variantsOf(args, viewport, storePage);
         return { kind: 'variants', title, columns, viewport, options, recommended: recommendedOf(args.recommended, options), multiple: multipleOf(args.multiple) };
     }

@@ -21,7 +21,6 @@ export interface UiVariant extends UiOption {
 export type UiVariantColumns = 1 | 2;
 
 export interface UiViewport {
-    width: number;
     height: number;
 }
 

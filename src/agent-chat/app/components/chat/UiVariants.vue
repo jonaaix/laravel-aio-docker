@@ -13,7 +13,6 @@ const props = defineProps<{
 
 const { t } = useI18n();
 const chatPlugins = useChatMarkdownPlugins();
-const { scaledPreviews } = useAppearance();
 const { active, isChosen, pick } = useOptionPick(() => props.options, () => props.messageId, () => props.multiple);
 
 const viewedIndex = ref<number | null>(null);
@@ -71,7 +70,7 @@ function choose(index: number): void {
                     <Markdown v-if="option.description" :value="option.description" :plugins="chatPlugins" class="text-sm text-muted *:my-0" />
                 </div>
             </div>
-            <ChatPreviewFrame :src="apiUrl(option.page.url)" :title="option.title" :width="viewport.width" :height="viewport.height" :scaled="scaledPreviews" class="rounded-sm ring ring-default" @click.stop />
+            <ChatPreviewFrame :src="apiUrl(option.page.url)" :title="option.title" :height="viewport.height" class="rounded-sm ring ring-default" @click.stop />
         </div>
     </div>
 

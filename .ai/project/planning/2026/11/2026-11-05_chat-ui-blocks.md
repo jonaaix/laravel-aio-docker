@@ -40,7 +40,7 @@ message field.
 - Timeline replaces the step-list idea: states done / running / open as dots, marks in a narrow column left of the line (user, 240a, 241a).
 - Lanes and spans extend `show_timeline` rather than a separate block; times draw a calendar-like day with time running down, lanes swipe sideways on a phone with the time column fixed (user, 242a–244a).
 - Screen sizes in the larger view use the device's full screen, not the browser's visible area (user, 196b).
-- Variants: each its own HTML file shown as a selectable card with a scaled live preview, radio button top left; the
+- Variants: each its own HTML file shown as a selectable card with a live preview at one pixel per pixel (a setting to scale it down was removed, user), radio button top left; the
   agent picks a small (350 px, two per row) or large (740 px, one per row) canvas (user). One page for all variants was no different from show_page.
 - Names by intent: `show_…` for what is looked at, `ask_choice` for the block that waits for a reply (user, 188a).
 - Pages are served with `Content-Security-Policy: sandbox allow-scripts`, so even opened directly they never run with
