@@ -21,6 +21,6 @@ defineEmits<{ pick: [] }>();
         <div class="min-w-0 flex-1">
             <slot />
         </div>
-        <UIcon v-if="selected" name="i-heroicons-check" class="mt-1 size-4 shrink-0" />
+        <UIcon name="i-heroicons-check" class="mt-1 size-4 shrink-0" :class="{ invisible: !selected }" />
     </button>
 </template>
