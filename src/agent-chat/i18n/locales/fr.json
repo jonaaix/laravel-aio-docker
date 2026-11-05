@@ -248,7 +248,7 @@
     "Deleted": "Supprimé",
     "Renamed": "Renommé",
     "Binary file": "Fichier binaire",
-    "Committed": "Commité",
+    "Git commit": "Commit Git",
     "Diff shortened": "Diff raccourci",
     "1 file changed | {count} files changed": "1 fichier modifié | {count} fichiers modifiés",
     "Previous change": "Modification précédente",
