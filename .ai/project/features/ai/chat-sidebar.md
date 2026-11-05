@@ -38,7 +38,7 @@ conversation below it in the sidebar — the one above when it was the last, a n
 finds them by title, ignoring case and accents.
 
 Each conversation has a small round picture of its own (a single geometric shape — circle, triangle, hexagon, star or square — on a coloured ground, the same for that conversation every time), shown before its entry. Folded to its icon strip, the sidebar still lists the conversations by that
-picture; resting on a picture opens a small card beside it showing the full entry as the unfolded list shows it — picture, name, creator, last activity and state; the open conversation is circled in the accent colour unless it is being read, an unseen answer shows a dot
+picture; resting on a picture opens a small card beside it (at once when moving straight on from another picture) showing the full entry as the unfolded list shows it — picture, name, creator, last activity and state; the open conversation is circled in the accent colour unless it is being read, an unseen answer shows a dot
 on the picture, a working conversation a slowly turning ring of light around it, and the conversation being read — folded or not — has a fine band
 close around its picture, in a slowly turning, glowing gradient drawn from the accent colour (with Black: black — white in dark mode — with violet and cyan), that billows with the voice actually being heard — its pitches spread around the circle —
 and lies as a thin, still ring while paused.

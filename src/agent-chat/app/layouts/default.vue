@@ -55,7 +55,23 @@ const items = computed<NavigationMenuItem[][]>(() => groupByRecency(conversation
     }),
 ]));
 
+const ENTRY_CARD_DELAY_MS = 300;
 const entryCardId = ref<string | null>(null);
+const entryCardWarm = ref(false);
+let entryCardCooling: ReturnType<typeof setTimeout> | undefined;
+
+function toggleEntryCard(id: string, open: boolean, collapsed: boolean): void {
+    clearTimeout(entryCardCooling);
+    if (open && collapsed) {
+        entryCardId.value = id;
+        entryCardWarm.value = true;
+        return;
+    }
+    if (entryCardId.value === id) {
+        entryCardId.value = null;
+    }
+    entryCardCooling = setTimeout(() => entryCardWarm.value = false, ENTRY_CARD_DELAY_MS);
+}
 
 let unsubscribe: (() => void) | undefined;
 
@@ -162,10 +178,10 @@ onBeforeUnmount(() => {
                             v-if="item.session"
                             mode="hover"
                             :open="collapsed && entryCardId === item.id"
-                            :open-delay="300"
+                            :open-delay="entryCardWarm ? 0 : ENTRY_CARD_DELAY_MS"
                             :content="{ side: 'right', sideOffset: 10 }"
-                            :ui="{ content: 'flex w-72 gap-3 rounded-xl p-3' }"
-                            @update:open="open => entryCardId = open && collapsed ? item.id : null"
+                            :ui="{ content: 'flex w-72 gap-3 rounded-md p-3' }"
+                            @update:open="open => toggleEntryCard(item.id, open, collapsed)"
                         >
                             <span
                                 class="relative flex shrink-0 items-center justify-center self-center rounded-full bg-default ring ring-default after:absolute after:-inset-1 after:rounded-full dark:bg-elevated/50"
