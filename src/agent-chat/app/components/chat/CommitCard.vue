@@ -16,7 +16,7 @@ const shownBody = computed(() => expanded.value || !longBody.value ? props.commi
 <template>
     <div class="rounded-md bg-linear-to-br from-(--ai-gradient-from)/12 via-(--ai-gradient-via)/8 to-(--ai-gradient-to)/12 border border-(--ai-gradient-via)/30 p-3">
         <div class="flex items-center gap-2 text-xs">
-            <span class="flex size-6 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-(--ai-gradient-from) to-(--ai-gradient-via) text-white">
+            <span class="flex size-6 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-(--ai-gradient-from) to-(--ai-gradient-via) text-white dark:text-white">
                 <UIcon name="i-heroicons-check" class="size-4" />
             </span>
             <span class="font-semibold text-highlighted">{{ t('Committed') }}</span>
