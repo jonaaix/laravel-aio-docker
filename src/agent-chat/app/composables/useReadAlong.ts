@@ -67,6 +67,17 @@ function messageRoot(messageId: string): Element | null {
     return document.querySelector(`[data-read-along="${CSS.escape(messageId)}"]`);
 }
 
+let revealPending = false;
+
+function readingTarget(messageId: string, passage: string | undefined): Element | null {
+    const root = messageRoot(messageId);
+    if (!root) {
+        return null;
+    }
+    const range = passage ? rangeFor(textMap(root), passage) : null;
+    return (range ? blockOf(range.startContainer) : null) ?? root.closest('article');
+}
+
 export function useReadAlong() {
     const { speakingId, paused, chunkTexts, currentChunk, jumpTo } = useSpeechPlayer();
     const playingId = computed(() => paused.value ? null : speakingId.value);
@@ -134,5 +145,24 @@ export function useReadAlong() {
         }
     }
 
-    return { follow, mark, jumpToClicked, playingId };
+    function reveal(): boolean {
+        const target = speakingId.value ? readingTarget(speakingId.value, chunkTexts.value[currentChunk.value]) : null;
+        target?.scrollIntoView({ block: 'center', behavior: 'instant' });
+        return target !== null;
+    }
+
+    function requestReveal(): void {
+        revealPending = true;
+    }
+
+    function revealIfRequested(beforeScroll: () => void): void {
+        if (!revealPending) {
+            return;
+        }
+        revealPending = false;
+        beforeScroll();
+        reveal();
+    }
+
+    return { follow, mark, jumpToClicked, playingId, reveal, requestReveal, revealIfRequested };
 }

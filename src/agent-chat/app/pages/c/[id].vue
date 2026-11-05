@@ -362,6 +362,7 @@ onMounted(async () => {
     settled.value = true;
     onScroll();
     readAlong.mark();
+    readAlong.revealIfRequested(releaseBottom);
 });
 
 onBeforeUnmount(() => {

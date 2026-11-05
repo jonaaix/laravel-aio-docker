@@ -30,7 +30,7 @@ languages, recognised by its common words — falling back to the person's chat 
 the prose is read: no code blocks, tool steps, the stop hook line, markdown marks or emoji. The speed is the person's
 reading speed from the settings (Read aloud). Reading goes on when the person moves to another conversation. While a
 message is read, a small player shows the beginning of the message — its first heading, or else its first line — as a link back
-to its conversation, a progress bar along the text with the passage count ("3/8")
+to its conversation that opens it scrolled to the passage being read, a progress bar along the text with the passage count ("3/8")
 — a jump lands on the start of the passage at that spot —, pause and resume (resuming carries on where it paused) with
 "Back 10 seconds" and "Forward 10 seconds" on either side, the reading speed as a menu from 0.5× to 3× in steps of
 0.25× and a button to stop; it sits at the foot of the sidebar right above the account card, and above the message
