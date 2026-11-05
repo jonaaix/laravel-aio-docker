@@ -47,7 +47,7 @@ const PRESET_DESIGNS = ['smiley', 'wow'];
 export const AGENT_PRESET_ROWS = PRESET_DESIGNS.map(design => SMILEY_COLORS.map(color => `${PRESET_PREFIX}${design}-${color}`));
 
 const cache = new Map<string, string>();
-const CHAT_SHAPE_SCALE = 0.85;
+const CHAT_SHAPE_SCALE = 0.8;
 // Shape Grid sizes each shape at random, which reads as sloppiness when a chat picture holds a single shape.
 const CHAT_EXTRA_BACKGROUNDS = ['#f2b6ee', '#e6d3b3', '#d9dce1', '#ff9e8a', '#d6d39c'];
 const chatStyle = new Style({
