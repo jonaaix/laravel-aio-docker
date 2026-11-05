@@ -480,13 +480,20 @@ function pickOption(line: string, siblings: string[]): void {
     focusComposerAtEnd();
 }
 
+function unpickOption(siblings: string[]): void {
+    const [first = '', ...rest] = input.value.trimStart().split('\n');
+    if (siblings.includes(first.trim())) {
+        input.value = rest.join('\n').trimStart();
+    }
+}
+
 function replyTo(messageId: string): string | undefined {
     const index = visibleMessages.value.findIndex(message => message.id === messageId);
     const reply = index === -1 ? undefined : visibleMessages.value.slice(index + 1).find(message => message.role === 'user');
     return reply ? messageText(reply) : undefined;
 }
 
-provide(blockPicksKey, { messageId: answerableMessageId, draft: input, reply: replyTo, pick: pickOption });
+provide(blockPicksKey, { messageId: answerableMessageId, draft: input, reply: replyTo, pick: pickOption, unpick: unpickOption });
 provide(questionAnswersKey, { messageId: answerableMessageId, chosen: chosenOptions, sent: messageId => sentAnswers.value.get(messageId), choose, accept });
 
 async function withFlag(flag: Ref<boolean>, action: () => Promise<void>): Promise<void> {

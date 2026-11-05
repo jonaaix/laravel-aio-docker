@@ -73,8 +73,8 @@ amber, bad red, each with a matching symbol beside the title; cards without a st
 ### Picking
 
 In variants and choices, clicking an option — for variants anywhere on its card — puts it into the message field as its letter and name, such as
-"b) Compact list", on the first line; anything the person has already written stays below it, and clicking another
-option of the same block replaces the line. Nothing is sent until the person sends the message, so they can add to it.
+"b) Compact list", on the first line; anything the person has already written stays below it, clicking another
+option of the same block replaces the line, and clicking the chosen option again takes it out. Nothing is sent until the person sends the message, so they can add to it.
 Options can only be picked on the latest answer while the agent is not working; once the person has answered, the
 option they sent stays marked.
 

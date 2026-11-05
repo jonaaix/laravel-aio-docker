@@ -6,12 +6,13 @@ export interface BlockPicks {
     draft: Ref<string>;
     reply: (messageId: string) => string | undefined;
     pick: (line: string, siblings: string[]) => void;
+    unpick: (siblings: string[]) => void;
 }
 
 export const blockPicksKey: InjectionKey<BlockPicks> = Symbol('blockPicks');
 
 export function useBlockPicks(): BlockPicks {
-    return inject(blockPicksKey, { messageId: ref(null), draft: ref(''), reply: () => undefined, pick: () => {} });
+    return inject(blockPicksKey, { messageId: ref(null), draft: ref(''), reply: () => undefined, pick: () => {}, unpick: () => {} });
 }
 
 export function pickLine(letter: string, title: string): string {
@@ -36,6 +37,10 @@ export function useOptionPick(options: () => UiOption[], messageId: () => string
     }
 
     function pick(index: number): void {
+        if (isChosen(index)) {
+            picks.unpick(lines.value);
+            return;
+        }
         picks.pick(lines.value[index]!, lines.value);
     }
 
