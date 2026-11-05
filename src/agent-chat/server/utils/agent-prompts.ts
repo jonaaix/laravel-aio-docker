@@ -41,7 +41,7 @@ function turnRules(agent: AgentRow): string {
 
 function chatLanguageLine(languageCode: string): string {
     const language = new Intl.DisplayNames('en', { type: 'language' }).of(languageCode) ?? languageCode;
-    return `The user's chat UI language is: ${language}`;
+    return `<important>The user's chat UI language is ${language}.</important>`;
 }
 
 export function agentSystemPrompt(agent: AgentRow, lead: AgentRow, projectDir: string, ownDir: string, chatLanguage: string): string {
