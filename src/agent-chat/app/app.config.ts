@@ -86,7 +86,7 @@ export default defineAppConfig({
             blockquote: { base: 'my-3' },
             table: { slots: { root: 'my-3' } },
             th: { base: 'px-3 py-2' },
-            td: { base: 'px-3 py-2' },
+            td: { base: 'px-3 py-2 [&_code]:whitespace-nowrap [&_code]:[overflow-wrap:normal]' },
             pre: {
                 slots: { root: 'my-3', base: 'bg-default text-xs/5 dark:bg-muted' },
             },
