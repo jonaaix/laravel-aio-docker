@@ -3,7 +3,7 @@ import { joinURL } from 'ufo';
 import dylan from '@dicebear/styles/dylan.json';
 import glyphs from '@dicebear/styles/glyphs.json';
 import notionists from '@dicebear/styles/notionists.json';
-import slice from '@dicebear/styles/slice.json';
+import identicon from '@dicebear/styles/identicon.json';
 import voxelBot from '@dicebear/styles/voxel-bot.json';
 
 export type ParticipantKind = 'person' | 'agent';
@@ -47,7 +47,7 @@ const PRESET_DESIGNS = ['smiley', 'wow'];
 export const AGENT_PRESET_ROWS = PRESET_DESIGNS.map(design => SMILEY_COLORS.map(color => `${PRESET_PREFIX}${design}-${color}`));
 
 const cache = new Map<string, string>();
-const chatStyle = new Style(slice);
+const chatStyle = new Style(identicon);
 
 export function chatAvatarUri(conversationId: string): string {
     const key = `chat:${conversationId}`;
