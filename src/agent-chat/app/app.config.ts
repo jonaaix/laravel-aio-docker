@@ -82,11 +82,11 @@ export default defineAppConfig({
             h3: { slots: { base: 'mt-5 mb-2 text-base font-semibold' } },
             h4: { slots: { base: 'mt-4 mb-1 text-base font-semibold' } },
             hr: { base: 'my-6' },
-            code: { base: 'inline [overflow-wrap:anywhere]' },
+            code: { base: 'inline [overflow-wrap:break-word]' },
             blockquote: { base: 'my-3' },
             table: { slots: { root: 'my-3' } },
             th: { base: 'px-3 py-2' },
-            td: { base: 'px-3 py-2 [&_code]:whitespace-nowrap [&_code]:[overflow-wrap:normal]' },
+            td: { base: 'px-3 py-2' },
             pre: {
                 slots: { root: 'my-3', base: 'bg-default text-xs/5 dark:bg-muted' },
             },
