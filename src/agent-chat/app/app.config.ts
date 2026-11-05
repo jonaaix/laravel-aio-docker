@@ -85,6 +85,8 @@ export default defineAppConfig({
             code: { base: 'inline [overflow-wrap:anywhere]' },
             blockquote: { base: 'my-3' },
             table: { slots: { root: 'my-3' } },
+            th: { base: 'px-3 py-1.5' },
+            td: { base: 'px-3 py-1.5' },
             pre: {
                 slots: { root: 'my-3', base: 'bg-default text-xs/5 dark:bg-muted' },
             },
