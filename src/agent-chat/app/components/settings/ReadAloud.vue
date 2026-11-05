@@ -48,7 +48,7 @@ const loadingVoices = ref(false);
 let sampleAudio: HTMLAudioElement | undefined;
 
 const active = computed<VoiceChoice>(() => services.value?.provider ?? 'device');
-const serviceTabs = computed<OptionStripItem<VoiceChoice>[]>(() => choices.map(choice => ({
+const serviceOptions = computed<OptionStripItem<VoiceChoice>[]>(() => choices.map(choice => ({
     value: choice.value,
     label: t(choice.label),
     icon: active.value === choice.value ? (switching.value ? 'i-heroicons-arrow-path' : 'i-heroicons-check-circle') : undefined,
@@ -220,7 +220,7 @@ onMounted(load);
             <div v-else class="flex max-w-3xl flex-col gap-4">
                 <OptionStrip
                     :model-value="shown"
-                    :items="serviceTabs"
+                    :items="serviceOptions"
                     :label="t('Voice service')"
                     class="self-start"
                     @update:model-value="value => choose(value)"
