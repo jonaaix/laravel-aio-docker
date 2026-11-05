@@ -205,7 +205,7 @@ html[data-embedded] {
 }
 
 ::highlight(speech-current) {
-    background-color: color-mix(in oklch, var(--ui-primary) 16%, transparent);
+    background-color: color-mix(in oklch, var(--ui-primary) 8%, transparent);
 }
 
 [data-reading] :is(p, li, h1, h2, h3, h4, h5, h6, blockquote, td) {

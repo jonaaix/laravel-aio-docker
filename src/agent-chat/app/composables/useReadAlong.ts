@@ -1,6 +1,7 @@
 const HIGHLIGHT_NAME = 'speech-current';
 const BLOCKS = 'p, li, h1, h2, h3, h4, h5, h6, blockquote, td';
-const PROBE_LENGTH = 32;
+const PROBE_LENGTH = 24;
+const WORD_CHARACTER = /[\p{L}\p{N}]/u;
 
 interface TextMap {
     text: string;
@@ -8,7 +9,7 @@ interface TextMap {
 }
 
 function normalize(text: string): string {
-    return text.replace(/\s+/g, ' ').trim();
+    return [...text.toLowerCase()].filter(char => WORD_CHARACTER.test(char)).join('');
 }
 
 function textMap(root: Element): TextMap {
@@ -17,13 +18,12 @@ function textMap(root: Element): TextMap {
     for (let node = walker.nextNode() as Text | null; node; node = walker.nextNode() as Text | null) {
         const value = node.data;
         for (let offset = 0; offset < value.length; offset++) {
-            const char = value[offset]!;
-            const space = /\s/.test(char);
-            if (space && (map.text === '' || map.text.endsWith(' '))) {
-                continue;
+            for (const char of value[offset]!.toLowerCase()) {
+                if (WORD_CHARACTER.test(char)) {
+                    map.text += char;
+                    map.points.push({ node, offset });
+                }
             }
-            map.text += space ? ' ' : char;
-            map.points.push({ node, offset });
         }
     }
     return map;
@@ -51,7 +51,8 @@ function messageRoot(messageId: string): Element | null {
 }
 
 export function useReadAlong() {
-    const { speakingId, chunkTexts, currentChunk, jumpTo } = useSpeechPlayer();
+    const { speakingId, paused, chunkTexts, currentChunk, jumpTo } = useSpeechPlayer();
+    const playingId = computed(() => paused.value ? null : speakingId.value);
     const supported = import.meta.client && 'highlights' in CSS;
 
     function clear(): void {
@@ -82,7 +83,7 @@ export function useReadAlong() {
     }
 
     function jumpToClicked(event: MouseEvent, messageId: string): void {
-        if (speakingId.value !== messageId || !getSelection()?.isCollapsed) {
+        if (playingId.value !== messageId || !getSelection()?.isCollapsed) {
             return;
         }
         const target = event.target as Element;
@@ -90,12 +91,31 @@ export function useReadAlong() {
         if (!block || target.closest('a, button, pre')) {
             return;
         }
-        const probe = normalize(block.textContent ?? '').slice(0, PROBE_LENGTH);
-        const index = chunkTexts.value.findIndex(chunk => normalize(chunk).includes(probe));
-        if (probe && index >= 0) {
-            jumpTo(index);
+        const root = messageRoot(messageId);
+        if (!root) {
+            return;
+        }
+        const map = textMap(root);
+        const blockStart = map.points.findIndex(point => block.contains(point.node));
+        if (blockStart < 0) {
+            return;
+        }
+        let searchFrom = 0;
+        let jumpIndex = -1;
+        chunkTexts.value.forEach((chunk, index) => {
+            const start = map.text.indexOf(normalize(chunk).slice(0, PROBE_LENGTH), searchFrom);
+            if (start < 0) {
+                return;
+            }
+            searchFrom = start + 1;
+            if (start <= blockStart) {
+                jumpIndex = index;
+            }
+        });
+        if (jumpIndex >= 0) {
+            jumpTo(jumpIndex);
         }
     }
 
-    return { follow, mark, jumpToClicked, readingId: speakingId };
+    return { follow, mark, jumpToClicked, playingId };
 }

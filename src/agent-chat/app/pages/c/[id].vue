@@ -579,7 +579,7 @@ const restoreConversation = () => withFlag(archiving, restore);
                             <div
                                 class="contents"
                                 :data-read-along="message.id"
-                                :data-reading="readAlong.readingId.value === message.id || undefined"
+                                :data-reading="readAlong.playingId.value === message.id || undefined"
                                 @click="event => readAlong.jumpToClicked(event, message.id)"
                             >
                                 <div v-if="message.role === 'assistant'" class="mb-3 flex flex-col empty:hidden">
