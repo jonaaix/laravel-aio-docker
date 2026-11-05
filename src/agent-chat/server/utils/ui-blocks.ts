@@ -54,7 +54,7 @@ export const UI_BLOCK_TOOLS = [
             type: 'object',
             properties: {
                 title: { type: 'string', description: 'Optional short title shown above the cards.' },
-                canvas: { type: 'string', enum: CANVASES, description: 'Choose the best suitable between small canvas (350px) and large canvas (740px).' },
+                canvas: { type: 'string', enum: CANVASES, description: 'Choose the best suitable between small canvas (350px), e.g. buttons, radios, icons, and large canvas (740px), e.g. cards, tables, forms, pages.' },
                 viewport_width: { type: 'integer', description: `Only used when previews are scaled down: the width the variants are designed for, ${VIEWPORT_WIDTH.min}–${VIEWPORT_WIDTH.max}. Default ${VIEWPORT_WIDTH.fallback}.` },
                 viewport_height: { type: 'integer', description: `How tall each preview is at that width, ${VIEWPORT_HEIGHT.min}–${VIEWPORT_HEIGHT.max}. Default ${VIEWPORT_HEIGHT.fallback}.` },
                 variants: {
