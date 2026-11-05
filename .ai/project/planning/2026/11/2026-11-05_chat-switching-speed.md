@@ -15,11 +15,13 @@ drops, selections or scrolling meant for the open one.
 - [x] Cheaper drawing: one clock formatter instead of one per message; the long-message clamp measured by its observer
       only, without a forced layout per message
 - [x] Measure again (long tasks when switching)
+- [x] First opening draws the last 10 messages, the rest in steps of 10 when the browser is idle (or at once when
+      scrolling up to them, or when the message being read aloud is further up)
 
 ## State
 
 - Done. Measured in the dev build: returning to a kept chat takes 10–60 ms without a request (before: 80–700 ms and a
-  fresh load); first opening of a 50-message chat is still ~750 ms of drawing, a small chat ~100 ms.
+  fresh load); first opening of a 50-message chat shows after ~400 ms (before ~800 ms), the rest follows without moving the view.
 - Window/document listeners go through `useActiveListener` (attached only while the page is active); the page saves its
   scroll position in a router guard, since `onDeactivated` runs after the next page has replaced the content.
 

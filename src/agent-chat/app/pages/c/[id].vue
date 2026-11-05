@@ -10,6 +10,9 @@ const AT_BOTTOM_THRESHOLD_PX = 120;
 const ANSWER_GAP_PX = 32;
 const STICK_TO_BOTTOM_MS = 3000;
 const SETTLE_QUIET_MS = 100;
+const FIRST_DRAWN_MESSAGES = 10;
+const DRAW_STEP = 10;
+const IDLE_FALLBACK_MS = 50;
 const SKELETON_DELAY_MS = 300;
 const SETTLE_MAX_MS = 900;
 const PIN_SENT_MESSAGE_MS = 2000;
@@ -62,6 +65,45 @@ const timeline = ref<HTMLElement | null>(null);
 const visibleMessages = computed(() => messages.value.filter(message => message.parts.length > 0
     || message.metadata?.outcome === 'stopped'
     || message.metadata?.outcome === 'failed'));
+
+const firstDrawnId = ref<string | null | undefined>(undefined);
+const drawnMessages = computed(() => {
+    if (firstDrawnId.value === undefined) {
+        return visibleMessages.value.slice(-FIRST_DRAWN_MESSAGES);
+    }
+    const start = firstDrawnId.value === null ? 0 : visibleMessages.value.findIndex(message => message.id === firstDrawnId.value);
+    return start <= 0 ? visibleMessages.value : visibleMessages.value.slice(start);
+});
+const fullyDrawn = computed(() => drawnMessages.value.length >= visibleMessages.value.length);
+
+function anchorDrawing(): void {
+    const all = visibleMessages.value;
+    firstDrawnId.value = all.length > FIRST_DRAWN_MESSAGES ? all.at(-FIRST_DRAWN_MESSAGES)!.id : null;
+}
+
+async function drawEarlier(): Promise<void> {
+    const all = visibleMessages.value;
+    const start = all.length - drawnMessages.value.length - DRAW_STEP;
+    const distanceFromBottom = scroller().scrollHeight - scroller().scrollTop;
+    firstDrawnId.value = start <= 0 ? null : all[start]!.id;
+    await nextTick();
+    scroller().scrollTop = scroller().scrollHeight - distanceFromBottom;
+}
+
+function whenIdle(callback: () => void): void {
+    if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(callback);
+        return;
+    }
+    setTimeout(callback, IDLE_FALLBACK_MS);
+}
+
+function drawRestWhenIdle(): void {
+    if (fullyDrawn.value) {
+        return;
+    }
+    whenIdle(() => void drawEarlier().then(drawRestWhenIdle));
+}
 
 const { agents, lead } = useAgents();
 const { conversations, upsert: upsertConversation } = useConversations();
@@ -248,6 +290,10 @@ function updateAnswerSpace(): void {
 function onScroll(): void {
     updateAtBottom();
     if (scroller().scrollTop < EARLIER_THRESHOLD_PX) {
+        if (!fullyDrawn.value) {
+            void drawEarlier();
+            return;
+        }
         loadEarlierKeepingPosition();
     }
 }
@@ -346,6 +392,7 @@ watch(() => visibleMessages.value.at(-1), (message, previous) => {
 onMounted(async () => {
     unsubscribe = subscribe();
     await load();
+    anchorDrawing();
     await nextTick();
     updateAnswerSpace();
     stickToBottom = true;
@@ -357,8 +404,14 @@ onMounted(async () => {
     scroller().scrollTop = scroller().scrollHeight;
     settled.value = true;
     onScroll();
+    const readingId = readAlong.playingId.value;
+    if (readingId && visibleMessages.value.some(message => message.id === readingId) && !drawnMessages.value.some(message => message.id === readingId)) {
+        firstDrawnId.value = null;
+        await nextTick();
+    }
     readAlong.mark();
     readAlong.revealIfRequested(releaseBottom);
+    drawRestWhenIdle();
 });
 
 USER_SCROLL_EVENTS.forEach(name => useActiveListener(() => window, name, releaseBottom, { passive: true }));
@@ -585,7 +638,7 @@ const restoreConversation = () => withFlag(archiving, restore);
 
                     <UChatMessages
                         :class="{ invisible: !settled }"
-                        :messages="visibleMessages"
+                        :messages="drawnMessages"
                         :status="chatStatus"
                         :auto-scroll="false"
                         :style="{ '--last-message-height': `${answerSpace}px`, '--message-scroll-margin': `${messageScrollMargin}px` }"
