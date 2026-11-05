@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 
 const SCROLLBAR_STYLE = '<style>'
+    + ':root{color-scheme:light dark}'
     + '::-webkit-scrollbar{width:10px;height:10px}'
     + '::-webkit-scrollbar-track,::-webkit-scrollbar-corner{background:transparent}'
     + '::-webkit-scrollbar-thumb{border:3px solid transparent;border-radius:9999px;background:rgb(0 0 0 / 0.25) padding-box}'
