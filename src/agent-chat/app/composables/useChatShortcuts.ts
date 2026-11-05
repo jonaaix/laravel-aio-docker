@@ -5,6 +5,7 @@ function isApplePlatform(): boolean {
 }
 
 export function useChatShortcuts(conversationIds: Ref<string[]>) {
+    const route = useRoute();
     const held = ref(false);
     const apple = import.meta.client && isApplePlatform();
     const modifierKey = apple ? 'Meta' : 'Control';
@@ -17,9 +18,23 @@ export function useChatShortcuts(conversationIds: Ref<string[]>) {
         return apple ? `⌘${index + 1}` : `Ctrl ${index + 1}`;
     }
 
+    function stepTo(direction: 1 | -1): void {
+        const ids = conversationIds.value;
+        const current = ids.indexOf(String(route.params.id ?? ''));
+        const target = current === -1 ? (direction === 1 ? ids[0] : ids.at(-1)) : ids[current + direction];
+        if (target) {
+            void navigateTo(`/c/${target}`);
+        }
+    }
+
     function onKeydown(event: KeyboardEvent): void {
         if (event.key === modifierKey) {
             held.value = true;
+            return;
+        }
+        if (event.altKey && !event.metaKey && !event.ctrlKey && !event.shiftKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
+            event.preventDefault();
+            stepTo(event.key === 'ArrowDown' ? 1 : -1);
             return;
         }
         const modifier = apple ? event.metaKey : event.ctrlKey;

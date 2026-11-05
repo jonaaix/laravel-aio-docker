@@ -6,6 +6,7 @@ const props = defineProps<{
     session: SessionState;
     paused: boolean;
     unreadCount: number;
+    countHidden?: boolean;
     now: number;
     wrapTitle?: boolean;
 }>();
@@ -17,7 +18,7 @@ const unread = computed(() => props.unreadCount > 0);
 <template>
     <span class="flex items-center gap-1.5">
         <span class="block" :class="[wrapTitle ? 'min-w-0 break-words' : 'truncate', unread ? 'font-semibold text-highlighted' : '', { 'light-streak text-muted!': session.live }]">{{ title }}</span>
-        <span v-if="unread" class="ms-auto flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-primary px-1 text-[0.625rem]/none font-semibold text-inverted tabular-nums" :aria-label="t('Unread')">{{ formatBadgeCount(unreadCount) }}</span>
+        <span v-if="unread && !countHidden" class="ms-auto flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-primary px-1 text-[0.625rem]/none font-semibold text-inverted tabular-nums" :aria-label="t('Unread')">{{ formatBadgeCount(unreadCount) }}</span>
     </span>
     <span class="mt-0.5 flex items-center gap-1.5 text-xs font-normal text-muted">
         <span class="flex min-w-0 items-center gap-1.5">

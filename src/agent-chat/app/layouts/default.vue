@@ -195,9 +195,9 @@ onBeforeUnmount(() => {
                                     <VoiceRing class="absolute -inset-1" />
                                     <span class="sr-only">{{ t('Reading aloud') }}</span>
                                 </template>
-                                <span v-if="collapsed && shortcuts.held.value && shortcuts.shortcutLabel(item.id)" class="absolute -end-2 -top-2 z-10 flex h-4 items-center rounded-sm bg-inverted px-1 text-[0.625rem]/none font-semibold text-inverted tabular-nums shadow-sm" aria-hidden="true">{{ shortcuts.shortcutLabel(item.id) }}</span>
+                                <span v-if="collapsed && shortcuts.held.value && shortcuts.shortcutLabel(item.id)" class="absolute -end-2 -top-2 z-10 flex h-4 items-center rounded-sm bg-muted/60 px-1 text-xs/none text-default tabular-nums backdrop-blur-md" aria-hidden="true">{{ shortcuts.shortcutLabel(item.id) }}</span>
                                 <template v-if="collapsed">
-                                    <span v-if="unread.isUnread(item.id)" class="absolute -end-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[0.625rem]/none font-semibold text-inverted tabular-nums ring-2 ring-(--ui-bg-muted)" :aria-label="t('Unread')">{{ formatBadgeCount(unread.unreadCount(item.id)) }}</span>
+                                    <span v-if="unread.isUnread(item.id) && !shortcuts.held.value" class="absolute -end-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[0.625rem]/none font-semibold text-inverted tabular-nums ring-2 ring-(--ui-bg-muted)" :aria-label="t('Unread')">{{ formatBadgeCount(unread.unreadCount(item.id)) }}</span>
                                     <span v-if="item.session.live" class="light-ring pointer-events-none absolute -inset-[3px] rounded-full" role="status" :aria-label="t(item.session.label)" />
                                 </template>
                             </span>
@@ -211,6 +211,7 @@ onBeforeUnmount(() => {
                                         :session="item.session"
                                         :paused="item.paused"
                                         :unread-count="unread.unreadCount(item.id)"
+                            :count-hidden="shortcuts.held.value"
                                         :now="now"
                                         wrap-title
                                     />
@@ -219,7 +220,7 @@ onBeforeUnmount(() => {
                         </UPopover>
                     </template>
                     <template #item-label="{ item }">
-                        <span v-if="item.session && shortcuts.held.value && shortcuts.shortcutLabel(item.id)" class="absolute end-1.5 top-1.5 z-10 flex h-4 items-center rounded-sm bg-inverted px-1 text-[0.625rem]/none font-semibold text-inverted tabular-nums shadow-sm" aria-hidden="true">{{ shortcuts.shortcutLabel(item.id) }}</span>
+                        <span v-if="item.session && shortcuts.held.value && shortcuts.shortcutLabel(item.id)" class="absolute end-1 top-1 z-10 flex h-5 items-center rounded-sm bg-muted/60 px-1.5 text-xs/none text-default tabular-nums backdrop-blur-md" aria-hidden="true">{{ shortcuts.shortcutLabel(item.id) }}</span>
                         <ChatConversationEntry
                             v-if="item.session"
                             :title="item.label"
@@ -228,6 +229,7 @@ onBeforeUnmount(() => {
                             :session="item.session"
                             :paused="item.paused"
                             :unread-count="unread.unreadCount(item.id)"
+                            :count-hidden="shortcuts.held.value"
                             :now="now"
                         />
                         <span v-else class="block truncate">{{ item.label }}</span>
