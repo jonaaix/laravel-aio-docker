@@ -99,9 +99,9 @@ message is sent or the input is emptied. The input for a new conversation keeps 
 Messages can be dictated and read aloud, as described in [Voice in the chat](chat-voice.md).
 
 When a stop hook of the project sends the agent back after its answer — a final code check, say — the answer
-still ends where the agent finished it. What the agent replies to the hook follows as a small grey line behind a
-shield-with-check icon, named "Stop hook" on hover, without section bars; a reply that is nothing but a bar
-shows no line. The line is left out when the message is copied, in notifications and in
+still ends where the agent finished it. What the agent replies to the hook stays hidden; a shield-with-check button
+named "Stop hook" among the message's actions unfolds it as a small grey line behind the same icon, without section
+bars, and folds it again. A reply that is nothing but a bar shows no line. The line is left out when the message is copied, in notifications and in
 what other agents read. When Claude summarizes a long conversation to make room, a small grey line "Conversation
 summarized" marks the spot in the answer where it happened, since the agent remembers less detail from before it. While the
 summary is being written, the same line reads "Summarizing conversation…" behind a glowing, pulsing dot in the accent colour, with a white

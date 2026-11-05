@@ -54,6 +54,17 @@ const {
 provide(workingDirKey, workingDir);
 
 const input = ref('');
+const openStopHooks = reactive(new Set<string>());
+
+function hasStopHook(message: ChatMessage): boolean {
+    return answerSegments(message).some(segment => segment.kind === 'stop-hook');
+}
+
+function toggleStopHook(messageId: string): void {
+    if (!openStopHooks.delete(messageId)) {
+        openStopHooks.add(messageId);
+    }
+}
 useDraft(conversationId, input);
 const { attachments, uploading, ready, add: attach, remove: removeAttachment, take: takeAttachments } = useAttachments();
 const pausing = ref(false);
@@ -668,15 +679,15 @@ const restoreConversation = () => withFlag(archiving, restore);
                                 </div>
                                 <template v-for="segment in answerSegments(message)" :key="`${segment.key}:${mentionKey}`">
                                     <ChatImageGroup v-if="segment.kind === 'images'" :parts="segment.parts" />
-                                    <p v-else-if="segment.kind === 'stop-hook'" class="stop-hook mt-4 flex items-start gap-2 text-sm text-muted [.stop-hook+&]:mt-2">
-                                        <UTooltip :text="t('Stop hook')">
+                                    <template v-else-if="segment.kind === 'stop-hook'">
+                                        <p v-if="openStopHooks.has(message.id)" class="stop-hook mt-4 flex items-start gap-2 text-sm text-muted [.stop-hook+&]:mt-2">
                                             <UIcon name="i-heroicons-shield-check" class="mt-0.5 size-4 shrink-0" />
-                                        </UTooltip>
-                                        <span class="sr-only">{{ t('Stop hook') }}</span>
-                                        <span class="flex min-w-0 flex-col gap-1">
-                                            <span v-for="(paragraph, line) in segment.paragraphs" :key="line" class="whitespace-pre-line" :class="line === 0 ? 'font-medium' : ''">{{ paragraph }}</span>
-                                        </span>
-                                    </p>
+                                            <span class="sr-only">{{ t('Stop hook') }}</span>
+                                            <span class="flex min-w-0 flex-col gap-1">
+                                                <span v-for="(paragraph, line) in segment.paragraphs" :key="line" class="whitespace-pre-line" :class="line === 0 ? 'font-medium' : ''">{{ paragraph }}</span>
+                                            </span>
+                                        </p>
+                                    </template>
                                     <template v-else-if="segment.kind === 'compacted'">
                                         <p v-if="!segment.running || isStreaming(message.id)" class="mb-3 flex items-center gap-2 text-sm text-muted" :role="segment.running ? 'status' : undefined">
                                             <span v-if="segment.running" class="relative flex size-4 shrink-0 items-center justify-center" aria-hidden="true">
@@ -700,6 +711,17 @@ const restoreConversation = () => withFlag(archiving, restore);
                             <template v-if="!isStreaming(message.id)">
                                 <ChatCopyButton v-if="messageText(message)" :text="messageText(message)" />
                                 <ChatSpeakButton v-if="messageSpeechText(message)" :text="messageSpeechText(message)" :message-id="message.id" />
+                                <UTooltip v-if="hasStopHook(message)" :text="t('Stop hook')">
+                                    <UButton
+                                        icon="i-heroicons-shield-check"
+                                        :aria-label="t('Stop hook')"
+                                        :aria-pressed="openStopHooks.has(message.id)"
+                                        size="xs"
+                                        color="neutral"
+                                        :variant="openStopHooks.has(message.id) ? 'soft' : 'ghost'"
+                                        @click="toggleStopHook(message.id)"
+                                    />
+                                </UTooltip>
                                 <span class="px-1 text-xs text-muted tabular-nums">{{ formatClockTime(message.metadata!.createdAt) }}</span>
                             </template>
                         </template>
