@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { OptionStripItem } from '~/components/OptionStrip.vue';
 import { SPEECH_MODELS, SPEECH_VOICES, type SpeechProvider } from '#shared/utils/speech';
 
 type VoiceChoice = SpeechProvider | 'device';
@@ -47,7 +48,7 @@ const loadingVoices = ref(false);
 let sampleAudio: HTMLAudioElement | undefined;
 
 const active = computed<VoiceChoice>(() => services.value?.provider ?? 'device');
-const serviceTabs = computed(() => choices.map(choice => ({
+const serviceTabs = computed<OptionStripItem<VoiceChoice>[]>(() => choices.map(choice => ({
     value: choice.value,
     label: t(choice.label),
     icon: active.value === choice.value ? (switching.value ? 'i-heroicons-arrow-path' : 'i-heroicons-check-circle') : undefined,
@@ -217,15 +218,12 @@ onMounted(load);
                 <UButton :label="t('Retry')" color="neutral" variant="outline" @click="load" />
             </div>
             <div v-else class="flex max-w-3xl flex-col gap-4">
-                <UTabs
+                <OptionStrip
                     :model-value="shown"
                     :items="serviceTabs"
-                    :content="false"
-                    variant="link"
-                    color="neutral"
-                    class="w-full"
-                    :ui="{ list: 'overflow-x-auto', trigger: 'flex-1 shrink-0 justify-center px-3', label: 'overflow-visible' }"
-                    @update:model-value="value => choose(value as VoiceChoice)"
+                    :label="t('Voice service')"
+                    class="self-start"
+                    @update:model-value="value => choose(value)"
                 />
                 <p v-if="shown === 'device'" class="text-sm text-muted">{{ t('Your device\'s own voice reads aloud.') }}</p>
                 <div v-else-if="!showForm" class="flex flex-wrap items-center gap-3">
