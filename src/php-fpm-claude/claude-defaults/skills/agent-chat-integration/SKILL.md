@@ -17,7 +17,8 @@ AGENT_CHAT_URL=http://localhost:3000
 AGENT_CHAT_KEY=<the chat's key>
 ```
 
-`AGENT_CHAT_KEY` is a secret. It never reaches the browser and is never committed, logged or shown in a reply.
+`AGENT_CHAT_KEY` must be the same value the chat runs with as `NUXT_CHAT_KEY`; the chat does not create one itself.
+It is a secret. It never reaches the browser and is never committed, logged or shown in a reply.
 Expose both through `config/services.php` as `services.agent_chat.url` and `services.agent_chat.key`.
 
 ## Requesting a sign-in link
