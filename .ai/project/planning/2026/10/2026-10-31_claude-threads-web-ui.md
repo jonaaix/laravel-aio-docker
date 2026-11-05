@@ -167,8 +167,8 @@ container restart with its full history and attachments, and no Mattermost/Slack
 ## Decisions
 
 - Chat key: without `NUXT_CHAT_KEY` the chat creates one on first start in `<data dir>/chat-key` (mode 600) and
-  keeps it; the Laravel app reads that file (user, 254a). The app always calls the chat at `http://localhost:3000`
-  inside the container; only the public address the browser uses is configurable (`AGENT_CHAT_URL`, user).
+  keeps it; the Laravel app reads that file (user, 254a). The app calls the chat at `http://localhost:3000` inside
+  the container (`AGENT_CHAT_INTERNAL_URL` overrides it); the browser uses the public `AGENT_CHAT_URL` (user).
 
 - Thought and Worked (`ChatThinkingBlock`, `ChatWorkingBlock`) are plain lines without frame or
   background (`ChatActivityBox` `plain`, 28 px rows, no gap), aligned with the answer text; background

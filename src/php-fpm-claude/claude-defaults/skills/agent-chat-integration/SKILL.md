@@ -10,14 +10,14 @@ signs these links. The Laravel app is the door: for its signed-in user it asks t
 sends the browser there. Opening the link signs that person in to that browser for good, until the
 chat's key changes.
 
-The app reaches the chat at `http://localhost:3000` inside this container; that never changes. The browser reaches
+The app reaches the chat at `http://localhost:3000` inside this container. The browser reaches
 it at the chat's public address, `AGENT_CHAT_URL` in `.env` — ask the user for it if it is not set. The chat creates
 its key on its first start and keeps it in `/home/laravel/.config/agent-chat/chat-key`; the app reads it from there.
 
 ```php
 // config/services.php
 'agent_chat' => [
-    'internal_url' => 'http://localhost:3000',
+    'internal_url' => env('AGENT_CHAT_INTERNAL_URL', 'http://localhost:3000'),
     'url' => env('AGENT_CHAT_URL'),
     'key' => trim((string) @file_get_contents('/home/laravel/.config/agent-chat/chat-key')),
 ],
