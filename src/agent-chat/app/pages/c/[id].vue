@@ -2,6 +2,7 @@
 import type { Agent } from '#shared/types/agent';
 import type { ChatMessage, ConversationSummary } from '#shared/types/conversation';
 import type { AnswerLine } from '~/utils/answer-line';
+import type { OwnsLine } from '~/composables/useBlockPicks';
 import type { Participant } from '~/utils/avatars';
 import { CHANGES_PANEL_MIN_PX } from '~/composables/useChangesPanelRoom';
 
@@ -479,18 +480,18 @@ function accept(): void {
     replaceAnswerBlock('ok');
 }
 
-function pickOption(line: string, siblings: string[]): void {
+function pickOption(line: string, ownsLine: OwnsLine): void {
     const draft = input.value.trimStart();
     const [first = '', ...rest] = draft.split('\n');
-    const remainder = siblings.includes(first.trim()) ? rest.join('\n').trimStart() : draft;
+    const remainder = ownsLine(first.trim()) ? rest.join('\n').trimStart() : draft;
     const head = `${line}\n\n`;
     input.value = head + remainder;
     focusComposerAt(head.length);
 }
 
-function unpickOption(siblings: string[]): void {
+function unpickOption(ownsLine: OwnsLine): void {
     const [first = '', ...rest] = input.value.trimStart().split('\n');
-    if (siblings.includes(first.trim())) {
+    if (ownsLine(first.trim())) {
         input.value = rest.join('\n').trimStart();
     }
 }

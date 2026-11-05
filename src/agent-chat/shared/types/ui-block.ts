@@ -42,5 +42,5 @@ export interface UiCardSection {
 export type UiBlock =
     | { kind: 'page'; title: string | null; page: UiPage }
     | { kind: 'variants'; title: string | null; columns: UiVariantColumns; viewport: UiViewport; options: UiVariant[]; recommended: string | null }
-    | { kind: 'choice'; question: string; options: UiOption[]; recommended: string | null }
+    | { kind: 'choice'; question: string; options: UiOption[]; recommended: string | null; multiple?: boolean }
     | { kind: 'cards'; sections: UiCardSection[] };

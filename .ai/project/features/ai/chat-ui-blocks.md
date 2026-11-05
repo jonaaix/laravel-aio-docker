@@ -59,7 +59,8 @@ the arrow keys ← and → and two arrow buttons in the title bar step to the pr
 ### Choice
 
 For questions the agent asks in a card: the question, then two to six lettered options with name and optional description; when the agent recommends one, it is a),
-marked "Recommended". Having asked, the agent ends its answer and waits for the reply.
+marked "Recommended". The agent can let a question take several answers; then each click switches one option on or
+off, and the chosen ones stand together on one line, such as "a) Basic, c) Business". Having asked, the agent ends its answer and waits for the reply.
 
 ### Cards
 

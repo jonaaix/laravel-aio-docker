@@ -5,11 +5,12 @@ const props = defineProps<{
     options: UiOption[];
     recommended: string | null;
     messageId: string;
+    multiple?: boolean;
 }>();
 
 const { t } = useI18n();
 const chatPlugins = useChatMarkdownPlugins();
-const { active, isChosen, pick } = useOptionPick(() => props.options, () => props.messageId);
+const { active, isChosen, pick } = useOptionPick(() => props.options, () => props.messageId, () => props.multiple);
 </script>
 
 <template>

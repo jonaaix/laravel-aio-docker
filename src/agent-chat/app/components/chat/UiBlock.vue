@@ -27,7 +27,7 @@ const chatPlugins = useChatMarkdownPlugins();
         />
         <div v-if="block.kind === 'choice'" class="flex flex-col gap-2 rounded-md bg-elevated/60 px-4 py-3 dark:bg-elevated/40">
             <Markdown :value="block.question" :plugins="chatPlugins" class="font-medium text-highlighted *:my-0" />
-            <ChatUiOptions :options="block.options" :recommended="block.recommended" :message-id="messageId" />
+            <ChatUiOptions :options="block.options" :recommended="block.recommended" :multiple="block.multiple" :message-id="messageId" />
         </div>
     </figure>
 </template>

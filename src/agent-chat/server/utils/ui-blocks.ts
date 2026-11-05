@@ -86,6 +86,7 @@ export const UI_BLOCK_TOOLS = [
                 question: { type: 'string', description: 'The question; Markdown allowed.' },
                 options: OPTIONS_PROPERTY,
                 recommended: RECOMMENDED_PROPERTY,
+                multiple: { type: 'boolean', description: 'Optional: true lets the user pick several options.' },
             },
             required: ['question', 'options'],
         },
@@ -250,7 +251,10 @@ export function uiBlockFor(tool: string, args: Record<string, unknown>, storePag
     if (tool === 'ask_choice') {
         const question = requiredText(args.question, 'question');
         const options = optionsOf(args.options, 'options');
-        return { kind: 'choice', question, options, recommended: recommendedOf(args.recommended, options) };
+        if (args.multiple !== undefined && typeof args.multiple !== 'boolean') {
+            throw new TypeError('multiple must be true or false.');
+        }
+        return { kind: 'choice', question, options, recommended: recommendedOf(args.recommended, options), multiple: args.multiple === true };
     }
     const title = optionalText(args.title, 'title');
     if (tool === 'show_cards') {
