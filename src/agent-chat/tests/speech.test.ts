@@ -33,6 +33,11 @@ test('a long opening sentence is cut down to the first piece length', () => {
     assert.equal(chunks.join(' '), `${opening}. Then more.`);
 });
 
+test('a piece never spans two paragraphs', () => {
+    const chunks = speechChunks('First short paragraph.\nSecond one here.\nThird.', 400, 120);
+    assert.deepEqual(chunks, ['First short paragraph.', 'Second one here.', 'Third.']);
+});
+
 test('the language follows the text, short texts keep the chat language', () => {
     assert.equal(guessLanguage('Das ist nicht die Datei, die ich mit dir besprochen habe.', 'en'), 'de');
     assert.equal(guessLanguage('This is not the file that we talked about with the team.', 'de'), 'en');

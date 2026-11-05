@@ -38,8 +38,8 @@ function splitLong(piece: string, maxLength: number): string[] {
     return current ? [...chunks, current] : chunks;
 }
 
-export function speechChunks(text: string, maxLength = DEVICE_CHUNK_LENGTH, firstLength = maxLength): string[] {
-    const sentences = text.split(/(?<=[.!?…:;])\s+|\n+/).map(sentence => sentence.trim()).filter(Boolean);
+function paragraphChunks(paragraph: string, maxLength: number, firstLength: number): string[] {
+    const sentences = paragraph.split(/(?<=[.!?…:;])\s+/).map(sentence => sentence.trim()).filter(Boolean);
     const pieces = sentences.flatMap(sentence => splitLong(sentence, maxLength));
     const opening = pieces.shift();
     const chunks: string[] = [];
@@ -54,4 +54,9 @@ export function speechChunks(text: string, maxLength = DEVICE_CHUNK_LENGTH, firs
         }
     }
     return chunks;
+}
+
+export function speechChunks(text: string, maxLength = DEVICE_CHUNK_LENGTH, firstLength = maxLength): string[] {
+    const paragraphs = text.split(/\n+/).map(paragraph => paragraph.trim()).filter(Boolean);
+    return paragraphs.flatMap((paragraph, index) => paragraphChunks(paragraph, maxLength, index === 0 ? firstLength : maxLength));
 }

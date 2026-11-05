@@ -46,7 +46,8 @@ new request.
 - The reading speed is saved shortly after the slider stops moving, so arrow keys and dragging don't lose steps.
 - The speed is applied when playing (playback rate), because ElevenLabs only allows up to 1.2× itself.
 - Long texts go out in pieces so services start playing sooner; the first piece is capped at 120 characters (about one
-  sentence), the rest at 400, so the voice starts after roughly a second.
+  sentence), the rest at 400, so the voice starts after roughly a second. A piece never spans two paragraphs, so the
+  player's read-along marks and paragraph jumps line up with the paragraphs.
 
 ## Open
 
