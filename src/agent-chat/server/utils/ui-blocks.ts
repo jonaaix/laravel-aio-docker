@@ -35,7 +35,7 @@ const OPTIONS_PROPERTY = {
 
 const IN_CHAT_LANGUAGE = ' Write all its texts in the chat language.';
 
-const RECOMMENDED_PROPERTY = { type: 'string', description: 'Optional letter of the recommended option, such as "a".' };
+const RECOMMENDED_PROPERTY = { type: 'string', description: 'Optional letter of the recommended option. List the recommended option first, so it is "a".' };
 
 export const UI_BLOCK_TOOLS = [
     {
