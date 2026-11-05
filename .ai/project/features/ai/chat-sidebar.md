@@ -17,9 +17,9 @@ A sidebar lists the conversations, with Settings at its foot; its edge lights up
 with the name of the person who started it: a development conversation is long-lived, and a team
 works on the same app. Each entry shows the title and, below it, who started it and when something last happened, and its state at the
 right end: while the agent is answering, three softly bouncing dots, the title turns grey like the line below it, and a narrow light
-streak in a soft accent colour runs across both lines in step; while the agent is free but tasks it started in the background are still running, a
-small badge with a slowly turning symbol and the number of those tasks, "Running in the background" on hover; while
-the session is running and waiting, a "Ready" badge; a paused session shows nothing. A conversation with an answer the person has not seen shows its title in bold with a dot after it, by the same rule as in
+streak in a soft accent colour runs across both lines in step; while the session is running and waiting, a "Ready" badge, joined — while tasks the agent
+started in the background are still running — by a small badge with a slowly turning symbol and the number of those
+tasks, "Running in the background" on hover; a paused session shows nothing. A conversation with an answer the person has not seen shows its title in bold with a dot after it, by the same rule as in
 the Orbit app (see [Orbit](chat-hub.md#unread)), and the browser tab shows how many there are, as "(2) AI Chat". When an answer
 finishes in a conversation the person has written in but is not looking at — another conversation is open, or the
 tab is in the background — a short, low double drum beat sounds, once per answer even with several tabs open; the
