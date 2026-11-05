@@ -159,13 +159,17 @@ html[data-embedded] {
     background-repeat: no-repeat;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    animation: light-streak 2.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+    animation: light-streak 1.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 
     @media (prefers-reduced-motion: reduce) {
         animation: none;
         background-image: none;
         -webkit-text-fill-color: currentColor;
     }
+}
+
+[aria-current='page'] .light-streak {
+    --light-streak: oklch(0.99 calc(0.02 * var(--tint-chroma)) var(--tint));
 }
 
 @keyframes light-streak {
