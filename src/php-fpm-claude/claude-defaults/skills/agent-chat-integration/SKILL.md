@@ -17,6 +17,7 @@ its key on its first start and keeps it in `/home/laravel/.config/agent-chat/cha
 ```php
 // config/services.php
 'agent_chat' => [
+    'internal_url' => 'http://localhost:3000',
     'url' => env('AGENT_CHAT_URL'),
     'key' => trim((string) @file_get_contents('/home/laravel/.config/agent-chat/chat-key')),
 ],
@@ -56,7 +57,7 @@ Route::get('/agent-chat', function (Request $request) {
 
     $link = Http::withToken($chat['key'])
         ->acceptJson()
-        ->post('http://localhost:3000/api/auth/links', array_filter([
+        ->post("{$chat['internal_url']}/api/auth/links", array_filter([
             'name' => $user->name,
             'userRef' => (string) $user->getKey(),
             'avatarUrl' => $user->avatar_url,
