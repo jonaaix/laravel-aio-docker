@@ -32,6 +32,14 @@ function moveProgress(value: number | undefined): void {
     }, SEEK_DELAY_MS);
 }
 
+async function revealCurrentRate(open: boolean): Promise<void> {
+    if (!open) {
+        return;
+    }
+    await nextTick();
+    document.querySelector('[role="menuitemcheckbox"][aria-checked="true"]')?.scrollIntoView({ block: 'center' });
+}
+
 function togglePause(): void {
     if (paused.value) {
         resume();
@@ -73,7 +81,7 @@ function togglePause(): void {
                     <UButton icon="i-heroicons-arrow-uturn-right" label="10s" color="neutral" variant="ghost" size="sm" class="items-end gap-0.5 text-[0.625rem]/none font-semibold tabular-nums" :aria-label="t('Forward 10 seconds')" @click="forward" />
                 </UTooltip>
             </div>
-            <UDropdownMenu :items="rateItems" :content="{ side: 'top', align: 'end' }" :ui="{ content: 'max-h-56 overflow-y-auto scrollbar-slim', itemLabel: 'tabular-nums' }">
+            <UDropdownMenu :items="rateItems" @update:open="revealCurrentRate" :content="{ side: 'top', align: 'end' }" :ui="{ content: 'max-h-56 overflow-y-auto scrollbar-slim', itemLabel: 'tabular-nums' }">
                 <UButton :label="formatSpeedFactor(speechRate)" color="neutral" variant="ghost" size="sm" class="justify-self-end tabular-nums" :aria-label="t('Reading speed')" />
             </UDropdownMenu>
         </div>
