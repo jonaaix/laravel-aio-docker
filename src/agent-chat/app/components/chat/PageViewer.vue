@@ -148,7 +148,7 @@ const frameStyle = computed(() => {
                 <UButton icon="i-heroicons-code-bracket" color="neutral" variant="ghost" class="size-7 justify-center p-0" :aria-label="t('View code')" @click="showCode" />
             </UTooltip>
             <UTooltip :text="t('Download')">
-                <UButton icon="i-heroicons-arrow-down-tray" color="neutral" variant="ghost" class="size-7 justify-center p-0" :aria-label="t('Download')" @click="downloadFile(fileUrl, withRandomSuffix(filename))" />
+                <UButton icon="i-heroicons-arrow-down-tray" color="neutral" variant="ghost" class="size-7 justify-center p-0" :aria-label="t('Download')" @click="downloadFile(fileUrl, withTimestamp(filename))" />
             </UTooltip>
             <UTooltip :text="t('Open in new tab')">
                 <UButton icon="i-heroicons-arrow-top-right-on-square" color="neutral" variant="ghost" class="size-7 justify-center p-0" :aria-label="t('Open in new tab')" :to="src" target="_blank" external />

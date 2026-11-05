@@ -1,9 +1,12 @@
-const SUFFIX_LENGTH = 6;
+function fileStamp(date: Date): string {
+    const pad = (value: number): string => String(value).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}_${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
+}
 
-export function withRandomSuffix(filename: string): string {
-    const suffix = crypto.randomUUID().replaceAll('-', '').slice(0, SUFFIX_LENGTH);
+export function withTimestamp(filename: string, date = new Date()): string {
     const dot = filename.lastIndexOf('.');
-    return dot > 0 ? `${filename.slice(0, dot)}-${suffix}${filename.slice(dot)}` : `${filename}-${suffix}`;
+    const stamp = fileStamp(date);
+    return dot > 0 ? `${filename.slice(0, dot)}-${stamp}${filename.slice(dot)}` : `${filename}-${stamp}`;
 }
 
 export function downloadFile(url: string, filename: string): void {

@@ -17,7 +17,7 @@ const codeOpen = ref(false);
 
 const moreItems = computed<DropdownMenuItem[]>(() => [
     { label: t('Open in new tab'), icon: 'i-heroicons-arrow-top-right-on-square', to: src.value, target: '_blank', external: true },
-    { label: t('Download'), icon: 'i-heroicons-arrow-down-tray', onSelect: () => downloadFile(fileUrl.value, withRandomSuffix(filename.value)) },
+    { label: t('Download'), icon: 'i-heroicons-arrow-down-tray', onSelect: () => downloadFile(fileUrl.value, withTimestamp(filename.value)) },
 ]);
 </script>
 
