@@ -106,7 +106,7 @@ onBeforeUnmount(() => {
             :default-size="18"
             :max-size="28"
             v-model:collapsed="sidebarCollapsed"
-            :ui="{ root: 'peer bg-muted', body: sidebarCollapsed ? 'px-2' : undefined, footer: ['pb-4', sidebarCollapsed ? 'px-2' : ''], header: [hub ? 'h-auto py-3' : '', sidebarCollapsed ? 'px-2' : ''] }"
+            :ui="{ root: 'peer bg-muted', body: sidebarCollapsed ? 'px-2' : 'px-2.5', footer: ['pb-4', sidebarCollapsed ? 'px-2' : 'px-2.5'], header: [hub ? 'h-auto py-3' : '', sidebarCollapsed ? 'px-2' : 'px-2.5'] }"
         >
             <template #header="{ collapsed }">
                 <div class="flex w-full flex-col gap-2">
@@ -157,7 +157,7 @@ onBeforeUnmount(() => {
                             <img v-else :src="chatAvatarUri(item.id)" alt="" class="size-full rounded-full">
                             <template v-if="collapsed">
                                 <span v-if="unread.isUnread(item.id)" class="absolute -end-0.5 -top-0.5 size-2 rounded-full bg-primary ring-2 ring-(--ui-bg-muted)" :aria-label="t('Unread')" />
-                                <ChatWorkingDots v-if="item.session.live" :label="t(item.session.label)" class="absolute -bottom-1 rounded-full bg-default px-1 py-0.5 ring ring-default dark:bg-elevated" />
+                                <span v-if="item.session.live" class="light-ring pointer-events-none absolute -inset-[3px] rounded-full" role="status" :aria-label="t(item.session.label)" />
                             </template>
                         </span>
                     </template>
