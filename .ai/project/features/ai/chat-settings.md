@@ -15,7 +15,8 @@ take further categories as the chat grows.
 
 Settings at the foot of the sidebar, below Archived, opens one Settings window with its categories on the left (on
 phones as tabs along the top): Appearance, Chat, Read aloud, Agents, Profile, Claude account, People (admins only) and Remote control, opening at Appearance. "Manage agents" in the agents menu of
-a conversation opens the same window at Agents.
+a conversation opens the same window at Agents. The open window and its category are part of the page address
+(`?settings=speech`, say), so a link or a reload opens it at that category, and Back closes it.
 
 - **Profile** holds the person's name and picture, as described in
   [People in the chat](chat-people.md). The very first prompt for a name is not part of this window

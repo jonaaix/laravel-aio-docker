@@ -22,7 +22,21 @@ const categories = computed<{ value: SettingsCategory; label: string; icon: stri
         : { value: 'remote', label: 'Remote control', icon: 'i-heroicons-device-phone-mobile' },
 ]);
 
+const settingsWindow = useSettingsWindow();
+const route = useRoute();
 const active = ref<SettingsCategory>(props.category);
+
+watch(active, category => settingsWindow.show(category));
+watch(() => route.query.settings, (value) => {
+    if (isSettingsCategory(value)) {
+        active.value = value;
+    }
+});
+watch(open, (isOpen) => {
+    if (!isOpen) {
+        settingsWindow.close();
+    }
+});
 
 watch(() => user.value?.admin, (admin) => {
     if (!admin && active.value === 'people') {

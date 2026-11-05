@@ -16,6 +16,7 @@ const unread = useUnread();
 unread.track();
 useDoneSound().track();
 followSpeechRate();
+followSettingsWindow();
 const speech = useSpeechPlayer();
 const hubUnread = hub ? useHubUnread() : null;
 hubUnread?.track();
