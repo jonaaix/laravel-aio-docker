@@ -69,10 +69,10 @@
     --ui-border-inverted: var(--ui-primary);
 }
 
-/* Black has no hue to derive the AI colours from, so they take a fixed violet, pink and cyan. */
+/* Black has no hue to derive the AI colours from, so it pairs its own black (white in dark) with a fixed violet and cyan. */
 [data-tint-neutral] {
-    --ai-gradient-from: oklch(0.62 0.24 292);
-    --ai-gradient-via: oklch(0.7 0.25 350);
+    --ai-gradient-from: var(--ui-primary);
+    --ai-gradient-via: oklch(0.62 0.24 292);
     --ai-gradient-to: oklch(0.8 0.15 205);
 }
 
