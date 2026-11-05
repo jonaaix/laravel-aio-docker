@@ -14,31 +14,58 @@ const { t } = useI18n();
 
 const MIN_WIDTH = 320;
 
-type ScreenPreset = 'iphone' | 'macbook' | 'full-hd' | 'uhd';
+type ScreenPreset = 'window' | 'iphone' | 'macbook' | 'monitor-24' | 'monitor-27';
 
-const SCREEN_WIDTHS: Record<ScreenPreset, number> = { 'iphone': 402, 'macbook': 1470, 'full-hd': 1920, 'uhd': 2560 };
+interface ScreenSize {
+    width: number;
+    height: number;
+}
 
-const screenOptions: OptionStripItem<ScreenPreset>[] = [
-    { value: 'iphone', label: 'iPhone 16 Pro' },
-    { value: 'macbook', label: 'MacBook Air 13″' },
-    { value: 'full-hd', label: 'Full HD' },
-    { value: 'uhd', label: '4K 27″' },
-];
+const SCREENS: Record<Exclude<ScreenPreset, 'window'>, ScreenSize> = {
+    'iphone': { width: 402, height: 874 },
+    'macbook': { width: 1470, height: 956 },
+    'monitor-24': { width: 1920, height: 1080 },
+    'monitor-27': { width: 2560, height: 1440 },
+};
+
+const screenOptions = computed<OptionStripItem<ScreenPreset>[]>(() => [
+    { value: 'window', label: t('Window'), icon: 'i-heroicons-window' },
+    { value: 'iphone', label: t('Smartphone'), icon: 'i-heroicons-device-phone-mobile' },
+    { value: 'macbook', label: t('Laptop'), icon: 'i-heroicons-computer-desktop' },
+    { value: 'monitor-24', label: '24″', icon: 'i-heroicons-computer-desktop' },
+    { value: 'monitor-27', label: '27″', icon: 'i-heroicons-computer-desktop' },
+]);
 
 const stage = ref<HTMLElement | null>(null);
 const stageSize = reactive({ width: 0, height: 0 });
 const frameWidth = ref<number | null>(null);
+const frameHeight = ref<number | null>(null);
 const dragging = ref(false);
 const codeOpen = ref(false);
 const codeMounted = ref(false);
 
 const shownWidth = computed(() => frameWidth.value ?? stageSize.width);
-const scale = computed(() => (stageSize.width > 0 ? Math.min(1, stageSize.width / shownWidth.value) : 1));
+const shownHeight = computed(() => frameHeight.value ?? stageSize.height);
+const scale = computed(() => {
+    if (stageSize.width <= 0 || stageSize.height <= 0) {
+        return 1;
+    }
+    return Math.min(1, stageSize.width / shownWidth.value, frameHeight.value === null ? 1 : stageSize.height / frameHeight.value);
+});
 const preset = computed<ScreenPreset | ''>({
-    get: () => (Object.entries(SCREEN_WIDTHS).find(([, width]) => width === frameWidth.value)?.[0] as ScreenPreset | undefined) ?? '',
+    get: () => {
+        if (frameWidth.value === null && frameHeight.value === null) {
+            return 'window';
+        }
+        return (Object.entries(SCREENS).find(([, screen]) => screen.width === frameWidth.value && screen.height === frameHeight.value)?.[0] as ScreenPreset | undefined) ?? '';
+    },
     set: (value) => {
-        if (value) {
-            frameWidth.value = SCREEN_WIDTHS[value];
+        if (value === 'window') {
+            resetSize();
+        }
+        else if (value) {
+            frameWidth.value = SCREENS[value].width;
+            frameHeight.value = SCREENS[value].height;
         }
     },
 });
@@ -59,7 +86,7 @@ watch(stage, (element) => {
 
 watch(open, (isOpen) => {
     if (isOpen) {
-        frameWidth.value = null;
+        resetSize();
     }
 });
 
@@ -71,6 +98,7 @@ function startResize(event: PointerEvent): void {
     const handle = event.currentTarget as HTMLElement;
     handle.setPointerCapture(event.pointerId);
     dragging.value = true;
+    frameHeight.value = null;
     const move = (moved: PointerEvent): void => {
         const width = startWidth + (moved.clientX - startX) * 2;
         frameWidth.value = Math.round(Math.min(Math.max(width, MIN_WIDTH), stageSize.width));
@@ -91,14 +119,22 @@ function showCode(): void {
     codeOpen.value = true;
 }
 
-function resetWidth(): void {
+function resetSize(): void {
     frameWidth.value = null;
+    frameHeight.value = null;
 }
 
-const frameBoxStyle = computed(() => (frameWidth.value === null ? { width: '100%' } : { width: `${shownWidth.value * scale.value}px` }));
-const frameStyle = computed(() => (scale.value === 1
-    ? { width: '100%', height: '100%' }
-    : { width: `${shownWidth.value}px`, height: `${stageSize.height / scale.value}px`, transform: `scale(${scale.value})`, transformOrigin: 'top left' }));
+const frameBoxStyle = computed(() => ({
+    width: frameWidth.value === null ? '100%' : `${shownWidth.value * scale.value}px`,
+    height: frameHeight.value === null ? '100%' : `${frameHeight.value * scale.value}px`,
+}));
+const frameStyle = computed(() => {
+    if (scale.value === 1 && frameHeight.value === null) {
+        return { width: '100%', height: '100%' };
+    }
+    const height = frameHeight.value ?? stageSize.height / scale.value;
+    return { width: `${shownWidth.value}px`, height: `${height}px`, transform: `scale(${scale.value})`, transformOrigin: 'top left' };
+});
 </script>
 
 <template>
@@ -116,8 +152,8 @@ const frameStyle = computed(() => (scale.value === 1
             </UTooltip>
         </template>
         <template #body>
-            <div ref="stage" class="flex flex-1 justify-center overflow-hidden bg-muted px-4">
-                <div class="relative h-full" :style="frameBoxStyle">
+            <div ref="stage" class="flex flex-1 items-center justify-center overflow-hidden bg-muted px-4" :class="{ 'py-4': frameHeight !== null }">
+                <div class="relative" :style="frameBoxStyle">
                     <iframe
                         :src="src"
                         :title="title"
@@ -132,7 +168,7 @@ const frameStyle = computed(() => (scale.value === 1
                         :aria-label="t('Width')"
                         class="group absolute inset-y-0 -end-3 flex w-3 cursor-ew-resize touch-none items-center justify-center"
                         @pointerdown.prevent="startResize"
-                        @dblclick="resetWidth"
+                        @dblclick="resetSize"
                     >
                         <span class="h-10 w-1 rounded-full bg-accented transition-colors duration-500 ease-out group-hover:bg-primary" :class="{ 'bg-primary': dragging }" />
                     </div>
@@ -141,7 +177,7 @@ const frameStyle = computed(() => (scale.value === 1
         </template>
         <template #footer>
             <span class="text-sm text-muted tabular-nums">
-                {{ t('Width') }}: {{ formatPixels(shownWidth) }}<template v-if="scale < 1"> · {{ formatPercent(scale) }}</template>
+                {{ formatScreenSize(shownWidth, shownHeight) }}<template v-if="scale < 1"> · {{ formatPercent(scale) }}</template>
             </span>
             <OptionStrip v-model="preset" :items="screenOptions" :label="t('Screen size')" size="sm" />
         </template>

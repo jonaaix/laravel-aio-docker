@@ -13,8 +13,9 @@ export function formatBadgeCount(count: number, cap = 99): string {
     return count > cap ? `${format.format(cap)}+` : format.format(count);
 }
 
-export function formatPixels(pixels: number): string {
-    return `${new Intl.NumberFormat(formatLocale.value, { maximumFractionDigits: 0 }).format(pixels)} px`;
+export function formatScreenSize(width: number, height: number): string {
+    const format = new Intl.NumberFormat(formatLocale.value, { maximumFractionDigits: 0 });
+    return `${format.format(width)} × ${format.format(height)} px`;
 }
 
 export function formatSpeedFactor(factor: number): string {
