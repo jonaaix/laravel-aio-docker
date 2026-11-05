@@ -25,7 +25,8 @@ drops, selections or scrolling meant for the open one.
 
 ## Decisions
 
-- Ten kept chats (user). The drawn view lives in memory only; it cannot be stored, the data snapshot in IndexedDB
+- Five kept chats (user): ten cost the tab about 600 MB in the dev build; loading from the snapshot alone was fast
+  but not seamless. The drawn view lives in memory only; it cannot be stored, the data snapshot in IndexedDB
   already covers restarts and remote servers.
 
 ## Open

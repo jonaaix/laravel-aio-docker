@@ -58,7 +58,7 @@ and shown is described in [People in the chat](chat-people.md).
 ### Conversations
 
 The conversations are listed in a sidebar, described in [Conversations in the sidebar](chat-sidebar.md).
-Going back to one of the last ten conversations opened shows it at once, exactly where it was left, without loading
+Going back to one of the last five conversations opened shows it at once, exactly where it was left, without loading
 it again; it kept receiving new messages meanwhile. Any other conversation first shows the copy the browser keeps of it
 and then brings it up to date.
 Each conversation is its own agent session. The agent's answer appears while it is
