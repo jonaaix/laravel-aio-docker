@@ -3,6 +3,7 @@ import { joinURL } from 'ufo';
 import dylan from '@dicebear/styles/dylan.json';
 import glyphs from '@dicebear/styles/glyphs.json';
 import notionists from '@dicebear/styles/notionists.json';
+import slice from '@dicebear/styles/slice.json';
 import voxelBot from '@dicebear/styles/voxel-bot.json';
 
 export type ParticipantKind = 'person' | 'agent';
@@ -46,6 +47,17 @@ const PRESET_DESIGNS = ['smiley', 'wow'];
 export const AGENT_PRESET_ROWS = PRESET_DESIGNS.map(design => SMILEY_COLORS.map(color => `${PRESET_PREFIX}${design}-${color}`));
 
 const cache = new Map<string, string>();
+const chatStyle = new Style(slice);
+
+export function chatAvatarUri(conversationId: string): string {
+    const key = `chat:${conversationId}`;
+    let uri = cache.get(key);
+    if (!uri) {
+        uri = new Avatar(chatStyle, { seed: conversationId }).toDataUri();
+        cache.set(key, uri);
+    }
+    return uri;
+}
 
 export function generatedAvatarUri(kind: ParticipantKind, seed: string): string {
     const key = `${kind}:${seed}`;
