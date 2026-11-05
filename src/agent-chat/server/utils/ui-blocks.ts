@@ -95,7 +95,9 @@ export const UI_BLOCK_TOOLS = [
     {
         name: 'show_cards',
         description: 'Show a grid of cards: a comparison, a summary, the state of several parts. '
-            + 'A card with a status is tinted green, amber or red as a whole, so use a status only where it is the message.' + IN_CHAT_LANGUAGE,
+            + 'Structure it in cards with a heading: most important first, related things together. '
+            + 'A card shows its message visibly, the more strongly the more important it is; without a message it stays neutral. '
+            + 'A status tints the whole card green, amber or red.' + IN_CHAT_LANGUAGE,
         inputSchema: {
             type: 'object',
             properties: {
