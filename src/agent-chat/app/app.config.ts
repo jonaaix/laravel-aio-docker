@@ -29,9 +29,12 @@ export default defineAppConfig({
         },
         modal: {
             slots: {
-                header: 'flex items-center gap-1.5 min-h-13 px-4 py-2.5 sm:px-5 pe-14 sm:pe-14',
-                close: 'absolute top-1.5 end-3',
-                footer: 'flex items-center gap-1.5 px-4 py-3 sm:px-5',
+                header: 'flex items-center gap-4 min-h-0 px-4 sm:px-4 py-2',
+                wrapper: 'min-w-0 flex-1',
+                title: 'truncate text-sm font-semibold text-highlighted',
+                close: 'static size-8 shrink-0 justify-center',
+                body: 'flex-1 p-5 sm:p-5',
+                footer: 'flex items-center justify-end gap-2 px-4 sm:px-4 py-3',
             },
         },
         badge: {
