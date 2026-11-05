@@ -6,12 +6,12 @@ const storePage = (path: string) => ({ url: `pages/${path}`, fileUrl: `files/${p
 const twoOptions = [{ title: 'Compact list' }, { title: 'Cards', description: 'Roomier' }];
 
 test('variants are lettered in order, each with its own page, and keep the recommendation', () => {
-    const block = uiBlockFor('show_variants', { columns: 2, variants: [{ path: 'a.html', title: 'Cards' }, { path: 'b.html', title: 'Table', description: 'Dense' }], recommended: 'B)' }, storePage);
+    const block = uiBlockFor('show_variants', { columns: 2, variants: [{ path: 'a.html', title: 'Cards' }, { path: 'b.html', title: 'Table', description: 'Dense' }], recommended: true }, storePage);
     assert.ok(block.kind === 'variants');
     assert.equal(block.columns, 2);
     assert.deepEqual(block.viewport, { width: 1280, height: 800 });
     assert.deepEqual(block.options.map(option => [option.letter, option.title, option.description, option.page.url]), [['a', 'Cards', null, 'pages/a.html'], ['b', 'Table', 'Dense', 'pages/b.html']]);
-    assert.equal(block.recommended, 'b');
+    assert.equal(block.recommended, 'a');
 });
 
 test('variants need one or two columns and a page each', () => {
@@ -31,8 +31,9 @@ test('a choice needs two to six options', () => {
     assert.throws(() => uiBlockFor('ask_choice', { question: 'Which?', options: [{ title: 'Only' }] }, storePage), /2 to 6/);
 });
 
-test('a recommendation must name one of the options', () => {
-    assert.throws(() => uiBlockFor('ask_choice', { question: 'Which?', options: twoOptions, recommended: 'c' }, storePage), /one of the letters a, b/);
+test('a recommendation is a yes or no for option a', () => {
+    assert.equal((uiBlockFor('ask_choice', { question: 'Which?', options: twoOptions }, storePage) as { recommended: string | null }).recommended, null);
+    assert.throws(() => uiBlockFor('ask_choice', { question: 'Which?', options: twoOptions, recommended: 'c' }, storePage), /true or false/);
 });
 
 test('an option without a title is refused', () => {

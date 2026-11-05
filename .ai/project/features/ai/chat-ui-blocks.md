@@ -46,7 +46,8 @@ the same name, while the versions of a draft line up in order in the download fo
 
 For visual design or UX alternatives — never for plain questions — the agent shows two to six variants as selectable
 cards, each variant its own HTML page holding only that variant. Each card carries a radio button at its top left with
-the variant's letter and name, the recommended one marked by a filled "Recommended" badge right after the name, an
+the variant's letter and name, option a) — always the recommendation when there is one — marked by a filled "Recommended" badge right after the
+name, an
 optional short description beneath the name, and a live preview of the variant at the card's full width and the
 height the agent gives it, laid out for that width as a real page would be. Under Settings → Chat the previews can
 instead be scaled down from the screen width the agent designed the variants for. The preview can be used like the page itself — clicked, scrolled, text selected; selecting the
@@ -58,7 +59,7 @@ the arrow keys ← and → and two arrow buttons in the title bar step to the pr
 ### Choice
 
 Where a plain question in the text would not do — for example when each option needs a description — the agent asks
-in a card: the question, then two to six lettered options with name and optional description, one of them possibly
+in a card: the question, then two to six lettered options with name and optional description; when the agent recommends one, it is a),
 marked "Recommended". Having asked, the agent ends its answer and waits for the reply.
 
 ### Cards

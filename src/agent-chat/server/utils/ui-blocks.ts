@@ -22,7 +22,7 @@ const OPTIONS_PROPERTY = {
     type: 'array',
     minItems: MIN_OPTIONS,
     maxItems: LETTERS.length,
-    description: 'The options in order; they are lettered a), b), c)… automatically.',
+    description: 'The options in order, lettered a), b), c)… automatically; a) is always the recommended one.',
     items: {
         type: 'object',
         properties: {
@@ -35,7 +35,7 @@ const OPTIONS_PROPERTY = {
 
 const IN_CHAT_LANGUAGE = ' Write all its texts in the chat language.';
 
-const RECOMMENDED_PROPERTY = { type: 'string', description: 'Optional letter of the recommended option. List the recommended option first, so it is "a".' };
+const RECOMMENDED_PROPERTY = { type: 'boolean', description: 'Whether a) is marked as recommended; false when there is no recommendation.' };
 
 export const UI_BLOCK_TOOLS = [
     {
@@ -60,7 +60,7 @@ export const UI_BLOCK_TOOLS = [
                     type: 'array',
                     minItems: MIN_OPTIONS,
                     maxItems: LETTERS.length,
-                    description: 'The variants in order; they are lettered a), b), c)… automatically.',
+                    description: 'The variants in order, lettered a), b), c)… automatically; a) is always the recommended one.',
                     items: {
                         type: 'object',
                         properties: {
@@ -188,11 +188,13 @@ function optionsOf(value: unknown, name: string): UiOption[] {
 }
 
 function recommendedOf(value: unknown, options: UiOption[]): string | null {
-    const letter = optionalText(value, 'recommended')?.toLowerCase().replace(/\)$/, '') ?? null;
-    if (letter !== null && !options.some(option => option.letter === letter)) {
-        throw new Error(`recommended must be one of the letters ${options.map(option => option.letter).join(', ')}.`);
+    if (value === undefined || value === null || value === false) {
+        return null;
     }
-    return letter;
+    if (value !== true) {
+        throw new TypeError('recommended must be true or false.');
+    }
+    return options[0]!.letter;
 }
 
 function cardsOf(value: unknown): UiCard[] {
