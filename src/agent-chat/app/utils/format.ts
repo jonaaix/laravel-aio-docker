@@ -13,6 +13,10 @@ export function formatBadgeCount(count: number, cap = 99): string {
     return count > cap ? `${format.format(cap)}+` : format.format(count);
 }
 
+export function formatPixels(pixels: number): string {
+    return `${new Intl.NumberFormat(formatLocale.value, { maximumFractionDigits: 0 }).format(pixels)} px`;
+}
+
 export function formatSpeedFactor(factor: number): string {
     return `${new Intl.NumberFormat(formatLocale.value, { maximumFractionDigits: 2 }).format(factor)}×`;
 }

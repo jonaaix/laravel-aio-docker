@@ -287,5 +287,10 @@
     "Key saved, but {service} could not be reached. Choose {service} again later.": "Schlüssel gespeichert, aber {service} war nicht erreichbar. Wähle {service} später erneut.",
     "The key could not be saved": "Der Schlüssel konnte nicht gespeichert werden",
     "Recommended": "Empfohlen",
-    "Summarizing conversation…": "Fasse Unterhaltung zusammen…"
+    "Summarizing conversation…": "Fasse Unterhaltung zusammen…",
+    "Open in new tab": "In neuem Tab öffnen",
+    "View larger": "Größer ansehen",
+    "View code": "Code ansehen",
+    "More actions": "Weitere Aktionen",
+    "Width": "Breite"
 }

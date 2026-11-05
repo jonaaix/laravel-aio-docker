@@ -47,7 +47,10 @@ function sendFile(conversationId: string, args: Record<string, unknown>): ToolRe
 function showUiBlock(conversationId: string, tool: string, args: Record<string, unknown>): ToolResult {
     useConversationRuntime(conversationId).attachPart(workingDir => ({
         type: UI_BLOCK_PART,
-        data: uiBlockFor(tool, args, path => pageUrl(conversationId, storeConversationFile(conversationId, workingDir, path))),
+        data: uiBlockFor(tool, args, (path) => {
+            const stored = storeConversationFile(conversationId, workingDir, path);
+            return { url: pageUrl(conversationId, stored), filename: stored.filename };
+        }),
     }));
     return textResult('Shown in the chat.');
 }

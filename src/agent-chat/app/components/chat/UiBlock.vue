@@ -11,7 +11,7 @@ const chatPlugins = useChatMarkdownPlugins();
 
 <template>
     <figure class="my-3 flex flex-col gap-2">
-        <figcaption v-if="block.kind !== 'choice' && block.title" class="font-semibold text-highlighted">
+        <figcaption v-if="block.kind === 'cards' && block.title" class="font-semibold text-highlighted">
             {{ block.title }}
         </figcaption>
         <ChatUiPage v-if="block.kind === 'page' || block.kind === 'variants'" :page="block.page" :title="block.title" />

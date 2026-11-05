@@ -287,5 +287,10 @@
     "Key saved, but {service} could not be reached. Choose {service} again later.": "Sleutel opgeslagen, maar {service} was niet bereikbaar. Kies {service} later opnieuw.",
     "The key could not be saved": "De sleutel kon niet worden opgeslagen",
     "Recommended": "Aanbevolen",
-    "Summarizing conversation…": "Gesprek samenvatten…"
+    "Summarizing conversation…": "Gesprek samenvatten…",
+    "Open in new tab": "Openen in nieuw tabblad",
+    "View larger": "Groter bekijken",
+    "View code": "Code bekijken",
+    "More actions": "Meer acties",
+    "Width": "Breedte"
 }

@@ -8,6 +8,7 @@ export interface UiOption {
 
 export interface UiPage {
     url: string;
+    filename?: string;
     height: number;
 }
 

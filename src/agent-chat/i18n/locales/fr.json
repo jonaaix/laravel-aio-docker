@@ -287,5 +287,10 @@
     "Key saved, but {service} could not be reached. Choose {service} again later.": "Clé enregistrée, mais {service} est injoignable. Choisissez {service} plus tard.",
     "The key could not be saved": "La clé n'a pas pu être enregistrée",
     "Recommended": "Recommandé",
-    "Summarizing conversation…": "Résumé de la conversation…"
+    "Summarizing conversation…": "Résumé de la conversation…",
+    "Open in new tab": "Ouvrir dans un nouvel onglet",
+    "View larger": "Agrandir",
+    "View code": "Voir le code",
+    "More actions": "Plus d'actions",
+    "Width": "Largeur"
 }

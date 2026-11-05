@@ -287,5 +287,10 @@
     "Key saved, but {service} could not be reached. Choose {service} again later.": "Key saved, but {service} could not be reached. Choose {service} again later.",
     "The key could not be saved": "The key could not be saved",
     "Recommended": "Recommended",
-    "Summarizing conversation…": "Summarizing conversation…"
+    "Summarizing conversation…": "Summarizing conversation…",
+    "Open in new tab": "Open in new tab",
+    "View larger": "View larger",
+    "View code": "View code",
+    "More actions": "More actions",
+    "Width": "Width"
 }

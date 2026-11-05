@@ -15,6 +15,8 @@ message field.
 - [x] Client: page block (embedded, full width, fixed height), variants block (page + option rows), choice block
       (section card + option rows); option row extracted from the question card; picks into the message field
 - [x] Feature Book chapter
+- [x] Page actions: larger view with a width handle (`PageViewer`), code in the preview column, new tab, download;
+      thin scrollbar injected by the page route
 - [ ] User check: a new conversation (tools load at session start) asked for design alternatives
 - [x] Second step: cards (`show_cards`, up to 12, optional status good / warning / bad tinting the whole card)
 

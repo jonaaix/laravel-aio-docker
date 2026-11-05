@@ -24,6 +24,13 @@ height, with an optional title above it, and scrolls inside that height. It is f
 revises the file, it shows the revision as a new page, so the earlier versions stay in the conversation. The page runs
 shut off from the chat — it can run its own scripts but never reaches the person's sign-in or the rest of the chat,
 not even when opened on its own. Only the page itself is kept, so it has to bring everything it needs along.
+Its scrollbar is drawn thin and quiet.
+
+Above the page sit its title and three actions. "View larger" opens it in a large window over the chat; a handle at
+the page's edge drags its width narrower or wider, with the current width shown below, so the page can be checked at
+phone and tablet widths — a double click on the handle gives it the full width again. "View code" opens the HTML in
+the preview column beside the conversation, where it can be copied or downloaded. The "More actions" menu opens the
+page on its own in a new tab, still shut off the same way, or downloads it.
 
 ### Variants
 

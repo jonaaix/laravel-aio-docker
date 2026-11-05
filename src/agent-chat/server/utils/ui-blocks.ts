@@ -7,7 +7,7 @@ const PAGE_FILE = /\.html?$/i;
 const MAX_CARDS = 12;
 const CARD_STATUSES: UiCardStatus[] = ['good', 'warning', 'bad'];
 
-export type PageStore = (path: string) => string;
+export type PageStore = (path: string) => { url: string; filename: string };
 
 const PAGE_PROPERTIES = {
     path: { type: 'string', description: 'Absolute path, or a path relative to the working directory, of a self-contained HTML file: styles and scripts inline or from a CDN. Files next to it are not available.' },
@@ -121,7 +121,7 @@ function pageOf(args: Record<string, unknown>, storePage: PageStore): UiPage {
     if (typeof height !== 'number' || !Number.isInteger(height) || height < PAGE_HEIGHT.min || height > PAGE_HEIGHT.max) {
         throw new Error(`height must be a whole number from ${PAGE_HEIGHT.min} to ${PAGE_HEIGHT.max}.`);
     }
-    return { url: storePage(path), height };
+    return { ...storePage(path), height };
 }
 
 function optionsOf(value: unknown, name: string): UiOption[] {
