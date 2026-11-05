@@ -582,29 +582,29 @@ const restoreConversation = () => withFlag(archiving, restore);
                                 :data-reading="readAlong.readingId.value === message.id || undefined"
                                 @click="event => readAlong.jumpToClicked(event, message.id)"
                             >
-                            <div v-if="message.role === 'assistant'" class="mb-3 flex flex-col empty:hidden">
-                                <ChatThinkingBlock :message="message" :streaming="isStreaming(message.id)" />
-                                <ChatWorkingBlock :message="message" :streaming="isStreaming(message.id)" :file-changes-shown="changesPanelShown" />
-                                <ChatTurnChanges :message="message" :shown="changesShownFor(message.id)" @show="showChanges(message.id)" />
-                            </div>
-                            <template v-for="segment in answerSegments(message)" :key="`${segment.key}:${mentionKey}`">
-                                <ChatImageGroup v-if="segment.kind === 'images'" :parts="segment.parts" />
-                                <p v-else-if="segment.kind === 'stop-hook'" class="mt-1 flex items-start gap-2 pb-2 text-sm text-muted">
-                                    <UTooltip :text="t('Stop hook')">
-                                        <UIcon name="i-heroicons-shield-check" class="mt-0.5 size-4 shrink-0" />
-                                    </UTooltip>
-                                    <span class="sr-only">{{ t('Stop hook') }}</span>
-                                    <span class="flex min-w-0 flex-col gap-1">
-                                        <span v-for="(paragraph, line) in segment.paragraphs" :key="line" class="whitespace-pre-line" :class="line === 0 ? 'font-medium' : ''">{{ paragraph }}</span>
-                                    </span>
-                                </p>
-                                <p v-else-if="segment.kind === 'compacted'" class="flex items-center gap-2 text-sm text-muted">
-                                    <UIcon name="i-heroicons-arrows-pointing-in" class="size-4 shrink-0" />
-                                    {{ t('Conversation summarized') }}
-                                </p>
-                                <ChatMessagePart v-else :part="segment.part" :message="message" :streaming="isStreaming(message.id)" />
-                            </template>
-                            <ChatTurnOutcome v-if="message.role === 'assistant'" :message="message" />
+                                <div v-if="message.role === 'assistant'" class="mb-3 flex flex-col empty:hidden">
+                                    <ChatThinkingBlock :message="message" :streaming="isStreaming(message.id)" />
+                                    <ChatWorkingBlock :message="message" :streaming="isStreaming(message.id)" :file-changes-shown="changesPanelShown" />
+                                    <ChatTurnChanges :message="message" :shown="changesShownFor(message.id)" @show="showChanges(message.id)" />
+                                </div>
+                                <template v-for="segment in answerSegments(message)" :key="`${segment.key}:${mentionKey}`">
+                                    <ChatImageGroup v-if="segment.kind === 'images'" :parts="segment.parts" />
+                                    <p v-else-if="segment.kind === 'stop-hook'" class="mt-1 flex items-start gap-2 pb-2 text-sm text-muted">
+                                        <UTooltip :text="t('Stop hook')">
+                                            <UIcon name="i-heroicons-shield-check" class="mt-0.5 size-4 shrink-0" />
+                                        </UTooltip>
+                                        <span class="sr-only">{{ t('Stop hook') }}</span>
+                                        <span class="flex min-w-0 flex-col gap-1">
+                                            <span v-for="(paragraph, line) in segment.paragraphs" :key="line" class="whitespace-pre-line" :class="line === 0 ? 'font-medium' : ''">{{ paragraph }}</span>
+                                        </span>
+                                    </p>
+                                    <p v-else-if="segment.kind === 'compacted'" class="flex items-center gap-2 text-sm text-muted">
+                                        <UIcon name="i-heroicons-arrows-pointing-in" class="size-4 shrink-0" />
+                                        {{ t('Conversation summarized') }}
+                                    </p>
+                                    <ChatMessagePart v-else :part="segment.part" :message="message" :streaming="isStreaming(message.id)" />
+                                </template>
+                                <ChatTurnOutcome v-if="message.role === 'assistant'" :message="message" />
                             </div>
                         </template>
                         <template #actions="{ message }">
