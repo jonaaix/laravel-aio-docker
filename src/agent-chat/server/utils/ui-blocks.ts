@@ -104,12 +104,14 @@ export const UI_BLOCK_TOOLS = [
                     type: 'array',
                     minItems: 1,
                     maxItems: MAX_CARDS,
+                    description: 'Cards stand two per row. A normal card is about 360 px wide (around 45 characters per line), a wide card about 740 px (around 90). Pair normal cards; make a card wide when its text needs the room.',
                     items: {
                         type: 'object',
                         properties: {
                             title: { type: 'string', description: 'Short title of the card.' },
                             text: { type: 'string', description: 'Optional body; Markdown allowed, such as a short list.' },
                             status: { type: 'string', enum: CARD_STATUSES, description: 'Optional: good, warning or bad.' },
+                            wide: { type: 'boolean', description: 'Optional: true takes the whole row.' },
                         },
                         required: ['title'],
                     },
@@ -207,12 +209,15 @@ function cardsOf(value: unknown): UiCard[] {
         if (typeof card !== 'object' || card === null) {
             throw new TypeError(`cards[${index}] must be an object with a title.`);
         }
-        const { title, text, status } = card as Record<string, unknown>;
+        const { title, text, status, wide } = card as Record<string, unknown>;
+        if (wide !== undefined && typeof wide !== 'boolean') {
+            throw new TypeError(`cards[${index}].wide must be true or false.`);
+        }
         const named = optionalText(status, `cards[${index}].status`);
         if (named !== null && !CARD_STATUSES.includes(named as UiCardStatus)) {
             throw new Error(`cards[${index}].status must be one of ${CARD_STATUSES.join(', ')}.`);
         }
-        return { title: requiredText(title, `cards[${index}].title`), text: optionalText(text, `cards[${index}].text`), status: named as UiCardStatus | null };
+        return { title: requiredText(title, `cards[${index}].title`), text: optionalText(text, `cards[${index}].text`), status: named as UiCardStatus | null, wide: wide === true };
     });
 }
 

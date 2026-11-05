@@ -31,6 +31,7 @@ export interface UiCard {
     title: string;
     text: string | null;
     status: UiCardStatus | null;
+    wide: boolean;
 }
 
 export type UiBlock =

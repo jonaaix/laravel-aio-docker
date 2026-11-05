@@ -45,7 +45,7 @@ test('cards keep their status and refuse an unknown one', () => {
     assert.deepEqual(uiBlockFor('show_cards', { cards: [{ title: 'API', status: 'good' }] }, storePage), {
         kind: 'cards',
         title: null,
-        cards: [{ title: 'API', text: null, status: 'good' }],
+        cards: [{ title: 'API', text: null, status: 'good', wide: false }],
     });
     assert.throws(() => uiBlockFor('show_cards', { cards: [{ title: 'API', status: 'green' }] }, storePage), /good, warning, bad/);
 });

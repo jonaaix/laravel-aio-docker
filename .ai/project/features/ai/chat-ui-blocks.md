@@ -66,8 +66,9 @@ marked "Recommended". Having asked, the agent ends its answer and waits for the 
 ### Cards
 
 For a comparison, a summary or the state of several parts the agent shows a grid of up to twelve cards, with an
-optional title above it. Each card has a title and optionally a short text, which may hold a list. The grid adapts to
-the width, cards in a row share their height. A card can carry a status: good tints the whole card green, warning
+optional title above it. Each card has a title and optionally a short text, which may hold a list. Cards stand two per row,
+and the agent can make a card wide so it takes the whole row; on a phone they stand one per row. Cards in a row share
+their height. A card can carry a status: good tints the whole card green, warning
 amber, bad red, each with a matching symbol beside the title; cards without a status stay neutral.
 
 ### Picking

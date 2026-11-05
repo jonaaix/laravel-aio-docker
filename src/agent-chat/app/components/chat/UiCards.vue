@@ -15,12 +15,12 @@ const STATUS_LOOK: Record<UiCardStatus, { surface: string; icon: string; tone: s
 </script>
 
 <template>
-    <div class="grid grid-cols-[repeat(auto-fit,minmax(14rem,1fr))] gap-2">
+    <div class="grid gap-2 sm:grid-cols-2">
         <div
             v-for="(card, index) in cards"
             :key="index"
             class="flex flex-col gap-1 rounded-md p-3 ring"
-            :class="card.status ? STATUS_LOOK[card.status].surface : 'ring-default'"
+            :class="[card.status ? STATUS_LOOK[card.status].surface : 'ring-default', { 'sm:col-span-2': card.wide }]"
         >
             <p class="flex items-start gap-1.5 font-semibold text-highlighted">
                 <UIcon v-if="card.status" :name="STATUS_LOOK[card.status].icon" class="mt-0.5 size-4 shrink-0" :class="STATUS_LOOK[card.status].tone" />
