@@ -10,3 +10,4 @@
 | ai-chat-sidebar | [ai/chat-sidebar.md](ai/chat-sidebar.md) | Conversation list: states, unread, done sound, naming, archive, avatars, folded strip |
 | ai-chat-file-changes | [ai/chat-file-changes.md](ai/chat-file-changes.md) | Live file changes of an answer: diffs, Changes panel, whole-file preview |
 | ai-chat-voice | [ai/chat-voice.md](ai/chat-voice.md) | Dictation, reading aloud, the mini player and read-along |
+| ai-chat-answer-sections | [ai/chat-answer-sections.md](ai/chat-answer-sections.md) | Marked answer sections as quiet blocks, question cards with selectable options |
