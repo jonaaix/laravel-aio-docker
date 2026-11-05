@@ -17,7 +17,6 @@ unread.track();
 useDoneSound().track();
 followSpeechRate();
 const speech = useSpeechPlayer();
-const speechLevel = useSpeechLevel();
 const hubUnread = hub ? useHubUnread() : null;
 hubUnread?.track();
 const { load: loadReads, apply: applyRead } = useReads();
@@ -46,6 +45,7 @@ const items = computed<NavigationMenuItem[][]>(() => groupByRecency(conversation
         paused: conversation.status !== 'running' && !conversation.turnActive,
         creatorName: chatName(conversation.creatorId),
         lastActivityAt: conversation.lastActivityAt,
+        reading: speech.speakingId.value !== null && speech.conversationId.value === conversation.id,
     })),
 ]));
 
@@ -156,15 +156,8 @@ onBeforeUnmount(() => {
                         >
                             <img :src="chatAvatarUri(item.id)" alt="" class="size-full rounded-full">
                             <template v-if="collapsed">
-                                <template v-if="speech.speakingId.value && speech.conversationId.value === item.id">
-                                    <span
-                                        class="audio-ring pointer-events-none absolute inset-0 rounded-full"
-                                        :style="{ transform: `scale(${1.08 + speechLevel.level.value * 0.3})`, opacity: 0.35 + speechLevel.level.value * 0.65 }"
-                                    />
-                                    <span
-                                        class="audio-ring pointer-events-none absolute inset-0 rounded-full"
-                                        :style="{ transform: `scale(${1.08 + speechLevel.echo.value * 0.7})`, opacity: speechLevel.echo.value * 0.6 }"
-                                    />
+                                <template v-if="item.reading">
+                                    <VoiceRing class="absolute -inset-1" />
                                     <span class="sr-only">{{ t('Reading aloud') }}</span>
                                 </template>
                                 <span v-if="unread.isUnread(item.id)" class="absolute -end-0.5 -top-0.5 size-2 rounded-full bg-primary ring-2 ring-(--ui-bg-muted)" :aria-label="t('Unread')" />
@@ -186,7 +179,7 @@ onBeforeUnmount(() => {
                                     </template>
                                     <span class="shrink-0 tabular-nums">{{ formatRelativeTime(item.lastActivityAt, now) }}</span>
                                 </span>
-                                <AudioLevelBars v-if="speech.speakingId.value && speech.conversationId.value === item.id" :playing="!speech.paused.value" :label="t('Reading aloud')" class="ms-auto" />
+                                <AudioLevelBars v-if="item.reading" :playing="!speech.paused.value" :label="t('Reading aloud')" class="ms-auto" />
                                 <ChatWorkingDots v-else-if="item.session.live" :label="t(item.session.label)" class="ms-auto" />
                                 <ChatSessionPill v-else-if="!item.paused" :state="item.session" class="ms-auto" />
                             </span>

@@ -220,11 +220,3 @@ html[data-embedded] {
     }
 }
 
-@utility audio-ring {
-    box-shadow: 0 0 0 1px var(--ui-primary);
-
-    @media (prefers-reduced-motion: reduce) {
-        transform: none !important;
-    }
-}
-
