@@ -169,7 +169,6 @@ onBeforeUnmount(() => {
 
             <template #footer="{ collapsed }">
                 <div class="flex w-full flex-col gap-2">
-                    <SpeechPlayer v-if="!collapsed" class="max-lg:hidden" />
                     <div class="flex flex-col">
                         <UTooltip :text="t('Archived')" :disabled="!collapsed">
                             <UButton
@@ -186,6 +185,7 @@ onBeforeUnmount(() => {
                         </UTooltip>
                         <SettingsButton :collapsed="collapsed" />
                     </div>
+                    <SpeechPlayer v-if="!collapsed" class="max-lg:hidden" />
                     <AccountCard v-if="!collapsed" />
                 </div>
             </template>
