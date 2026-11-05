@@ -41,10 +41,11 @@ a conversation opens the same window at Agents. The open window and its category
   people's message bubbles a light container tone of it — while background, sidebar, surfaces, text and borders
   stay the plain greys of Black, in light and dark alike. Every choice applies at once and belongs to the person, so it
   follows them to every device and browser.
-- **Chat** holds how the conversation behaves, each choice belonging to the person like the appearance:
+- **Chat** holds how the conversation behaves, each choice belonging to the person like the appearance, grouped
+  under "Sending", "Agent activity" and "Sound" in the order a turn runs through them:
   "Move sent message to top", off by default: when off, the conversation stays at the bottom after sending and
   follows the answer; when on, the sent message moves to the top with room below for the answer. "Expand thinking
-  automatically" and "Expand work steps automatically", both on by default, let the agent's thinking and its work
+  automatically" and "Expand work steps automatically", both off by default, let the agent's thinking and its work
   steps stand open while they run; when off, each stays folded and opens only on a click. The changes panel is not
   affected by them. "Show file changes
   automatically", on by default, lets the changes panel open on its own beside the conversation (see

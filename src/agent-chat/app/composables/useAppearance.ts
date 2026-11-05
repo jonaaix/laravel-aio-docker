@@ -62,8 +62,8 @@ export function useAppearance() {
     const changesPanelHidden = computed(() => user.value?.changesPanelHidden ?? false);
     const changesPanelAuto = computed(() => user.value?.changesPanelAuto ?? true);
     const doneSound = computed(() => user.value?.doneSound ?? true);
-    const thinkingAutoOpen = computed(() => user.value?.thinkingAutoOpen ?? true);
-    const workingAutoOpen = computed(() => user.value?.workingAutoOpen ?? true);
+    const thinkingAutoOpen = computed(() => user.value?.thinkingAutoOpen ?? false);
+    const workingAutoOpen = computed(() => user.value?.workingAutoOpen ?? false);
     const language = computed(() => locale.value);
     const tint = computed(() => isTint(user.value?.tint) ? user.value?.tint ?? null : DEFAULT_TINT);
     const speechRate = computed(() => isSpeechRate(user.value?.speechRate) ? user.value.speechRate : DEFAULT_SPEECH_RATE);

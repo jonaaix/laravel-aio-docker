@@ -50,7 +50,7 @@ export function signInUser(name: string, userRef: string): UserRow | null {
         useDatabase().update(users).set({ appUserRef: userRef }).where(eq(users.id, named.id)).run();
         return { ...named, appUserRef: userRef };
     }
-    const row: UserRow = { id: randomUUID(), name, avatarSeed: null, avatarFile: null, avatarSource: null, avatarUpdatedAt: null, colorMode: null, font: null, language: null, pinSentMessage: false, changesPanelHidden: false, changesPanelAuto: true, doneSound: true, thinkingAutoOpen: true, workingAutoOpen: true, tint: null, speechVoices: null, speechRate: null, appUserRef: userRef, isAdmin: false, blockedAt: null, accountDetails: null, createdAt: Date.now() };
+    const row: UserRow = { id: randomUUID(), name, avatarSeed: null, avatarFile: null, avatarSource: null, avatarUpdatedAt: null, colorMode: null, font: null, language: null, pinSentMessage: false, changesPanelHidden: false, changesPanelAuto: true, doneSound: true, thinkingAutoOpen: false, workingAutoOpen: false, tint: null, speechVoices: null, speechRate: null, appUserRef: userRef, isAdmin: false, blockedAt: null, accountDetails: null, createdAt: Date.now() };
     useDatabase().insert(users).values(row).run();
     return announce(row);
 }

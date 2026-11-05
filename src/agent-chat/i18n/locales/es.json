@@ -299,5 +299,8 @@
     "Previous": "Anterior",
     "Next": "Siguiente",
     "Expand thinking automatically": "Desplegar el razonamiento automáticamente",
-    "Expand work steps automatically": "Desplegar los pasos de trabajo automáticamente"
+    "Expand work steps automatically": "Desplegar los pasos de trabajo automáticamente",
+    "Sending": "Envío",
+    "Agent activity": "Actividad del agente",
+    "Sound": "Sonido"
 }

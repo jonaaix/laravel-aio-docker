@@ -288,6 +288,13 @@
       "when": 1793920544556,
       "tag": "0040_drop_user_scaled_previews",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "6",
+      "when": 1793920725930,
+      "tag": "0041_user_auto_open_default_off",
+      "breakpoints": true
     }
   ]
 }
