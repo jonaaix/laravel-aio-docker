@@ -20,9 +20,9 @@
     --font-scale: 1;
     --ui-radius: 0.5rem;
     --ui-container: 52rem;
-    --ai-gradient-from: var(--ui-primary);
-    --ai-gradient-via: oklch(from var(--ui-primary) calc(l + 0.06) c calc(h + 55));
-    --ai-gradient-to: oklch(from var(--ui-primary) calc(l + 0.1) c calc(h - 70));
+    --ai-gradient-from: oklch(from var(--ui-primary) 0.64 0.23 h);
+    --ai-gradient-via: oklch(from var(--ui-primary) 0.7 0.25 calc(h + 70));
+    --ai-gradient-to: oklch(from var(--ui-primary) 0.78 0.17 calc(h - 85));
 }
 
 .light {
@@ -67,6 +67,13 @@
     --ui-border-muted: oklch(0.96 0 0 / 7%);
     --ui-border-accented: oklch(0.96 0 0 / 16%);
     --ui-border-inverted: var(--ui-primary);
+}
+
+/* Black has no hue to derive the AI colours from, so they take a fixed violet, pink and cyan. */
+[data-tint-neutral] {
+    --ai-gradient-from: oklch(0.62 0.24 292);
+    --ai-gradient-via: oklch(0.7 0.25 350);
+    --ai-gradient-to: oklch(0.8 0.15 205);
 }
 
 /* Black is the neutral choice: pure greys with black and white accents. */

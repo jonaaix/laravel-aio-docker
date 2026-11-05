@@ -145,7 +145,7 @@ watch(time, draw, { immediate: true });
 </script>
 
 <template>
-    <svg :viewBox="`0 0 ${SIZE} ${SIZE}`" class="pointer-events-none overflow-visible" aria-hidden="true">
+    <svg :viewBox="`0 0 ${SIZE} ${SIZE}`" class="pointer-events-none overflow-visible drop-shadow-[0_0_2.5px_var(--ai-gradient-via)]" aria-hidden="true">
         <defs>
             <linearGradient :id="gradientId" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox" :gradientTransform="gradientTurn">
                 <stop offset="0" style="stop-color: var(--ai-gradient-from)" />
