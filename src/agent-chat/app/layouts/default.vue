@@ -256,7 +256,7 @@ onBeforeUnmount(() => {
                             />
                         </UTooltip>
                         <SettingsButton :collapsed="collapsed" />
-                        <ColorModeStrip v-if="!collapsed" class="mt-1" />
+                        <ColorModeStrip v-if="!collapsed" class="mt-2" />
                     </div>
                     <SpeechPlayer v-if="!collapsed" class="max-lg:hidden" />
                     <AccountCard v-if="!collapsed" />
