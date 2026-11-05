@@ -25,6 +25,7 @@
 .light {
     --ui-primary: oklch(var(--tint-lightness) calc(0.18 * var(--tint-chroma)) var(--tint));
     --light-streak: oklch(0.62 calc(0.1 * var(--tint-chroma)) var(--tint));
+    --nav-current: oklch(var(--tint-lightness) calc(0.09 * var(--tint-chroma)) var(--tint));
     --user-message: oklch(0.93 calc(0.04 * var(--tint-chroma)) var(--tint));
     --ui-bg: oklch(0.985 0 0);
     --ui-bg-muted: oklch(0.965 0 0);
@@ -46,6 +47,7 @@
 .dark {
     --ui-primary: oklch(var(--tint-dark-lightness) calc(0.14 * var(--tint-chroma)) var(--tint));
     --light-streak: oklch(0.86 calc(0.08 * var(--tint-chroma)) var(--tint));
+    --nav-current: oklch(var(--tint-dark-lightness) calc(0.07 * var(--tint-chroma)) var(--tint));
     --user-message: oklch(0.3 calc(0.04 * var(--tint-chroma)) var(--tint));
     --ui-bg: oklch(0.17 0 0);
     --ui-bg-muted: oklch(0.205 0 0);
@@ -67,12 +69,14 @@
 /* Black is the neutral choice: pure greys with black and white accents. */
 .light[data-tint-neutral] {
     --ui-primary: oklch(0.205 0 0);
+    --nav-current: var(--ui-primary);
     /* A fixed agreed tone rather than a derived one: Black's bubbles are exactly #f5f6f3. */
     --user-message: oklch(0.9716 0.0041 121.6);
 }
 
 .dark[data-tint-neutral] {
     --ui-primary: oklch(0.922 0 0);
+    --nav-current: var(--ui-primary);
     --user-message: oklch(0.275 0.004 106);
 }
 

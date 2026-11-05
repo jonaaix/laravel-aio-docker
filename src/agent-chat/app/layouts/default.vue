@@ -139,7 +139,7 @@ onBeforeUnmount(() => {
                     :items="items"
                     :collapsed="collapsed"
                     orientation="vertical"
-                    :ui="{ link: 'overflow-hidden py-1.5 before:transition-colors before:duration-500 before:ease-out hover:before:bg-primary/8 aria-[current=page]:before:bg-primary/12 aria-[current=page]:text-primary', linkLabel: 'min-w-0 flex-1' }"
+                    :ui="{ link: 'overflow-hidden py-1.5 before:transition-colors before:duration-500 before:ease-out hover:before:bg-primary/8 aria-[current=page]:before:bg-primary/12 aria-[current=page]:text-(--nav-current)', linkLabel: 'min-w-0 flex-1' }"
                 >
                     <template #item-label="{ item }">
                         <template v-if="item.session">
