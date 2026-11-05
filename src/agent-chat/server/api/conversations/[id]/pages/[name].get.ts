@@ -3,8 +3,9 @@ import { readFileSync } from 'node:fs';
 const SCROLLBAR_STYLE = '<style>'
     + '::-webkit-scrollbar{width:10px;height:10px}'
     + '::-webkit-scrollbar-track,::-webkit-scrollbar-corner{background:transparent}'
-    + '::-webkit-scrollbar-thumb{border:3px solid transparent;border-radius:9999px;background:rgb(128 128 128 / 0.45) padding-box}'
-    + '::-webkit-scrollbar-thumb:hover{background-color:rgb(128 128 128 / 0.7)}'
+    + '::-webkit-scrollbar-thumb{border:3px solid transparent;border-radius:9999px;background:rgb(0 0 0 / 0.25) padding-box}'
+    + '::-webkit-scrollbar-thumb:hover{background-color:rgb(0 0 0 / 0.4)}'
+    + '@media (prefers-color-scheme:dark){::-webkit-scrollbar-thumb{background-color:rgb(255 255 255 / 0.2)}::-webkit-scrollbar-thumb:hover{background-color:rgb(255 255 255 / 0.35)}}'
     + '@supports not selector(::-webkit-scrollbar){*{scrollbar-width:thin;scrollbar-color:rgb(128 128 128 / 0.45) transparent}}'
     + '</style>';
 const HEAD_OPEN = /<head\b[^>]*>/i;
