@@ -43,7 +43,10 @@ a conversation opens the same window at Agents. The open window and its category
   follows them to every device and browser.
 - **Chat** holds how the conversation behaves, each choice belonging to the person like the appearance:
   "Move sent message to top", off by default: when off, the conversation stays at the bottom after sending and
-  follows the answer; when on, the sent message moves to the top with room below for the answer. "Show file changes
+  follows the answer; when on, the sent message moves to the top with room below for the answer. "Expand thinking
+  automatically" and "Expand work steps automatically", both on by default, let the agent's thinking and its work
+  steps stand open while they run; when off, each stays folded and opens only on a click. The changes panel is not
+  affected by them. "Show file changes
   automatically", on by default, lets the changes panel open on its own beside the conversation (see
   [File changes in the chat](chat-file-changes.md)); when off, it opens only through "N files changed" and only for that conversation.
   "Sound when a chat is done", on by default, plays the drum beat when an answer finishes out of sight (see

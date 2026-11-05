@@ -50,12 +50,12 @@ export function signInUser(name: string, userRef: string): UserRow | null {
         useDatabase().update(users).set({ appUserRef: userRef }).where(eq(users.id, named.id)).run();
         return { ...named, appUserRef: userRef };
     }
-    const row: UserRow = { id: randomUUID(), name, avatarSeed: null, avatarFile: null, avatarSource: null, avatarUpdatedAt: null, colorMode: null, font: null, language: null, pinSentMessage: false, changesPanelHidden: false, changesPanelAuto: true, doneSound: true, scaledPreviews: false, tint: null, speechVoices: null, speechRate: null, appUserRef: userRef, isAdmin: false, blockedAt: null, accountDetails: null, createdAt: Date.now() };
+    const row: UserRow = { id: randomUUID(), name, avatarSeed: null, avatarFile: null, avatarSource: null, avatarUpdatedAt: null, colorMode: null, font: null, language: null, pinSentMessage: false, changesPanelHidden: false, changesPanelAuto: true, doneSound: true, scaledPreviews: false, thinkingAutoOpen: true, workingAutoOpen: true, tint: null, speechVoices: null, speechRate: null, appUserRef: userRef, isAdmin: false, blockedAt: null, accountDetails: null, createdAt: Date.now() };
     useDatabase().insert(users).values(row).run();
     return announce(row);
 }
 
-export function setUserAppearance(row: UserRow, changes: Partial<Pick<UserRow, 'colorMode' | 'font' | 'language' | 'pinSentMessage' | 'changesPanelHidden' | 'changesPanelAuto' | 'doneSound' | 'scaledPreviews' | 'tint' | 'speechVoices' | 'speechRate'>>): UserRow {
+export function setUserAppearance(row: UserRow, changes: Partial<Pick<UserRow, 'colorMode' | 'font' | 'language' | 'pinSentMessage' | 'changesPanelHidden' | 'changesPanelAuto' | 'doneSound' | 'scaledPreviews' | 'thinkingAutoOpen' | 'workingAutoOpen' | 'tint' | 'speechVoices' | 'speechRate'>>): UserRow {
     useDatabase().update(users).set(changes).where(eq(users.id, row.id)).run();
     return announce({ ...row, ...changes });
 }
@@ -94,7 +94,7 @@ function announce(row: UserRow): UserRow {
 }
 
 export function toChatUser(row: UserRow): ChatUser {
-    return { id: row.id, name: row.name, avatarSeed: row.avatarSeed, avatarUrl: avatarUrl(row.avatarFile, row.avatarUpdatedAt), avatarLocked: row.avatarSource !== null, colorMode: row.colorMode, font: row.font, language: row.language, pinSentMessage: row.pinSentMessage, changesPanelHidden: row.changesPanelHidden, changesPanelAuto: row.changesPanelAuto, doneSound: row.doneSound, scaledPreviews: row.scaledPreviews, tint: row.tint, speechVoices: row.speechVoices ?? {}, speechRate: row.speechRate, admin: row.isAdmin, blocked: row.blockedAt !== null, accountDetails: row.accountDetails };
+    return { id: row.id, name: row.name, avatarSeed: row.avatarSeed, avatarUrl: avatarUrl(row.avatarFile, row.avatarUpdatedAt), avatarLocked: row.avatarSource !== null, colorMode: row.colorMode, font: row.font, language: row.language, pinSentMessage: row.pinSentMessage, changesPanelHidden: row.changesPanelHidden, changesPanelAuto: row.changesPanelAuto, doneSound: row.doneSound, scaledPreviews: row.scaledPreviews, thinkingAutoOpen: row.thinkingAutoOpen, workingAutoOpen: row.workingAutoOpen, tint: row.tint, speechVoices: row.speechVoices ?? {}, speechRate: row.speechRate, admin: row.isAdmin, blocked: row.blockedAt !== null, accountDetails: row.accountDetails };
 }
 
 function userAvatarBase(row: UserRow): string {

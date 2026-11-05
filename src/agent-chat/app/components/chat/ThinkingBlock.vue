@@ -10,6 +10,7 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
+const { thinkingAutoOpen } = useAppearance();
 
 const reasoning = computed(() => props.message.parts.filter((part): part is ReasoningUIPart => part.type === 'reasoning'));
 const thoughts = computed(() => reasoning.value.map(part => part.text.trim().replace(/\n{2,}/g, '\n')).filter(Boolean));
@@ -48,7 +49,7 @@ watch(() => thoughts.value.join('\n').length, async () => {
         v-if="visible"
         :title="thinking ? t('Thinking…') : t('Thought')"
         :active="thinking"
-        :auto-open="streaming"
+        :auto-open="streaming && thinkingAutoOpen"
         icon="i-heroicons-light-bulb"
         :expandable="thoughts.length > 0"
         plain

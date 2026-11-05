@@ -298,5 +298,7 @@
     "Phone": "Telefono",
     "Previous": "Precedente",
     "Next": "Successiva",
-    "Scale down variant previews": "Riduci le anteprime delle varianti"
+    "Scale down variant previews": "Riduci le anteprime delle varianti",
+    "Expand thinking automatically": "Espandi il ragionamento automaticamente",
+    "Expand work steps automatically": "Espandi i passaggi di lavoro automaticamente"
 }

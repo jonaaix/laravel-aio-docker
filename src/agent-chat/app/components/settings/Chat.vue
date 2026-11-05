@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const { t } = useI18n();
-const { pinSentMessage, changesPanelAuto, doneSound, scaledPreviews, setPinSentMessage, setChangesPanelAuto, setDoneSound, setScaledPreviews } = useAppearance();
+const { pinSentMessage, changesPanelAuto, doneSound, scaledPreviews, thinkingAutoOpen, workingAutoOpen, setPinSentMessage, setChangesPanelAuto, setDoneSound, setScaledPreviews, setThinkingAutoOpen, setWorkingAutoOpen } = useAppearance();
 </script>
 
 <template>
@@ -10,6 +10,18 @@ const { pinSentMessage, changesPanelAuto, doneSound, scaledPreviews, setPinSentM
             :model-value="pinSentMessage"
             :label="t('Move sent message to top')"
             @update:model-value="value => setPinSentMessage(value === true)"
+        />
+        <USwitch
+            id="setting-thinking-auto-open"
+            :model-value="thinkingAutoOpen"
+            :label="t('Expand thinking automatically')"
+            @update:model-value="value => setThinkingAutoOpen(value === true)"
+        />
+        <USwitch
+            id="setting-working-auto-open"
+            :model-value="workingAutoOpen"
+            :label="t('Expand work steps automatically')"
+            @update:model-value="value => setWorkingAutoOpen(value === true)"
         />
         <USwitch
             id="setting-file-changes-auto"

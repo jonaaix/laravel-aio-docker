@@ -298,5 +298,7 @@
     "Phone": "Handy",
     "Previous": "Vorherige",
     "Next": "Nächste",
-    "Scale down variant previews": "Varianten-Vorschauen verkleinern"
+    "Scale down variant previews": "Varianten-Vorschauen verkleinern",
+    "Expand thinking automatically": "Nachdenken automatisch aufklappen",
+    "Expand work steps automatically": "Arbeitsschritte automatisch aufklappen"
 }

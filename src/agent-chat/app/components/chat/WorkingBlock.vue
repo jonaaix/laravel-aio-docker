@@ -11,6 +11,7 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
+const { workingAutoOpen } = useAppearance();
 
 const tools = computed(() => props.message.parts.filter((part): part is DynamicToolUIPart => part.type === 'dynamic-tool'));
 const working = computed(() => props.streaming && props.message.parts.at(-1)?.type !== 'text');
@@ -42,7 +43,7 @@ const commandTool = computed(() => {
         v-if="tools.length > 0"
         :title="title"
         :active="working"
-        :auto-open="streaming"
+        :auto-open="streaming && workingAutoOpen"
         :expandable="listedTools.length > 0"
         :icon="failed ? 'i-heroicons-exclamation-triangle' : 'i-heroicons-wrench-screwdriver'"
         :icon-class="failed ? 'text-error' : ''"

@@ -4,7 +4,7 @@ import { SPEECH_VOICES, isSpeechProvider, isSpeechRate } from '../../../../share
 
 export default defineEventHandler(async (event) => {
     const user = ownUser(event);
-    const { colorMode, font, language, pinSentMessage, changesPanelHidden, changesPanelAuto, doneSound, scaledPreviews, tint, speechRate, speechVoice } = await readBody<{ colorMode?: unknown; font?: unknown; language?: unknown; pinSentMessage?: unknown; changesPanelHidden?: unknown; changesPanelAuto?: unknown; doneSound?: unknown; speechVoice?: { provider?: unknown; voice?: unknown }; tint?: unknown; speechRate?: unknown }>(event);
+    const { colorMode, font, language, pinSentMessage, changesPanelHidden, changesPanelAuto, doneSound, scaledPreviews, thinkingAutoOpen, workingAutoOpen, tint, speechRate, speechVoice } = await readBody<{ colorMode?: unknown; font?: unknown; language?: unknown; pinSentMessage?: unknown; changesPanelHidden?: unknown; changesPanelAuto?: unknown; doneSound?: unknown; scaledPreviews?: unknown; thinkingAutoOpen?: unknown; workingAutoOpen?: unknown; speechVoice?: { provider?: unknown; voice?: unknown }; tint?: unknown; speechRate?: unknown }>(event);
     const changes: Parameters<typeof setUserAppearance>[1] = {};
     if (colorMode !== undefined) {
         if (!(COLOR_MODES as readonly unknown[]).includes(colorMode)) {
@@ -50,6 +50,12 @@ export default defineEventHandler(async (event) => {
     }
     if (typeof scaledPreviews === 'boolean') {
         changes.scaledPreviews = scaledPreviews;
+    }
+    if (typeof thinkingAutoOpen === 'boolean') {
+        changes.thinkingAutoOpen = thinkingAutoOpen;
+    }
+    if (typeof workingAutoOpen === 'boolean') {
+        changes.workingAutoOpen = workingAutoOpen;
     }
     if (speechVoice !== undefined) {
         const { provider, voice } = speechVoice ?? {};
