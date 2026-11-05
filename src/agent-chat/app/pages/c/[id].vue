@@ -420,15 +420,22 @@ async function submit(): Promise<void> {
     await send(text, takeAttachments());
 }
 
-async function focusComposerAtEnd(): Promise<void> {
+async function focusComposerAt(position: number | null): Promise<void> {
     await nextTick();
     const textarea = composerBar.value?.querySelector('textarea');
     if (!textarea) {
         return;
     }
+    const caret = position ?? textarea.value.length;
     textarea.focus();
-    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-    textarea.scrollTop = textarea.scrollHeight;
+    textarea.setSelectionRange(caret, caret);
+    if (position === null) {
+        textarea.scrollTop = textarea.scrollHeight;
+    }
+}
+
+function focusComposerAtEnd(): Promise<void> {
+    return focusComposerAt(null);
 }
 
 function quote(text: string): void {
@@ -476,8 +483,9 @@ function pickOption(line: string, siblings: string[]): void {
     const draft = input.value.trimStart();
     const [first = '', ...rest] = draft.split('\n');
     const remainder = siblings.includes(first.trim()) ? rest.join('\n').trimStart() : draft;
-    input.value = remainder ? `${line}\n\n${remainder}` : line;
-    focusComposerAtEnd();
+    const head = `${line}\n\n`;
+    input.value = head + remainder;
+    focusComposerAt(head.length);
 }
 
 function unpickOption(siblings: string[]): void {
