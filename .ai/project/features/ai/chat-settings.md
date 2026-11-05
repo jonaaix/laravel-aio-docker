@@ -25,7 +25,8 @@ a conversation opens the same window at Agents. The open window and its category
   Italiano, each named in its own language — which turns every text the chat shows itself, and its
   dates and numbers, into that language; what agents and people write stays as written. Until the
   person picks one, the chat follows the browser's language if it is one of these, else English. The
-  mobile app shows the same language. Appearance also sets the theme — light, dark or the system's — and the font of the whole chat:
+  mobile app shows the same language. Appearance also sets the theme — light, dark or the system's, which can also be switched from a strip right below
+  Settings in the unfolded sidebar — and the font of the whole chat:
   System UI (the default), Geist, Inter, Source Sans 3, IBM Plex Sans or, for those who prefer
   monospaced text throughout, JetBrains Mono, set a size smaller so it reads as large as the
   others, each shown in its own
