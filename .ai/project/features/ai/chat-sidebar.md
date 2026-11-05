@@ -38,8 +38,8 @@ finds them by title, ignoring case and accents.
 Each conversation has a small round picture of its own (an abstract "Slice" image that stays the same for that
 conversation), shown before its entry. Folded to its icon strip, the sidebar still lists the conversations by that
 picture, with the name on hover; an unseen answer shows a dot
-on the picture, a working conversation a slowly turning ring of light around it, and the conversation being read shows the
-level bars instead.
+on the picture, a working conversation a slowly turning ring of light around it, and the conversation being read sends soft
+rings pulsing out from its picture, standing still while paused.
 
 ## Examples
 

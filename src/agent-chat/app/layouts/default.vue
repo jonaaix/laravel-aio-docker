@@ -153,9 +153,18 @@ onBeforeUnmount(() => {
                             class="relative flex shrink-0 items-center justify-center self-center rounded-full bg-default ring ring-default dark:bg-elevated/50"
                             :class="collapsed ? 'size-8' : 'size-7'"
                         >
-                            <AudioLevelBars v-if="collapsed && speech.speakingId.value && speech.conversationId.value === item.id" :playing="!speech.paused.value" :label="t('Reading aloud')" />
-                            <img v-else :src="chatAvatarUri(item.id)" alt="" class="size-full rounded-full">
+                            <img :src="chatAvatarUri(item.id)" alt="" class="size-full rounded-full">
                             <template v-if="collapsed">
+                                <template v-if="speech.speakingId.value && speech.conversationId.value === item.id">
+                                    <span
+                                        v-for="echo in 2"
+                                        :key="echo"
+                                        class="audio-pulse pointer-events-none absolute inset-0 rounded-full"
+                                        :class="{ 'audio-pulse-paused': speech.paused.value }"
+                                        :style="{ animationDelay: `${(echo - 1) * 0.8}s` }"
+                                    />
+                                    <span class="sr-only">{{ t('Reading aloud') }}</span>
+                                </template>
                                 <span v-if="unread.isUnread(item.id)" class="absolute -end-0.5 -top-0.5 size-2 rounded-full bg-primary ring-2 ring-(--ui-bg-muted)" :aria-label="t('Unread')" />
                                 <span v-if="item.session.live" class="light-ring pointer-events-none absolute -inset-[3px] rounded-full" role="status" :aria-label="t(item.session.label)" />
                             </template>
