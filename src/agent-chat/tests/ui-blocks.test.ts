@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { uiBlockFor } from '../server/utils/ui-blocks.ts';
 
-const storePage = (path: string) => ({ url: `pages/${path}`, filename: path });
+const storePage = (path: string) => ({ url: `pages/${path}`, fileUrl: `files/${path}`, filename: path });
 const twoOptions = [{ title: 'Compact list' }, { title: 'Cards', description: 'Roomier' }];
 
 test('variants are lettered in order and keep the recommendation', () => {
@@ -10,7 +10,7 @@ test('variants are lettered in order and keep the recommendation', () => {
     assert.deepEqual(block, {
         kind: 'variants',
         title: null,
-        page: { url: 'pages/design.html', filename: 'design.html', height: 560 },
+        page: { url: 'pages/design.html', fileUrl: 'files/design.html', filename: 'design.html', height: 560 },
         options: [{ letter: 'a', title: 'Compact list', description: null }, { letter: 'b', title: 'Cards', description: 'Roomier' }],
         recommended: 'b',
     });

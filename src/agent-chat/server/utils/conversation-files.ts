@@ -71,9 +71,13 @@ export function fileUIPart(conversationId: string, stored: StoredFile, caption?:
         type: 'file',
         mediaType: stored.mediaType,
         filename: stored.filename,
-        url: `conversations/${conversationId}/files/${stored.storedName}`,
+        url: fileUrl(conversationId, stored),
         providerMetadata: { agentChat: caption ? { size: stored.size, caption } : { size: stored.size } },
     };
+}
+
+export function fileUrl(conversationId: string, stored: StoredFile): string {
+    return `conversations/${conversationId}/files/${stored.storedName}`;
 }
 
 export function pageUrl(conversationId: string, stored: StoredFile): string {

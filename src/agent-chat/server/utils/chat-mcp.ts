@@ -49,7 +49,7 @@ function showUiBlock(conversationId: string, tool: string, args: Record<string, 
         type: UI_BLOCK_PART,
         data: uiBlockFor(tool, args, (path) => {
             const stored = storeConversationFile(conversationId, workingDir, path);
-            return { url: pageUrl(conversationId, stored), filename: stored.filename };
+            return { url: pageUrl(conversationId, stored), fileUrl: fileUrl(conversationId, stored), filename: stored.filename };
         }),
     }));
     return textResult('Shown in the chat.');

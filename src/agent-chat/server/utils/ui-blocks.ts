@@ -7,7 +7,7 @@ const PAGE_FILE = /\.html?$/i;
 const MAX_CARDS = 12;
 const CARD_STATUSES: UiCardStatus[] = ['good', 'warning', 'bad'];
 
-export type PageStore = (path: string) => { url: string; filename: string };
+export type PageStore = (path: string) => { url: string; fileUrl: string; filename: string };
 
 const PAGE_PROPERTIES = {
     path: { type: 'string', description: 'Absolute path, or a path relative to the working directory, of a self-contained HTML file: styles and scripts inline or from a CDN. Files next to it are not available.' },

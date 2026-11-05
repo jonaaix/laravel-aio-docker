@@ -10,8 +10,8 @@ const props = defineProps<{
 const { t } = useI18n();
 
 const src = computed(() => apiUrl(props.page.url));
-const fileUrl = computed(() => apiUrl(props.page.url.replace('/pages/', '/files/')));
-const filename = computed(() => props.page.filename ?? 'page.html');
+const fileUrl = computed(() => apiUrl(props.page.fileUrl));
+const filename = computed(() => props.page.filename);
 const viewerOpen = ref(false);
 const codeOpen = ref(false);
 
