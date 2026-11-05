@@ -39,10 +39,9 @@ function turnRules(agent: AgentRow): string {
 - Hand over only when another agent's role fits the task better. Write the hand-over so it stands on its own: the question, the facts, file paths and values it needs, and how much you want back.`;
 }
 
-function chatLanguageSection(languageCode: string): string {
+function chatLanguageLine(languageCode: string): string {
     const language = new Intl.DisplayNames('en', { type: 'language' }).of(languageCode) ?? languageCode;
-    return `## Chat language
-The people use the chat in ${language}. Write the texts you pass to the chat tools — titles, options, descriptions, cards — in ${language}.`;
+    return `Chat language: ${language}`;
 }
 
 export function agentSystemPrompt(agent: AgentRow, lead: AgentRow, projectDir: string, ownDir: string, chatLanguage: string): string {
@@ -56,7 +55,7 @@ ${SHOW_RESULT}
 
 ${BUILDING_BLOCKS}
 
-${chatLanguageSection(chatLanguage)}`;
+${chatLanguageLine(chatLanguage)}`;
     }
     return `You are ${introduction(agent)}, an agent in a web chat led by ${lead.name}. ${turnRules(agent)}
 
@@ -67,7 +66,7 @@ ${SHOW_RESULT}
 
 ${BUILDING_BLOCKS}
 
-${chatLanguageSection(chatLanguage)}`;
+${chatLanguageLine(chatLanguage)}`;
 }
 
 export function rosterBlock(agent: AgentRow, lead: AgentRow, peers: AgentRow[], people: string[]): string {
