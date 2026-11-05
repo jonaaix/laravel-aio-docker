@@ -1,10 +1,13 @@
-import type { UiBlock, UiCard, UiCardStatus, UiOption, UiPage } from '../../shared/types/ui-block';
+import type { UiBlock, UiCard, UiCardStatus, UiOption, UiPage, UiVariant, UiVariantColumns, UiViewport } from '../../shared/types/ui-block';
 
 const LETTERS = 'abcdef';
 const MIN_OPTIONS = 2;
 const PAGE_HEIGHT = { min: 240, max: 1200, fallback: 560 };
 const PAGE_FILE = /\.html?$/i;
 const MAX_CARDS = 12;
+const VARIANT_COLUMNS: UiVariantColumns[] = [1, 2];
+const VIEWPORT_WIDTH = { min: 320, max: 2560, fallback: 1280 };
+const VIEWPORT_HEIGHT = { min: 240, max: 1600, fallback: 800 };
 const CARD_STATUSES: UiCardStatus[] = ['good', 'warning', 'bad'];
 
 export type PageStore = (path: string) => { url: string; fileUrl: string; filename: string };
@@ -41,12 +44,34 @@ export const UI_BLOCK_TOOLS = [
     },
     {
         name: 'show_variants',
-        description: 'Show design or UX alternatives: an HTML page holding all variants, lettered a), b), c)… on the page itself, with the matching list beneath it. '
-            + 'The user picks one with a click and answers in the chat.',
+        description: 'Show visual design or UX alternatives side by side as selectable cards, each with a live preview of its own HTML file. '
+            + 'Only for alternatives that must be seen to be judged; never for plain questions, use ask_choice for those. '
+            + 'The user selects one and answers in the chat.',
         inputSchema: {
             type: 'object',
-            properties: { ...PAGE_PROPERTIES, variants: OPTIONS_PROPERTY, recommended: RECOMMENDED_PROPERTY },
-            required: ['path', 'variants'],
+            properties: {
+                title: { type: 'string', description: 'Optional short title shown above the cards.' },
+                columns: { type: 'integer', enum: VARIANT_COLUMNS, description: 'Cards per row, 1 or 2: 1 when each variant needs the full width to be judged, such as whole pages; 2 for narrower parts.' },
+                viewport_width: { type: 'integer', description: `The screen width in pixels the variants are designed for, ${VIEWPORT_WIDTH.min}–${VIEWPORT_WIDTH.max}; previews are scaled down from it. Default ${VIEWPORT_WIDTH.fallback}.` },
+                viewport_height: { type: 'integer', description: `How tall each preview is at that width, ${VIEWPORT_HEIGHT.min}–${VIEWPORT_HEIGHT.max}. Default ${VIEWPORT_HEIGHT.fallback}.` },
+                variants: {
+                    type: 'array',
+                    minItems: MIN_OPTIONS,
+                    maxItems: LETTERS.length,
+                    description: 'The variants in order; they are lettered a), b), c)… automatically.',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            path: PAGE_PROPERTIES.path,
+                            title: { type: 'string', description: 'Short name of the variant, such as "Compact list".' },
+                            description: { type: 'string', description: 'Optional one or two sentences; Markdown allowed.' },
+                        },
+                        required: ['path', 'title'],
+                    },
+                },
+                recommended: RECOMMENDED_PROPERTY,
+            },
+            required: ['columns', 'variants'],
         },
     },
     {
@@ -112,16 +137,39 @@ function requiredText(value: unknown, name: string): string {
     return text;
 }
 
-function pageOf(args: Record<string, unknown>, storePage: PageStore): UiPage {
-    const path = requiredText(args.path, 'path');
-    if (!PAGE_FILE.test(path)) {
-        throw new Error('path must point to an .html file.');
+function wholeNumber(value: unknown, name: string, range: { min: number; max: number; fallback: number }): number {
+    const number = value ?? range.fallback;
+    if (typeof number !== 'number' || !Number.isInteger(number) || number < range.min || number > range.max) {
+        throw new Error(`${name} must be a whole number from ${range.min} to ${range.max}.`);
     }
-    const height = args.height ?? PAGE_HEIGHT.fallback;
-    if (typeof height !== 'number' || !Number.isInteger(height) || height < PAGE_HEIGHT.min || height > PAGE_HEIGHT.max) {
-        throw new Error(`height must be a whole number from ${PAGE_HEIGHT.min} to ${PAGE_HEIGHT.max}.`);
+    return number;
+}
+
+function storedPage(pathValue: unknown, name: string, height: number, storePage: PageStore): UiPage {
+    const path = requiredText(pathValue, name);
+    if (!PAGE_FILE.test(path)) {
+        throw new Error(`${name} must point to an .html file.`);
     }
     return { ...storePage(path), height, createdAt: Date.now() };
+}
+
+function pageOf(args: Record<string, unknown>, storePage: PageStore): UiPage {
+    return storedPage(args.path, 'path', wholeNumber(args.height, 'height', PAGE_HEIGHT), storePage);
+}
+
+function variantsOf(args: Record<string, unknown>, viewport: UiViewport, storePage: PageStore): UiVariant[] {
+    const options = optionsOf(args.variants, 'variants');
+    return options.map((option, index) => ({
+        ...option,
+        page: storedPage((args.variants as Record<string, unknown>[])[index]!.path, `variants[${index}].path`, viewport.height, storePage),
+    }));
+}
+
+function columnsOf(value: unknown): UiVariantColumns {
+    if (!VARIANT_COLUMNS.includes(value as UiVariantColumns)) {
+        throw new Error('columns must be 1 or 2.');
+    }
+    return value as UiVariantColumns;
 }
 
 function optionsOf(value: unknown, name: string): UiOption[] {
@@ -173,9 +221,10 @@ export function uiBlockFor(tool: string, args: Record<string, unknown>, storePag
         return { kind: 'cards', title, cards: cardsOf(args.cards) };
     }
     if (tool === 'show_variants') {
-        const options = optionsOf(args.variants, 'variants');
-        const recommended = recommendedOf(args.recommended, options);
-        return { kind: 'variants', title, page: pageOf(args, storePage), options, recommended };
+        const columns = columnsOf(args.columns);
+        const viewport = { width: wholeNumber(args.viewport_width, 'viewport_width', VIEWPORT_WIDTH), height: wholeNumber(args.viewport_height, 'viewport_height', VIEWPORT_HEIGHT) };
+        const options = variantsOf(args, viewport, storePage);
+        return { kind: 'variants', title, columns, viewport, options, recommended: recommendedOf(args.recommended, options) };
     }
     return { kind: 'page', title, page: pageOf(args, storePage) };
 }

@@ -8,19 +8,8 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
-const picks = useBlockPicks();
 const chatPlugins = useChatMarkdownPlugins();
-
-const lines = computed(() => props.options.map(option => pickLine(option.letter, option.title)));
-const active = computed(() => picks.messageId.value === props.messageId);
-const chosenLine = computed(() => {
-    const text = active.value ? picks.draft.value : picks.reply(props.messageId);
-    return text === undefined ? null : firstLine(text);
-});
-
-function pick(index: number): void {
-    picks.pick(lines.value[index]!, lines.value);
-}
+const { active, isChosen, pick } = useOptionPick(() => props.options, () => props.messageId);
 </script>
 
 <template>
@@ -29,7 +18,7 @@ function pick(index: number): void {
             v-for="(option, index) in options"
             :key="option.letter"
             :letter="option.letter"
-            :selected="chosenLine === lines[index]"
+            :selected="isChosen(index)"
             :disabled="!active"
             @pick="pick(index)"
         >

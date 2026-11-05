@@ -5,16 +5,18 @@ import { uiBlockFor } from '../server/utils/ui-blocks.ts';
 const storePage = (path: string) => ({ url: `pages/${path}`, fileUrl: `files/${path}`, filename: path });
 const twoOptions = [{ title: 'Compact list' }, { title: 'Cards', description: 'Roomier' }];
 
-test('variants are lettered in order and keep the recommendation', () => {
-    const block = uiBlockFor('show_variants', { path: 'design.html', variants: twoOptions, recommended: 'B)' }, storePage);
-    assert.ok(block.kind === 'variants' && block.page.createdAt > 0);
-    assert.deepEqual({ ...block, page: { ...block.page, createdAt: 0 } }, {
-        kind: 'variants',
-        title: null,
-        page: { url: 'pages/design.html', fileUrl: 'files/design.html', filename: 'design.html', height: 560, createdAt: 0 },
-        options: [{ letter: 'a', title: 'Compact list', description: null }, { letter: 'b', title: 'Cards', description: 'Roomier' }],
-        recommended: 'b',
-    });
+test('variants are lettered in order, each with its own page, and keep the recommendation', () => {
+    const block = uiBlockFor('show_variants', { columns: 2, variants: [{ path: 'a.html', title: 'Cards' }, { path: 'b.html', title: 'Table', description: 'Dense' }], recommended: 'B)' }, storePage);
+    assert.ok(block.kind === 'variants');
+    assert.equal(block.columns, 2);
+    assert.deepEqual(block.viewport, { width: 1280, height: 800 });
+    assert.deepEqual(block.options.map(option => [option.letter, option.title, option.description, option.page.url]), [['a', 'Cards', null, 'pages/a.html'], ['b', 'Table', 'Dense', 'pages/b.html']]);
+    assert.equal(block.recommended, 'b');
+});
+
+test('variants need one or two columns and a page each', () => {
+    assert.throws(() => uiBlockFor('show_variants', { columns: 3, variants: [{ path: 'a.html', title: 'A' }, { path: 'b.html', title: 'B' }] }, storePage), /columns must be 1 or 2/);
+    assert.throws(() => uiBlockFor('show_variants', { columns: 1, variants: [{ path: 'a.html', title: 'A' }, { title: 'B' }] }, storePage), /variants\[1\]\.path is required/);
 });
 
 test('a page must be an html file', () => {

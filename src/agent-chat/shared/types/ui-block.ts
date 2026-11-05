@@ -14,6 +14,17 @@ export interface UiPage {
     createdAt: number;
 }
 
+export interface UiVariant extends UiOption {
+    page: UiPage;
+}
+
+export type UiVariantColumns = 1 | 2;
+
+export interface UiViewport {
+    width: number;
+    height: number;
+}
+
 export type UiCardStatus = 'good' | 'warning' | 'bad';
 
 export interface UiCard {
@@ -24,6 +35,6 @@ export interface UiCard {
 
 export type UiBlock =
     | { kind: 'page'; title: string | null; page: UiPage }
-    | { kind: 'variants'; title: string | null; page: UiPage; options: UiOption[]; recommended: string | null }
+    | { kind: 'variants'; title: string | null; columns: UiVariantColumns; viewport: UiViewport; options: UiVariant[]; recommended: string | null }
     | { kind: 'choice'; question: string; options: UiOption[]; recommended: string | null }
     | { kind: 'cards'; title: string | null; cards: UiCard[] };

@@ -40,9 +40,12 @@ the same name, while the versions of a draft line up in order in the download fo
 
 ### Variants
 
-For design or UX alternatives the agent shows one page holding all variants, lettered a), b), c)… on the page itself,
-and beneath it the matching list: each variant's letter, name and an optional short description, with the
-recommended one marked "Recommended". Two to six variants are possible.
+For visual design or UX alternatives — never for plain questions — the agent shows two to six variants as selectable
+cards, each variant its own HTML page holding only that variant. Each card carries a radio button at its top left with
+the variant's letter and name, the recommended one marked "Recommended", a live preview of the variant scaled down
+from the screen width the agent designed it for, and an optional short description. The agent decides whether the
+cards stand one per row, for variants that need the full width, or two side by side; on a phone they always stand one
+per row. A button on each card opens that variant in the large window with its screen sizes, code and download.
 
 ### Choice
 
@@ -59,7 +62,7 @@ amber, bad red, each with a matching symbol beside the title; cards without a st
 
 ### Picking
 
-In variants and choices, clicking an option puts it into the message field as its letter and name, such as
+In variants and choices, clicking an option — for variants anywhere on its card — puts it into the message field as its letter and name, such as
 "b) Compact list", on the first line; anything the person has already written stays below it, and clicking another
 option of the same block replaces the line. Nothing is sent until the person sends the message, so they can add to it.
 Options can only be picked on the latest answer while the agent is not working; once the person has answered, the
@@ -73,8 +76,8 @@ Nothing half-built reaches the chat.
 
 ## Examples
 
-- Asked to rework a settings screen, the agent shows a page with five lettered layouts and the list a) to e) beneath
-  it, c) marked as recommended. The person clicks c), adds "but with the toolbar of b)" and sends it.
+- Asked to rework a settings screen, the agent shows five lettered layouts as cards, two side by side, c) marked as
+  recommended. The person clicks c), adds "but with the toolbar of b)" and sends it.
 - The agent builds a report page and shows it embedded; after feedback it shows the corrected version as a second
   page below its next answer, while the first one still shows the old state.
 - Checking a deployment, the agent shows four cards — database, queue, mail and storage — the mail card red with
