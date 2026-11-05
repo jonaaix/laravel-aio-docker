@@ -115,6 +115,11 @@ function startResize(event: PointerEvent): void {
     handle.addEventListener('pointercancel', stop);
 }
 
+function focusWindow(event: Event): void {
+    event.preventDefault();
+    (event.currentTarget as HTMLElement | null)?.focus();
+}
+
 function showCode(): void {
     codeMounted.value = true;
     codeOpen.value = true;
@@ -142,6 +147,7 @@ const frameStyle = computed(() => {
     <UModal
         v-model:open="open"
         :title="title"
+        :content="{ onOpenAutoFocus: focusWindow }"
         :ui="{ content: 'w-[min(96vw,1600px)] max-w-none h-[calc(100vh-1rem)] max-h-none sm:max-h-none max-sm:h-dvh max-sm:w-screen max-sm:rounded-none max-sm:ring-0', body: 'flex flex-1 p-0 sm:p-0 overflow-hidden', footer: 'justify-between' }"
     >
         <template #actions>
