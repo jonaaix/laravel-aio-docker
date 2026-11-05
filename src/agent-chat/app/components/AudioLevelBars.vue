@@ -6,6 +6,7 @@ const WORD_SHAPES = [0.7, 1, 0.8, 0.55];
 const REST = 0.25;
 const GAIN = 1.2;
 const CONTRAST = 1.8;
+const WORD_SHARE = 0.6;
 
 const { level, time } = useSpeechLevel();
 const still = import.meta.client && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -17,7 +18,7 @@ const heights = computed(() => {
     void time.value;
     const spectrum = speechSpectrum();
     return BANDS.map((band, index) => {
-        const value = Math.max((spectrum[band] ?? 0) ** CONTRAST, level.value * WORD_SHAPES[index]! * 0.6);
+        const value = Math.max((spectrum[band] ?? 0) ** CONTRAST, level.value * WORD_SHAPES[index]! * WORD_SHARE);
         return Math.min(1, REST + value * GAIN * (1 - REST));
     });
 });
