@@ -172,15 +172,6 @@ html[data-embedded] {
     }
 }
 
-/* On the open chat the title is already a muted accent, so the streak lights it up the way light does on each background. */
-.light [aria-current='page'] .light-streak {
-    --light-streak: var(--ui-primary);
-}
-
-.dark [aria-current='page'] .light-streak {
-    --light-streak: oklch(0.97 0 0);
-}
-
 @keyframes light-streak {
     0% {
         background-position: -22rem 0;
