@@ -19,13 +19,24 @@ const { tint } = useAppearance();
 let chart: Chart | null = null;
 let disposed = false;
 
+let pixel: CanvasRenderingContext2D | null = null;
+
+// Chart.js cannot read oklch() and derives its hover shades as black from it, so colours go in as rgba().
 function resolvedColor(css: string): string {
     const probe = document.createElement('span');
     probe.style.color = css;
     document.body.appendChild(probe);
     const color = getComputedStyle(probe).color;
     probe.remove();
-    return color;
+    pixel ??= document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+    if (!pixel) {
+        return color;
+    }
+    pixel.clearRect(0, 0, 1, 1);
+    pixel.fillStyle = color;
+    pixel.fillRect(0, 0, 1, 1);
+    const [red, green, blue, alpha] = pixel.getImageData(0, 0, 1, 1).data;
+    return `rgba(${red}, ${green}, ${blue}, ${alpha! / 255})`;
 }
 
 function seriesColor(index: number): string {
