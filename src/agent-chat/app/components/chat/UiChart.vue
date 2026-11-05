@@ -12,6 +12,8 @@ const props = defineProps<{
 const CHART_HEIGHT_PX = 300;
 const HUE_SHIFTS = [0, 60, 120, 180];
 const EXTRA_HUE_STEP = 45;
+const HOVER_ALPHA = 0.8;
+const HOVER_MS = 500;
 
 const canvas = ref<HTMLCanvasElement | null>(null);
 const colorMode = useColorMode();
@@ -39,6 +41,10 @@ function resolvedColor(css: string): string {
     return `rgba(${red}, ${green}, ${blue}, ${alpha! / 255})`;
 }
 
+function softened(rgba: string): string {
+    return rgba.replace(/, [\d.]+\)$/, `, ${HOVER_ALPHA})`);
+}
+
 function seriesColor(index: number): string {
     if (index < HUE_SHIFTS.length) {
         return resolvedColor(`oklch(from var(--ui-primary) l c calc(h + ${HUE_SHIFTS[index]}))`);
@@ -55,12 +61,12 @@ function configuration(): ChartConfiguration {
     const grid = resolvedColor('var(--ui-border)');
     const surface = resolvedColor('var(--ui-bg)');
     const datasets: ChartDataset[] = round
-        ? [{ label: props.series[0]!.name, data: props.series[0]!.values, backgroundColor: props.labels.map((_, index) => seriesColor(index)), borderColor: surface, borderWidth: 2 }]
+        ? [{ label: props.series[0]!.name, data: props.series[0]!.values, backgroundColor: props.labels.map((_, index) => seriesColor(index)), hoverBackgroundColor: props.labels.map((_, index) => softened(seriesColor(index))), borderColor: surface, hoverBorderColor: surface, borderWidth: 2 }]
         : props.series.map((series, index) => {
             const color = seriesColor(index);
             return props.chartType === 'line'
                 ? { label: series.name, data: series.values, borderColor: color, backgroundColor: color, tension: 0.3, pointRadius: 2, borderWidth: 2 }
-                : { label: series.name, data: series.values, backgroundColor: color, borderRadius: 3 };
+                : { label: series.name, data: series.values, backgroundColor: color, hoverBackgroundColor: softened(color), borderRadius: 3 };
         });
     const stacked = props.chartType === 'stacked_bar';
     const axis = { stacked, grid: { color: grid }, border: { color: grid }, ticks: { color: text } };
@@ -70,7 +76,8 @@ function configuration(): ChartConfiguration {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            animation: false,
+            animation: { duration: 0 },
+            transitions: { active: { animation: { duration: HOVER_MS, easing: 'easeOutQuart' } } },
             plugins: {
                 legend: { position: 'top', labels: { color: text, boxWidth: 12, boxHeight: 12 } },
                 tooltip: { callbacks: { label: item => `${item.dataset.label ?? ''}: ${formatAmount(Number(item.raw), props.unit)}` } },
