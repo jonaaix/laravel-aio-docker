@@ -30,12 +30,17 @@ export type UiCardStatus = 'good' | 'warning' | 'bad';
 export interface UiCard {
     title: string;
     text: string | null;
-    status: UiCardStatus | null;
     wide: boolean;
+}
+
+export interface UiCardSection {
+    heading: string;
+    status: UiCardStatus | null;
+    cards: UiCard[];
 }
 
 export type UiBlock =
     | { kind: 'page'; title: string | null; page: UiPage }
     | { kind: 'variants'; title: string | null; columns: UiVariantColumns; viewport: UiViewport; options: UiVariant[]; recommended: string | null }
     | { kind: 'choice'; question: string; options: UiOption[]; recommended: string | null }
-    | { kind: 'cards'; title: string | null; cards: UiCard[] };
+    | { kind: 'cards'; sections: UiCardSection[] };

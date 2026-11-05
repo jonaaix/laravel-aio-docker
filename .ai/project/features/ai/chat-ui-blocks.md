@@ -64,11 +64,12 @@ marked "Recommended". Having asked, the agent ends its answer and waits for the 
 
 ### Cards
 
-For a comparison, a summary or the state of several parts the agent shows a grid of up to twelve cards, with an
-optional title above it. Each card has a title and optionally a short text, which may hold a list. Cards stand two per row,
-and the agent can make a card wide so it takes the whole row; on a phone they stand one per row. Cards in a row share
-their height. A card can carry a status: good tints the whole card green, warning
-amber, bad red, each with a matching symbol beside the title; cards without a status stay neutral.
+For a comparison, a summary or the state of several parts the agent shows cards grouped into sections, all in one
+block: each section has its own heading and up to twelve cards, the sections sorted by importance, the most important
+first. Each card has a title and optionally a short text, which may hold a list. Within a section all cards look the
+same; a section can carry a message — good tints all its cards green, warning amber, bad red, with a matching symbol
+beside its heading — and a section without one stays neutral. Cards stand two per row, the agent can make a card wide
+so it takes the whole row, and on a phone they stand one per row. Cards in a row share their height.
 
 ### Picking
 
@@ -90,7 +91,7 @@ Nothing half-built reaches the chat.
   recommended. The person clicks c), adds "but with the toolbar of b)" and sends it.
 - The agent builds a report page and shows it embedded; after feedback it shows the corrected version as a second
   page below its next answer, while the first one still shows the old state.
-- Checking a deployment, the agent shows four cards — database, queue, mail and storage — the mail card red with
-  "No SMTP host set", the others green.
+- Checking a deployment, the agent shows a red section "Problem" with the mail card ("No SMTP host set") above a green
+  section "Fine" with database, queue and storage.
 - The agent asks in a choice card which of three export formats to use, each with a one-line description; the person
   clicks b), which appears as "b) CSV" in the message field.

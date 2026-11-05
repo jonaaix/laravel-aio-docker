@@ -41,11 +41,11 @@ test('an option without a title is refused', () => {
     assert.throws(() => uiBlockFor('ask_choice', { question: 'Which?', options: [{ title: 'A' }, { description: 'x' }] }, storePage), /options\[1\]\.title is required/);
 });
 
-test('cards keep their status and refuse an unknown one', () => {
-    assert.deepEqual(uiBlockFor('show_cards', { cards: [{ title: 'API', status: 'good' }] }, storePage), {
+test('cards come in sections, each with its own status', () => {
+    assert.deepEqual(uiBlockFor('show_cards', { sections: [{ heading: 'Done', status: 'good', cards: [{ title: 'API' }, { title: 'Docs', wide: true }] }] }, storePage), {
         kind: 'cards',
-        title: null,
-        cards: [{ title: 'API', text: null, status: 'good', wide: false }],
+        sections: [{ heading: 'Done', status: 'good', cards: [{ title: 'API', text: null, wide: false }, { title: 'Docs', text: null, wide: true }] }],
     });
-    assert.throws(() => uiBlockFor('show_cards', { cards: [{ title: 'API', status: 'green' }] }, storePage), /good, warning, bad/);
+    assert.throws(() => uiBlockFor('show_cards', { sections: [{ heading: 'X', status: 'green', cards: [{ title: 'API' }] }] }, storePage), /good, warning, bad/);
+    assert.throws(() => uiBlockFor('show_cards', { sections: [{ cards: [{ title: 'API' }] }] }, storePage), /sections\[0\]\.heading is required/);
 });

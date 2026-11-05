@@ -1,10 +1,11 @@
-import type { UiBlock, UiCard, UiCardStatus, UiOption, UiPage, UiVariant, UiVariantColumns, UiViewport } from '../../shared/types/ui-block';
+import type { UiBlock, UiCard, UiCardSection, UiCardStatus, UiOption, UiPage, UiVariant, UiVariantColumns, UiViewport } from '../../shared/types/ui-block';
 
 const LETTERS = 'abcdef';
 const MIN_OPTIONS = 2;
 const PAGE_HEIGHT = { min: 240, max: 1200, fallback: 560 };
 const PAGE_FILE = /\.html?$/i;
 const MAX_CARDS = 12;
+const MAX_SECTIONS = 6;
 const CANVAS_COLUMNS: Record<string, UiVariantColumns> = { small: 2, large: 1 };
 const CANVASES = Object.keys(CANVAS_COLUMNS);
 const VIEWPORT_WIDTH = { min: 320, max: 2560, fallback: 1280 };
@@ -96,29 +97,40 @@ export const UI_BLOCK_TOOLS = [
             + 'Group content into sections, each with its own heading, sorted by importance in descending order. '
             + 'Within a section everything looks the same; between sections the appearance differs by importance. '
             + 'Sections without a message stay neutral. '
-            + 'One call shows one section. For several sections, send several calls one after another, each with the section heading as its title.',
+            + 'List all sections in one call.',
         inputSchema: {
             type: 'object',
             properties: {
-                title: { type: 'string', description: 'Optional short title shown above the cards.' },
-                cards: {
+                sections: {
                     type: 'array',
                     minItems: 1,
-                    maxItems: MAX_CARDS,
-                    description: 'Cards stand two per row. A normal card is about 360 px wide (around 45 characters per line), a wide card about 740 px (around 90). Pair normal cards; make a card wide when its text needs the room.',
+                    maxItems: MAX_SECTIONS,
                     items: {
                         type: 'object',
                         properties: {
-                            title: { type: 'string', description: 'Short title of the card.' },
-                            text: { type: 'string', description: 'Optional body; Markdown allowed, such as a short list.' },
-                            status: { type: 'string', enum: CARD_STATUSES, description: 'Optional: good, warning or bad.' },
-                            wide: { type: 'boolean', description: 'Optional: true takes the whole row.' },
+                            heading: { type: 'string', description: 'Heading of the section.' },
+                            status: { type: 'string', enum: CARD_STATUSES, description: 'Optional message of the section: good, warning or bad.' },
+                            cards: {
+                                type: 'array',
+                                minItems: 1,
+                                maxItems: MAX_CARDS,
+                                description: 'Cards stand two per row. A normal card is about 360 px wide (around 45 characters per line), a wide card about 740 px (around 90). Pair normal cards; make a card wide when its text needs the room.',
+                                items: {
+                                    type: 'object',
+                                    properties: {
+                                        title: { type: 'string', description: 'Short title of the card.' },
+                                        text: { type: 'string', description: 'Optional body; Markdown allowed, such as a short list.' },
+                                        wide: { type: 'boolean', description: 'Optional: true takes the whole row.' },
+                                    },
+                                    required: ['title'],
+                                },
+                            },
                         },
-                        required: ['title'],
+                        required: ['heading', 'cards'],
                     },
                 },
             },
-            required: ['cards'],
+            required: ['sections'],
         },
     },
 ];
@@ -202,23 +214,36 @@ function recommendedOf(value: unknown, options: UiOption[]): string | null {
     return options[0]!.letter;
 }
 
-function cardsOf(value: unknown): UiCard[] {
+function cardsOf(value: unknown, name: string): UiCard[] {
     if (!Array.isArray(value) || value.length < 1 || value.length > MAX_CARDS) {
-        throw new Error(`cards must list 1 to ${MAX_CARDS} cards.`);
+        throw new Error(`${name} must list 1 to ${MAX_CARDS} cards.`);
     }
     return value.map((card: unknown, index) => {
         if (typeof card !== 'object' || card === null) {
-            throw new TypeError(`cards[${index}] must be an object with a title.`);
+            throw new TypeError(`${name}[${index}] must be an object with a title.`);
         }
-        const { title, text, status, wide } = card as Record<string, unknown>;
+        const { title, text, wide } = card as Record<string, unknown>;
         if (wide !== undefined && typeof wide !== 'boolean') {
-            throw new TypeError(`cards[${index}].wide must be true or false.`);
+            throw new TypeError(`${name}[${index}].wide must be true or false.`);
         }
-        const named = optionalText(status, `cards[${index}].status`);
+        return { title: requiredText(title, `${name}[${index}].title`), text: optionalText(text, `${name}[${index}].text`), wide: wide === true };
+    });
+}
+
+function sectionsOf(value: unknown): UiCardSection[] {
+    if (!Array.isArray(value) || value.length < 1 || value.length > MAX_SECTIONS) {
+        throw new Error(`sections must list 1 to ${MAX_SECTIONS} sections.`);
+    }
+    return value.map((section: unknown, index) => {
+        if (typeof section !== 'object' || section === null) {
+            throw new TypeError(`sections[${index}] must be an object with a heading and cards.`);
+        }
+        const { heading, status, cards } = section as Record<string, unknown>;
+        const named = optionalText(status, `sections[${index}].status`);
         if (named !== null && !CARD_STATUSES.includes(named as UiCardStatus)) {
-            throw new Error(`cards[${index}].status must be one of ${CARD_STATUSES.join(', ')}.`);
+            throw new Error(`sections[${index}].status must be one of ${CARD_STATUSES.join(', ')}.`);
         }
-        return { title: requiredText(title, `cards[${index}].title`), text: optionalText(text, `cards[${index}].text`), status: named as UiCardStatus | null, wide: wide === true };
+        return { heading: requiredText(heading, `sections[${index}].heading`), status: named as UiCardStatus | null, cards: cardsOf(cards, `sections[${index}].cards`) };
     });
 }
 
@@ -230,7 +255,7 @@ export function uiBlockFor(tool: string, args: Record<string, unknown>, storePag
     }
     const title = optionalText(args.title, 'title');
     if (tool === 'show_cards') {
-        return { kind: 'cards', title, cards: cardsOf(args.cards) };
+        return { kind: 'cards', sections: sectionsOf(args.sections) };
     }
     if (tool === 'show_variants') {
         const columns = columnsOf(args.canvas);
