@@ -169,7 +169,7 @@ html[data-embedded] {
 }
 
 [aria-current='page'] .light-streak {
-    --light-streak: oklch(0.99 calc(0.02 * var(--tint-chroma)) var(--tint));
+    --light-streak: color-mix(in oklch, var(--ui-primary) 45%, var(--ui-bg));
 }
 
 @keyframes light-streak {
