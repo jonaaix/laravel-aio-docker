@@ -6,6 +6,7 @@ const MAX_HEIGHT_PX = 1600;
 const MIN_BLOCK_PX = 22;
 const POINT_PX = 28;
 const MIN_TICK_GAP_PX = 40;
+const MINUTES_PER_DAY = 1440;
 const TICK_STEPS = [15, 30, 60, 120, 180, 360, 720, 1440, 2880, 10080];
 
 export interface ScheduleEntry {
@@ -61,7 +62,7 @@ export function scheduleLayout(group: UiTimelineGroup): ScheduleLayout {
     const until = Math.max(...items.map(item => item.end ?? item.start!));
     const spans = items.filter(item => item.end != null).map(item => item.end! - item.start!);
     const scale = pixelsPerMinute(Math.max(until - from, 60), spans.length > 0 ? Math.min(...spans) : 60);
-    const step = TICK_STEPS.find(minutes => minutes * scale >= MIN_TICK_GAP_PX) ?? TICK_STEPS.at(-1)!;
+    const step = TICK_STEPS.find(minutes => minutes * scale >= MIN_TICK_GAP_PX) ?? Math.ceil(MIN_TICK_GAP_PX / scale / MINUTES_PER_DAY) * MINUTES_PER_DAY;
     const rangeStart = Math.floor(from / step) * step;
     const rangeEnd = Math.max(Math.ceil(until / step) * step, rangeStart + step, until + POINT_PX / scale);
     const ticks = [];
