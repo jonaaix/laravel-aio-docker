@@ -11,8 +11,9 @@ tags: [chat, agents, mcp, design-alternatives, choices]
 An agent can do more than write text and send files: it can shape the chat's interface at the point of its answer
 where it needs it. It describes a building block as data, and the chat draws it in its own style. This lets an agent
 show a prototype or a set of design alternatives right in the conversation and let people choose with a click,
-instead of handing over a file to download. Whether an agent uses the blocks depends on what it was asked or told to
-do; answers without them keep their usual formatting, including the clickable question cards (see
+instead of handing over a file to download. Agents reach for the blocks on their own whenever seeing or clicking serves
+the people better than reading — weighing alternatives, deciding between options, judging something visual, taking in
+the state of several things at a glance — and a prompt or project rule can ask for them too; answers without them keep their usual formatting, including the clickable question cards (see
 [Answer sections](chat-answer-sections.md)).
 
 ## How does it work?
