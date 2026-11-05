@@ -169,7 +169,7 @@ function variantsOf(args: Record<string, unknown>, viewport: UiViewport, storePa
 }
 
 function columnsOf(canvas: unknown): UiVariantColumns {
-    const columns = typeof canvas === 'string' ? CANVAS_COLUMNS[canvas] : undefined;
+    const columns = typeof canvas === 'string' && Object.hasOwn(CANVAS_COLUMNS, canvas) ? CANVAS_COLUMNS[canvas] : undefined;
     if (!columns) {
         throw new Error(`canvas must be ${CANVASES.join(' or ')}.`);
     }

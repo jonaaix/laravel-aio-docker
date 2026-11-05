@@ -16,6 +16,7 @@ test('variants are lettered in order, each with its own page, and keep the recom
 
 test('variants need a small or large canvas and a page each', () => {
     assert.throws(() => uiBlockFor('show_variants', { canvas: 'huge', variants: [{ path: 'a.html', title: 'A' }, { path: 'b.html', title: 'B' }] }, storePage), /canvas must be small or large/);
+    assert.throws(() => uiBlockFor('show_variants', { canvas: 'constructor', variants: [{ path: 'a.html', title: 'A' }, { path: 'b.html', title: 'B' }] }, storePage), /canvas must be small or large/);
     assert.throws(() => uiBlockFor('show_variants', { canvas: 'large', variants: [{ path: 'a.html', title: 'A' }, { title: 'B' }] }, storePage), /variants\[1\]\.path is required/);
 });
 
