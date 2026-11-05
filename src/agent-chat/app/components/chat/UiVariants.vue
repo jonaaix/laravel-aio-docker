@@ -50,23 +50,22 @@ function choose(index: number): void {
             @keydown.enter.prevent="choose(index)"
             @keydown.space.prevent="choose(index)"
         >
-            <div class="flex items-center gap-2">
-                <span class="flex size-4 shrink-0 items-center justify-center rounded-full ring" :class="isChosen(index) ? 'ring-primary' : 'ring-accented'" aria-hidden="true">
+            <div class="flex items-start gap-2">
+                <span class="mt-1 flex size-4 shrink-0 items-center justify-center rounded-full ring" :class="isChosen(index) ? 'ring-primary' : 'ring-accented'" aria-hidden="true">
                     <span v-if="isChosen(index)" class="size-2 rounded-full bg-primary" />
                 </span>
-                <span class="min-w-0 flex-1 truncate font-medium text-highlighted">
-                    <span class="text-muted">{{ option.letter }})</span> {{ option.title }}
-                </span>
-                <span v-if="option.letter === recommended" class="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary">
-                    <UIcon name="i-heroicons-star-solid" class="size-3.5" />
-                    {{ t('Recommended') }}
-                </span>
+                <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span class="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-highlighted">
+                        <span><span class="text-muted">{{ option.letter }})</span> {{ option.title }}</span>
+                        <UBadge v-if="option.letter === recommended" :label="t('Recommended')" icon="i-heroicons-star-solid" color="primary" variant="solid" size="sm" />
+                    </span>
+                    <Markdown v-if="option.description" :value="option.description" :plugins="chatPlugins" class="text-sm text-muted *:my-0" />
+                </div>
                 <UTooltip :text="t('View larger')">
                     <UButton icon="i-heroicons-arrows-pointing-out" color="neutral" variant="ghost" class="size-7 shrink-0 justify-center p-0" :aria-label="t('View larger')" @click.stop="viewedIndex = index" />
                 </UTooltip>
             </div>
-            <ChatScaledFrame :src="apiUrl(option.page.url)" :title="option.title" :width="viewport.width" :height="viewport.height" class="rounded-sm ring ring-default" />
-            <Markdown v-if="option.description" :value="option.description" :plugins="chatPlugins" class="text-sm text-muted *:my-0" />
+            <ChatScaledFrame :src="apiUrl(option.page.url)" :title="option.title" :width="viewport.width" :height="viewport.height" class="rounded-sm ring ring-default" @click.stop />
         </div>
     </div>
 

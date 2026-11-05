@@ -46,8 +46,10 @@ the same name, while the versions of a draft line up in order in the download fo
 
 For visual design or UX alternatives — never for plain questions — the agent shows two to six variants as selectable
 cards, each variant its own HTML page holding only that variant. Each card carries a radio button at its top left with
-the variant's letter and name, the recommended one marked "Recommended", a live preview of the variant scaled down
-from the screen width the agent designed it for, and an optional short description. The agent puts two cards side by
+the variant's letter and name, the recommended one marked by a filled "Recommended" badge right after the name, an
+optional short description beneath the name, and a live preview of the variant scaled down from the screen width the
+agent designed it for. The preview can be used like the page itself — clicked, scrolled, text selected; selecting the
+variant takes a click on the card outside the preview. The agent puts two cards side by
 side only for small elements such as icons, buttons or badges, and one per row for anything larger; on a phone they always stand one
 per row. A button on each card opens that variant in the large window with its screen sizes, code and download; there
 the arrow keys ← and → and two arrow buttons in the title bar step to the previous or next variant.

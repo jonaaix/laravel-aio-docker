@@ -31,8 +31,7 @@ onBeforeUnmount(() => observer?.disconnect());
             :title="title"
             sandbox="allow-scripts"
             loading="lazy"
-            tabindex="-1"
-            class="pointer-events-none absolute start-0 top-0 origin-top-left"
+            class="absolute start-0 top-0 origin-top-left"
             :style="{ width: `${width}px`, height: `${height}px`, transform: `scale(${scale})` }"
         />
     </div>
