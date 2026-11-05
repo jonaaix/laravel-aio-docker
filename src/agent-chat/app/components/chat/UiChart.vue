@@ -12,7 +12,7 @@ const props = defineProps<{
 const CHART_HEIGHT_PX = 300;
 const HUE_SHIFTS = [0, 60, 120, 180];
 const EXTRA_HUE_STEP = 45;
-const HOVER_ALPHA = 0.8;
+const HOVER_ALPHA = 0.6;
 const HOVER_MS = 500;
 
 const canvas = ref<HTMLCanvasElement | null>(null);
