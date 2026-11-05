@@ -50,9 +50,10 @@ export const UI_BLOCK_TOOLS = [
         },
     },
     {
-        name: 'show_choice',
+        name: 'ask_choice',
         description: 'Ask the user to choose between options in a card they can click. '
-            + 'Use it where a plain question in the text would not do, such as options that need a description each.',
+            + 'Use it where a plain question in the text would not do, such as options that need a description each. '
+            + 'End your answer right after it and wait for the reply.',
         inputSchema: {
             type: 'object',
             properties: {
@@ -162,7 +163,7 @@ function cardsOf(value: unknown): UiCard[] {
 }
 
 export function uiBlockFor(tool: string, args: Record<string, unknown>, storePage: PageStore): UiBlock {
-    if (tool === 'show_choice') {
+    if (tool === 'ask_choice') {
         const question = requiredText(args.question, 'question');
         const options = optionsOf(args.options, 'options');
         return { kind: 'choice', question, options, recommended: recommendedOf(args.recommended, options) };

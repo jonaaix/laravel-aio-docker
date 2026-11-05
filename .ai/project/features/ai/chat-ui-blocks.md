@@ -35,7 +35,7 @@ recommended one marked "Recommended". Two to six variants are possible.
 
 Where a plain question in the text would not do — for example when each option needs a description — the agent asks
 in a card: the question, then two to six lettered options with name and optional description, one of them possibly
-marked "Recommended".
+marked "Recommended". Having asked, the agent ends its answer and waits for the reply.
 
 ### Cards
 

@@ -25,15 +25,15 @@ test('a page height outside the range is refused', () => {
 });
 
 test('a choice needs two to six options', () => {
-    assert.throws(() => uiBlockFor('show_choice', { question: 'Which?', options: [{ title: 'Only' }] }, storePage), /2 to 6/);
+    assert.throws(() => uiBlockFor('ask_choice', { question: 'Which?', options: [{ title: 'Only' }] }, storePage), /2 to 6/);
 });
 
 test('a recommendation must name one of the options', () => {
-    assert.throws(() => uiBlockFor('show_choice', { question: 'Which?', options: twoOptions, recommended: 'c' }, storePage), /one of the letters a, b/);
+    assert.throws(() => uiBlockFor('ask_choice', { question: 'Which?', options: twoOptions, recommended: 'c' }, storePage), /one of the letters a, b/);
 });
 
 test('an option without a title is refused', () => {
-    assert.throws(() => uiBlockFor('show_choice', { question: 'Which?', options: [{ title: 'A' }, { description: 'x' }] }, storePage), /options\[1\]\.title is required/);
+    assert.throws(() => uiBlockFor('ask_choice', { question: 'Which?', options: [{ title: 'A' }, { description: 'x' }] }, storePage), /options\[1\]\.title is required/);
 });
 
 test('cards keep their status and refuse an unknown one', () => {

@@ -10,7 +10,7 @@ message field.
 ## Milestones
 
 - [x] Shared type `data-ui-block` part (page, variants, choice)
-- [x] Server: tools `show_page`, `show_variants`, `show_choice` in the chat MCP server; validation with clear errors;
+- [x] Server: tools `show_page`, `show_variants`, `ask_choice` in the chat MCP server; validation with clear errors;
       page HTML stored as a frozen copy; page route serving it sandboxed with scripts allowed
 - [x] Client: page block (embedded, full width, fixed height), variants block (page + option rows), choice block
       (section card + option rows); option row extracted from the question card; picks into the message field
@@ -33,6 +33,7 @@ message field.
 - Page, variants and choice first, cards second (user, 185a).
 - The "❓ Questions" question cards stay; the choice block is an addition, used when the prompt asks for it (user, 186a).
 - One tool per block instead of one tool with a kind field: each schema stays small and exact for the model.
+- Names by intent: `show_…` for what is looked at, `ask_choice` for the block that waits for a reply (user, 188a).
 - Pages are served with `Content-Security-Policy: sandbox allow-scripts`, so even opened directly they never run with
   the chat's origin. Only the HTML file is copied: pages must be self-contained (inline or CDN).
 
