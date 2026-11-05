@@ -9,7 +9,7 @@ const PROGRESS_STEPS = 1000;
 
 const { t } = useI18n();
 const { speechRate, setSpeechRate } = useAppearance();
-const { speakingId, conversationId, label, paused, progress, pause, resume, back, forward, seek, stop } = useSpeechPlayer();
+const { speakingId, conversationId, label, paused, progress, chunkTexts, currentChunk, pause, resume, back, forward, seek, stop } = useSpeechPlayer();
 
 const draftProgress = ref<number | null>(null);
 let seekTimer: ReturnType<typeof setTimeout> | undefined;
@@ -79,7 +79,7 @@ function togglePause(): void {
             @update:model-value="moveProgress"
         />
         <div class="grid grid-cols-[1fr_auto_1fr] items-center">
-            <span />
+            <span class="self-end text-[0.625rem]/none font-semibold text-muted tabular-nums" :aria-label="t('Reading position')">{{ currentChunk + 1 }}/{{ chunkTexts.length }}</span>
             <div class="flex items-center gap-1">
                 <UTooltip :text="t('Back 10 seconds')">
                     <UButton trailing-icon="i-heroicons-arrow-uturn-left" label="10s" color="neutral" variant="ghost" size="sm" class="items-end gap-0.5 text-[0.625rem]/none font-semibold tabular-nums" :aria-label="t('Back 10 seconds')" @click="back" />
@@ -92,7 +92,7 @@ function togglePause(): void {
                 </UTooltip>
             </div>
             <UDropdownMenu :items="rateItems" @update:open="revealCurrentRate" :content="{ side: 'top', align: 'end' }" :ui="{ content: 'max-h-56 overflow-y-auto scrollbar-slim', itemLabel: 'tabular-nums' }">
-                <UButton :label="formatSpeedFactor(speechRate)" color="neutral" variant="ghost" size="sm" class="justify-self-end tabular-nums" :aria-label="t('Reading speed')" />
+                <UButton :label="formatSpeedFactor(speechRate)" color="neutral" variant="ghost" size="sm" class="-me-1.5 h-auto self-end justify-self-end px-1.5 py-0.5 text-[0.625rem]/none font-semibold tabular-nums" :aria-label="t('Reading speed')" />
             </UDropdownMenu>
         </div>
     </div>
