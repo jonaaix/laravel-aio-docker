@@ -33,6 +33,7 @@ watch(() => user.value?.id, () => {
 }, { immediate: true });
 
 const now = useNow();
+const sidebarCollapsed = ref(false);
 
 const items = computed<NavigationMenuItem[][]>(() => groupByRecency(conversations.value).map(group => [
     { label: t(group.label), type: 'label' },
@@ -104,7 +105,8 @@ onBeforeUnmount(() => {
             :min-size="14"
             :default-size="18"
             :max-size="28"
-            :ui="{ root: 'peer bg-muted', footer: 'pb-4', header: hub ? 'h-auto py-3' : undefined }"
+            v-model:collapsed="sidebarCollapsed"
+            :ui="{ root: 'peer bg-muted', body: sidebarCollapsed ? 'px-2' : undefined, footer: ['pb-4', sidebarCollapsed ? 'px-2' : ''], header: [hub ? 'h-auto py-3' : '', sidebarCollapsed ? 'px-2' : ''] }"
         >
             <template #header="{ collapsed }">
                 <div class="flex w-full flex-col gap-2">
@@ -143,12 +145,12 @@ onBeforeUnmount(() => {
                     :collapsed="collapsed"
                     tooltip
                     orientation="vertical"
-                    :ui="{ link: ['overflow-hidden py-1.5 before:transition-colors before:duration-500 before:ease-out hover:before:bg-primary/8 aria-[current=page]:before:bg-primary/12 aria-[current=page]:text-(--nav-current)', collapsed ? 'mx-auto size-9 justify-center overflow-visible p-0 before:inset-0 before:rounded-full' : ''], linkLabel: 'min-w-0 flex-1' }"
+                    :ui="{ link: ['overflow-hidden py-1.5 before:transition-colors before:duration-500 before:ease-out hover:before:bg-primary/8 aria-[current=page]:before:bg-primary/12 aria-[current=page]:text-(--nav-current)', collapsed ? 'mx-auto size-10 justify-center overflow-visible p-0 before:inset-0 before:rounded-full' : ''], linkLabel: 'min-w-0 flex-1' }"
                 >
                     <template #item-leading="{ item }">
                         <span
                             v-if="collapsed && item.session"
-                            class="relative flex size-7 shrink-0 items-center justify-center rounded-full bg-default text-xs font-semibold ring ring-default dark:bg-elevated/50"
+                            class="relative flex size-8 shrink-0 items-center justify-center rounded-full bg-default text-xs font-semibold ring ring-default dark:bg-elevated/50"
                         >
                             <AudioLevelBars v-if="speech.speakingId.value && speech.conversationId.value === item.id" :playing="!speech.paused.value" :label="t('Reading aloud')" />
                             <span v-else :class="item.session.live ? 'light-streak text-muted' : 'text-toned'">{{ chatInitials(item.label ?? '') }}</span>
