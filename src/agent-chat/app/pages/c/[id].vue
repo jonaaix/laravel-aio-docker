@@ -621,7 +621,7 @@ const restoreConversation = () => withFlag(archiving, restore);
                                                 <span class="relative inline-flex size-2 rounded-full bg-primary shadow-[0_0_6px_1px_var(--ui-primary)]" />
                                             </span>
                                             <UIcon v-else name="i-heroicons-arrows-pointing-in" class="size-4 shrink-0" />
-                                            <span v-if="segment.running" class="light-streak [--light-streak:white]">{{ t('Summarizing conversation…') }}</span>
+                                            <span v-if="segment.running" class="light-streak">{{ t('Summarizing conversation…') }}</span>
                                             <template v-else>
                                                 {{ t('Conversation summarized') }}
                                             </template>

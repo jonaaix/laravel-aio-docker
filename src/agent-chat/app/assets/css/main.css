@@ -27,7 +27,7 @@
 
 .light {
     --ui-primary: oklch(var(--tint-lightness) calc(0.18 * var(--tint-chroma)) var(--tint));
-    --light-streak: oklch(0.55 calc(0.14 * var(--tint-chroma)) var(--tint));
+    --light-streak: oklch(1 0 0);
     --nav-current: oklch(var(--tint-lightness) calc(0.09 * var(--tint-chroma)) var(--tint));
     --diff-added: oklch(0.97 0.035 150);
     --diff-added-gutter: oklch(0.92 0.075 150);
@@ -54,7 +54,7 @@
 
 .dark {
     --ui-primary: oklch(var(--tint-dark-lightness) calc(0.14 * var(--tint-chroma)) var(--tint));
-    --light-streak: oklch(0.92 calc(0.06 * var(--tint-chroma)) var(--tint));
+    --light-streak: oklch(1 0 0);
     --nav-current: oklch(var(--tint-dark-lightness) calc(0.07 * var(--tint-chroma)) var(--tint));
     --diff-added: oklch(0.65 0.15 150 / 15%);
     --diff-added-gutter: oklch(0.7 0.15 150 / 30%);
