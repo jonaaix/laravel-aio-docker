@@ -52,6 +52,7 @@ function choose(index: number): void {
             @keydown.space.prevent="choose(index)"
         >
             <div class="flex items-start gap-2">
+                <!-- Fixed radius: rounded-md is 12px in this chat and would turn the 24px key cap into a circle. -->
                 <span
                     class="flex size-6 shrink-0 items-center justify-center rounded-[0.375rem] text-xs font-semibold uppercase transition-colors duration-500 ease-out"
                     :class="isChosen(index) ? 'bg-primary text-inverted' : 'bg-default text-muted shadow-[0_1px_0_var(--ui-border-accented)] ring ring-accented'"
