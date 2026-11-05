@@ -14,6 +14,7 @@ export interface UsageSnapshot {
     session: UsageWindow | null;
     week: UsageWindow | null;
     updatedAt: number;
+    blockedUntil?: number | null;
 }
 
 export interface AccountSummary {

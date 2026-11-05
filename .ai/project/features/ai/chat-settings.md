@@ -84,8 +84,9 @@ a conversation opens the same window at Agents. The open window and its category
   every account with its usage, switches with one more click, and offers "Manage accounts". It shows "Not
   signed in" while no account is signed in and then opens this category; it follows sign-ins, switches and
   sign-outs in every open browser. While signed out, a notice above every message input says "Claude is not
-  signed in" and its "Sign in" opens this category; while a usage limit is reached, it says "Usage limit
-  reached" with the time agents can answer again. Usage is kept per account, so one account never shows
+  signed in" and its "Sign in" opens this category; once an answer has actually failed because the usage limit
+  is reached, it says "Usage limit reached" with the time agents can answer again — a high usage figure alone never
+  shows it, and the next answer that gets through takes it away. Usage is kept per account, so one account never shows
   another's usage.
   Everyone sees the account details until an admin hides them from that person under People, which works
   for admins too, also for oneself. Hidden from someone, an account shows to them only as "Claude account"

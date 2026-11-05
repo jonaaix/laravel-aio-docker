@@ -5,8 +5,8 @@ const { usage } = useAccount();
 const now = useNow();
 
 const freeAt = computed(() => {
-    const limited = [usage.value?.session, usage.value?.week].filter(window => window?.limited && window.resetsAt > now.value);
-    return limited.length > 0 ? Math.max(...limited.map(window => window!.resetsAt)) : null;
+    const blockedUntil = usage.value?.blockedUntil ?? null;
+    return blockedUntil !== null && blockedUntil > now.value ? blockedUntil : null;
 });
 </script>
 

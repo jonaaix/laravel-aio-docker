@@ -2,6 +2,7 @@ import { execFile } from 'node:child_process';
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
+import { cooldownDeadline, detectRateLimit } from '#claude-threads/claude/rate-limit-detector';
 import { getClaudePath } from '#claude-threads/claude/version-check';
 import type { AccountProfile, AccountStatus, AccountSummary, UsageSnapshot, UsageWindow } from '../../shared/types/account';
 import type { ClaudeAccount } from './claude-accounts';
@@ -10,6 +11,7 @@ import type { UserRow } from './user-store';
 const LEGACY_SIGNED_IN_BY_SETTING = 'account.signedInBy';
 const HIDDEN_PROFILE: AccountProfile = { email: null, organization: null, plan: null };
 const LIMIT_REACHED = 'rejected';
+const LIMIT_HIT = /hit your (usage )?limit|usage limit|rate[ _-]?limit/i;
 
 interface RateLimitWindow {
     utilization?: number;
@@ -114,11 +116,28 @@ export function recordRateLimit(info: unknown, accountId: string): void {
     if (!windows) {
         return;
     }
-    const usage: UsageSnapshot = { session: toUsageWindow(windows.five_hour), week: toUsageWindow(windows.seven_day), updatedAt: Date.now() };
+    const previous = claudeAccounts().find(account => account.id === accountId)?.usage;
+    const usage: UsageSnapshot = { session: toUsageWindow(windows.five_hour), week: toUsageWindow(windows.seven_day), updatedAt: Date.now(), blockedUntil: previous?.blockedUntil ?? null };
+    publishUsage(accountId, usage);
+}
+
+function publishUsage(accountId: string, usage: UsageSnapshot): void {
     updateAccount(accountId, { usage });
     if (accountId === activeAccountId()) {
         publishConversationListEvent({ type: 'usage', usage });
     }
+}
+
+export function recordTurnLimit(errorMessage: string | null, accountId: string): void {
+    const usage = claudeAccounts().find(account => account.id === accountId)?.usage;
+    const hit = errorMessage ? detectRateLimit(errorMessage) : { detected: false };
+    const limited = hit.detected || (errorMessage !== null && LIMIT_HIT.test(errorMessage));
+    const windowReset = Math.max(0, ...[usage?.session, usage?.week].filter(window => window?.limited).map(window => window!.resetsAt));
+    const blockedUntil = limited ? (hit.resetAtEpochMs ?? (windowReset || cooldownDeadline({ detected: true }))) : null;
+    if (!usage || (usage.blockedUntil ?? null) === blockedUntil) {
+        return;
+    }
+    publishUsage(accountId, { ...usage, blockedUntil });
 }
 
 export async function rememberSignedInAccount(id: string, signedInBy: UserRow): Promise<void> {

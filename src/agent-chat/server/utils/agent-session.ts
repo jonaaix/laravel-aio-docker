@@ -389,6 +389,9 @@ export class AgentSession {
         this.turn = null;
         const message = turn.message ?? appendMessage(this.conversationId, 'assistant', [], this.agentId);
         saveTurnMetrics(this.conversationId, message.id, metrics);
+        if (metrics.outcome !== 'stopped') {
+            recordTurnLimit(metrics.outcome === 'failed' ? metrics.errorMessage ?? null : null, this.accountId);
+        }
         const finished = { ...message, parts: [...turn.parts], metadata: { ...message.metadata!, outcome: metrics.outcome, error: metrics.errorMessage ?? undefined } };
         publishConversationEvent(this.conversationId, { type: 'message', message: finished });
         this.trackTurnChanges(turn.message ? message.id : null);
