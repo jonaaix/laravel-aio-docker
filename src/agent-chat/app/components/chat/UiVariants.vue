@@ -56,15 +56,17 @@ function choose(index: number): void {
                     <span v-if="isChosen(index)" class="size-2 rounded-full bg-primary" />
                 </span>
                 <div class="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span class="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-highlighted">
-                        <span><span class="text-muted">{{ option.letter }})</span> {{ option.title }}</span>
-                        <UBadge v-if="option.letter === recommended" :label="t('Recommended')" icon="i-heroicons-star-solid" color="primary" variant="solid" size="sm" />
-                    </span>
+                    <div class="flex items-start gap-2">
+                        <span class="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 font-medium text-highlighted">
+                            <span><span class="text-muted">{{ option.letter }})</span> {{ option.title }}</span>
+                            <UBadge v-if="option.letter === recommended" :label="t('Recommended')" icon="i-heroicons-star-solid" color="primary" variant="solid" size="sm" />
+                        </span>
+                        <UTooltip :text="t('View larger')">
+                            <UButton icon="i-heroicons-arrows-pointing-out" color="neutral" variant="ghost" class="-my-1 size-7 shrink-0 justify-center p-0" :aria-label="t('View larger')" @click.stop="viewedIndex = index" />
+                        </UTooltip>
+                    </div>
                     <Markdown v-if="option.description" :value="option.description" :plugins="chatPlugins" class="text-sm text-muted *:my-0" />
                 </div>
-                <UTooltip :text="t('View larger')">
-                    <UButton icon="i-heroicons-arrows-pointing-out" color="neutral" variant="ghost" class="size-7 shrink-0 justify-center p-0" :aria-label="t('View larger')" @click.stop="viewedIndex = index" />
-                </UTooltip>
             </div>
             <ChatPreviewFrame :src="apiUrl(option.page.url)" :title="option.title" :width="viewport.width" :height="viewport.height" :scaled="scaledPreviews" class="rounded-sm ring ring-default" @click.stop />
         </div>
