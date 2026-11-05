@@ -35,7 +35,7 @@ to its conversation, a progress bar along the text
 "Back 10 seconds" and "Forward 10 seconds" on either side, the reading speed as a menu from 0.5× to 3× in steps of
 0.25× and a button to stop; it sits at the foot of the sidebar right above the account card, and above the message
 input where the sidebar is folded away. With the sidebar folded to its icon strip, the player shrinks to one button there that pauses and resumes. Inside the
-message, the passage being read is faintly tinted, and while that message is playing, clicking one of its paragraphs
+message, the paragraph being read is tinted as a whole, even when it is read in more than one piece, and while that message is playing, clicking one of its paragraphs
 carries on reading from there; while paused, clicks and text selection work as usual. The conversation being read shows moving level bars at the right end of its sidebar
 entry, standing still while paused. Google Cloud voices belong to one language, so it reads in the
 language recognised the same way.

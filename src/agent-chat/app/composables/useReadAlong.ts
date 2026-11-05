@@ -46,6 +46,23 @@ function rangeFor(map: TextMap, passage: string): Range | null {
     return range;
 }
 
+function blockOf(node: Node): Element | null {
+    return (node instanceof Element ? node : node.parentElement)?.closest(BLOCKS) ?? null;
+}
+
+function wholeBlocks(range: Range): Range {
+    const first = blockOf(range.startContainer);
+    const last = blockOf(range.endContainer);
+    const widened = range.cloneRange();
+    if (first) {
+        widened.setStartBefore(first);
+    }
+    if (last) {
+        widened.setEndAfter(last);
+    }
+    return widened;
+}
+
 function messageRoot(messageId: string): Element | null {
     return document.querySelector(`[data-read-along="${CSS.escape(messageId)}"]`);
 }
@@ -70,7 +87,7 @@ export function useReadAlong() {
         }
         const range = rangeFor(textMap(root), passage);
         if (range) {
-            CSS.highlights.set(HIGHLIGHT_NAME, new Highlight(range));
+            CSS.highlights.set(HIGHLIGHT_NAME, new Highlight(wholeBlocks(range)));
         }
         else {
             clear();
