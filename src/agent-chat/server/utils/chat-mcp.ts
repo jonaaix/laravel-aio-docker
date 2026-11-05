@@ -1,3 +1,5 @@
+import { UI_BLOCK_PART } from '../../shared/types/ui-block';
+
 const PROTOCOL_VERSION = '2025-06-18';
 
 interface JsonRpcRequest {
@@ -26,23 +28,39 @@ const TOOLS = [
             required: ['path'],
         },
     },
+    ...UI_BLOCK_TOOLS,
 ];
 
 function textResult(text: string, isError = false): ToolResult {
     return { content: [{ type: 'text', text }], ...(isError ? { isError } : {}) };
 }
 
-function callTool(conversationId: string, name: unknown, args: Record<string, unknown>): ToolResult {
-    if (name !== 'send_file') {
-        return textResult(`Unknown tool: ${String(name)}`, true);
-    }
+function sendFile(conversationId: string, args: Record<string, unknown>): ToolResult {
     if (typeof args.path !== 'string' || !args.path.trim()) {
         return textResult('The path is required.', true);
     }
+    const caption = typeof args.caption === 'string' && args.caption.trim() ? args.caption.trim() : undefined;
+    const filename = useConversationRuntime(conversationId).attachFile(args.path, caption);
+    return textResult(`Sent ${filename} to the chat.`);
+}
+
+function showUiBlock(conversationId: string, tool: string, args: Record<string, unknown>): ToolResult {
+    useConversationRuntime(conversationId).attachPart(workingDir => ({
+        type: UI_BLOCK_PART,
+        data: uiBlockFor(tool, args, path => pageUrl(conversationId, storeConversationFile(conversationId, workingDir, path))),
+    }));
+    return textResult('Shown in the chat.');
+}
+
+function callTool(conversationId: string, name: unknown, args: Record<string, unknown>): ToolResult {
     try {
-        const caption = typeof args.caption === 'string' && args.caption.trim() ? args.caption.trim() : undefined;
-        const filename = useConversationRuntime(conversationId).attachFile(args.path, caption);
-        return textResult(`Sent ${filename} to the chat.`);
+        if (name === 'send_file') {
+            return sendFile(conversationId, args);
+        }
+        if (typeof name === 'string' && UI_BLOCK_TOOL_NAMES.has(name)) {
+            return showUiBlock(conversationId, name, args);
+        }
+        return textResult(`Unknown tool: ${String(name)}`, true);
     }
     catch (error) {
         return textResult(error instanceof Error ? error.message : String(error), true);

@@ -439,6 +439,21 @@ function accept(): void {
     replaceAnswerBlock('ok');
 }
 
+function pickOption(line: string, siblings: string[]): void {
+    const draft = input.value.trimStart();
+    const [first = '', ...rest] = draft.split('\n');
+    const remainder = siblings.includes(first.trim()) ? rest.join('\n').trimStart() : draft;
+    input.value = remainder ? `${line}\n\n${remainder}` : line;
+    focusComposerAtEnd();
+}
+
+function replyTo(messageId: string): string | undefined {
+    const index = visibleMessages.value.findIndex(message => message.id === messageId);
+    const reply = index === -1 ? undefined : visibleMessages.value.slice(index + 1).find(message => message.role === 'user');
+    return reply ? messageText(reply) : undefined;
+}
+
+provide(blockPicksKey, { messageId: answerableMessageId, draft: input, reply: replyTo, pick: pickOption });
 provide(questionAnswersKey, { messageId: answerableMessageId, chosen: chosenOptions, sent: messageId => sentAnswers.value.get(messageId), choose, accept });
 
 async function withFlag(flag: Ref<boolean>, action: () => Promise<void>): Promise<void> {
@@ -603,6 +618,7 @@ const restoreConversation = () => withFlag(archiving, restore);
                                         <UIcon name="i-heroicons-arrows-pointing-in" class="size-4 shrink-0" />
                                         {{ t('Conversation summarized') }}
                                     </p>
+                                    <ChatUiBlock v-else-if="segment.kind === 'ui-block'" :block="segment.block" :message-id="message.id" />
                                     <ChatMessagePart v-else :part="segment.part" :message="message" :streaming="isStreaming(message.id)" />
                                 </template>
                                 <ChatTurnOutcome v-if="message.role === 'assistant'" :message="message" />

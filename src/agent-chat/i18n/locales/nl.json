@@ -285,5 +285,6 @@
     "{service} has no credit left on this account. Add credit there, then choose {service} again.": "{service} heeft geen tegoed meer op dit account. Waardeer daar op en kies daarna opnieuw {service}.",
     "Key saved, but {service} did not accept it. Check it and save it again.": "Sleutel opgeslagen, maar {service} accepteerde hem niet. Controleer hem en sla hem opnieuw op.",
     "Key saved, but {service} could not be reached. Choose {service} again later.": "Sleutel opgeslagen, maar {service} was niet bereikbaar. Kies {service} later opnieuw.",
-    "The key could not be saved": "De sleutel kon niet worden opgeslagen"
+    "The key could not be saved": "De sleutel kon niet worden opgeslagen",
+    "Recommended": "Aanbevolen"
 }

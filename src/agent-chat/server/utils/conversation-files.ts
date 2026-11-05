@@ -76,6 +76,10 @@ export function fileUIPart(conversationId: string, stored: StoredFile, caption?:
     };
 }
 
+export function pageUrl(conversationId: string, stored: StoredFile): string {
+    return `conversations/${conversationId}/pages/${stored.storedName}`;
+}
+
 export function storeConversationFile(conversationId: string, workingDir: string, path: string): StoredFile {
     const source = isAbsolute(path) ? path : resolve(workingDir, path);
     if (!existsSync(source) || !statSync(source).isFile()) {

@@ -285,5 +285,6 @@
     "{service} has no credit left on this account. Add credit there, then choose {service} again.": "{service} hat auf diesem Konto kein Guthaben mehr. Lade dort Guthaben auf und wähle {service} dann erneut.",
     "Key saved, but {service} did not accept it. Check it and save it again.": "Schlüssel gespeichert, aber {service} hat ihn nicht angenommen. Prüfe ihn und speichere ihn erneut.",
     "Key saved, but {service} could not be reached. Choose {service} again later.": "Schlüssel gespeichert, aber {service} war nicht erreichbar. Wähle {service} später erneut.",
-    "The key could not be saved": "Der Schlüssel konnte nicht gespeichert werden"
+    "The key could not be saved": "Der Schlüssel konnte nicht gespeichert werden",
+    "Recommended": "Empfohlen"
 }

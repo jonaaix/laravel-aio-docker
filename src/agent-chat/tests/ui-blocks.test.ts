@@ -1,0 +1,37 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { uiBlockFor } from '../server/utils/ui-blocks.ts';
+
+const storePage = (path: string) => `pages/${path}`;
+const twoOptions = [{ title: 'Compact list' }, { title: 'Cards', description: 'Roomier' }];
+
+test('variants are lettered in order and keep the recommendation', () => {
+    const block = uiBlockFor('show_variants', { path: 'design.html', variants: twoOptions, recommended: 'B)' }, storePage);
+    assert.deepEqual(block, {
+        kind: 'variants',
+        title: null,
+        page: { url: 'pages/design.html', height: 560 },
+        options: [{ letter: 'a', title: 'Compact list', description: null }, { letter: 'b', title: 'Cards', description: 'Roomier' }],
+        recommended: 'b',
+    });
+});
+
+test('a page must be an html file', () => {
+    assert.throws(() => uiBlockFor('show_page', { path: 'shot.png' }, storePage), /\.html file/);
+});
+
+test('a page height outside the range is refused', () => {
+    assert.throws(() => uiBlockFor('show_page', { path: 'a.html', height: 5000 }, storePage), /height/);
+});
+
+test('a choice needs two to six options', () => {
+    assert.throws(() => uiBlockFor('show_choice', { question: 'Which?', options: [{ title: 'Only' }] }, storePage), /2 to 6/);
+});
+
+test('a recommendation must name one of the options', () => {
+    assert.throws(() => uiBlockFor('show_choice', { question: 'Which?', options: twoOptions, recommended: 'c' }, storePage), /one of the letters a, b/);
+});
+
+test('an option without a title is refused', () => {
+    assert.throws(() => uiBlockFor('show_choice', { question: 'Which?', options: [{ title: 'A' }, { description: 'x' }] }, storePage), /options\[1\]\.title is required/);
+});

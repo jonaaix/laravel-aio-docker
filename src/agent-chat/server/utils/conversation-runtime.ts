@@ -70,12 +70,22 @@ class ConversationRuntime {
         return token === this.mcpToken;
     }
 
-    attachFile(path: string, caption?: string): string {
+    attachPart(create: (workingDir: string) => ChatPart): void {
         const session = [...this.sessions.values()].find(candidate => candidate.answering);
         if (!session) {
-            throw new Error('Files can only be sent while answering.');
+            throw new Error('This only works while answering.');
         }
-        return session.attachFile(path, caption);
+        session.attachPart(create);
+    }
+
+    attachFile(path: string, caption?: string): string {
+        let filename = '';
+        this.attachPart((workingDir) => {
+            const stored = storeConversationFile(this.conversationId, workingDir, path);
+            filename = stored.filename;
+            return fileUIPart(this.conversationId, stored, caption);
+        });
+        return filename;
     }
 
     send(text: string, attachments: StoredFile[], serverOrigin: string, sender: UserRow | null): void {

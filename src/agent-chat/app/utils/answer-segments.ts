@@ -1,11 +1,14 @@
 import type { FileUIPart } from 'ai';
 import type { ChatMessage, ChatPart } from '#shared/types/conversation';
+import type { UiBlock } from '#shared/types/ui-block';
+import { UI_BLOCK_PART } from '#shared/types/ui-block';
 
 export type AnswerSegment =
     | { kind: 'part'; key: string; part: ChatPart }
     | { kind: 'images'; key: string; parts: FileUIPart[] }
     | { kind: 'stop-hook'; key: string; paragraphs: string[] }
-    | { kind: 'compacted'; key: string };
+    | { kind: 'compacted'; key: string }
+    | { kind: 'ui-block'; key: string; block: UiBlock };
 
 function isImage(part: ChatPart): part is FileUIPart {
     return part.type === 'file' && part.mediaType.startsWith('image/');
@@ -29,6 +32,10 @@ export function answerSegments(message: ChatMessage): AnswerSegment[] {
             if (paragraphs.length > 0) {
                 segments.push({ kind: 'stop-hook', key: `${message.id}-${index}`, paragraphs });
             }
+            return;
+        }
+        if (part.type === UI_BLOCK_PART) {
+            segments.push({ kind: 'ui-block', key: `${message.id}-${index}`, block: (part as { data: UiBlock }).data });
             return;
         }
         if (part.type !== 'text' && part.type !== 'file') {

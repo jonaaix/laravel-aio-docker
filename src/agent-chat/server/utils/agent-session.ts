@@ -8,7 +8,7 @@ import { ChangeTracker } from './working-tree';
 const TURN_EVENT_TYPES = new Set(['stream_event', 'assistant', 'user']);
 // Questions and plans happen as plain chat text; the chat has no controls for these tools.
 const DISALLOWED_TOOLS = ['AskUserQuestion', 'EnterPlanMode', 'ExitPlanMode'];
-const READ_ONLY_TOOLS = new Set(['Read', 'Grep', 'Glob', 'LS', 'WebFetch', 'WebSearch', 'ToolSearch', 'TodoWrite', 'Skill', 'Monitor', 'BashOutput', 'TaskOutput', 'ListMcpResourcesTool', 'ReadMcpResourceTool', 'mcp__chat__send_file']);
+const READ_ONLY_TOOLS = new Set(['Read', 'Grep', 'Glob', 'LS', 'WebFetch', 'WebSearch', 'ToolSearch', 'TodoWrite', 'Skill', 'Monitor', 'BashOutput', 'TaskOutput', 'ListMcpResourcesTool', 'ReadMcpResourceTool', 'mcp__chat__send_file', 'mcp__chat__show_page', 'mcp__chat__show_variants', 'mcp__chat__show_choice']);
 
 interface ActiveTurn {
     message: ChatMessage | null;
@@ -136,14 +136,13 @@ export class AgentSession {
         return this.cli?.sendControlRequest(request) ?? null;
     }
 
-    attachFile(path: string, caption?: string): string {
+    attachPart(create: (workingDir: string) => ChatPart): void {
         if (!this.turn || !this.workingDir) {
-            throw new Error('Files can only be sent while answering.');
+            throw new Error('This only works while answering.');
         }
-        const stored = storeConversationFile(this.conversationId, this.workingDir, path);
-        const index = this.turn.parts.push(fileUIPart(this.conversationId, stored, caption)) - 1;
+        const part = create(this.workingDir);
+        const index = this.turn.parts.push(part) - 1;
         this.recordParts([index]);
-        return stored.filename;
     }
 
     stop(): void {

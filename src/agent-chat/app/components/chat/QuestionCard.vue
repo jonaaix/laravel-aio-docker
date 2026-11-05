@@ -63,26 +63,16 @@ const chatPlugins = useChatMarkdownPlugins();
                     class="col-start-2 text-muted *:my-0"
                 />
                 <div v-if="shownOptions(question).length > 0" class="col-start-2 -mx-2 flex flex-col">
-                    <button
+                    <ChatOptionRow
                         v-for="option in shownOptions(question)"
                         :key="option.letter"
-                        type="button"
+                        :letter="option.letter"
+                        :selected="isSelected(question, option.letter)"
                         :disabled="!active"
-                        :aria-pressed="isSelected(question, option.letter)"
-                        class="flex w-full items-start gap-2 rounded-sm px-2 py-0.5 text-start text-[calc(var(--text-base)-1px)] transition-colors duration-500 ease-out disabled:cursor-default"
-                        :class="isSelected(question, option.letter)
-                            ? 'bg-primary/10 text-primary ring ring-inset ring-primary/40'
-                            : 'text-default enabled:hover:bg-primary/8'"
-                        @click="pick(question, option.letter)"
+                        @pick="pick(question, option.letter)"
                     >
-                        <span class="shrink-0 font-semibold" :class="isSelected(question, option.letter) ? '' : 'text-muted'">{{ option.letter }})</span>
-                        <Markdown :value="option.text" :plugins="chatPlugins" class="min-w-0 flex-1 *:my-0" />
-                        <UIcon
-                            v-if="isSelected(question, option.letter)"
-                            name="i-heroicons-check"
-                            class="mt-1 size-4 shrink-0"
-                        />
-                    </button>
+                        <Markdown :value="option.text" :plugins="chatPlugins" class="*:my-0" />
+                    </ChatOptionRow>
                 </div>
             </div>
             <p v-if="collapsed && unanswered" class="text-sm text-muted">{{ t('Not answered') }}</p>
