@@ -225,6 +225,7 @@ onMounted(load);
                     class="self-start"
                     @update:model-value="value => choose(value)"
                 />
+                <p v-if="shown === 'google'" class="text-sm text-muted">{{ t('Best value of all services: the most free hours and natural voices.') }}</p>
                 <p v-if="shown === 'device'" class="text-sm text-muted">{{ t('Your device\'s own voice reads aloud.') }}</p>
                 <div v-else-if="!showForm" class="flex flex-wrap items-center gap-3">
                     <span class="flex h-9 items-center gap-2 text-sm">
@@ -250,7 +251,8 @@ onMounted(load);
                             @click="chooseModel(shown, model.id)"
                         >
                             <span class="flex-1 font-medium">{{ model.label }}</span>
-                            <span v-if="model.freeHoursPerMonth" class="text-muted tabular-nums">{{ t('{hours} h free monthly, then {price}/h', { hours: model.freeHoursPerMonth, price: formatDollars(model.dollarsPerHour) }) }}</span>
+                            <span v-if="model.freeHoursPerMonth && model.freeHoursPerMonth < 1" class="text-muted tabular-nums">{{ t('{minutes} min free monthly, then {price}/h', { minutes: Math.round(model.freeHoursPerMonth * 60), price: formatDollars(model.dollarsPerHour) }) }}</span>
+                            <span v-else-if="model.freeHoursPerMonth" class="text-muted tabular-nums">{{ t('{hours} h free monthly, then {price}/h', { hours: model.freeHoursPerMonth, price: formatDollars(model.dollarsPerHour) }) }}</span>
                             <span v-else class="text-muted tabular-nums">{{ t('about {price} per hour', { price: formatDollars(model.dollarsPerHour) }) }}</span>
                         </button>
                     </div>

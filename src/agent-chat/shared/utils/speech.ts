@@ -46,7 +46,7 @@ export const SPEECH_MODELS: Record<SpeechProvider, SpeechModel[]> = {
         { id: 'gemini-3.8-flash-tts', label: 'Flash', dollarsPerHour: 0.8 },
     ],
     elevenlabs: [
-        { id: 'eleven_flash_v2_5', label: 'Flash v2.5', dollarsPerHour: 2.8 },
+        { id: 'eleven_flash_v2_5', label: 'Flash v2.5', dollarsPerHour: 2.8, freeHoursPerMonth: 1 / 6 },
     ],
     openai: [
         { id: 'tts-1', label: 'TTS-1', dollarsPerHour: 0.85 },

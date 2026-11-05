@@ -267,6 +267,8 @@
     "Voice": "Voix",
     "about {price} per hour": "env. {price} par heure",
     "{hours} h free monthly, then {price}/h": "{hours} h gratuites par mois, puis {price}/h",
+    "{minutes} min free monthly, then {price}/h": "{minutes} min gratuites par mois, puis {price}/h",
+    "Best value of all services: the most free hours and natural voices.": "Meilleur rapport qualité-prix : le plus d’heures gratuites et des voix naturelles.",
     "Play sample": "Écouter un extrait",
     "Stop sample": "Arrêter l'extrait",
     "This is how I sound when I read answers to you.": "Voici ma voix quand je vous lis les réponses.",
