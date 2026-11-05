@@ -29,7 +29,9 @@ closed or another message is read; while it reads, the button stays visible with
 plays again without asking the service anew; if the service fails, the device's voice reads the rest. Without a
 service the device's own voice reads, chosen by the language the message is written in — one of the six chat
 languages, recognised by its common words — falling back to the person's chat language for very short texts. Only
-the prose is read: no code blocks, tool steps, the stop hook line, markdown marks or emoji. The speed is the person's
+the prose is read: no code blocks, tool steps, the stop hook line, markdown marks or emoji. Building blocks the agent placed in
+the answer are read from their content: card sections with their heading and cards, variants and choices with letter,
+name and description, a page only by its title. The speed is the person's
 reading speed from the settings (Read aloud). Reading goes on when the person moves to another conversation. While a
 message is read, a small player shows the beginning of the message — its first heading, or else its first line — as a link back
 to its conversation that opens it scrolled to the passage being read, a progress bar along the text with the passage count ("3/8")

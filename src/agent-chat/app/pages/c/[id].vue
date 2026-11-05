@@ -684,7 +684,7 @@ const restoreConversation = () => withFlag(archiving, restore);
                         <template #actions="{ message }">
                             <template v-if="!isStreaming(message.id)">
                                 <ChatCopyButton v-if="messageText(message)" :text="messageText(message)" />
-                                <ChatSpeakButton v-if="messageText(message)" :text="messageText(message)" :message-id="message.id" />
+                                <ChatSpeakButton v-if="messageSpeechText(message)" :text="messageSpeechText(message)" :message-id="message.id" />
                                 <span class="px-1 text-xs text-muted tabular-nums">{{ formatClockTime(message.metadata!.createdAt) }}</span>
                             </template>
                         </template>
