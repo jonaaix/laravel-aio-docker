@@ -42,7 +42,7 @@ const items = computed<NavigationMenuItem[][]>(() => groupByRecency(conversation
         label: conversation.title,
         id: conversation.id,
         to: `/c/${conversation.id}`,
-        session: sessionState(conversation.status, conversation.turnActive),
+        session: sessionState(conversation.status, conversation.turnActive, conversation.backgroundTasks.length),
         paused: conversation.status !== 'running' && !conversation.turnActive,
         creatorName: chatName(conversation.creatorId),
         lastActivityAt: conversation.lastActivityAt,
