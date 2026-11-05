@@ -45,7 +45,7 @@ export const UI_BLOCK_TOOLS = [
         inputSchema: { type: 'object', properties: PAGE_PROPERTIES, required: ['path'] },
     },
     {
-        name: 'ask_variants',
+        name: 'ask_visual_choice',
         description: 'Show visual design or UX alternatives side by side as selectable cards, each with a live preview of its own HTML file. '
             + 'Only for alternatives that must be seen to be judged; never for plain questions, use ask_choice for those. '
             + 'End your answer right after it and wait for the reply.',
@@ -260,7 +260,7 @@ export function uiBlockFor(tool: string, args: Record<string, unknown>, storePag
     if (tool === 'show_cards') {
         return { kind: 'cards', sections: sectionsOf(args.sections) };
     }
-    if (tool === 'ask_variants') {
+    if (tool === 'ask_visual_choice') {
         const columns = columnsOf(args.canvas);
         const viewport = { width: wholeNumber(args.viewport_width, 'viewport_width', VIEWPORT_WIDTH), height: wholeNumber(args.viewport_height, 'viewport_height', VIEWPORT_HEIGHT) };
         const options = variantsOf(args, viewport, storePage);

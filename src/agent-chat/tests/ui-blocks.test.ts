@@ -6,7 +6,7 @@ const storePage = (path: string) => ({ url: `pages/${path}`, fileUrl: `files/${p
 const twoOptions = [{ title: 'Compact list' }, { title: 'Cards', description: 'Roomier' }];
 
 test('variants are lettered in order, each with its own page, and keep the recommendation', () => {
-    const block = uiBlockFor('ask_variants', { canvas: 'small', variants: [{ path: 'a.html', title: 'Cards' }, { path: 'b.html', title: 'Table', description: 'Dense' }], recommended: true }, storePage);
+    const block = uiBlockFor('ask_visual_choice', { canvas: 'small', variants: [{ path: 'a.html', title: 'Cards' }, { path: 'b.html', title: 'Table', description: 'Dense' }], recommended: true }, storePage);
     assert.ok(block.kind === 'variants');
     assert.equal(block.columns, 2);
     assert.deepEqual(block.viewport, { width: 1280, height: 800 });
@@ -15,9 +15,9 @@ test('variants are lettered in order, each with its own page, and keep the recom
 });
 
 test('variants need a small or large canvas and a page each', () => {
-    assert.throws(() => uiBlockFor('ask_variants', { canvas: 'huge', variants: [{ path: 'a.html', title: 'A' }, { path: 'b.html', title: 'B' }] }, storePage), /canvas must be small or large/);
-    assert.throws(() => uiBlockFor('ask_variants', { canvas: 'constructor', variants: [{ path: 'a.html', title: 'A' }, { path: 'b.html', title: 'B' }] }, storePage), /canvas must be small or large/);
-    assert.throws(() => uiBlockFor('ask_variants', { canvas: 'large', variants: [{ path: 'a.html', title: 'A' }, { title: 'B' }] }, storePage), /variants\[1\]\.path is required/);
+    assert.throws(() => uiBlockFor('ask_visual_choice', { canvas: 'huge', variants: [{ path: 'a.html', title: 'A' }, { path: 'b.html', title: 'B' }] }, storePage), /canvas must be small or large/);
+    assert.throws(() => uiBlockFor('ask_visual_choice', { canvas: 'constructor', variants: [{ path: 'a.html', title: 'A' }, { path: 'b.html', title: 'B' }] }, storePage), /canvas must be small or large/);
+    assert.throws(() => uiBlockFor('ask_visual_choice', { canvas: 'large', variants: [{ path: 'a.html', title: 'A' }, { title: 'B' }] }, storePage), /variants\[1\]\.path is required/);
 });
 
 test('a page must be an html file', () => {
