@@ -183,7 +183,7 @@ const frameStyle = computed(() => {
             <span class="text-sm text-muted tabular-nums">
                 {{ formatScreenSize(shownWidth, shownHeight) }}<template v-if="scale < 1"> · {{ formatPercent(scale) }}</template>
             </span>
-            <OptionStrip v-model="preset" :items="screenOptions" :label="t('Screen size')" size="sm" />
+            <OptionStrip v-model="preset" :items="screenOptions" :label="t('Screen size')" size="sm" class="max-sm:hidden" />
         </template>
     </UModal>
     <!-- Mounted on first use so its overlay is placed after the window's and opens on top of it. -->
