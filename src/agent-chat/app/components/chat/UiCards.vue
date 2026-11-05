@@ -25,7 +25,7 @@ const STATUS_LOOK: Record<UiCardStatus, { surface: string; icon: string; tone: s
                 <div
                     v-for="(card, index) in section.cards"
                     :key="index"
-                    class="flex flex-col gap-1 rounded-md p-3 ring"
+                    class="flex flex-col gap-1 rounded-md px-4 py-3 ring"
                     :class="[section.status ? STATUS_LOOK[section.status].surface : 'ring-default', { 'sm:col-span-2': card.wide }]"
                 >
                     <p class="font-semibold text-highlighted">
