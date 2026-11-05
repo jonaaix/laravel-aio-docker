@@ -4,7 +4,7 @@ import type { ConversationListEvent } from '#shared/types/conversation';
 
 const { t } = useI18n();
 const { conversations, upsert, load } = useConversations();
-const { usage, load: loadAccount } = useAccount();
+const { usage, accounts, load: loadAccount } = useAccount();
 const { load: loadAgents } = useAgents();
 const { load: loadUsers, upsert: upsertUser, chatName } = useUsers();
 const { baseURL } = useRuntimeConfig().app;
@@ -86,6 +86,7 @@ onMounted(async () => {
         }
         else {
             usage.value = event.usage;
+            accounts.value = accounts.value.map(account => account.active ? { ...account, usage: event.usage } : account);
         }
     }, () => {
         void Promise.all([load(), loadAccount(), loadUsers(), loadAgents(), loadReads()]);

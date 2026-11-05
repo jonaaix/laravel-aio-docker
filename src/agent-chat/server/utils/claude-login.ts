@@ -1,7 +1,5 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { existsSync, statSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
 import { getClaudePath } from '#claude-threads/claude/version-check';
 
 const AUTHORIZE_URL = /https:\/\/[^\s\x07\x1B]+\/oauth\/authorize\?[^\s\x07\x1B]+/;
@@ -14,6 +12,7 @@ const SUCCESS = /login successful|logged in as|signed in as/i;
 
 let child: ChildProcess | null = null;
 let output = '';
+let pendingAccountId: string | null = null;
 
 function shellQuote(value: string): string {
     return `'${value.replaceAll('\'', '\'\\\'\'')}'`;
@@ -83,12 +82,20 @@ export function cancelClaudeLogin(): void {
     }
     child = null;
     output = '';
+    if (pendingAccountId && !claudeAccounts().some(account => account.id === pendingAccountId)) {
+        forgetAccount(pendingAccountId);
+    }
+    pendingAccountId = null;
 }
 
 export async function startClaudeLogin(): Promise<string> {
     cancelClaudeLogin();
-    const started = spawn('/bin/sh', ['-c', loginCommand()], { stdio: ['pipe', 'pipe', 'pipe'], env: { ...process.env, BROWSER: 'none' }, detached: true });
+    await ensureMainAccount();
+    const accountId = claudeAccounts().length === 0 ? MAIN_ACCOUNT_ID : newAccountId();
+    const configDir = prepareAccountFolder(accountId);
+    const started = spawn('/bin/sh', ['-c', loginCommand()], { stdio: ['pipe', 'pipe', 'pipe'], env: { ...process.env, ...(configDir ? { CLAUDE_CONFIG_DIR: configDir } : {}), BROWSER: 'none' }, detached: true });
     child = started;
+    pendingAccountId = accountId;
     output = '';
     started.stdout.on('data', (chunk: Buffer) => {
         output += chunk.toString();
@@ -111,18 +118,20 @@ export async function startClaudeLogin(): Promise<string> {
     }
 }
 
-function credentialsStamp(): number | null {
-    const file = join(process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), '.claude'), '.credentials.json');
+function credentialsStamp(configDir: string | null): number | null {
+    const file = credentialsFile(configDir);
     return existsSync(file) ? statSync(file).mtimeMs : null;
 }
 
-export async function submitClaudeLoginCode(code: string): Promise<void> {
+export async function submitClaudeLoginCode(code: string): Promise<string> {
     const running = child;
-    if (!running?.stdin) {
+    const accountId = pendingAccountId;
+    if (!running?.stdin || !accountId) {
         throw new Error('Start the sign-in again.');
     }
-    const previous = await readProfile();
-    const stamp = credentialsStamp();
+    const configDir = accountConfigDir(accountId);
+    const previous = await readProfile(configDir);
+    const stamp = credentialsStamp(configDir);
     const before = output.length;
     let exitCode: number | null | undefined;
     running.once('exit', (codeOnExit) => {
@@ -133,11 +142,12 @@ export async function submitClaudeLoginCode(code: string): Promise<void> {
     while (Date.now() < deadline) {
         await new Promise(resolve => setTimeout(resolve, STATUS_POLL_MS));
         const reply = output.slice(before).replace(ESCAPE_SEQUENCES, '').split(/[\r\n]+/).map(line => line.trim()).filter(line => line && !line.includes(code));
-        const current = await readProfile();
+        const current = await readProfile(configDir);
         const switched = current !== null && current.email !== previous?.email;
-        if (exitCode === 0 || switched || credentialsStamp() !== stamp || reply.some(line => SUCCESS.test(line))) {
+        if (exitCode === 0 || switched || credentialsStamp(configDir) !== stamp || reply.some(line => SUCCESS.test(line))) {
+            pendingAccountId = null;
             cancelClaudeLogin();
-            return;
+            return accountId;
         }
         const failure = reply.find(line => FAILURE.test(line));
         if (failure || (exitCode !== undefined && exitCode !== 0)) {

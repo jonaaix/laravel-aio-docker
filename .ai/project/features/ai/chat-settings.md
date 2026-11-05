@@ -64,21 +64,31 @@ a conversation opens the same window at Agents. The open window and its category
   except where Google has fewer WaveNet voices for a language (two in German); a voice chosen elsewhere that is not
   listed reads with the listed voice marked in its place. Each person picks their own, and each voice plays a short sample sentence in the person's language, which is kept so it is paid once.
 - **Agents** defines the agents, as described in [Agents in the chat](chat-agents.md).
-- **Claude account** signs the container's Claude Code in to a Claude subscription and out again, the
-  same login a terminal `/login` creates. Signed in, it shows the account's e-mail, organisation,
-  plan and usage (the sidebar's account card shows the e-mail and usage), with "Switch account", which signs in another account directly, and "Sign out". Signed out, "Sign in with Claude" offers Claude's own sign-in page in a new tab
-  and a field for the code that page shows; a wrong code or a failed sign-in says so, and a sign-in in
-  progress can be cancelled. Anyone who can open the chat may do this. The account card at the foot of
-  the sidebar shows "Not signed in" while no account is signed in and opens this category; it follows
-  sign-ins and sign-outs in every open browser. While signed out, a notice above every message input
-  says "Claude is not signed in" and its "Sign in" opens this category; while a usage limit is reached,
-  it says "Usage limit reached" with the time agents can answer again. Usage figures start over with
-  every sign-in and sign-out, so they never show another account's usage.
+- **Claude account** keeps one or more Claude subscriptions signed in to the container's Claude Code and
+  switches between them by hand, never on its own — so a team whose account has used up its quota carries on
+  with another without signing in again. The first sign-in is the container's own login, the same one a
+  terminal `/login` creates; "Add account" signs in a further account through Claude's own sign-in page in a
+  new tab and a field for the code that page shows, and the new account is put to use at once. Signing in an
+  account that is already listed refreshes it rather than adding it twice. Each account shows its e-mail,
+  organisation, plan and the usage last seen for it, the one in use marked "In use"; the others offer "Switch
+  to this account", and every account "Remove" (which asks first and signs it out). A wrong code or a failed
+  sign-in says so, and a sign-in in progress can be cancelled. Anyone who can open the chat may add, switch
+  and remove accounts.
+  A switch applies at once: an answer that is being written finishes on the account it started on, every
+  following message runs on the new one, and conversations simply carry on — the agent's history stays the
+  same on every account. An account left unused for long may ask to be signed in again.
+  The account card at the foot of the sidebar shows the account in use with its usage; clicking it lists
+  every account with its usage, switches with one more click, and offers "Manage accounts". It shows "Not
+  signed in" while no account is signed in and then opens this category; it follows sign-ins, switches and
+  sign-outs in every open browser. While signed out, a notice above every message input says "Claude is not
+  signed in" and its "Sign in" opens this category; while a usage limit is reached, it says "Usage limit
+  reached" with the time agents can answer again. Usage is kept per account, so one account never shows
+  another's usage.
   Everyone sees the account details until an admin hides them from that person under People, which works
-  for admins too, also for oneself. Hidden from someone, the account shows to them only as "Claude account"
-  with its session usage: no e-mail, organisation, plan or weekly usage reaches their browser. Switching and
-  signing out stay open to everyone, so a friend can sign in their own account. Whoever signed in the current account always sees its details, whatever the
-  settings say; once someone else signs in an account or it is signed out, their own setting applies again.
+  for admins too, also for oneself. Hidden from someone, an account shows to them only as "Claude account"
+  with its session usage: no e-mail, organisation, plan or weekly usage reaches their browser. Adding,
+  switching and removing stay open to everyone, so a friend can sign in their own account. Whoever signed in
+  an account always sees its details, whatever the settings say.
 - **People** appears only for admins. It is a table of everyone who has signed in to the chat, with a tick box
   per person for Admin, AI account details and Blocked; a tick takes effect at once. An admin can make others
   admins, take the role away again (also from themselves), show or hide the AI account details for each

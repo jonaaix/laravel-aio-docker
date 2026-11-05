@@ -253,6 +253,7 @@ class ConversationRuntime {
             appendSystemPrompt: agentSystemPrompt(agent, leadAgent(), conversation.workingDir, workingDir),
             deniedTools: agent.lead ? [] : projectWriteRules(conversation.workingDir),
             mcpConfigPath: this.writeMcpConfig(),
+            account: sessionAccount(),
         });
         if (agent.lead && conversation.titleRenamed) {
             session.sendControlRequest({ subtype: 'rename_session', title: conversation.title });
@@ -378,9 +379,18 @@ class ConversationRuntime {
         return path;
     }
 
+    pauseIfOnOtherAccount(): void {
+        const active = activeAccountId();
+        const stale = [...this.sessions.values()].some(session => session.onAccount !== null && session.onAccount !== active);
+        if (stale && !this.pausing && !this.turnActive && this.runningBackgroundTasks.length === 0) {
+            void this.pause();
+        }
+    }
+
     private publishStatus(): void {
         const status = [...this.sessions.values()].some(session => session.running) ? 'running' : 'paused';
         this.scheduleIdlePause();
+        this.pauseIfOnOtherAccount();
         setConversationStatus(this.conversationId, status);
         publishConversationEvent(this.conversationId, { type: 'status', status, turnActive: this.turnActive, answeringAgentId: this.answeringAgentId, backgroundTasks: this.runningBackgroundTasks, queuedMessages: this.queuedMessages });
         this.publishSummary();
@@ -428,6 +438,12 @@ export function runningBackgroundTasks(conversationId: string): BackgroundTask[]
 
 export function queuedMessages(conversationId: string): QueuedMessage[] {
     return runtimes.get(conversationId)?.queuedMessages ?? [];
+}
+
+export function settleClaudeAccountSwitch(): void {
+    for (const runtime of runtimes.values()) {
+        runtime.pauseIfOnOtherAccount();
+    }
 }
 
 export async function pauseAllConversations(): Promise<void> {

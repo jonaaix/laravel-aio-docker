@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import type { UsageWindow } from '#shared/types/account';
+import type { UsageSnapshot, UsageWindow } from '#shared/types/account';
+
+const props = defineProps<{ usage?: UsageSnapshot | null }>();
 
 const { t } = useI18n();
-const { usage } = useAccount();
+const { usage: activeUsage } = useAccount();
+const usage = computed(() => props.usage === undefined ? activeUsage.value : props.usage);
 
 const now = useNow();
 

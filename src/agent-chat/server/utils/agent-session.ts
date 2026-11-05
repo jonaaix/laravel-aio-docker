@@ -31,6 +31,7 @@ export interface AgentLaunch {
     appendSystemPrompt: string;
     deniedTools: string[];
     mcpConfigPath: string;
+    account: ClaudeAccountFolder;
 }
 
 export interface AgentSessionHooks {
@@ -43,6 +44,7 @@ export interface AgentSessionHooks {
 
 export class AgentSession {
     private cli: ClaudeCli | null = null;
+    private accountId = MAIN_ACCOUNT_ID;
     private turn: ActiveTurn | null = null;
     private model: string | null = null;
     private workingDir: string | null = null;
@@ -57,6 +59,10 @@ export class AgentSession {
         readonly agentId: string,
         private readonly hooks: AgentSessionHooks,
     ) {}
+
+    get onAccount(): string | null {
+        return this.cli ? this.accountId : null;
+    }
 
     get running(): boolean {
         return this.cli !== null;
@@ -83,6 +89,7 @@ export class AgentSession {
     }
 
     start(launch: AgentLaunch): void {
+        this.accountId = launch.account.id;
         const cli = new ClaudeCli({
             workingDir: launch.workingDir,
             sessionId: launch.sessionRef,
@@ -97,6 +104,7 @@ export class AgentSession {
             appendSystemPrompt: launch.appendSystemPrompt,
             // Deliberately no permission prompts so work is never held up; the container is the sandbox.
             permissionMode: 'bypass',
+            account: launch.account.configDir ? { id: launch.account.id, configDir: launch.account.configDir } : undefined,
         });
         cli.on('event', event => this.handleEvent(event));
         cli.on('exit', () => this.handleExit(cli));
@@ -221,7 +229,7 @@ export class AgentSession {
             this.model = event.model;
         }
         if (event.type === 'rate_limit_event') {
-            recordRateLimit(event.rate_limit_info);
+            recordRateLimit(event.rate_limit_info, this.accountId);
         }
         if (event.type === 'user' && event.isReplay) {
             this.takeQueued(event.uuid);

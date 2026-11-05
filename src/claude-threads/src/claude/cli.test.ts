@@ -257,6 +257,15 @@ describe('ClaudeCli', () => {
       expect(env.CLAUDE_CODE_SUBPROCESS_ENV_SCRUB).toBe('1');
     });
 
+    test('account.configDir points Claude at that folder and keeps HOME', () => {
+      const parent = { HOME: '/home/bot', ANTHROPIC_API_KEY: 'sk-bot', CLAUDE_CODE_OAUTH_TOKEN: 'oauth-bot' };
+      const env = buildClaudeChildEnv(parent, { id: 'b', configDir: '/data/accounts/b' });
+      expect(env.CLAUDE_CONFIG_DIR).toBe('/data/accounts/b');
+      expect(env.HOME).toBe('/home/bot');
+      expect(env.ANTHROPIC_API_KEY).toBeUndefined();
+      expect(env.CLAUDE_CODE_OAUTH_TOKEN).toBeUndefined();
+    });
+
     test('account.home swaps HOME and clears competing credentials', () => {
       const parent = {
         HOME: '/home/bot',

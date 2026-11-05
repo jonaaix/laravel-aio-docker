@@ -1,14 +1,14 @@
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import { getClaudePath } from '#claude-threads/claude/version-check';
-
 export default defineEventHandler(async (event) => {
+    const { id } = await readBody<{ id?: unknown }>(event) ?? {};
+    const accountId = typeof id === 'string' ? id : activeAccountId();
+    if (!claudeAccounts().some(account => account.id === accountId)) {
+        throw createError({ statusCode: 404, statusMessage: 'Unknown account' });
+    }
     try {
-        await promisify(execFile)(getClaudePath(), ['auth', 'logout']);
+        await signOutClaudeAccount(accountId);
     }
     catch {
         throw createError({ statusCode: 502, statusMessage: 'Claude could not sign out.' });
     }
-    refreshAccountProfile(null);
     return accountStatusFor(sessionUser(event));
 });

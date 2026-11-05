@@ -3,13 +3,13 @@ export default defineEventHandler(async (event) => {
     if (typeof code !== 'string' || !code.trim()) {
         throw createError({ statusCode: 422, statusMessage: 'Enter the code from the sign-in page.' });
     }
+    const user = sessionUser(event);
     try {
-        await submitClaudeLoginCode(code.trim());
+        const accountId = await submitClaudeLoginCode(code.trim());
+        await rememberSignedInAccount(accountId, user);
     }
     catch (error) {
         throw createError({ statusCode: 422, statusMessage: (error as Error).message });
     }
-    const user = sessionUser(event);
-    refreshAccountProfile(user);
     return accountStatusFor(user);
 });

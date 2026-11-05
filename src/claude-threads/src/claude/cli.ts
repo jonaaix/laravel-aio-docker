@@ -157,6 +157,8 @@ export interface ClaudeCliOptions {
 export interface ClaudeCliAccount {
   id: string;
   home?: string;
+  /** Claude's own config folder (`CLAUDE_CONFIG_DIR`): switches the account while HOME, and with it the agent's git and ssh setup, stays. */
+  configDir?: string;
   apiKey?: string;
 }
 
@@ -216,6 +218,11 @@ export function buildClaudeChildEnv(
     // the file-based credentials we're pointing at: an inherited API key
     // or OAuth token from the bot's own parent env would silently swap the
     // account we thought we were using.
+    delete env.ANTHROPIC_API_KEY;
+    delete env.CLAUDE_CODE_OAUTH_TOKEN;
+  } else if (account?.configDir) {
+    env.CLAUDE_CONFIG_DIR = account.configDir;
+    // Same reason as above: an inherited key or token would beat the credentials in that folder.
     delete env.ANTHROPIC_API_KEY;
     delete env.CLAUDE_CODE_OAUTH_TOKEN;
   } else if (account?.apiKey) {

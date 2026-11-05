@@ -16,8 +16,16 @@ export interface UsageSnapshot {
     updatedAt: number;
 }
 
+export interface AccountSummary {
+    id: string;
+    profile: AccountProfile | null;
+    usage: UsageSnapshot | null;
+    active: boolean;
+}
+
 export interface AccountStatus {
     profile: AccountProfile | null;
     usage: UsageSnapshot | null;
     signedInBy: string | null;
+    accounts: AccountSummary[];
 }
