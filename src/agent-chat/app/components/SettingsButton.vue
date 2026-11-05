@@ -16,6 +16,7 @@ const settingsWindow = useSettingsWindow();
             :square="collapsed"
             :block="!collapsed"
             class="justify-start hover:bg-primary/10"
+            :class="collapsed ? 'self-center' : ''"
             @click="settingsWindow.open()"
         />
     </UTooltip>

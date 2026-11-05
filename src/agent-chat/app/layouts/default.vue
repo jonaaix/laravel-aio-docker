@@ -117,8 +117,9 @@ onBeforeUnmount(() => {
                         :aria-label="t('New Code Session')"
                         color="neutral"
                         variant="soft"
-                        block
+                        :block="!collapsed"
                         :square="collapsed"
+                        :class="collapsed ? 'self-center' : ''"
                         class="bg-default text-primary ring ring-primary/40 hover:bg-primary/10 dark:bg-elevated/50 dark:hover:bg-primary/10"
                     />
                 </UTooltip>
@@ -142,12 +143,12 @@ onBeforeUnmount(() => {
                     :collapsed="collapsed"
                     tooltip
                     orientation="vertical"
-                    :ui="{ link: ['overflow-hidden py-1.5 before:transition-colors before:duration-500 before:ease-out hover:before:bg-primary/8 aria-[current=page]:before:bg-primary/12 aria-[current=page]:text-(--nav-current)', collapsed ? 'justify-center px-0.5' : ''], linkLabel: 'min-w-0 flex-1' }"
+                    :ui="{ link: ['overflow-hidden py-1.5 before:transition-colors before:duration-500 before:ease-out hover:before:bg-primary/8 aria-[current=page]:before:bg-primary/12 aria-[current=page]:text-(--nav-current)', collapsed ? 'justify-center overflow-visible px-0' : ''], linkLabel: 'min-w-0 flex-1' }"
                 >
                     <template #item-leading="{ item }">
                         <span
                             v-if="collapsed && item.session"
-                            class="relative flex size-8 shrink-0 items-center justify-center rounded-lg bg-default text-xs font-semibold ring ring-default dark:bg-elevated/50"
+                            class="relative flex size-7 shrink-0 items-center justify-center rounded-lg bg-default text-xs font-semibold ring ring-default dark:bg-elevated/50"
                         >
                             <AudioLevelBars v-if="speech.speakingId.value && speech.conversationId.value === item.id" :playing="!speech.paused.value" :label="t('Reading aloud')" />
                             <span v-else :class="item.session.live ? 'light-streak text-muted' : 'text-toned'">{{ chatInitials(item.label ?? '') }}</span>
@@ -192,6 +193,7 @@ onBeforeUnmount(() => {
                                 :square="collapsed"
                                 :block="!collapsed"
                                 class="justify-start hover:bg-primary/10"
+                                :class="collapsed ? 'self-center' : ''"
                             />
                         </UTooltip>
                         <SettingsButton :collapsed="collapsed" />
