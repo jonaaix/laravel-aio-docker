@@ -43,6 +43,14 @@ picture's corner, the pictures spaced so it fits, a working conversation a slowl
 close around its picture, in a slowly turning, glowing gradient drawn from the accent colour (with Black: black — white in dark mode — with violet and cyan), that billows with the voice actually being heard — its pitches spread around the circle —
 and lies as a thin, still ring while paused.
 
+### Switching by keyboard
+
+The first nine conversations of the list, counted from the top across all groups, can be opened with Cmd+1 to Cmd+9
+on a Mac and Ctrl+1 to Ctrl+9 elsewhere; the chat takes these keys over from the browser's tab switching where the
+browser allows it. As soon as Cmd or Ctrl is pressed, each of those nine entries shows its shortcut as a small mark at
+its top right corner — on the picture when the sidebar is folded — and the marks go away when the key is let go.
+Conversations further down have no shortcut.
+
 ## Examples
 
 - A developer starts three tasks in three conversations and works in a fourth. Two of the entries show the bouncing

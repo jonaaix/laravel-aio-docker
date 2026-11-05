@@ -36,7 +36,10 @@ watch(() => user.value?.id, () => {
 const now = useNow();
 const sidebarCollapsed = ref(false);
 
-const items = computed<NavigationMenuItem[][]>(() => groupByRecency(conversations.value).map(group => [
+const sidebarGroups = computed(() => groupByRecency(conversations.value));
+const shortcuts = useChatShortcuts(computed(() => sidebarGroups.value.flatMap(group => group.conversations.map(conversation => conversation.id))));
+
+const items = computed<NavigationMenuItem[][]>(() => sidebarGroups.value.map(group => [
     { label: t(group.label), type: 'label' },
     ...group.conversations.map((conversation) => {
         const reading = speech.speakingId.value !== null && speech.conversationId.value === conversation.id;
@@ -192,6 +195,7 @@ onBeforeUnmount(() => {
                                     <VoiceRing class="absolute -inset-1" />
                                     <span class="sr-only">{{ t('Reading aloud') }}</span>
                                 </template>
+                                <span v-if="collapsed && shortcuts.held.value && shortcuts.shortcutLabel(item.id)" class="absolute -end-2 -top-2 z-10 flex h-4 items-center rounded-sm bg-inverted px-1 text-[0.625rem]/none font-semibold text-inverted tabular-nums shadow-sm" aria-hidden="true">{{ shortcuts.shortcutLabel(item.id) }}</span>
                                 <template v-if="collapsed">
                                     <span v-if="unread.isUnread(item.id)" class="absolute -end-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[0.625rem]/none font-semibold text-inverted tabular-nums ring-2 ring-(--ui-bg-muted)" :aria-label="t('Unread')">{{ formatBadgeCount(unread.unreadCount(item.id)) }}</span>
                                     <span v-if="item.session.live" class="light-ring pointer-events-none absolute -inset-[3px] rounded-full" role="status" :aria-label="t(item.session.label)" />
@@ -215,6 +219,7 @@ onBeforeUnmount(() => {
                         </UPopover>
                     </template>
                     <template #item-label="{ item }">
+                        <span v-if="item.session && shortcuts.held.value && shortcuts.shortcutLabel(item.id)" class="absolute end-1.5 top-1.5 z-10 flex h-4 items-center rounded-sm bg-inverted px-1 text-[0.625rem]/none font-semibold text-inverted tabular-nums shadow-sm" aria-hidden="true">{{ shortcuts.shortcutLabel(item.id) }}</span>
                         <ChatConversationEntry
                             v-if="item.session"
                             :title="item.label"
