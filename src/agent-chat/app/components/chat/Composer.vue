@@ -251,7 +251,7 @@ function onKeydown(event: KeyboardEvent): void {
             :maxrows="MAX_ROWS"
             :ui="{
                 body: 'items-end gap-1.5',
-                base: ['rounded-none py-2 ps-0 text-base/5 transition-none', hasQuote ? 'text-transparent caret-[var(--ui-text-highlighted)]' : ''],
+                base: ['scrollbar-slim rounded-none py-2 ps-0 text-base/5 transition-none', hasQuote ? 'text-transparent caret-[var(--ui-text-highlighted)]' : ''],
                 leading: 'static order-first inset-auto ps-0',
             }"
             @submit="emit('submit')"
