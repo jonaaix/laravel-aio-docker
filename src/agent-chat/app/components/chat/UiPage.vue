@@ -15,16 +15,9 @@ const filename = computed(() => props.page.filename);
 const viewerOpen = ref(false);
 const codeOpen = ref(false);
 
-function download(): void {
-    const link = document.createElement('a');
-    link.href = fileUrl.value;
-    link.download = filename.value;
-    link.click();
-}
-
 const moreItems = computed<DropdownMenuItem[]>(() => [
     { label: t('Open in new tab'), icon: 'i-heroicons-arrow-top-right-on-square', to: src.value, target: '_blank', external: true },
-    { label: t('Download'), icon: 'i-heroicons-arrow-down-tray', onSelect: download },
+    { label: t('Download'), icon: 'i-heroicons-arrow-down-tray', onSelect: () => downloadFile(fileUrl.value, filename.value) },
 ]);
 </script>
 
