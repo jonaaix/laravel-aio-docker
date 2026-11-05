@@ -14,7 +14,7 @@ interface Spike {
 const SIZE = 40;
 const CENTER = SIZE / 2;
 const BASE_RADIUS = 16.6;
-const WAVE_MAX = 2.4;
+const WAVE_MAX = 3;
 const INNER_CAP = 0.5;
 const REST_WIDTH = 0.6;
 const BINS = 96;
