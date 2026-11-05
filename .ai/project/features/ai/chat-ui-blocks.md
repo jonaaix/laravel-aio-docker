@@ -90,7 +90,7 @@ Entries can run in parallel lanes, such as teams working at the same time; the l
 each under its name. Entries can also carry a start and an optional end, as a time of day or as a date with a time.
 A group with times is drawn to scale like a day in a calendar: time runs downwards along a time column, each lane is a
 column, an entry with an end is a block whose height shows its duration, and one without an end is a point in time.
-Entries of one lane that overlap stand next to each other. A time of day that ends before it starts runs past midnight.
+Entries of one lane that overlap stand next to each other, and blocks that follow one another keep a small gap. A block too short for its text unfolds downwards over its neighbours while the pointer rests on it, or when tapped on a phone, and shows the whole text. A time of day that ends before it starts runs past midnight.
 Within a group either every entry has a time and a lane or none does. Where the lanes do not fit the width, as on a
 phone, they can be swiped sideways while the time column stays in place.
 

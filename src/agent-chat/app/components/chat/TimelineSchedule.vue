@@ -12,6 +12,15 @@ const MINUTES_PER_DAY = 1440;
 
 const chatPlugins = useChatMarkdownPlugins();
 
+const expanded = ref<string | null>(null);
+
+function expandWhenClipped(key: string, event: MouseEvent): void {
+    const card = event.currentTarget as HTMLElement;
+    if (card.scrollHeight > card.clientHeight + 1) {
+        expanded.value = key;
+    }
+}
+
 const layout = computed(() => scheduleLayout(props.group));
 const namedLanes = computed(() => layout.value.lanes.some(lane => lane.name));
 const columns = computed(() => {
@@ -68,7 +77,13 @@ function span(entry: ScheduleEntry): string {
                     :style="{ top: `${tick.top + EDGE_PX}px` }"
                     aria-hidden="true"
                 />
-                <div v-for="(entry, index) in lane.entries" :key="index" class="absolute px-1" :style="entryStyle(entry)">
+                <div
+                    v-for="(entry, index) in lane.entries"
+                    :key="index"
+                    class="absolute px-1"
+                    :class="{ 'pb-1': !entry.point, 'z-[5]': expanded === `${laneIndex}-${index}` }"
+                    :style="entryStyle(entry)"
+                >
                     <div v-if="entry.point" class="flex h-full items-center gap-1.5 -translate-y-1/2">
                         <span class="relative flex size-3 shrink-0 items-center justify-center" aria-hidden="true">
                             <span v-if="entry.item.state === 'active'" class="absolute inline-flex size-full rounded-full bg-primary opacity-75 motion-safe:animate-ping" />
@@ -76,7 +91,13 @@ function span(entry: ScheduleEntry): string {
                         </span>
                         <span class="min-w-0 truncate text-sm font-medium text-highlighted">{{ entry.item.title }}</span>
                     </div>
-                    <div v-else class="relative flex h-full flex-col overflow-hidden rounded-sm px-2 py-1 ring ring-inset" :class="timelineBlockLook(entry.item.state)">
+                    <div
+                        v-else
+                        class="relative flex min-h-full flex-col overflow-hidden rounded-sm px-2 py-1 ring ring-inset transition-[height,box-shadow] duration-500 ease-out [interpolate-size:allow-keywords]"
+                        :class="[timelineBlockLook(entry.item.state), expanded === `${laneIndex}-${index}` ? 'h-auto shadow-lg' : 'h-full']"
+                        @mouseenter="expandWhenClipped(`${laneIndex}-${index}`, $event)"
+                        @mouseleave="expanded = null"
+                    >
                         <span v-if="entry.item.state === 'active'" class="absolute end-1.5 top-1.5 flex size-2" aria-hidden="true">
                             <span class="absolute inline-flex size-full rounded-full bg-primary opacity-75 motion-safe:animate-ping" />
                             <span class="relative inline-flex size-2 rounded-full bg-primary" />

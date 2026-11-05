@@ -93,8 +93,8 @@ const DOT_LOOK: Record<UiTimelineState | 'none', string> = {
 };
 
 const BLOCK_LOOK: Record<UiTimelineState | 'none', string> = {
-    done: 'bg-primary/10 ring-primary/30',
-    active: 'bg-primary/15 ring-primary',
+    done: 'bg-[color-mix(in_oklab,var(--ui-primary)_10%,var(--ui-bg))] ring-primary/30',
+    active: 'bg-[color-mix(in_oklab,var(--ui-primary)_15%,var(--ui-bg))] ring-primary',
     open: 'bg-default ring-accented',
     none: 'bg-elevated ring-default',
 };
