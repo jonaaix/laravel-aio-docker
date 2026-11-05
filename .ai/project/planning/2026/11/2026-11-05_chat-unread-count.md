@@ -25,7 +25,6 @@ hover card, and opening it clears the number on every device.
 - Built and migrated (`0037_message_posted_at`): the backfill moved the read markers of fully read conversations up
   to `last_posted_at`, so nothing that was read turned unread.
 - Dev data for the check: Jonas's markers on "Mobile Framework7-Chat-App" and the image chat were reset to 0.
-- The Framework7 app (`agent-chat-mobile`) still judges unread by `lastAnswerAt` on its own; not touched.
 
 ## Decisions
 
