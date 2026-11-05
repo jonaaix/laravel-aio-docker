@@ -30,8 +30,8 @@ const SCREENS: Record<Exclude<ScreenPreset, 'window'>, ScreenSize> = {
 
 const screenOptions = computed<OptionStripItem<ScreenPreset>[]>(() => [
     { value: 'window', label: t('Window'), icon: 'i-heroicons-window' },
-    { value: 'iphone', label: t('Smartphone'), icon: 'i-heroicons-device-phone-mobile' },
-    { value: 'macbook', label: t('Laptop'), icon: 'i-heroicons-computer-desktop' },
+    { value: 'iphone', label: t('Phone'), icon: 'i-heroicons-device-phone-mobile' },
+    { value: 'macbook', label: '13″', icon: 'i-heroicons-computer-desktop' },
     { value: 'monitor-24', label: '24″', icon: 'i-heroicons-computer-desktop' },
     { value: 'monitor-27', label: '27″', icon: 'i-heroicons-computer-desktop' },
 ]);
