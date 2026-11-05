@@ -54,7 +54,7 @@ function togglePause(): void {
 
 <template>
     <UTooltip v-if="speakingId && collapsed" :text="paused ? t('Resume') : t('Pause')">
-        <UButton color="neutral" variant="ghost" square :aria-label="paused ? t('Resume') : t('Pause')" class="justify-center" @click="togglePause">
+        <UButton color="neutral" variant="ghost" square :aria-label="paused ? t('Resume') : t('Pause')" class="size-9 justify-center self-center rounded-full hover:bg-primary/10" @click="togglePause">
             <UIcon v-if="paused" name="i-heroicons-play" class="size-5" />
             <AudioLevelBars v-else :playing="true" :label="t('Reading aloud')" />
         </UButton>
