@@ -37,6 +37,13 @@ Where a plain question in the text would not do — for example when each option
 in a card: the question, then two to six lettered options with name and optional description, one of them possibly
 marked "Recommended".
 
+### Cards
+
+For a comparison, a summary or the state of several parts the agent shows a grid of up to twelve cards, with an
+optional title above it. Each card has a title and optionally a short text, which may hold a list. The grid adapts to
+the width, cards in a row share their height. A card can carry a status: good tints the whole card green, warning
+amber, bad red, each with a matching symbol beside the title; cards without a status stay neutral.
+
 ### Picking
 
 In variants and choices, clicking an option puts it into the message field as its letter and name, such as
@@ -57,5 +64,7 @@ Nothing half-built reaches the chat.
   it, c) marked as recommended. The person clicks c), adds "but with the toolbar of b)" and sends it.
 - The agent builds a report page and shows it embedded; after feedback it shows the corrected version as a second
   page below its next answer, while the first one still shows the old state.
+- Checking a deployment, the agent shows four cards — database, queue, mail and storage — the mail card red with
+  "No SMTP host set", the others green.
 - The agent asks in a choice card which of three export formats to use, each with a one-line description; the person
   clicks b), which appears as "b) CSV" in the message field.

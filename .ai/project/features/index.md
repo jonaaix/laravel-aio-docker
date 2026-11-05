@@ -11,4 +11,4 @@
 | ai-chat-file-changes | [ai/chat-file-changes.md](ai/chat-file-changes.md) | Live file changes of an answer: diffs, Changes panel, whole-file preview |
 | ai-chat-voice | [ai/chat-voice.md](ai/chat-voice.md) | Dictation, reading aloud, the mini player and read-along |
 | ai-chat-answer-sections | [ai/chat-answer-sections.md](ai/chat-answer-sections.md) | Marked answer sections as quiet blocks, question cards with selectable options |
-| ai-chat-ui-blocks | [ai/chat-ui-blocks.md](ai/chat-ui-blocks.md) | Building blocks agents place in answers: embedded pages, lettered variants and choices that fill the message field |
+| ai-chat-ui-blocks | [ai/chat-ui-blocks.md](ai/chat-ui-blocks.md) | Building blocks agents place in answers: embedded pages, lettered variants, choices that fill the message field, status cards |

@@ -35,3 +35,12 @@ test('a recommendation must name one of the options', () => {
 test('an option without a title is refused', () => {
     assert.throws(() => uiBlockFor('show_choice', { question: 'Which?', options: [{ title: 'A' }, { description: 'x' }] }, storePage), /options\[1\]\.title is required/);
 });
+
+test('cards keep their status and refuse an unknown one', () => {
+    assert.deepEqual(uiBlockFor('show_cards', { cards: [{ title: 'API', status: 'good' }] }, storePage), {
+        kind: 'cards',
+        title: null,
+        cards: [{ title: 'API', text: null, status: 'good' }],
+    });
+    assert.throws(() => uiBlockFor('show_cards', { cards: [{ title: 'API', status: 'green' }] }, storePage), /good, warning, bad/);
+});

@@ -1,9 +1,11 @@
-import type { UiBlock, UiOption, UiPage } from '../../shared/types/ui-block';
+import type { UiBlock, UiCard, UiCardStatus, UiOption, UiPage } from '../../shared/types/ui-block';
 
 const LETTERS = 'abcdef';
 const MIN_OPTIONS = 2;
 const PAGE_HEIGHT = { min: 240, max: 1200, fallback: 560 };
 const PAGE_FILE = /\.html?$/i;
+const MAX_CARDS = 12;
+const CARD_STATUSES: UiCardStatus[] = ['good', 'warning', 'bad'];
 
 export type PageStore = (path: string) => string;
 
@@ -61,6 +63,32 @@ export const UI_BLOCK_TOOLS = [
             required: ['question', 'options'],
         },
     },
+    {
+        name: 'show_cards',
+        description: 'Show a grid of cards: a comparison, a summary, the state of several parts. '
+            + 'A card with a status is tinted green, amber or red as a whole, so use a status only where it is the message.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                title: { type: 'string', description: 'Optional short title shown above the cards.' },
+                cards: {
+                    type: 'array',
+                    minItems: 1,
+                    maxItems: MAX_CARDS,
+                    items: {
+                        type: 'object',
+                        properties: {
+                            title: { type: 'string', description: 'Short title of the card.' },
+                            text: { type: 'string', description: 'Optional body; Markdown allowed, such as a short list.' },
+                            status: { type: 'string', enum: CARD_STATUSES, description: 'Optional: good, warning or bad.' },
+                        },
+                        required: ['title'],
+                    },
+                },
+            },
+            required: ['cards'],
+        },
+    },
 ];
 
 export const UI_BLOCK_TOOL_NAMES = new Set(UI_BLOCK_TOOLS.map(tool => tool.name));
@@ -116,6 +144,23 @@ function recommendedOf(value: unknown, options: UiOption[]): string | null {
     return letter;
 }
 
+function cardsOf(value: unknown): UiCard[] {
+    if (!Array.isArray(value) || value.length < 1 || value.length > MAX_CARDS) {
+        throw new Error(`cards must list 1 to ${MAX_CARDS} cards.`);
+    }
+    return value.map((card: unknown, index) => {
+        if (typeof card !== 'object' || card === null) {
+            throw new TypeError(`cards[${index}] must be an object with a title.`);
+        }
+        const { title, text, status } = card as Record<string, unknown>;
+        const named = optionalText(status, `cards[${index}].status`);
+        if (named !== null && !CARD_STATUSES.includes(named as UiCardStatus)) {
+            throw new Error(`cards[${index}].status must be one of ${CARD_STATUSES.join(', ')}.`);
+        }
+        return { title: requiredText(title, `cards[${index}].title`), text: optionalText(text, `cards[${index}].text`), status: named as UiCardStatus | null };
+    });
+}
+
 export function uiBlockFor(tool: string, args: Record<string, unknown>, storePage: PageStore): UiBlock {
     if (tool === 'show_choice') {
         const question = requiredText(args.question, 'question');
@@ -123,6 +168,9 @@ export function uiBlockFor(tool: string, args: Record<string, unknown>, storePag
         return { kind: 'choice', question, options, recommended: recommendedOf(args.recommended, options) };
     }
     const title = optionalText(args.title, 'title');
+    if (tool === 'show_cards') {
+        return { kind: 'cards', title, cards: cardsOf(args.cards) };
+    }
     if (tool === 'show_variants') {
         const options = optionsOf(args.variants, 'variants');
         const recommended = recommendedOf(args.recommended, options);

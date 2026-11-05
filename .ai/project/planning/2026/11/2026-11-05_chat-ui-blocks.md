@@ -16,12 +16,12 @@ message field.
       (section card + option rows); option row extracted from the question card; picks into the message field
 - [x] Feature Book chapter
 - [ ] User check: a new conversation (tools load at session start) asked for design alternatives
-- [ ] Second step (own plan): cards
+- [x] Second step: cards (`show_cards`, up to 12, optional status good / warning / bad tinting the whole card)
 
 ## State
 
 - Built: tools in `server/utils/ui-blocks.ts` (validation tested in `tests/ui-blocks.test.ts`), page route
-  `conversations/[id]/pages/[name]`, components `UiBlock`, `UiPage`, `UiOptions`, `OptionRow` (shared with the question
+  `conversations/[id]/pages/[name]`, components `UiBlock`, `UiPage`, `UiOptions`, `UiCards`, `OptionRow` (shared with the question
   card), pick bridge `useBlockPicks`.
 - Not yet seen with a real agent answer.
 
