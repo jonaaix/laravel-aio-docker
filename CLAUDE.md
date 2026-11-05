@@ -227,7 +227,8 @@ for it; the `ui-patterns` skill holds class recipes for what none covers.
 We adapt Tailwind UI and shadcn/ui by hand in Tailwind — neither is installed as a package. Material may contribute where it helps, restyled to the rules below: the app reads as one design, not a patchwork.
 
 - **Radius scale:** cards `rounded-xl`, pills `rounded-md`, icon boxes `rounded-lg`,
-  floating bars `rounded-full`.
+  floating bars `rounded-full`. In the Nuxt UI chat (`src/agent-chat`) the same names render
+  larger (`md` = 12px, `xl` = 24px), so its cards take `rounded-md`.
 - **Flat rings, no shadows on cards.** Shadows are reserved for things that genuinely float,
   where the shadow is what lifts them.
 - **Padding `p-3`–`p-5`.** Wasteful padding looks dated.
