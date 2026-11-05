@@ -34,22 +34,20 @@ const OPTIONS_PROPERTY = {
     },
 };
 
-const IN_CHAT_LANGUAGE = ' Write all its texts in the chat language.';
-
 const RECOMMENDED_PROPERTY = { type: 'boolean', description: 'Whether a) is marked as recommended; false when there is no recommendation.' };
 
 export const UI_BLOCK_TOOLS = [
     {
         name: 'show_page',
         description: 'Show an HTML page embedded in your answer at full width, frozen as it is now. '
-            + 'Use it for anything the user should look at and try in the browser: a prototype, a report, a visual explanation. Send a revision as a new page.' + IN_CHAT_LANGUAGE,
+            + 'Use it for anything the user should look at and try in the browser: a prototype, a report, a visual explanation. Send a revision as a new page.',
         inputSchema: { type: 'object', properties: PAGE_PROPERTIES, required: ['path'] },
     },
     {
         name: 'show_variants',
         description: 'Show visual design or UX alternatives side by side as selectable cards, each with a live preview of its own HTML file. '
             + 'Only for alternatives that must be seen to be judged; never for plain questions, use ask_choice for those. '
-            + 'The user selects one and answers in the chat.' + IN_CHAT_LANGUAGE,
+            + 'The user selects one and answers in the chat.',
         inputSchema: {
             type: 'object',
             properties: {
@@ -81,7 +79,7 @@ export const UI_BLOCK_TOOLS = [
         name: 'ask_choice',
         description: 'Ask the user to choose between options in a card they can click. '
             + 'Use it where a plain question in the text would not do, such as options that need a description each. '
-            + 'End your answer right after it and wait for the reply.' + IN_CHAT_LANGUAGE,
+            + 'End your answer right after it and wait for the reply.',
         inputSchema: {
             type: 'object',
             properties: {
@@ -97,7 +95,7 @@ export const UI_BLOCK_TOOLS = [
         description: 'Show a grid of cards: a comparison, a summary, the state of several parts. '
             + 'Structure it in cards with a heading: most important first, related things together. '
             + 'A card shows its message visibly, the more strongly the more important it is; without a message it stays neutral. '
-            + 'A status tints the whole card green, amber or red.' + IN_CHAT_LANGUAGE,
+            + 'A status tints the whole card green, amber or red.',
         inputSchema: {
             type: 'object',
             properties: {

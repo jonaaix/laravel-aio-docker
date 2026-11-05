@@ -17,9 +17,8 @@ look or take stock rather than read, and a prompt or project rule can ask for th
 
 ## How does it work?
 
-The texts of every block — titles, options, descriptions, card texts — are written in the chat language of the
-person who started the conversation, whatever language the agent's project otherwise works in; the pages themselves
-are free.
+The agent learns the chat language of the person who started the conversation, so it can write the texts of its
+blocks in it; the pages themselves are free.
 
 ### Page
 
