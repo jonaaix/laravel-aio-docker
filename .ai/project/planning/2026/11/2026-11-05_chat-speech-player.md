@@ -23,8 +23,9 @@ stopped, rewound and jumped through without starting over.
 
 ## Decisions
 
-- Player at the top of the sidebar below "New Code Session" (moved there from the foot, user's call), floating
-  above the input on narrow screens (question 150a).
+- Player at the foot of the sidebar right above the account card, links above both (question 154a): mini players
+  conventionally sit at the bottom, and a player at the top made the chat list jump. Floats above the input on narrow
+  screens (question 150a).
 - Back and forward 10 seconds on either side of pause (user's call, replacing back-only); progress bar and stop
   (question 152b). Speed in the player is a menu in 0.25× steps with a capped, scrolling height (user's call); the fine
   slider stays in the settings.

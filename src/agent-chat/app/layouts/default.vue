@@ -104,7 +104,7 @@ onBeforeUnmount(() => {
             :min-size="14"
             :default-size="18"
             :max-size="28"
-            :ui="{ root: 'peer bg-muted', footer: 'pb-4', header: hub || speech.speakingId.value ? 'h-auto py-3' : undefined }"
+            :ui="{ root: 'peer bg-muted', footer: 'pb-4', header: hub ? 'h-auto py-3' : undefined }"
         >
             <template #header="{ collapsed }">
                 <div class="flex w-full flex-col gap-2">
@@ -122,7 +122,6 @@ onBeforeUnmount(() => {
                         class="bg-default text-primary ring ring-primary/40 hover:bg-primary/10 dark:bg-elevated/50 dark:hover:bg-primary/10"
                     />
                 </UTooltip>
-                <SpeechPlayer v-if="!collapsed" class="max-lg:hidden" />
                 <template v-if="hub && !collapsed">
                     <UAlert v-if="hubOffline" :title="t('Offline')" :description="t('Showing saved chats.')" icon="i-heroicons-signal-slash" color="neutral" variant="subtle" />
                     <UAlert
@@ -186,6 +185,7 @@ onBeforeUnmount(() => {
                         </UTooltip>
                         <SettingsButton :collapsed="collapsed" />
                     </div>
+                    <SpeechPlayer v-if="!collapsed" class="max-lg:hidden" />
                     <AccountCard v-if="!collapsed" />
                 </div>
             </template>
