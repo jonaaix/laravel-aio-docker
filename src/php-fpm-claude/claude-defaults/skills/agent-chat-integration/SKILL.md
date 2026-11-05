@@ -10,16 +10,20 @@ signs these links. The Laravel app is the door: for its signed-in user it asks t
 sends the browser there. Opening the link signs that person in to that browser for good, until the
 chat's key changes.
 
-Two values connect the app to the chat. Keep both in `.env`:
+Two values connect the app to the chat: its address and its key. The chat creates its key on its first start and
+keeps it in `/home/laravel/.config/agent-chat/chat-key`; the app reads it from there, so it never needs copying.
+Only a chat that runs somewhere else is given the key through `AGENT_CHAT_KEY` in `.env`, the same value that chat
+runs with as `NUXT_CHAT_KEY`.
 
-```dotenv
-AGENT_CHAT_URL=http://localhost:3000
-AGENT_CHAT_KEY=<the chat's key>
+```php
+// config/services.php
+'agent_chat' => [
+    'url' => env('AGENT_CHAT_URL', 'http://localhost:3000'),
+    'key' => env('AGENT_CHAT_KEY') ?: trim((string) @file_get_contents('/home/laravel/.config/agent-chat/chat-key')),
+],
 ```
 
-`AGENT_CHAT_KEY` must be the same value the chat runs with as `NUXT_CHAT_KEY`; the chat does not create one itself.
-It is a secret. It never reaches the browser and is never committed, logged or shown in a reply.
-Expose both through `config/services.php` as `services.agent_chat.url` and `services.agent_chat.key`.
+The key is a secret. It never reaches the browser and is never committed, logged or shown in a reply.
 
 ## Requesting a sign-in link
 
@@ -111,5 +115,5 @@ If it is not clear which area should get the chat, ask the user before adding th
 
 ## Not settled yet
 
-- The chat's address inside this container and where its key is kept are not fixed yet. Until they are, ask the
-  user for both and put them into `.env` as above.
+- The chat's address inside this container is not fixed yet. Until it is, ask the user for it and put it into
+  `.env` as `AGENT_CHAT_URL`.

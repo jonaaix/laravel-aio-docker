@@ -1,4 +1,6 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { H3Event } from 'h3';
 import type { UserRow } from './user-store';
 
@@ -110,8 +112,26 @@ export function sessionUserId(key: string, value: string | undefined): string | 
     return separator > 0 && sameSecret(createSessionValue(key, userId), value) ? userId : null;
 }
 
+const KEY_FILE = 'chat-key';
+const KEY_BYTES = 32;
+let loadedKey: string | undefined;
+
+function storedChatKey(): string {
+    const path = join(resolveDataDir(), KEY_FILE);
+    try {
+        writeFileSync(path, randomBytes(KEY_BYTES).toString('base64url'), { mode: 0o600, flag: 'wx' });
+    }
+    catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'EEXIST') {
+            throw error;
+        }
+    }
+    return readFileSync(path, 'utf8').trim();
+}
+
 export function chatKey(): string {
-    return useRuntimeConfig().chatKey;
+    loadedKey ??= useRuntimeConfig().chatKey || storedChatKey();
+    return loadedKey;
 }
 
 export function sessionUser(event: H3Event): UserRow {

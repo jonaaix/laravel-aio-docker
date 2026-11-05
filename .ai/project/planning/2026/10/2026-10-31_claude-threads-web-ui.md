@@ -166,6 +166,9 @@ container restart with its full history and attachments, and no Mattermost/Slack
 
 ## Decisions
 
+- Chat key: without `NUXT_CHAT_KEY` the chat creates one on first start in `<data dir>/chat-key` (mode 600) and
+  keeps it; the Laravel app reads that file, `.env` only for a chat running elsewhere (user, 254a).
+
 - Thought and Worked (`ChatThinkingBlock`, `ChatWorkingBlock`) are plain lines without frame or
   background (`ChatActivityBox` `plain`, 28 px rows, no gap), aligned with the answer text; background
   tasks and waiting messages keep the framed box.

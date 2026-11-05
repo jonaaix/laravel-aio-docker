@@ -38,8 +38,9 @@ Chat tabs in the background let go of their live connection and catch up as soon
 open chat tabs never hold up a page that loads the chat.
 
 Only a signed link lets someone in. The chat signs these links itself; the Laravel app is only the
-door: for its signed-in user it asks the chat for a link, proving itself with a key stored centrally in
-the image, and passes on who the person is in the app, their name and picture (see [People in the chat](chat-people.md)). The link carries them and its signature as
+door: for its signed-in user it asks the chat for a link, proving itself with the chat's key — one the
+chat is given, or else one it creates on its first start and keeps in its data folder, where the app reads it —
+and passes on who the person is in the app, their name and picture (see [People in the chat](chat-people.md)). The link carries them and its signature as
 query parameters, works once and only for about a minute. Opening it signs the person in to that
 browser for good — until the key on the server is changed. Anyone reaching the chat without a valid
 link or an earlier sign-in sees only "Unauthorized". There is no other way in: no password, no
