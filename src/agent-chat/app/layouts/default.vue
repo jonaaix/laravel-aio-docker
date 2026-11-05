@@ -47,7 +47,7 @@ const items = computed<NavigationMenuItem[][]>(() => groupByRecency(conversation
         creatorName: chatName(conversation.creatorId),
         lastActivityAt: conversation.lastActivityAt,
         reading: speech.speakingId.value !== null && speech.conversationId.value === conversation.id,
-    })),
+    })).map(item => ({ ...item, class: item.reading ? 'aria-[current=page]:before:ring-0' : undefined })),
 ]));
 
 let unsubscribe: (() => void) | undefined;
