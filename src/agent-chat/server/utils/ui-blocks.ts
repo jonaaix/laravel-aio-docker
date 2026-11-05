@@ -50,12 +50,6 @@ const RECOMMENDED_PROPERTY = { type: 'boolean', description: 'Whether a) is mark
 
 export const UI_BLOCK_TOOLS = [
     {
-        name: 'show_page',
-        description: 'Show an HTML page embedded in your answer at full width, frozen as it is now. '
-            + 'Use it for anything the user should look at and try in the browser: a prototype, a report, a visual explanation. Send a revision as a new page.',
-        inputSchema: { type: 'object', properties: PAGE_PROPERTIES, required: ['path'] },
-    },
-    {
         name: 'ask_visual_choice',
         description: 'Show visual design or UX alternatives side by side as selectable cards, each with a live preview of its own HTML file. '
             + 'Only for alternatives that must be seen to be judged; never for plain questions, use ask_choice for those. '
@@ -210,6 +204,11 @@ export const UI_BLOCK_TOOLS = [
             },
             required: ['groups'],
         },
+    },
+    {
+        name: 'show_page',
+        description: 'Show an HTML page embedded in your answer at full width, frozen as it is now, when no other building block fits, such as a prototype. Send a revision as a new page.',
+        inputSchema: { type: 'object', properties: PAGE_PROPERTIES, required: ['path'] },
     },
 ];
 

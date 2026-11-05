@@ -37,6 +37,7 @@ message field.
 - Page, variants and choice first, cards second (user, 185a).
 - The "❓ Questions" question cards stay; the choice block is an addition, used when the prompt asks for it (user, 186a).
 - One tool per block instead of one tool with a kind field: each schema stays small and exact for the model.
+- `show_page` is listed last and described as the fallback when no other block fits; listed first with "anything to look at" it drew every visual answer (user, 249a).
 - Timeline replaces the step-list idea: states done / running / open as dots, marks in a narrow column left of the line (user, 240a, 241a).
 - Lanes and spans extend `show_timeline` rather than a separate block; times draw a calendar-like day with time running down, lanes swipe sideways on a phone with the time column fixed (user, 242a–244a).
 - Screen sizes in the larger view use the device's full screen, not the browser's visible area (user, 196b).
