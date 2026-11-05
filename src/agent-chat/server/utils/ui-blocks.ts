@@ -1,4 +1,4 @@
-import type { UiBlock, UiCard, UiCardSection, UiCardStatus, UiChartSeries, UiChartType, UiTimelineGroup, UiTimelineState, UiOption, UiPage, UiVariant, UiVariantColumns, UiViewport } from '../../shared/types/ui-block';
+import type { UiBlock, UiCard, UiCardSection, UiCardStatus, UiChartSeries, UiChartType, UiTimelineGroup, UiTimelineItem, UiTimelineState, UiOption, UiPage, UiVariant, UiVariantColumns, UiViewport } from '../../shared/types/ui-block';
 
 const LETTERS = 'abcdef';
 const MIN_OPTIONS = 2;
@@ -11,6 +11,10 @@ const CHART_TYPES: UiChartType[] = ['line', 'bar', 'stacked_bar', 'pie', 'doughn
 const MAX_SERIES = 8;
 const MAX_GROUPS = 8;
 const MAX_ITEMS = 30;
+const MAX_LANES = 6;
+const MINUTES_PER_DAY = 1440;
+const CLOCK_TIME = /^(\d{1,2}):(\d{2})$/;
+const DATED_TIME = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{1,2}):(\d{2})$/;
 const TIMELINE_STATES: UiTimelineState[] = ['done', 'active', 'open'];
 const CANVAS_COLUMNS: Record<string, UiVariantColumns> = { small: 2, large: 1 };
 const CANVASES = Object.keys(CANVAS_COLUMNS);
@@ -194,6 +198,9 @@ export const UI_BLOCK_TOOLS = [
                                         marker: { type: 'string', description: 'Optional short mark beside the line, such as a time, a date or "Step 2".' },
                                         text: { type: 'string', description: 'Optional short text; Markdown allowed.' },
                                         state: { type: 'string', enum: TIMELINE_STATES, description: 'Optional: done, active or open.' },
+                                        lane: { type: 'string', description: 'Optional parallel track, such as a team; lanes stand side by side.' },
+                                        start: { type: 'string', description: 'Optional "HH:MM" or "YYYY-MM-DD HH:MM"; with times, the group is drawn to scale.' },
+                                        end: { type: 'string', description: 'Optional, same format as start.' },
                                     },
                                     required: ['title'],
                                 },
@@ -356,6 +363,75 @@ function chartOf(args: Record<string, unknown>): UiBlock {
     return { kind: 'chart', title: optionalText(args.title, 'title'), chartType, labels, series, unit: optionalText(args.unit, 'unit') };
 }
 
+interface PlanTime {
+    minute: number;
+    dated: boolean;
+}
+
+function planTimeOf(value: unknown, name: string): PlanTime | null {
+    const text = optionalText(value, name);
+    if (text === null) {
+        return null;
+    }
+    const clock = CLOCK_TIME.exec(text);
+    const dated = clock ? null : DATED_TIME.exec(text);
+    const [hour, minute] = (clock ? clock.slice(1) : dated?.slice(4) ?? []).map(Number);
+    if (hour === undefined || minute === undefined || hour > 23 || minute > 59) {
+        throw new Error(`${name} must be "HH:MM" or "YYYY-MM-DD HH:MM".`);
+    }
+    if (clock) {
+        return { minute: hour * 60 + minute, dated: false };
+    }
+    const [year, month, day] = dated!.slice(1, 4).map(Number) as [number, number, number];
+    const moment = new Date(Date.UTC(year, month - 1, day, hour, minute));
+    if (moment.getUTCMonth() !== month - 1 || moment.getUTCDate() !== day) {
+        throw new Error(`${name} is not a valid date.`);
+    }
+    return { minute: moment.getTime() / 60000, dated: true };
+}
+
+function spanEndOf(start: PlanTime | null, end: PlanTime | null, name: string): number | null {
+    if (end === null) {
+        return null;
+    }
+    if (start === null) {
+        throw new Error(`${name}.end needs a start.`);
+    }
+    if (end.dated !== start.dated) {
+        throw new Error(`${name}: start and end must use the same format.`);
+    }
+    if (end.minute === start.minute || (end.dated && end.minute < start.minute)) {
+        throw new Error(`${name}.end must be after its start.`);
+    }
+    return end.minute < start.minute ? end.minute + MINUTES_PER_DAY : end.minute;
+}
+
+function timelineItemOf(item: unknown, name: string): UiTimelineItem & { dated: boolean | null } {
+    const { title, marker, text, state, lane, start, end } = (typeof item === 'object' && item !== null ? item : {}) as Record<string, unknown>;
+    const named = optionalText(state, `${name}.state`);
+    if (named !== null && !TIMELINE_STATES.includes(named as UiTimelineState)) {
+        throw new Error(`${name}.state must be one of ${TIMELINE_STATES.join(', ')}.`);
+    }
+    const startTime = planTimeOf(start, `${name}.start`);
+    return {
+        title: requiredText(title, `${name}.title`),
+        marker: optionalText(marker, `${name}.marker`),
+        text: optionalText(text, `${name}.text`),
+        state: named as UiTimelineState | null,
+        lane: optionalText(lane, `${name}.lane`),
+        start: startTime?.minute ?? null,
+        end: spanEndOf(startTime, planTimeOf(end, `${name}.end`), name),
+        dated: startTime?.dated ?? null,
+    };
+}
+
+function allOrNone(items: UiTimelineItem[], key: 'start' | 'lane', name: string): void {
+    const given = items.filter(item => item[key] !== null).length;
+    if (given > 0 && given < items.length) {
+        throw new Error(`${name}: give every item a ${key} or none.`);
+    }
+}
+
 function timelineOf(value: unknown): UiTimelineGroup[] {
     if (!Array.isArray(value) || value.length < 1 || value.length > MAX_GROUPS) {
         throw new Error(`groups must list 1 to ${MAX_GROUPS} groups.`);
@@ -365,17 +441,20 @@ function timelineOf(value: unknown): UiTimelineGroup[] {
         if (!Array.isArray(items) || items.length < 1 || items.length > MAX_ITEMS) {
             throw new Error(`groups[${groupIndex}].items must list 1 to ${MAX_ITEMS} items.`);
         }
+        const name = `groups[${groupIndex}]`;
+        const parsed = items.map((item: unknown, index) => timelineItemOf(item, `${name}.items[${index}]`));
+        allOrNone(parsed, 'start', name);
+        allOrNone(parsed, 'lane', name);
+        if (new Set(parsed.map(item => item.dated)).size > 1) {
+            throw new Error(`${name}: use one time format for all items.`);
+        }
+        if (new Set(parsed.map(item => item.lane)).size > MAX_LANES) {
+            throw new Error(`${name} may use at most ${MAX_LANES} lanes.`);
+        }
         return {
-            heading: optionalText(heading, `groups[${groupIndex}].heading`),
-            items: items.map((item: unknown, index) => {
-                const name = `groups[${groupIndex}].items[${index}]`;
-                const { title, marker, text, state } = (typeof item === 'object' && item !== null ? item : {}) as Record<string, unknown>;
-                const named = optionalText(state, `${name}.state`);
-                if (named !== null && !TIMELINE_STATES.includes(named as UiTimelineState)) {
-                    throw new Error(`${name}.state must be one of ${TIMELINE_STATES.join(', ')}.`);
-                }
-                return { title: requiredText(title, `${name}.title`), marker: optionalText(marker, `${name}.marker`), text: optionalText(text, `${name}.text`), state: named as UiTimelineState | null };
-            }),
+            heading: optionalText(heading, `${name}.heading`),
+            dated: parsed[0]!.dated === true,
+            items: parsed.map(({ dated: _dated, ...item }) => item),
         };
     });
 }

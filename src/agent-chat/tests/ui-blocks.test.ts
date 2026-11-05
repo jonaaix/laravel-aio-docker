@@ -61,7 +61,17 @@ test('a chart needs one number per label and one series for a pie', () => {
 test('a timeline keeps groups, markers and states', () => {
     assert.deepEqual(uiBlockFor('show_timeline', { groups: [{ heading: 'Today', items: [{ title: 'Deploy', marker: '09:30', state: 'done' }, { title: 'Review' }] }] }, storePage), {
         kind: 'timeline',
-        groups: [{ heading: 'Today', items: [{ title: 'Deploy', marker: '09:30', text: null, state: 'done' }, { title: 'Review', marker: null, text: null, state: null }] }],
+        groups: [{ heading: 'Today', dated: false, items: [{ title: 'Deploy', marker: '09:30', text: null, state: 'done', lane: null, start: null, end: null }, { title: 'Review', marker: null, text: null, state: null, lane: null, start: null, end: null }] }],
     });
     assert.throws(() => uiBlockFor('show_timeline', { groups: [{ items: [{ title: 'X', state: 'late' }] }] }, storePage), /done, active, open/);
+});
+
+test('a timeline reads lanes and spans, running past midnight', () => {
+    const block = uiBlockFor('show_timeline', { groups: [{ items: [{ title: 'Tiramisu', lane: 'Dessert', start: '22:00', end: '08:00' }, { title: 'Roast', lane: 'Main', start: '17:30' }] }] }, storePage);
+    assert.deepEqual(block.kind === 'timeline' && block.groups[0]!.items.map(item => [item.lane, item.start, item.end]), [['Dessert', 1320, 1920], ['Main', 1050, null]]);
+    const dated = uiBlockFor('show_timeline', { groups: [{ items: [{ title: 'Trip', start: '2026-11-05 09:00', end: '2026-11-06 18:00' }] }] }, storePage);
+    assert.equal(dated.kind === 'timeline' && dated.groups[0]!.dated, true);
+    assert.throws(() => uiBlockFor('show_timeline', { groups: [{ items: [{ title: 'A', start: '09:00' }, { title: 'B' }] }] }, storePage), /every item a start/);
+    assert.throws(() => uiBlockFor('show_timeline', { groups: [{ items: [{ title: 'A', start: '25:00' }] }] }, storePage), /HH:MM/);
+    assert.throws(() => uiBlockFor('show_timeline', { groups: [{ items: [{ title: 'A', end: '09:00' }] }] }, storePage), /needs a start/);
 });

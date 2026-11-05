@@ -1,5 +1,5 @@
 import type { ChatMessage, ChatPart } from '#shared/types/conversation';
-import type { UiBlock } from '#shared/types/ui-block';
+import type { UiBlock, UiTimelineItem } from '#shared/types/ui-block';
 import { UI_BLOCK_PART } from '#shared/types/ui-block';
 
 export function messageText(message: ChatMessage): string {
@@ -12,12 +12,17 @@ function sentence(text: string): string {
     return /[.!?:]$/.test(text) ? text : `${text}.`;
 }
 
+function timelineItemSpeech(item: UiTimelineItem): string {
+    const time = item.start == null ? item.marker : [item.start, item.end].flatMap(minute => minute == null ? [] : [formatPlanTime(minute)]).join('–');
+    return [item.lane, time, item.title].filter(Boolean).join(' ') + (item.text ? `: ${item.text}` : '');
+}
+
 function blockSpeech(block: UiBlock): string[] {
     if (block.kind === 'cards') {
         return block.sections.map(section => [sentence(section.heading), ...section.cards.map(card => sentence(card.text ? `${card.title}: ${card.text}` : card.title))].join(' '));
     }
     if (block.kind === 'timeline') {
-        return block.groups.map(group => [group.heading ? sentence(group.heading) : '', ...group.items.map(item => sentence([item.marker, item.title].filter(Boolean).join(' ') + (item.text ? `: ${item.text}` : '')))].filter(Boolean).join(' '));
+        return block.groups.map(group => [group.heading ? sentence(group.heading) : '', ...group.items.map(item => sentence(timelineItemSpeech(item)))].filter(Boolean).join(' '));
     }
     if (block.kind === 'page' || block.kind === 'chart') {
         return block.title ? [sentence(block.title)] : [];

@@ -86,6 +86,14 @@ one block. An entry has a title, optionally a short mark beside the line (a time
 It can carry a state: done shows a filled dot in the accent colour, running a pulsing one, open a hollow one; without a
 state the dot stays neutral. Marks line up in one column across all groups. Reading aloud reads headings and entries in order.
 
+Entries can run in parallel lanes, such as teams working at the same time; the lanes of a group stand side by side,
+each under its name. Entries can also carry a start and an optional end, as a time of day or as a date with a time.
+A group with times is drawn to scale like a day in a calendar: time runs downwards along a time column, each lane is a
+column, an entry with an end is a block whose height shows its duration, and one without an end is a point in time.
+Entries of one lane that overlap stand next to each other. A time of day that ends before it starts runs past midnight.
+Within a group either every entry has a time and a lane or none does. Where the lanes do not fit the width, as on a
+phone, they can be swiped sideways while the time column stays in place.
+
 ### Picking
 
 In variants and choices, clicking an option — for variants anywhere on its card — puts it into the message field as its letter and name, such as
@@ -111,5 +119,8 @@ Nothing half-built reaches the chat.
   section "Fine" with database, queue and storage.
 - Reporting a release, the agent shows a timeline "Today" with two done steps at 09:30 and 09:42 and a running
   meeting at 10:00, and "Tomorrow" with the open review at 14:00.
+- For a dinner, the agent shows three lanes — starter, main course, dessert — from 15:00: the tiramisu is layered at
+  15:00 and then sets until 22:00 as one long block, while the roast and the sauce overlap in the main-course lane and
+  "Guests arrive" is a point at 18:30.
 - The agent asks in a choice card which of three export formats to use, each with a one-line description; the person
   clicks b), which appears as "b) CSV" in the message field.

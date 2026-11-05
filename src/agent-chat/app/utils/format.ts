@@ -48,6 +48,14 @@ export function formatClockTime(timestamp: number, now = new Date()): string {
     return `${dateFormat('weekday', { weekday: 'short' }).format(moment)} ${time}`;
 }
 
+export function formatPlanTime(minute: number): string {
+    return dateFormat('plan-clock', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' }).format(new Date(minute * 60000));
+}
+
+export function formatPlanDay(minute: number): string {
+    return dateFormat('plan-day', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(minute * 60000));
+}
+
 const BYTE_UNITS = ['byte', 'kilobyte', 'megabyte', 'gigabyte'] as const;
 
 export function formatBytes(bytes: number): string {

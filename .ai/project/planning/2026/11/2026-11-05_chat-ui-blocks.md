@@ -20,6 +20,7 @@ message field.
 - [ ] User check: a new conversation (tools load at session start) asked for design alternatives
 - [x] Second step: cards (`show_cards`, up to 12, optional status good / warning / bad tinting the whole card)
 - [x] Timeline (`show_timeline`): groups with optional heading, entries with mark, text and state done / active / open
+- [x] Timeline lanes and spans: optional lane, start and end; groups with times drawn to scale (`TimelineSchedule`)
 
 ## State
 
@@ -37,6 +38,7 @@ message field.
 - The "❓ Questions" question cards stay; the choice block is an addition, used when the prompt asks for it (user, 186a).
 - One tool per block instead of one tool with a kind field: each schema stays small and exact for the model.
 - Timeline replaces the step-list idea: states done / running / open as dots, marks in a narrow column left of the line (user, 240a, 241a).
+- Lanes and spans extend `show_timeline` rather than a separate block; times draw a calendar-like day with time running down, lanes swipe sideways on a phone with the time column fixed (user, 242a–244a).
 - Screen sizes in the larger view use the device's full screen, not the browser's visible area (user, 196b).
 - Variants: each its own HTML file shown as a selectable card with a scaled live preview, radio button top left; the
   agent picks a small (350 px, two per row) or large (740 px, one per row) canvas (user). One page for all variants was no different from show_page.

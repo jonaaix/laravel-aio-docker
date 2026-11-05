@@ -53,10 +53,14 @@ export interface UiTimelineItem {
     marker: string | null;
     text: string | null;
     state: UiTimelineState | null;
+    lane?: string | null;
+    start?: number | null;
+    end?: number | null;
 }
 
 export interface UiTimelineGroup {
     heading: string | null;
+    dated?: boolean;
     items: UiTimelineItem[];
 }
 
