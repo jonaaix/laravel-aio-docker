@@ -5,26 +5,47 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
-const { supported, speakingId, preparingId, speak, stop } = useSpeech();
+const { supported, speakingId, preparingId, speak } = useSpeech();
+const { paused, pause, resume } = useSpeechPlayer();
 
 const speaking = computed(() => speakingId.value === props.messageId);
 const preparing = computed(() => preparingId.value === props.messageId);
 
-function toggle(): void {
-    if (speaking.value) {
-        stop();
-        return;
+const label = computed(() => {
+    if (!speaking.value) {
+        return t('Read aloud');
     }
-    speak(props.messageId, props.text);
+    return paused.value ? t('Resume') : t('Pause');
+});
+const icon = computed(() => {
+    if (preparing.value) {
+        return 'i-heroicons-arrow-path';
+    }
+    if (!speaking.value) {
+        return 'i-heroicons-speaker-wave';
+    }
+    return paused.value ? 'i-heroicons-play' : 'i-heroicons-pause';
+});
+
+function toggle(): void {
+    if (!speaking.value) {
+        speak(props.messageId, props.text);
+    }
+    else if (paused.value) {
+        resume();
+    }
+    else {
+        pause();
+    }
 }
 </script>
 
 <template>
-    <UTooltip v-if="supported" :text="speaking ? t('Stop reading') : t('Read aloud')">
+    <UTooltip v-if="supported" :text="label">
         <UButton
-            :icon="preparing ? 'i-heroicons-arrow-path' : speaking ? 'i-heroicons-stop' : 'i-heroicons-speaker-wave'"
+            :icon="icon"
             :ui="{ leadingIcon: preparing ? 'animate-spin' : '' }"
-            :aria-label="speaking ? t('Stop reading') : t('Read aloud')"
+            :aria-label="label"
             size="xs"
             color="neutral"
             variant="ghost"
