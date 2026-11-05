@@ -34,7 +34,7 @@ export default defineAppConfig({
                 title: 'truncate text-sm font-semibold text-highlighted',
                 close: 'static size-7 shrink-0 justify-center p-0',
                 body: 'flex-1 p-5 sm:p-5',
-                footer: 'flex items-center justify-end gap-2 px-4 sm:px-4 py-2',
+                footer: 'flex items-center justify-end gap-2 min-h-10 px-4 sm:px-4 py-1.5',
             },
         },
         badge: {
