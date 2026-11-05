@@ -38,7 +38,7 @@ const { pinSentMessage, changesPanelAuto, doneSound, scaledPreviews, thinkingAut
         <USwitch
             id="setting-scaled-previews"
             :model-value="scaledPreviews"
-            :label="t('Scale down variant previews')"
+            :label="t('Show variants at original width')"
             @update:model-value="value => setScaledPreviews(value === true)"
         />
     </div>

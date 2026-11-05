@@ -50,7 +50,7 @@ a conversation opens the same window at Agents. The open window and its category
   automatically", on by default, lets the changes panel open on its own beside the conversation (see
   [File changes in the chat](chat-file-changes.md)); when off, it opens only through "N files changed" and only for that conversation.
   "Sound when a chat is done", on by default, plays the drum beat when an answer finishes out of sight (see
-  [Conversations in the sidebar](chat-sidebar.md)). "Scale down variant previews", off by default, shows the previews of
+  [Conversations in the sidebar](chat-sidebar.md)). "Show variants at original width", off by default, shows the previews of
   design variants scaled down from the width they were designed for instead of laid out for the card's width (see
   [Building blocks agents place in the chat](chat-ui-blocks.md)).
 - **Read aloud** (how reading and dictation work is in [Voice in the chat](chat-voice.md)) sets the person's reading speed on a slider from 0.5× to 3× in steps of 0.05× (1.5× by default) and the voice
