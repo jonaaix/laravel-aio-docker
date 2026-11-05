@@ -23,7 +23,9 @@ voice service there is no microphone.
 
 Any message can also be read aloud: the speaker beside "Copy" starts reading and turns into a pause button, and into a
 resume button while paused, until it is done; until the voice actually starts, it shows a spinning icon instead.
-Reading ends only when it is through or the player is closed; while it reads, the button stays visible without pointing at the message. With a voice service set up in the settings, a natural voice of that service reads, and a message read once
+When it is through, reading stays paused at the end with the player still there, so the person can step back 10
+seconds or jump to a passage; resuming from the very end starts the message again. Reading ends only when the player is
+closed or another message is read; while it reads, the button stays visible without pointing at the message. With a voice service set up in the settings, a natural voice of that service reads, and a message read once
 plays again without asking the service anew; if the service fails, the device's voice reads the rest. Without a
 service the device's own voice reads, chosen by the language the message is written in — one of the six chat
 languages, recognised by its common words — falling back to the person's chat language for very short texts. Only

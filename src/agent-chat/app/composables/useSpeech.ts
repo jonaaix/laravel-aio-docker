@@ -29,6 +29,7 @@ let language = 'en';
 let rate = 1;
 let deviceChunkStartedAt = 0;
 let clips = new Map<number, Promise<Blob>>();
+let ended = false;
 let silence: string | null = null;
 
 function silentClip(): string {
@@ -92,6 +93,16 @@ function finish(current: number): void {
     stopSpeechLevel();
 }
 
+function settleAtEnd(current: number): void {
+    if (run !== current) {
+        return;
+    }
+    ended = true;
+    preparingId.value = null;
+    paused.value = true;
+    progress.value = 1;
+}
+
 function halt(): void {
     run++;
     player?.pause();
@@ -127,7 +138,7 @@ function speakWithDevice(from: number, current: number): void {
         };
         utterance.onerror = () => finish(current);
         if (index === chunks.length - 1) {
-            utterance.onend = () => finish(current);
+            utterance.onend = () => settleAtEnd(current);
         }
         speechSynthesis.speak(utterance);
     });
@@ -195,7 +206,7 @@ async function speakWithService(from: number, startAt: number, current: number, 
                     setProgress(index, audio.currentTime / audio.duration);
                 }
             };
-            audio.onended = () => resolve();
+            audio.onended = () => (index === chunks.length - 1 ? settleAtEnd(current) : resolve());
             audio.onerror = () => resolve();
             audio.onpause = () => {
                 if (run !== current) {
@@ -217,6 +228,7 @@ async function speakWithService(from: number, startAt: number, current: number, 
 function playFrom(index: number, startAt = 0): void {
     halt();
     const current = run;
+    ended = false;
     paused.value = false;
     if (mode === 'service' && player) {
         void speakWithService(index, startAt, current, player);
@@ -254,6 +266,10 @@ export function useSpeechPlayer() {
     }
 
     function resume(): void {
+        if (ended) {
+            playFrom(0);
+            return;
+        }
         paused.value = false;
         if (mode === 'service') {
             player?.play().catch(() => undefined);
@@ -266,6 +282,7 @@ export function useSpeechPlayer() {
     function back(): void {
         if (mode === 'service' && player) {
             if (player.currentTime >= SKIP_SECONDS || chunkIndex === 0) {
+                ended = false;
                 player.currentTime = Math.max(0, player.currentTime - SKIP_SECONDS);
                 return;
             }
