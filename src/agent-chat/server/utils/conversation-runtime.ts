@@ -260,7 +260,7 @@ class ConversationRuntime {
             resume: state.started && claudeSessionExists(workingDir, state.sessionRef),
             model: agent.model || useRuntimeConfig().claudeModel || undefined,
             effort: agent.effort ?? undefined,
-            appendSystemPrompt: agentSystemPrompt(agent, leadAgent(), conversation.workingDir, workingDir),
+            appendSystemPrompt: agentSystemPrompt(agent, leadAgent(), conversation.workingDir, workingDir, findUser(conversation.creatorId)?.language ?? DEFAULT_LANGUAGE),
             deniedTools: agent.lead ? [] : projectWriteRules(conversation.workingDir),
             mcpConfigPath: this.writeMcpConfig(),
             account: sessionAccount(),

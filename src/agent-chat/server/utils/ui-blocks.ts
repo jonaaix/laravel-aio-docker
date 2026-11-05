@@ -33,20 +33,22 @@ const OPTIONS_PROPERTY = {
     },
 };
 
+const IN_CHAT_LANGUAGE = ' Write all its texts in the chat language.';
+
 const RECOMMENDED_PROPERTY = { type: 'string', description: 'Optional letter of the recommended option, such as "a".' };
 
 export const UI_BLOCK_TOOLS = [
     {
         name: 'show_page',
         description: 'Show an HTML page embedded in your answer at full width, frozen as it is now. '
-            + 'Use it for anything the user should look at and try in the browser: a prototype, a report, a visual explanation. Send a revision as a new page.',
+            + 'Use it for anything the user should look at and try in the browser: a prototype, a report, a visual explanation. Send a revision as a new page.' + IN_CHAT_LANGUAGE,
         inputSchema: { type: 'object', properties: PAGE_PROPERTIES, required: ['path'] },
     },
     {
         name: 'show_variants',
         description: 'Show visual design or UX alternatives side by side as selectable cards, each with a live preview of its own HTML file. '
             + 'Only for alternatives that must be seen to be judged; never for plain questions, use ask_choice for those. '
-            + 'The user selects one and answers in the chat.',
+            + 'The user selects one and answers in the chat.' + IN_CHAT_LANGUAGE,
         inputSchema: {
             type: 'object',
             properties: {
@@ -78,7 +80,7 @@ export const UI_BLOCK_TOOLS = [
         name: 'ask_choice',
         description: 'Ask the user to choose between options in a card they can click. '
             + 'Use it where a plain question in the text would not do, such as options that need a description each. '
-            + 'End your answer right after it and wait for the reply.',
+            + 'End your answer right after it and wait for the reply.' + IN_CHAT_LANGUAGE,
         inputSchema: {
             type: 'object',
             properties: {
@@ -92,7 +94,7 @@ export const UI_BLOCK_TOOLS = [
     {
         name: 'show_cards',
         description: 'Show a grid of cards: a comparison, a summary, the state of several parts. '
-            + 'A card with a status is tinted green, amber or red as a whole, so use a status only where it is the message.',
+            + 'A card with a status is tinted green, amber or red as a whole, so use a status only where it is the message.' + IN_CHAT_LANGUAGE,
         inputSchema: {
             type: 'object',
             properties: {

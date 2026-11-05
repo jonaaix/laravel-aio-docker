@@ -39,7 +39,13 @@ function turnRules(agent: AgentRow): string {
 - Hand over only when another agent's role fits the task better. Write the hand-over so it stands on its own: the question, the facts, file paths and values it needs, and how much you want back.`;
 }
 
-export function agentSystemPrompt(agent: AgentRow, lead: AgentRow, projectDir: string, ownDir: string): string {
+function chatLanguageSection(languageCode: string): string {
+    const language = new Intl.DisplayNames('en', { type: 'language' }).of(languageCode) ?? languageCode;
+    return `## Chat language
+The people use the chat in ${language}. Write the texts you pass to the chat tools — titles, options, descriptions, cards — in ${language}.`;
+}
+
+export function agentSystemPrompt(agent: AgentRow, lead: AgentRow, projectDir: string, ownDir: string, chatLanguage: string): string {
     if (agent.lead) {
         return `You are ${introduction(agent)}, the lead agent of a web chat. ${turnRules(agent)}
 
@@ -48,7 +54,9 @@ You work in the project at ${projectDir}. Other agents may only read it and hand
 
 ${SHOW_RESULT}
 
-${BUILDING_BLOCKS}`;
+${BUILDING_BLOCKS}
+
+${chatLanguageSection(chatLanguage)}`;
     }
     return `You are ${introduction(agent)}, an agent in a web chat led by ${lead.name}. ${turnRules(agent)}
 
@@ -57,7 +65,9 @@ You may create, edit, move or delete files only in your own folder ${ownDir} and
 
 ${SHOW_RESULT}
 
-${BUILDING_BLOCKS}`;
+${BUILDING_BLOCKS}
+
+${chatLanguageSection(chatLanguage)}`;
 }
 
 export function rosterBlock(agent: AgentRow, lead: AgentRow, peers: AgentRow[], people: string[]): string {
