@@ -149,13 +149,16 @@ onBeforeUnmount(() => {
                 >
                     <template #item-leading="{ item }">
                         <span
-                            v-if="collapsed && item.session"
-                            class="relative flex size-8 shrink-0 items-center justify-center rounded-full bg-default ring ring-default dark:bg-elevated/50"
+                            v-if="item.session"
+                            class="relative flex shrink-0 items-center justify-center self-center rounded-full bg-default ring ring-default dark:bg-elevated/50"
+                            :class="collapsed ? 'size-8' : 'size-7'"
                         >
-                            <AudioLevelBars v-if="speech.speakingId.value && speech.conversationId.value === item.id" :playing="!speech.paused.value" :label="t('Reading aloud')" />
+                            <AudioLevelBars v-if="collapsed && speech.speakingId.value && speech.conversationId.value === item.id" :playing="!speech.paused.value" :label="t('Reading aloud')" />
                             <img v-else :src="chatAvatarUri(item.id)" alt="" class="size-full rounded-full">
-                            <span v-if="unread.isUnread(item.id)" class="absolute -end-0.5 -top-0.5 size-2 rounded-full bg-primary ring-2 ring-(--ui-bg-muted)" :aria-label="t('Unread')" />
-                            <ChatWorkingDots v-if="item.session.live" :label="t(item.session.label)" class="absolute -bottom-1 rounded-full bg-default px-1 py-0.5 ring ring-default dark:bg-elevated" />
+                            <template v-if="collapsed">
+                                <span v-if="unread.isUnread(item.id)" class="absolute -end-0.5 -top-0.5 size-2 rounded-full bg-primary ring-2 ring-(--ui-bg-muted)" :aria-label="t('Unread')" />
+                                <ChatWorkingDots v-if="item.session.live" :label="t(item.session.label)" class="absolute -bottom-1 rounded-full bg-default px-1 py-0.5 ring ring-default dark:bg-elevated" />
+                            </template>
                         </span>
                     </template>
                     <template #item-label="{ item }">
