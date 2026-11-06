@@ -106,9 +106,10 @@ If it is not clear which area should get the chat, ask the user before adding th
   never loads twice.
 - The panel only loads the chat once it is opened. Moving between pages with and without the tag hides the panel
   and brings it back as it was on the next page that has it.
-- `data-sign-in` is required and points to the route above; without it the script shows nothing and logs an error.
-  When the panel finds the person not yet signed in to the chat, it opens that route once inside the panel, and its
-  "Open in new tab" button opens it in a new tab, so render the tag only for signed-in users.
+- `data-sign-in` points to the route above and is required whenever the app has a login. When the panel finds the
+  person not yet signed in to the chat, it opens that route once inside the panel, and its "Open in new tab" button
+  opens it in a new tab, so render the tag only for signed-in users. Without it the panel only works for a browser
+  already signed in to the chat, and "Open in new tab" opens the chat itself.
 - The launcher takes the app's colours when `:root` defines `--ai-1` to `--ai-4`, `--ai-gradient` and `--ai-fill`
   (the fill switched under the app's dark mode); without them it uses neutral defaults.
 - If the app sends a `Content-Security-Policy`, allow `AGENT_CHAT_URL` in `script-src` and `frame-src`.

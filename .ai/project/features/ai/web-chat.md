@@ -27,14 +27,15 @@ For working on the app, the chat can also sit beside the pages the app chooses i
 — a light, faintly tinted surface inside a slowly flowing gradient border, with gradient lettering and sparkles that turn and glow
 under the pointer, in colours the app can give it from its own accent — opens the chat in a panel on the right and moves the page aside
 to make room; a round button in the same corner and the same look closes it again; while the pointer rests on the corner, a round button "Open in new tab"
-slides in beside it and opens the chat in its own tab, signed in through the app's way in; the edge between them lights up under the pointer and
+slides in beside it and opens the chat in its own tab, signed in through the app's way in when it has one; it shows while the pointer rests
+on the corner or the keyboard reaches it, not after a click; the edge between them lights up under the pointer and
 can be dragged to change the width. Page and chat scroll with slim scrollbars while the panel is open, so two broad
 bars never stand side by side. When the page reloads or the user follows a link, the panel comes straight back as it
 was — open or closed, width, the open conversation and any text not yet sent — while the agents carry on undisturbed on
 the server. Inside the panel the conversation list always stands beside the chat as its narrow icon strip, which cannot be
 folded away or widened; the menu button opens the full list over the panel, as on a phone. The chat only loads once the panel is first opened, and a conversation in the panel shows its last ten
-messages first, loading earlier ones on scrolling up. The app shows the panel only to its signed-in users and must tell
-it its own way into the chat — without it the panel does not appear; a panel that finds its person not yet signed in to the chat goes that way once by
+messages first, loading earlier ones on scrolling up. The app shows the panel only to its signed-in users and tells
+it its own way into the chat — required for an app with a login, optional for one without, such as a local setup; a panel that finds its person not yet signed in to the chat goes that way once by
 itself, so they are signed in inside the panel without a separate step.
 
 Chat tabs in the background let go of their live connection and catch up as soon as they are in front again, so many

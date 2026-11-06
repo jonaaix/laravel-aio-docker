@@ -2,10 +2,6 @@
     if (window.top !== window.self || document.getElementById('agent-chat-overlay')) {
         return;
     }
-    if (!document.currentScript.dataset.signIn) {
-        console.error('Agent chat: the overlay script needs data-sign-in with the URL of the app\'s chat sign-in route.');
-        return;
-    }
 
     const STORAGE_KEY = 'agent-chat-overlay';
     const DEFAULT_WIDTH = 440;
@@ -31,7 +27,8 @@
 
     const chatUrl = new URL('./?embedded', document.currentScript.src).href;
     const chatOrigin = new URL(chatUrl).origin;
-    const signInUrl = new URL(document.currentScript.dataset.signIn, location.href).href;
+    const signInUrl = document.currentScript.dataset.signIn ? new URL(document.currentScript.dataset.signIn, location.href).href : null;
+    const newTabUrl = signInUrl || new URL('./', document.currentScript.src).href;
 
     function readState() {
         try {
@@ -106,7 +103,7 @@
             /* Hidden but still hit-testable: otherwise the pointer leaves .controls on its way to the button and it vanishes. */
             .new-tab { position: absolute; top: 50%; right: 100%; padding-right: 8px; opacity: 0; transform: translate(6px, -50%);
                 transition: opacity 160ms ease-in, transform 160ms ease-in; }
-            .controls:hover .new-tab, .controls:focus-within .new-tab { opacity: 1; transform: translate(0, -50%);
+            .controls:hover .new-tab, .controls:has(:focus-visible) .new-tab { opacity: 1; transform: translate(0, -50%);
                 transition: opacity 180ms ease-out, transform 180ms ease-out; }
             .new-tab a, button.toggle:not(.launch) { position: relative; display: flex; align-items: center; justify-content: center;
                 width: 36px; height: 36px; border: 1px solid transparent; border-radius: 9999px; backdrop-filter: none;
@@ -151,7 +148,7 @@
     const newTab = document.createElement('div');
     const newTabLink = document.createElement('a');
     newTab.className = 'new-tab';
-    newTabLink.href = signInUrl;
+    newTabLink.href = newTabUrl;
     newTabLink.target = '_blank';
     newTabLink.rel = 'noopener';
     newTabLink.setAttribute('aria-label', labels.newTab);
@@ -164,7 +161,7 @@
     let signInTried = false;
 
     window.addEventListener('message', (event) => {
-        if (signInTried || !frame || event.origin !== chatOrigin || event.source !== frame.contentWindow || event.data?.type !== 'agent-chat:unauthorized') {
+        if (!signInUrl || signInTried || !frame || event.origin !== chatOrigin || event.source !== frame.contentWindow || event.data?.type !== 'agent-chat:unauthorized') {
             return;
         }
         signInTried = true;
