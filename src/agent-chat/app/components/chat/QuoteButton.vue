@@ -104,7 +104,7 @@ onBeforeUnmount(() => clearTimeout(settle));
                     icon="i-heroicons-chat-bubble-bottom-center-text"
                     color="neutral"
                     variant="solid"
-                    class="shadow-lg"
+                    class="shadow-lg hover:bg-[color-mix(in_oklab,var(--ui-bg-inverted)_90%,var(--ui-bg))] active:bg-[color-mix(in_oklab,var(--ui-bg-inverted)_90%,var(--ui-bg))]"
                     @mousedown.prevent
                     @click="quote"
                 />
