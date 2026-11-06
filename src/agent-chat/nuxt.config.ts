@@ -63,6 +63,11 @@ export default defineNuxtConfig({
         },
     },
 
+    routeRules: {
+        '/**': { headers: { 'cache-control': 'no-cache' } },
+        '/_nuxt/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
+    },
+
     runtimeConfig: {
         chatKey: '',
         workingDir: '',
