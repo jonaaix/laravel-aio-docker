@@ -46,6 +46,9 @@ handover runs and the user has reviewed the result.
 
 ## State
 
+- Not developed further; to be deleted later (user). Backed up with its history and uncommitted changes, without
+  `node_modules`, in `~/repos/agent-chat-mobile-archiv.tar.gz`. The local dev chat still uses the folder as its
+  project (21 conversations), so it stays until deletion is approved.
 - The app is built and committed in its own repo (326 tests via `npm test`, Pages workflow runs them
   before deploying); its own plan and Feature Book live in `src/agent-chat-mobile/.ai/`. The chat's
   tests count 38 via `npm test` in `src/agent-chat`.
