@@ -85,8 +85,8 @@ claude_init() {
    _ai_nontech_enabled && _claude_append CLAUDE.nontech.md
    _ai_softdev_enabled && _claude_append CLAUDE.softdev.md
 
-   # Only the beta image serves the agent chat, so only there the agent learns how to connect the app to it.
-   if [ "$IMAGE_BETA" = "1" ] && [ -d /opt/claude-defaults/skills/agent-chat-integration ]; then
+   # Only the gamma image serves the agent chat, so only there the agent learns how to connect the app to it.
+   if [ "$IMAGE_GAMMA" = "1" ] && [ -d /opt/claude-defaults/skills/agent-chat-integration ]; then
       mkdir -p /home/laravel/.claude/skills
       rm -rf /home/laravel/.claude/skills/agent-chat-integration
       cp -r /opt/claude-defaults/skills/agent-chat-integration /home/laravel/.claude/skills/
