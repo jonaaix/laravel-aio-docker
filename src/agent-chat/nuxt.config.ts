@@ -63,6 +63,10 @@ export default defineNuxtConfig({
         },
     },
 
+    experimental: {
+        checkOutdatedBuildInterval: 60_000,
+    },
+
     routeRules: {
         '/**': { headers: { 'cache-control': 'private, no-cache' } },
         '/_nuxt/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },

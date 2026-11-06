@@ -503,6 +503,12 @@ function choose(selection: Record<string, string>): void {
 
 function accept(): void {
     replaceAnswerBlock('ok');
+    void submit();
+}
+
+function acceptChoice(selection: Record<string, string>): void {
+    choose(selection);
+    void submit();
 }
 
 function pickOption(line: string, ownsLine: OwnsLine): void {
@@ -528,7 +534,7 @@ function replyTo(messageId: string): string | undefined {
 }
 
 provide(blockPicksKey, { messageId: answerableMessageId, draft: input, reply: replyTo, pick: pickOption, unpick: unpickOption });
-provide(questionAnswersKey, { messageId: answerableMessageId, chosen: chosenOptions, sent: messageId => sentAnswers.value.get(messageId), choose, accept });
+provide(questionAnswersKey, { messageId: answerableMessageId, chosen: chosenOptions, sent: messageId => sentAnswers.value.get(messageId), choose, accept, acceptChoice });
 
 async function withFlag(flag: Ref<boolean>, action: () => Promise<void>): Promise<void> {
     flag.value = true;

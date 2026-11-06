@@ -8,7 +8,7 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
-const { messageId: answerableMessageId, chosen, sent, choose } = useQuestionAnswers();
+const { messageId: answerableMessageId, chosen, sent, choose, acceptChoice } = useQuestionAnswers();
 
 const active = computed(() => answerableMessageId.value === props.messageId);
 const sentAnswer = computed(() => active.value ? undefined : sent(props.messageId));
@@ -35,7 +35,7 @@ function pick(question: OfferedQuestion, letter: string): void {
 }
 
 function acceptRecommendations(): void {
-    choose(withRecommendations(chosen.value, props.section));
+    acceptChoice(withRecommendations(chosen.value, props.section));
 }
 
 function isSelected(question: OfferedQuestion, letter: string): boolean {

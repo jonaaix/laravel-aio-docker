@@ -38,6 +38,9 @@ messages first, loading earlier ones on scrolling up. The app shows the panel on
 it its own way into the chat — required for an app with a login, optional for one without, such as a local setup; a panel that finds its person not yet signed in to the chat goes that way once by
 itself, so they are signed in inside the panel without a separate step.
 
+After the chat has been updated, an open chat notices within about a minute and reloads itself on the next move to
+another page or after a minute without input, so it never keeps running an old version; text not yet sent stays.
+
 Chat tabs in the background let go of their live connection and catch up as soon as they are in front again, so many
 open chat tabs never hold up a page that loads the chat.
 
