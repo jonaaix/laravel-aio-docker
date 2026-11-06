@@ -12,9 +12,9 @@ through the guide's route and shows the panel on a page.
 ## Milestones
 
 - [x] Scope confirmed (public address, on/off)
-- [x] Build: own `src/php-fpm-claude-gamma/Dockerfile`, a copy of today's beta build (fork claude-threads built in,
-      no switch) plus the chat built with bun into `/opt`, never `/home/laravel`; registered in `build-image.sh`,
-      `build-push-all.sh` and the CI workflow
+- [x] Build: own `src/php-fpm-claude-gamma/Dockerfile`, a copy of the beta build without claude-threads, plus the
+      chat built with bun into `/opt`, never `/home/laravel`; registered in `build-image.sh`, `build-push-all.sh` and
+      the CI workflow
 - [x] Runtime: supervisor program for the chat (`NUXT_WORKING_DIR=/app`, data in `/home/laravel/.config/agent-chat`),
       port 3000, started only with `ENABLE_AGENT_CHAT=true`, entrypoint banner marks GAMMA
 - [x] Check: container starts, chat creates its key (600, readable by PHP), links only with that key, browser
@@ -23,9 +23,9 @@ through the guide's route and shows the panel on a page.
 
 ## State
 
-- The chat comes from `~/repos/orbit-agent-chat` and runs its agents through the Claude Agent SDK; gamma no
-  longer copies `src/claude-threads` for it. Built locally and checked in a container: the chat starts, signs in,
-  and lists models through the SDK.
+- The chat comes from `~/repos/orbit-agent-chat` and runs its agents through the Claude Agent SDK. Built locally and
+  checked in a container: the chat starts, signs in, and lists models through the SDK.
+- claude-threads is no longer installed in gamma; the image has not been built since that change.
 - Last push: digest `sha256:76c37a77…` - from before the move and the SDK switch. The next push waits for the
   user's test of real conversations on the SDK.
 
@@ -41,6 +41,8 @@ through the guide's route and shows the panel on a page.
 - The chat is reached on its own port 3000, mapped in `docker-compose.yml`; the app's nginx stays untouched (user, 258a).
 - Opt-in like everything the image defines: the chat runs only with `ENABLE_AGENT_CHAT=true` (user, 259b).
 - Not in the public docs or CHANGELOG, like `fpm-claude-beta`: a test variant.
+- Gamma has no claude-threads (user, 289a): the chat replaces the bridge there. `ENABLE_CLAUDE_THREADS` is ignored
+  when `IMAGE_GAMMA=1` (`claude.sh`), so the toggle cannot start a worker for a missing binary. Beta keeps the fork.
 - The chat guide moved from `php-fpm-claude` to gamma's defaults, so `fpm-claude` and beta no longer ship a guide for
   a chat they do not have.
 

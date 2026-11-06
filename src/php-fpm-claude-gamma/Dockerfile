@@ -218,20 +218,8 @@ ARG CACHEBUST_NPM_GLOBAL=initial
 RUN echo "npm-global cache key: ${CACHEBUST_NPM_GLOBAL}" \
  && npm install -g @playwright/mcp@latest @upstash/context7-mcp@latest @openai/codex@latest
 
-# Pinned to 999.0.0 so claude-threads' own auto-updater never replaces this fork build.
-COPY --chown=laravel:laravel ./src/claude-threads /tmp/claude-threads-src
-RUN echo "claude-threads cache key: ${CACHEBUST_NPM_GLOBAL}" \
- && curl -fsSL https://bun.sh/install | bash \
- && cd /tmp/claude-threads-src \
- && node -e "const f='package.json',fs=require('fs');const p=JSON.parse(fs.readFileSync(f));p.version='999.0.0';fs.writeFileSync(f,JSON.stringify(p,null,2))" \
- && export PATH="$HOME/.bun/bin:$PATH" HUSKY=0 \
- && bun install \
- && bun run build \
- && npm pack --ignore-scripts \
- && npm install -g --ignore-scripts /tmp/claude-threads-src/claude-threads-*.tgz \
- && npm install -g opencode-ai@latest \
- && cd / \
- && rm -rf /tmp/claude-threads-src
+RUN curl -fsSL https://bun.sh/install | bash \
+ && npm install -g opencode-ai@latest
 
 # Under /opt, not the frozen /home/laravel volume, so every image update brings the current chat.
 COPY --chown=laravel:laravel --from=orbit-agent-chat . /tmp/chat-build/orbit-agent-chat

@@ -7,7 +7,8 @@
 # AI feature toggles. All opt-in and NOT tied to ENV_DEV. Canonical names:
 # ENABLE_CLAUDE_THREADS (the claude-threads bridge), ENABLE_AI_NONTECH_MODE,
 # ENABLE_AI_SOFTDEV_MODE. The legacy DEV_ENABLE_CLAUDE_* names stay as hidden aliases.
-_ai_threads_enabled() { [ "$ENABLE_CLAUDE_THREADS" = "true" ]     || [ "$DEV_ENABLE_CLAUDE_THREADS" = "true" ]; }
+# The gamma image ships the agent chat instead of claude-threads, so the toggle has nothing to start there.
+_ai_threads_enabled() { [ "$IMAGE_GAMMA" != "1" ] && { [ "$ENABLE_CLAUDE_THREADS" = "true" ] || [ "$DEV_ENABLE_CLAUDE_THREADS" = "true" ]; }; }
 _ai_nontech_enabled() { [ "$ENABLE_AI_NONTECH_MODE" = "true" ] || [ "$DEV_ENABLE_CLAUDE_NONTECH_MODE" = "true" ]; }
 _ai_softdev_enabled() { [ "$ENABLE_AI_SOFTDEV_MODE" = "true" ] || [ "$DEV_ENABLE_CLAUDE_SOFTDEV_MODE" = "true" ]; }
 
