@@ -5,7 +5,7 @@
                 "hooks": [
                     {
                         "type": "command",
-                        "command": "test \"$(jq -r '.stop_hook_active // false')\" = true || jq -n '{decision:\"block\",reason:\"Check (if not already done) if your latest changes comply with the coding standards from CLAUDE.md. No changes → just say: ✅ Code check ok. Nothing else.\"}'"
+                        "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/stop-checks.sh\""
                     }
                 ]
             }

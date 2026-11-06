@@ -27,6 +27,7 @@ Before implementing a feature: first questions until scope and behaviour are una
 
 ## Architectural Standards
 - **Modular Monolith:** A feature area with its own table(s) belongs in a local module, not the root app. Even a single dedicated table is enough. Tables carry the module prefix (`<module>_<table>`), views and translations their own namespace — a module must be deletable as a unit: drop the prefixed tables, delete the folder. Modules may use shared root capabilities; implementation and boundaries stay outside root. Before writing code that adds a new area to root, name it and propose the module — the user decides.
+- **Find the missing concept.** Applies whenever a requirement doesn't fit the existing data, code or UX. If a second realistic case would hit the same wall, the structure lacks a concept — choose the concept, not the special case.
 
 ### Decomposition & Reuse
 - **Soft limit ~500 lines per file**, hard limit ~1500. These are warnings to reassess, not mandates to split. A coherent 800-line file beats six fragmented 150-line files connected by parameter chains.
@@ -39,11 +40,13 @@ Before implementing a feature: first questions until scope and behaviour are una
 - Never add or remove features proactively; always confirm it explicitly with the user first.
 - Interact in the user's language, produce strictly in English.
 - Ask when the answer depends on it — missing context, ambiguous scope, unclear domain logic. Don't ask what the codebase can tell you.
+- **Design alternatives:** Unhappy with a design or UX? Before reworking, put 4–6 distinct, lettered variants in the project's style on one HTML page at `.ai/project/artifacts/<YYYY-MM-DD>_<topic>.html`. Show it via a chat tool if available, else via a temporary copy in `public/`. Never a hosted artifact.
 
 ## Response Format
-- **Section marker:** a `╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌` bar, the section name with its emoji, the same bar again. Used for the sections below and nothing else — it only works while it stays rare.
+- **Tools first:** If the environment offers tools that render content in the chat — questions, cards, charts, timelines, … — build the response with them; the rules below cover what they don't.
+- **Section marker:** a `╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌` bar, the section name with its emoji, the same bar again. Used for the sections below and nothing else.
 - Before implementation work, open with the plan under a `🎯 Plan` marker — what you are about to build, in a few lines. Before the first edit, never as part of the summary afterwards.
-- When the summary runs longer than a few sentences, close it with a `🔑 TL;DR` marker — two or three lines on what is different now. It comes after the details and before `🚀 Next` or `❓ Questions`.
+- When the summary runs longer than a few sentences, close it with a `🔑 TL;DR` marker — two or three lines on what is different now, before `🚀 Next` or `❓ Questions`.
 - Questions go at the end, under a `❓ Questions` marker. Numbered, one per item, continuing across the conversation — never restarting at 1. Each question offers at least two lettered options, one per line, unless only the user can supply the answer; a) is the recommendation, prefixed with ⭐ and the word "Recommended" in the user's language — `⭐ Recommended:`, `⭐ Empfehlung:`. "ok" accepts every recommendation, or the `🚀 Next` step when no question is pending. Options and alternatives are lettered wherever else they appear.
 - After implementation work, close with a forward-looking suggestion under a `🚀 Next` marker — a gap, a next step the feature opens up, or a weakness worth addressing. One step you could implement next, not something to observe or decide later. If questions are pending, those take the slot instead — never both. Never end a response as if the work were simply over.
 - Emoji mark what a line is, not just in section headings: ⚠️ before a risk or caveat, 🔧 before a change you made or propose, ✅ before something done, ⏳ before something pending, ❌ before something failed or rejected, 👉 before something the user has to do, 💡 before an idea, and others where they fit. Only at the start of a line, never inside a sentence. Don't decorate prose.
@@ -91,6 +94,12 @@ take over from a cold start.
 - To pick up unfinished work, look at the current and previous month folder for files with
   open milestones. When starting work in an area that has been touched before, look for its
   earlier file.
+- **A comprehensive concept** — a new module or a whole app, often a multi-page document
+  with references — is broken into sub-plans before any code, one per module or
+  self-contained feature, each with its goal and rough milestones. A master plan links the
+  sources and lists the sub-plans as milestones in build order, dependencies first; the
+  user confirms the order. Build one sub-plan at a time; the order is a guide, and a
+  deviation goes into Decisions.
 
 ## File structure
 
@@ -227,8 +236,7 @@ for it; the `ui-patterns` skill holds class recipes for what none covers.
 We adapt Tailwind UI and shadcn/ui by hand in Tailwind — neither is installed as a package. Material may contribute where it helps, restyled to the rules below: the app reads as one design, not a patchwork.
 
 - **Radius scale:** cards `rounded-xl`, pills `rounded-md`, icon boxes `rounded-lg`,
-  floating bars `rounded-full`. In the Nuxt UI chat (`src/agent-chat`) the same names render
-  larger (`md` = 12px, `xl` = 24px), so its cards take `rounded-md`.
+  floating bars `rounded-full`.
 - **Flat rings, no shadows on cards.** Shadows are reserved for things that genuinely float,
   where the shadow is what lifts them.
 - **Padding `p-3`–`p-5`.** Wasteful padding looks dated.
