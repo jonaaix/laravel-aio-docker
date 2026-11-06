@@ -2,6 +2,10 @@
     if (window.top !== window.self || document.getElementById('agent-chat-overlay')) {
         return;
     }
+    if (!document.currentScript.dataset.signIn) {
+        console.error('Agent chat: the overlay script needs data-sign-in with the URL of the app\'s chat sign-in route.');
+        return;
+    }
 
     const STORAGE_KEY = 'agent-chat-overlay';
     const DEFAULT_WIDTH = 440;
@@ -27,8 +31,7 @@
 
     const chatUrl = new URL('./?embedded', document.currentScript.src).href;
     const chatOrigin = new URL(chatUrl).origin;
-    const signInUrl = document.currentScript.dataset.signIn ? new URL(document.currentScript.dataset.signIn, location.href).href : null;
-    const newTabUrl = signInUrl || new URL('./', document.currentScript.src).href;
+    const signInUrl = new URL(document.currentScript.dataset.signIn, location.href).href;
 
     function readState() {
         try {
@@ -146,7 +149,7 @@
     const newTab = document.createElement('div');
     const newTabLink = document.createElement('a');
     newTab.className = 'new-tab';
-    newTabLink.href = newTabUrl;
+    newTabLink.href = signInUrl;
     newTabLink.target = '_blank';
     newTabLink.rel = 'noopener';
     newTabLink.setAttribute('aria-label', labels.newTab);
@@ -159,7 +162,7 @@
     let signInTried = false;
 
     window.addEventListener('message', (event) => {
-        if (!signInUrl || signInTried || !frame || event.origin !== chatOrigin || event.source !== frame.contentWindow || event.data?.type !== 'agent-chat:unauthorized') {
+        if (signInTried || !frame || event.origin !== chatOrigin || event.source !== frame.contentWindow || event.data?.type !== 'agent-chat:unauthorized') {
             return;
         }
         signInTried = true;
