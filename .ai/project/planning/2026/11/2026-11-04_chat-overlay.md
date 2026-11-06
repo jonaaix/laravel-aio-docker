@@ -48,4 +48,5 @@ this works on a test site with several linked pages, and the Laravel app can add
 
 ## Open
 
-- Nothing.
+- How someone gets into the chat from an app without a login (local setup): a local-only route that signs in a
+  fixed person, or a prior sign-in elsewhere (question 266). The user decides after testing with real apps.
