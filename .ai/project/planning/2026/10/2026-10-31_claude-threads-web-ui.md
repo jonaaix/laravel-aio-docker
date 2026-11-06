@@ -51,6 +51,9 @@ container restart with its full history and attachments, and no Mattermost/Slack
 
 ## State
 
+
+- The chat itself moved to its own repo `~/repos/orbit-agent-chat` on 2026-11-06, with its history, Feature Book and
+  plans; this file covers the claude-threads fork side only.
 - `src/claude-threads/` = vendored fork (core + Mattermost bridge), configs as in the fork.
 - `src/agent-chat/` = the Nuxt 4 app, its own package: `app/` (Nuxt UI frontend), `server/` (API,
   SSE, runtime, SQLite), `shared/types/conversation.ts` (message format shared by both sides). It

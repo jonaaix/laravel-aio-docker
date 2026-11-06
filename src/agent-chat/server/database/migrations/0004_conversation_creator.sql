@@ -1,1 +1,0 @@
-ALTER TABLE `conversations` ADD `creator_name` text;

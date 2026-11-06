@@ -1,1 +1,0 @@
-ALTER TABLE `users` ADD `done_sound` integer DEFAULT true NOT NULL;

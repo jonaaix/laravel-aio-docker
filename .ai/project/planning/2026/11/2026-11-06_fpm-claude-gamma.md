@@ -33,6 +33,9 @@ through the guide's route and shows the panel on a page.
 
 ## Decisions
 
+- The chat lives in its own repo, `~/repos/orbit-agent-chat` (user). `build-image.sh` hands its committed state
+  (`git archive HEAD`, path overridable with `AGENT_CHAT_REPO`) to the build as the named context `orbit-agent-chat`.
+
 - The chat goes into its own variant, not into `fpm-claude-beta`: an update of beta must not change running beta
   instances (user).
 - Gamma is a copy of beta with its own Dockerfile, not built on beta or switched by a build arg, so changes to gamma
@@ -45,4 +48,5 @@ through the guide's route and shows the panel on a page.
 
 ## Open
 
-- Nothing.
+- The CI workflow cannot build gamma until the chat's repo is on GitHub: it still expects the chat in this
+  repo. Then the workflow has to check it out as the `orbit-agent-chat` build context.

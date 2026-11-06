@@ -1,1 +1,0 @@
-ALTER TABLE `users` ADD `speech_rate` real;

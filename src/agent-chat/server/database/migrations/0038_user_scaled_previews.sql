@@ -1,1 +1,0 @@
-ALTER TABLE `users` ADD `scaled_previews` integer DEFAULT false NOT NULL;

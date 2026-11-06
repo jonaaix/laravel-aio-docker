@@ -234,11 +234,11 @@ RUN echo "claude-threads cache key: ${CACHEBUST_NPM_GLOBAL}" \
  && rm -rf /tmp/claude-threads-src
 
 # Under /opt, not the frozen /home/laravel volume, so every image update brings the current chat.
-COPY --chown=laravel:laravel ./src/claude-threads /tmp/chat-build/claude-threads
-COPY --chown=laravel:laravel ./src/agent-chat /tmp/chat-build/agent-chat
+COPY --chown=laravel:laravel ./src/claude-threads /tmp/chat-build/laravel-aio-docker/src/claude-threads
+COPY --chown=laravel:laravel --from=orbit-agent-chat . /tmp/chat-build/orbit-agent-chat
 RUN export PATH="$HOME/.bun/bin:$PATH" HUSKY=0 \
- && cd /tmp/chat-build/claude-threads && bun install \
- && cd /tmp/chat-build/agent-chat && bun install && bun run build \
+ && cd /tmp/chat-build/laravel-aio-docker/src/claude-threads && bun install \
+ && cd /tmp/chat-build/orbit-agent-chat && bun install && bun run build \
  && sudo mkdir -p /opt/agent-chat \
  && sudo chown laravel:laravel /opt/agent-chat \
  && cp -r .output/. /opt/agent-chat/ \

@@ -1,1 +1,0 @@
-ALTER TABLE `conversations` ADD `title_renamed` integer DEFAULT false NOT NULL;
