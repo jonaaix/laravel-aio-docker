@@ -21,11 +21,12 @@ useHead({
             { name: 'theme-color', content: '#07061a' },
         ] : []),
     ],
-    link: hub ? [
-        { rel: 'manifest', href: `${app.baseURL}manifest.webmanifest` },
+    link: [
+        ...(hub ? [{ rel: 'manifest', href: `${app.baseURL}manifest.webmanifest` }] : []),
         { rel: 'apple-touch-icon', href: `${app.baseURL}icons/apple-touch-icon.png` },
+        { rel: 'icon', type: 'image/png', sizes: '64x64', href: `${app.baseURL}icons/favicon.png` },
         { rel: 'icon', type: 'image/svg+xml', href: `${app.baseURL}orbit-icon.svg` },
-    ] : [],
+    ],
     htmlAttrs: { lang: locale },
 });
 </script>
