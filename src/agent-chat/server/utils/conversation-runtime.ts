@@ -384,7 +384,7 @@ class ConversationRuntime {
         mkdirSync(dir, { recursive: true, mode: 0o700 });
         const path = join(dir, `${this.conversationId}.json`);
         const url = `${this.serverOrigin}${useRuntimeConfig().app.baseURL.replace(/\/$/, '')}/api/mcp/${this.conversationId}`;
-        const config = { mcpServers: { chat: { type: 'http', url, headers: { Authorization: `Bearer ${this.mcpToken}` } } } };
+        const config = { mcpServers: { chat: { type: 'http', url, alwaysLoad: true, headers: { Authorization: `Bearer ${this.mcpToken}` } } } };
         writeFileSync(path, JSON.stringify(config), { mode: 0o600 });
         return path;
     }
