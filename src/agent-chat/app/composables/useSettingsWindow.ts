@@ -1,6 +1,6 @@
 import { SettingsModal } from '#components';
 
-export const SETTINGS_CATEGORIES = ['profile', 'appearance', 'chat', 'speech', 'agents', 'account', 'people', 'remote', 'notifications'] as const;
+export const SETTINGS_CATEGORIES = ['profile', 'appearance', 'chat', 'speech', 'agents', 'account', 'admin', 'remote', 'notifications'] as const;
 
 export type SettingsCategory = typeof SETTINGS_CATEGORIES[number];
 

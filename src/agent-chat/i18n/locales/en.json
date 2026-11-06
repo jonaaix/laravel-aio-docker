@@ -302,5 +302,7 @@
     "Expand work steps automatically": "Expand work steps automatically",
     "Sending": "Sending",
     "Agent activity": "Agent activity",
-    "Sound": "Sound"
+    "Sound": "Sound",
+    "Chat title": "Chat title",
+    "Could not save the chat title": "Could not save the chat title"
 }

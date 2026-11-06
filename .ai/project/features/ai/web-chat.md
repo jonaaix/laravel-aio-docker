@@ -38,6 +38,11 @@ messages first, loading earlier ones on scrolling up. The app shows the panel on
 it its own way into the chat — required for an app with a login, optional for one without, such as a local setup; a panel that finds its person not yet signed in to the chat goes that way once by
 itself, so they are signed in inside the panel without a separate step.
 
+The browser tab shows the chat's title, "AI Chat" unless an admin named it otherwise in the settings, with the number of
+unread messages before it. Opening the chat with `?title=…` in its address sets that title for everyone and the parameter
+leaves the address; the panel script passes its `data-title` that way, so the app's name reaches the chat. Orbit keeps
+its own name.
+
 After the chat has been updated, an open chat notices within about a minute and reloads itself on the next move to
 another page or after a minute without input, so it never keeps running an old version; text not yet sent stays.
 

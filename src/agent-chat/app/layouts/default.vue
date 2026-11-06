@@ -79,7 +79,12 @@ function toggleEntryCard(id: string, open: boolean, collapsed: boolean): void {
 
 let unsubscribe: (() => void) | undefined;
 
+const chatTitle = useChatTitle();
+
 onMounted(async () => {
+    if (!hub) {
+        void chatTitle.adoptFromQuery().catch(() => undefined);
+    }
     unsubscribe = subscribeEvents<ConversationListEvent>('events', (event) => {
         if (event.type === 'conversation') {
             upsert(event.conversation);

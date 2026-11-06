@@ -302,5 +302,7 @@
     "Expand work steps automatically": "Déplier les étapes de travail automatiquement",
     "Sending": "Envoi",
     "Agent activity": "Activité de l'agent",
-    "Sound": "Son"
+    "Sound": "Son",
+    "Chat title": "Titre du chat",
+    "Could not save the chat title": "Impossible d'enregistrer le titre du chat"
 }

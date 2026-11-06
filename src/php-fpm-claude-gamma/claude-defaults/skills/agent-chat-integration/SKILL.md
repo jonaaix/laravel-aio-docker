@@ -110,6 +110,7 @@ If it is not clear which area should get the chat, ask the user before adding th
   person not yet signed in to the chat, it opens that route once inside the panel, and its "Open in new tab" button
   opens it in a new tab, so render the tag only for signed-in users. Without it the panel only works for a browser
   already signed in to the chat, and "Open in new tab" opens the chat itself.
+- `data-title="{{ config('app.name') }}"` is optional and names the chat in the browser tab for everyone.
 - The launcher takes the app's colours when `:root` defines `--ai-1` to `--ai-4`, `--ai-gradient` and `--ai-fill`
   (the fill switched under the app's dark mode); without them it uses neutral defaults.
 - If the app sends a `Content-Security-Policy`, allow `AGENT_CHAT_URL` in `script-src` and `frame-src`.

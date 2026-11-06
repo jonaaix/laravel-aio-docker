@@ -16,7 +16,7 @@ const categories = computed<{ value: SettingsCategory; label: string; icon: stri
     { value: 'agents', label: 'Agents', icon: 'i-heroicons-cpu-chip' },
     { value: 'profile', label: 'Profile', icon: 'i-heroicons-user' },
     { value: 'account', label: 'Claude account', icon: 'i-heroicons-key' },
-    ...(user.value?.admin ? [{ value: 'people' as const, label: 'People', icon: 'i-heroicons-users' }] : []),
+    ...(user.value?.admin ? [{ value: 'admin' as const, label: 'Admin', icon: 'i-heroicons-shield-check' }] : []),
     hub
         ? { value: 'notifications', label: 'Notifications', icon: 'i-heroicons-bell' }
         : { value: 'remote', label: 'Remote control', icon: 'i-heroicons-device-phone-mobile' },
@@ -39,7 +39,7 @@ watch(open, (isOpen) => {
 });
 
 watch(() => user.value?.admin, (admin) => {
-    if (!admin && active.value === 'people') {
+    if (!admin && active.value === 'admin') {
         active.value = 'profile';
     }
 });
@@ -73,9 +73,9 @@ const hasActions = computed(() => active.value === 'agents');
                     <SettingsChat v-else-if="active === 'chat'" />
                     <SettingsReadAloud v-else-if="active === 'speech'" />
                     <SettingsAgents v-else-if="active === 'agents'" actions-target="#settings-actions" />
-                    <SettingsProfile v-else-if="active === 'profile'" @unlocked="active = 'people'" />
+                    <SettingsProfile v-else-if="active === 'profile'" @unlocked="active = 'admin'" />
                     <SettingsAccount v-else-if="active === 'account'" />
-                    <SettingsPeople v-else-if="active === 'people'" />
+                    <SettingsAdmin v-else-if="active === 'admin'" />
                     <SettingsNotifications v-else-if="active === 'notifications'" />
                     <SettingsRemoteControl v-else />
                 </div>

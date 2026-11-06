@@ -302,5 +302,7 @@
     "Expand work steps automatically": "Werkstappen automatisch uitklappen",
     "Sending": "Verzenden",
     "Agent activity": "Agentactiviteit",
-    "Sound": "Geluid"
+    "Sound": "Geluid",
+    "Chat title": "Chattitel",
+    "Could not save the chat title": "Chattitel kon niet worden opgeslagen"
 }

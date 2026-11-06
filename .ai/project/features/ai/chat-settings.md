@@ -95,7 +95,8 @@ a conversation opens the same window at Agents. The open window and its category
   with its session usage: no e-mail, organisation, plan or weekly usage reaches their browser. Adding,
   switching and removing stay open to everyone, so a friend can sign in their own account. Whoever signed in
   an account always sees its details, whatever the settings say.
-- **People** appears only for admins. It is a table of everyone who has signed in to the chat, with a tick box
+- **Admin** appears only for admins. At its top, "Chat title" names the chat in the browser tab for everyone ("AI Chat"
+  when empty); it saves on leaving the field or Enter, and Escape restores it. Below, under "People", is a table of everyone who has signed in to the chat, with a tick box
   per person for Admin, AI account details and Blocked; a tick takes effect at once. An admin can make others
   admins, take the role away again (also from themselves), show or hide the AI account details for each
   person, and block or unblock anyone but themselves. A blocked person's

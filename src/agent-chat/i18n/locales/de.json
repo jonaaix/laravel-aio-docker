@@ -302,5 +302,7 @@
     "Expand work steps automatically": "Arbeitsschritte automatisch aufklappen",
     "Sending": "Senden",
     "Agent activity": "Agent-Aktivität",
-    "Sound": "Ton"
+    "Sound": "Ton",
+    "Chat title": "Chat-Titel",
+    "Could not save the chat title": "Chat-Titel konnte nicht gespeichert werden"
 }

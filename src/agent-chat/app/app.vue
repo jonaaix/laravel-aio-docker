@@ -10,8 +10,10 @@ void signIn();
 const uiLocale = computed(() => uiLocales[locale.value as keyof typeof uiLocales] ?? uiLocales.en);
 
 
+const { title: chatTitle } = useChatTitle();
+
 useHead({
-    title: hub ? 'Orbit' : 'AI Chat',
+    title: () => hub ? 'Orbit' : chatTitle.value || 'AI Chat',
     meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
         ...(hub ? [
