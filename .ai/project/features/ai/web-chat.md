@@ -23,9 +23,11 @@ conversation remain part of the feature; Claude comes first.
 The chat can be embedded as an iframe inside the Laravel app the container hosts, so the app's
 users talk to the agent without leaving the app, or be given its own domain or port.
 
-For working on the app, the chat can also sit beside the pages the app chooses in its own code: a button "Open AI chat" at the bottom right, in a
-gently moving violet gradient with twinkling sparkles, opens the chat in a panel on the right and moves the page aside
-to make room; a small, quiet round button in the same corner closes it again; the edge between them lights up under the pointer and
+For working on the app, the chat can also sit beside the pages the app chooses in its own code: a pill "Open AI chat" at the bottom right
+— a light, faintly tinted surface inside a slowly flowing gradient border, with gradient lettering and sparkles that turn and glow
+under the pointer, in colours the app can give it from its own accent — opens the chat in a panel on the right and moves the page aside
+to make room; a small, quiet round button in the same corner closes it again; while the pointer rests on the corner, a round button "Open in new tab"
+slides in beside it and opens the chat in its own tab, signed in through the app's way in when it has one; the edge between them lights up under the pointer and
 can be dragged to change the width. Page and chat scroll with slim scrollbars while the panel is open, so two broad
 bars never stand side by side. When the page reloads or the user follows a link, the panel comes straight back as it
 was — open or closed, width, the open conversation and any text not yet sent — while the agents carry on undisturbed on

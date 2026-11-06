@@ -108,6 +108,8 @@ If it is not clear which area should get the chat, ask the user before adding th
   and brings it back as it was on the next page that has it.
 - `data-sign-in` points to the route above. When the panel finds the person not yet signed in to the chat, it opens
   that route once inside the panel and signs them in there, so render the tag only for signed-in users.
+- The launcher takes the app's colours when `:root` defines `--ai-1` to `--ai-4`, `--ai-gradient` and `--ai-fill`
+  (the fill switched under the app's dark mode); without them it uses neutral defaults.
 - If the app sends a `Content-Security-Policy`, allow `AGENT_CHAT_URL` in `script-src` and `frame-src`.
 - The panel signs in by showing the route inside a frame of the app's own page. `X-Frame-Options: SAMEORIGIN` or
   `frame-ancestors 'self'` allow that; `DENY` or `frame-ancestors 'none'` on that route make the sign-in fail.
