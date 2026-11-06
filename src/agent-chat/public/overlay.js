@@ -27,7 +27,7 @@
 
     const chatAddress = new URL('./?embedded', document.currentScript.src);
     if (document.currentScript.dataset.title) {
-        chatAddress.searchParams.set('title', document.currentScript.dataset.title);
+        chatAddress.searchParams.set('t', document.currentScript.dataset.title);
     }
     const chatUrl = chatAddress.href;
     const chatOrigin = new URL(chatUrl).origin;

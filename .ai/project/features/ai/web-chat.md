@@ -39,7 +39,7 @@ it its own way into the chat — required for an app with a login, optional for 
 itself, so they are signed in inside the panel without a separate step.
 
 The browser tab shows the chat's title, "AI Chat" unless an admin named it otherwise in the settings, with the number of
-unread messages before it. Opening the chat with `?title=…` in its address sets that title for everyone and the parameter
+unread messages before it. Opening the chat with `?t=…` in its address sets that title for everyone and the parameter
 leaves the address; the panel script passes its `data-title` that way, so the app's name reaches the chat. Orbit keeps
 its own name.
 

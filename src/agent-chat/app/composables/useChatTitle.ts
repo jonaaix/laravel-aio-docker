@@ -1,4 +1,4 @@
-const TITLE_QUERY = 'title';
+const TITLE_QUERY = 't';
 
 export function useChatTitle() {
     const title = useState<string | null>('chat-title', () => null);
