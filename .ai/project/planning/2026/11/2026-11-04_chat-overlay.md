@@ -14,7 +14,7 @@ this works on a test site with several linked pages, and the Laravel app can add
 - [x] Chat inside the panel: reopens the last conversation and keeps unsent text per conversation
 - [x] Test site with linked pages, checked in the browser
 - [x] Laravel side: the app adds the script tag itself where the chat should appear — guide
-      `src/php-fpm-claude/claude-defaults/skills/agent-chat-integration`
+      `src/php-fpm-claude-gamma/claude-defaults/skills/agent-chat-integration`
 - [x] Feature Book: web chat chapter
 
 ## State

@@ -21,11 +21,8 @@ container restart with its full history and attachments, and no Mattermost/Slack
 - [x] History store for evaluation: tool output cut to its first 2,000 characters, per-turn metrics
       (model, tokens, cost, duration, outcome), archive instead of delete, paged message loading
 - [x] Auth: signed links only → `2026/11/2026-11-03_chat-hub-multi-server.md`; the Laravel side is a guide for
-      the app's agent (`src/php-fpm-claude/claude-defaults/skills/agent-chat-integration`), installed in the beta image
-- [ ] Image integration: supervisor program, nginx sub-path proxy for the iframe, optional own
-      port/domain, env (`NUXT_WORKING_DIR=/app`, `NUXT_DATA_DIR=/home/laravel/.config/agent-chat`);
-      app code under `/opt`, never `/home/laravel` (the home volume is seeded once, then frozen); then fill in the
-      chat's address and key in the guide's "Not settled yet"
+      the app's agent (`src/php-fpm-claude-gamma/claude-defaults/skills/agent-chat-integration`), installed in the beta image
+- [ ] Image integration → own variant `fpm-claude-gamma`, `2026/11/2026-11-06_fpm-claude-gamma.md`
 - [x] In-process HTTP MCP for Claude with `send_file` → attachment stored with the conversation
 - [x] Token-level streaming (`--include-partial-messages` + `stream_event` deltas)
 - [x] Turn markers: show "stopped" on interrupted turns, errors inline

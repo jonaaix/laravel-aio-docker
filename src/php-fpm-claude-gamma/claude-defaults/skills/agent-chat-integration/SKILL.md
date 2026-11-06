@@ -10,7 +10,8 @@ signs these links. The Laravel app is the door: for its signed-in user it asks t
 sends the browser there. Opening the link signs that person in to that browser for good, until the
 chat's key changes.
 
-The app reaches the chat at `http://localhost:3000` inside this container. The browser reaches
+The chat runs only when the container is started with `ENABLE_AGENT_CHAT=true`, and the browser reaches it only
+if port 3000 is published in `docker-compose.yml`. The app reaches the chat at `http://localhost:3000` inside this container. The browser reaches
 it at the chat's public address, `AGENT_CHAT_URL` in `.env` — ask the user for it if it is not set. The chat creates
 its key on its first start and keeps it in `/home/laravel/.config/agent-chat/chat-key`; the app reads it from there.
 
