@@ -64,7 +64,7 @@ export default defineNuxtConfig({
     },
 
     routeRules: {
-        '/**': { headers: { 'cache-control': 'no-cache' } },
+        '/**': { headers: { 'cache-control': 'private, no-cache' } },
         '/_nuxt/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
     },
 
