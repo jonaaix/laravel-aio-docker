@@ -26,7 +26,7 @@ users talk to the agent without leaving the app, or be given its own domain or p
 For working on the app, the chat can also sit beside the pages the app chooses in its own code: a pill "Open AI chat" at the bottom right
 — a light, faintly tinted surface inside a slowly flowing gradient border, with gradient lettering and sparkles that turn and glow
 under the pointer, in colours the app can give it from its own accent — opens the chat in a panel on the right and moves the page aside
-to make room; a small, quiet round button in the same corner closes it again; while the pointer rests on the corner, a round button "Open in new tab"
+to make room; a round button in the same corner and the same look closes it again; while the pointer rests on the corner, a round button "Open in new tab"
 slides in beside it and opens the chat in its own tab, signed in through the app's way in; the edge between them lights up under the pointer and
 can be dragged to change the width. Page and chat scroll with slim scrollbars while the panel is open, so two broad
 bars never stand side by side. When the page reloads or the user follows a link, the panel comes straight back as it

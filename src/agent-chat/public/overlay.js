@@ -108,13 +108,15 @@
                 transition: opacity 160ms ease-in, transform 160ms ease-in; }
             .controls:hover .new-tab, .controls:focus-within .new-tab { opacity: 1; transform: translate(0, -50%);
                 transition: opacity 180ms ease-out, transform 180ms ease-out; }
-            .new-tab a { position: relative; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;
-                border: 1px solid transparent; border-radius: 9999px; background-image: var(--pill-fill), var(--pill-gradient);
-                background-origin: border-box; background-clip: padding-box, padding-box, border-box;
-                background-size: 100% 100%, 100% 100%, 300% 100%; color: var(--pill-ink);
-                box-shadow: 0 4px 14px -6px oklch(from var(--pill-ink) l c h / 0.5); }
-            .new-tab a:focus-visible { outline: 2px solid var(--pill-ink); outline-offset: 2px; }
-            .new-tab svg { width: 16px; height: 16px; }
+            .new-tab a, button.toggle:not(.launch) { position: relative; display: flex; align-items: center; justify-content: center;
+                width: 36px; height: 36px; border: 1px solid transparent; border-radius: 9999px; backdrop-filter: none;
+                background-image: var(--pill-fill), var(--pill-gradient); background-origin: border-box;
+                background-clip: padding-box, padding-box, border-box; background-size: 100% 100%, 100% 100%, 300% 100%;
+                color: var(--pill-ink); box-shadow: 0 4px 14px -6px oklch(from var(--pill-ink) l c h / 0.5);
+                transition: box-shadow 500ms ease-out; }
+            .new-tab a:hover, button.toggle:not(.launch):hover { color: var(--pill-ink); box-shadow: 0 0 22px -2px oklch(from var(--pill-ink) l c h / 0.55); }
+            .new-tab a:focus-visible, button.toggle:not(.launch):focus-visible { outline: 2px solid var(--pill-ink); outline-offset: 2px; }
+            .new-tab svg, button.toggle:not(.launch) svg { width: 16px; height: 16px; }
             .new-tab a::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 8px); right: 0; padding: 4px 8px;
                 border-radius: 6px; background: #171717; color: #fafafa; font: 500 12px/16px system-ui, sans-serif; white-space: nowrap;
                 opacity: 0; pointer-events: none; transition: opacity 120ms ease; }
