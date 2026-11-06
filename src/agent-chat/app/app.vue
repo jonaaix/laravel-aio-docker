@@ -22,7 +22,7 @@ useHead({
         ] : []),
     ],
     link: [
-        ...(hub ? [{ rel: 'manifest', href: `${app.baseURL}manifest.webmanifest` }] : []),
+        ...(hub ? [{ rel: 'manifest' as const, href: `${app.baseURL}manifest.webmanifest` }, ...splashScreenLinks(app.baseURL)] : []),
         { rel: 'apple-touch-icon', href: `${app.baseURL}icons/apple-touch-icon.png` },
         { rel: 'icon', type: 'image/png', sizes: '64x64', href: `${app.baseURL}icons/favicon.png` },
         { rel: 'icon', type: 'image/svg+xml', href: `${app.baseURL}orbit-icon.svg` },

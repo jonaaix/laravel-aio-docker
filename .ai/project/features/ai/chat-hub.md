@@ -16,7 +16,8 @@ app, and it is the same chat — every view and every change of the chat is also
 ## How does it work?
 
 Orbit lives on its own address on GitHub Pages and can be installed from there to the home screen or the
-desktop. It has no server of its own: it talks directly to the chats it is paired with.
+desktop. Opened from the iPhone home screen it starts on its own start screen in light or dark, matching the
+phone, instead of a blank one. It has no server of its own: it talks directly to the chats it is paired with.
 
 ### Pairing
 
