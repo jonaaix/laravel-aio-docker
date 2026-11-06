@@ -23,13 +23,11 @@ through the guide's route and shows the panel on a page.
 
 ## State
 
-- Built locally as `ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm-claude-gamma` and checked in a container without a
-  Laravel app (`SKIP_LARAVEL_BOOT=true`). Pushed from the Mac for arm64 only (index with the arm64 image and its
-  attestation); the CI workflow is unchanged and builds both architectures when run.
-- Last push: digest `sha256:76c37a77…`, includes everything up to `2f4f5d8` (chat title, cache rule, accepted answers
-  sent at once, reload after updates, chat tools always loaded).
-- Gamma: `src/php-fpm-claude-gamma/` (Dockerfile, `agent-chat.conf`, the guide under `claude-defaults/skills`).
-  Shared scripts only act on `IMAGE_GAMMA=1`: banner, `supervisor_add_agent_chat_if_enabled`.
+- The chat comes from `~/repos/orbit-agent-chat` and runs its agents through the Claude Agent SDK; gamma no
+  longer copies `src/claude-threads` for it. Built locally and checked in a container: the chat starts, signs in,
+  and lists models through the SDK.
+- Last push: digest `sha256:76c37a77…` - from before the move and the SDK switch. The next push waits for the
+  user's test of real conversations on the SDK.
 
 ## Decisions
 
