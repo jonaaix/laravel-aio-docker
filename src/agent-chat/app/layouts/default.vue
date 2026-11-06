@@ -34,7 +34,8 @@ watch(() => user.value?.id, () => {
 }, { immediate: true });
 
 const now = useNow();
-const sidebarCollapsed = ref(false);
+const embedded = isEmbedded();
+const sidebarCollapsed = ref(embedded);
 
 const sidebarGroups = computed(() => groupByRecency(conversations.value));
 const shortcuts = useChatShortcuts(computed(() => sidebarGroups.value.flatMap(group => group.conversations.map(conversation => conversation.id))));
@@ -128,14 +129,14 @@ onBeforeUnmount(() => {
 <template>
     <UDashboardGroup unit="rem" :storage-key="`ai-chat-${baseURL}`">
         <UDashboardSidebar
-            id="conversations"
-            collapsible
-            resizable
+            :id="embedded ? 'conversations-panel' : 'conversations'"
+            :collapsible="!embedded"
+            :resizable="!embedded"
             :min-size="14"
             :default-size="18"
             :max-size="28"
             v-model:collapsed="sidebarCollapsed"
-            :ui="{ root: 'peer bg-muted', content: 'w-[85%]', body: ['scrollbar-slim', sidebarCollapsed ? 'px-2' : 'px-2.5'], footer: [sidebarCollapsed ? 'px-2 pb-2' : 'px-2.5 pb-2.5'], header: [hub ? 'h-auto py-3' : '', sidebarCollapsed ? 'px-2' : 'px-2.5'] }"
+            :ui="{ root: ['peer bg-muted', embedded ? 'max-lg:flex' : ''], content: 'w-[85%]', body: ['scrollbar-slim', sidebarCollapsed ? 'px-2' : 'px-2.5'], footer: [sidebarCollapsed ? 'px-2 pb-2' : 'px-2.5 pb-2.5'], header: [hub ? 'h-auto py-3' : '', sidebarCollapsed ? 'px-2' : 'px-2.5'] }"
         >
             <template #header="{ collapsed }">
                 <div class="flex w-full flex-col gap-2">
