@@ -24,7 +24,8 @@ through the guide's route and shows the panel on a page.
 ## State
 
 - Built locally as `ghcr.io/jonaaix/laravel-aio:1.3-php8.5-fpm-claude-gamma` and checked in a container without a
-  Laravel app (`SKIP_LARAVEL_BOOT=true`). Not pushed.
+  Laravel app (`SKIP_LARAVEL_BOOT=true`). Pushed from the Mac for arm64 only (index with the arm64 image and its
+  attestation); the CI workflow is unchanged and builds both architectures when run.
 - Gamma: `src/php-fpm-claude-gamma/` (Dockerfile, `agent-chat.conf`, the guide under `claude-defaults/skills`).
   Shared scripts only act on `IMAGE_GAMMA=1`: banner, `supervisor_add_agent_chat_if_enabled`.
 
