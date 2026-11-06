@@ -135,7 +135,7 @@ onBeforeUnmount(() => {
             :default-size="18"
             :max-size="28"
             v-model:collapsed="sidebarCollapsed"
-            :ui="{ root: 'peer bg-muted', body: ['scrollbar-slim', sidebarCollapsed ? 'px-2' : 'px-2.5'], footer: [sidebarCollapsed ? 'px-2 pb-2' : 'px-2.5 pb-2.5'], header: [hub ? 'h-auto py-3' : '', sidebarCollapsed ? 'px-2' : 'px-2.5'] }"
+            :ui="{ root: 'peer bg-muted', content: 'w-[85%]', body: ['scrollbar-slim', sidebarCollapsed ? 'px-2' : 'px-2.5'], footer: [sidebarCollapsed ? 'px-2 pb-2' : 'px-2.5 pb-2.5'], header: [hub ? 'h-auto py-3' : '', sidebarCollapsed ? 'px-2' : 'px-2.5'] }"
         >
             <template #header="{ collapsed }">
                 <div class="flex w-full flex-col gap-2">

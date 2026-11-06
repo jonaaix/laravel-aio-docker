@@ -13,7 +13,7 @@ they see at a glance which ones are working, which have news and which one is be
 
 ## How does it work?
 
-A sidebar lists the conversations, with Settings at its foot; its edge lights up under the pointer like the panel's and can be dragged to change the width. Everyone working in the same container sees all of them, each
+A sidebar lists the conversations, with Settings at its foot; its edge lights up under the pointer like the panel's and can be dragged to change the width. On a phone it slides in from the left over 85 % of the width, so the open conversation stays in sight beside it; tapping there closes it. Everyone working in the same container sees all of them, each
 with the name of the person who started it: a development conversation is long-lived, and a team
 works on the same app. Each entry shows the title and, below it, who started it and when something last happened, and its state at the
 right end: while the agent is answering, three softly bouncing dots, the title turns grey like the line below it, and a narrow light
