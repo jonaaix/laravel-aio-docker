@@ -26,6 +26,8 @@ through the guide's route and shows the panel on a page.
 - The chat comes from `~/repos/orbit-agent-chat` and runs its agents through the Claude Agent SDK. Built locally and
   checked in a container: the chat starts, signs in, and lists models through the SDK.
 - claude-threads is no longer installed in gamma; the image has not been built since that change.
+- Switched to the starter-only image; not built yet, and no chat release is published yet, so a new gamma container
+  cannot start the chat until the first stable build of the chat.
 - Last push: digest `sha256:76c37a77…` - from before the move and the SDK switch. The next push waits for the
   user's test of real conversations on the SDK.
 
@@ -33,6 +35,10 @@ through the guide's route and shows the panel on a page.
 
 - The chat lives in its own repo, `~/repos/orbit-agent-chat` (user). `build-image.sh` hands its committed state
   (`git archive HEAD`, path overridable with `AGENT_CHAT_REPO`) to the build as the named context `orbit-agent-chat`.
+- The public image carries only the chat's starter (`/opt/agent-chat/starter.mjs`), never the chat (user, 369a): the
+  starter fetches the encrypted release from `jonaaix/orbit` into `/home/laravel/.config/agent-chat/releases` and the
+  chat updates itself there. A container needs `ORBIT_RELEASE_KEY` (or the file `release-key` in that folder) before
+  the chat can start (370a). Rules live in the chat repo's Feature Book chapter `ai-chat-instance-updates`.
 
 - The chat goes into its own variant, not into `fpm-claude-beta`: an update of beta must not change running beta
   instances (user).

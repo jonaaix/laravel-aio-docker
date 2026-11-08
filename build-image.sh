@@ -67,7 +67,7 @@ if [ "$imageType" = "fpm-claude-beta" ]; then
   extraBuildArgs+=(--build-arg CLAUDE_THREADS_BETA=1)
 fi
 
-# fpm-claude-gamma builds the agent chat from its own repo, taken from its committed state.
+# fpm-claude-gamma takes the agent chat's starter from its own repo, taken from its committed state.
 if [ "$imageType" = "fpm-claude-gamma" ]; then
   chatRepo="${AGENT_CHAT_REPO:-../orbit-agent-chat}"
   chatContext="$(mktemp -d)"

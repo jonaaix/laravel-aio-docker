@@ -221,15 +221,8 @@ RUN echo "npm-global cache key: ${CACHEBUST_NPM_GLOBAL}" \
 RUN curl -fsSL https://bun.sh/install | bash \
  && npm install -g opencode-ai@latest
 
-# Under /opt, not the frozen /home/laravel volume, so every image update brings the current chat.
-COPY --chown=laravel:laravel --from=orbit-agent-chat . /tmp/chat-build/orbit-agent-chat
-RUN export PATH="$HOME/.bun/bin:$PATH" HUSKY=0 \
- && cd /tmp/chat-build/orbit-agent-chat && bun install && bun run build \
- && sudo mkdir -p /opt/agent-chat \
- && sudo chown laravel:laravel /opt/agent-chat \
- && cp -r .output/. /opt/agent-chat/ \
- && cd / \
- && rm -rf /tmp/chat-build
+# The public image carries only the starter; it fetches the encrypted chat into the home directory and keeps it updated.
+COPY --chown=laravel:laravel --from=orbit-agent-chat server/starter/starter.mjs server/starter/releases.mjs /opt/agent-chat/
 
 ENV IMAGE_GAMMA=1
 
