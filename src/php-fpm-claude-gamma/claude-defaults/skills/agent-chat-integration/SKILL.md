@@ -76,7 +76,7 @@ chat, for example in the user menu.
 ## Putting the chat panel into the app
 
 The chat serves a script that adds a chat button at the bottom right of a page. The button opens the chat in a
-panel on the right and pushes the page aside. The panel comes back after every page load the way it was left:
+panel on the right and pushes the page aside; on a phone the panel covers the page. The panel comes back after every page load the way it was left:
 open or closed, its width, the open conversation and any unsent text.
 
 The panel appears on exactly the pages whose HTML contains the script tag, so the app decides in its own code where
@@ -107,14 +107,15 @@ If it is not clear which area should get the chat, ask the user before adding th
 - The panel only loads the chat once it is opened. Moving between pages with and without the tag hides the panel
   and brings it back as it was on the next page that has it.
 - `data-sign-in` points to the route above and is required whenever the app has a login. When the panel finds the
-  person not yet signed in to the chat, it opens that route once inside the panel, and its "Open in new tab" button
-  opens it in a new tab, so render the tag only for signed-in users. Without it the panel only works for a browser
+  person not yet signed in to the chat, it opens that route once inside the panel, and "Open in new tab" in the
+  chat's header opens it in a new tab, so render the tag only for signed-in users. Without it the panel only works for a browser
   already signed in to the chat, and "Open in new tab" opens the chat itself.
 - `data-title="{{ config('app.name') }}"` is optional and names the chat in the browser tab for everyone.
-- The launcher takes the app's colours when `:root` defines `--ai-1` to `--ai-4`, `--ai-gradient` and `--ai-fill`
-  (the fill switched under the app's dark mode); without them it uses neutral defaults.
+- The launcher takes the app's colours when `:root` defines `--ai-3` (its text and icon colour), `--ai-gradient` and
+  `--ai-fill` (the fill switched under the app's dark mode); without them it uses neutral defaults.
 - If the app sends a `Content-Security-Policy`, allow `AGENT_CHAT_URL` in `script-src` and `frame-src`.
 - The panel signs in by showing the route inside a frame of the app's own page. `X-Frame-Options: SAMEORIGIN` or
   `frame-ancestors 'self'` allow that; `DENY` or `frame-ancestors 'none'` on that route make the sign-in fail.
+- The agent is told which page of the app the person sees beside the panel, so "this page" in a message refers to it.
 - Fixed elements of the app (sticky headers, toasts) do not move with the page when the panel opens. That is
   accepted; do not rework the app's layout for it.
