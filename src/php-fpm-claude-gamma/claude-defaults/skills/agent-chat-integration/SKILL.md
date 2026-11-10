@@ -104,6 +104,8 @@ If it is not clear which area should get the chat, ask the user before adding th
 
 - The script takes care of itself: no build step, no styles, no Vite entry. It does nothing inside an iframe and
   never loads twice.
+- A chat admin can switch the widget off in the chat's settings (Admin → Website widget); the tag then does nothing and
+  the chat still works in its own tab. Leave the tag in place rather than removing it for that.
 - The panel only loads the chat once it is opened. Moving between pages with and without the tag hides the panel
   and brings it back as it was on the next page that has it.
 - `data-sign-in` points to the route above and is required whenever the app has a login. When the panel finds the
