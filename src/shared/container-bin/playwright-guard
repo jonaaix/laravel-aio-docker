@@ -1,0 +1,4 @@
+#!/bin/sh
+echo "$(basename "$0"): the browser does not start from the command line in this container." >&2
+echo "Use the Playwright MCP tools instead (browser_navigate, browser_take_screenshot, ...): one shared browser service, built for parallel agents." >&2
+exit 1

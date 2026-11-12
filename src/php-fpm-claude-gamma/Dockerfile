@@ -195,6 +195,11 @@ RUN printf '%s\n' \
     > /usr/local/share/container-bin/ll \
  && chmod +x /usr/local/share/container-bin/ll
 
+# Agents reach for the Playwright CLI by habit; in here it cannot start a browser, so these names point them to the MCP tools.
+COPY ./src/shared/container-bin/playwright-guard /usr/local/share/container-bin/playwright-cli
+RUN chmod +x /usr/local/share/container-bin/playwright-cli \
+ && ln -sf playwright-cli /usr/local/share/container-bin/playwright
+
 # Prepare environment for Claude
 ENV HOME=/home/laravel
 ENV SHELL=/bin/bash

@@ -75,6 +75,10 @@ claude_init() {
    # overwrite — that would wipe user-added permissions, hooks, plugin toggles etc.
    node /scripts/merge-settings.js
    cp /opt/claude-defaults/CLAUDE.md /home/laravel/.claude/CLAUDE.md
+   if [ -f /opt/claude-defaults/AGENTS.md ]; then
+      mkdir -p /home/laravel/.codex
+      cp /opt/claude-defaults/AGENTS.md /home/laravel/.codex/AGENTS.md
+   fi
 
    if _ai_threads_enabled; then
       _claude_append CLAUDE.threads.md
