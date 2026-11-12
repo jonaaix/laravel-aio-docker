@@ -65,6 +65,11 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
 
 RUN curl -sS https://starship.rs/install.sh | sh -s -- -y -b /usr/local/bin
 
+# Orbit's server runs on Bun; it lives outside the persisted home so every container gets the image's version.
+RUN curl -fsSL https://bun.sh/install | BUN_INSTALL=/opt/bun bash \
+ && ln -s /opt/bun/bin/bun /usr/local/bin/bun
+ENV ORBIT_BUN=/opt/bun/bin/bun
+
 # Create non-root user with UID 1000 to match host user
 RUN groupadd -g 1000 laravel \
  && useradd -m -u 1000 -g laravel -s /bin/bash laravel \
