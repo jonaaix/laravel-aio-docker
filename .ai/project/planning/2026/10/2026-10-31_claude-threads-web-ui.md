@@ -1,0 +1,260 @@
+# claude-threads web UI (fpm-claude-beta)
+
+## Goal
+
+The `fpm-claude-beta` image ships its own claude-threads build that serves a built-in web chat app
+(Claude.ai / ChatGPT-like) instead of bridging to Mattermost/Slack. Agreed behavior:
+[Feature Book `ai-web-chat`](../../../features/ai/web-chat.md).
+
+Finished when: a fresh `fpm-claude-beta` container with the feature enabled serves the app both
+embedded (iframe under the app's domain) and standalone (own port/domain), a conversation survives a
+container restart with its full history and attachments, and no Mattermost/Slack config is needed.
+
+## Milestones
+
+- [x] Fork copied into this repo (`src/claude-threads`), beta image builds from it
+- [x] Stack decided: Nuxt 4 + Nuxt UI, SQLite/Drizzle, SSE
+- [x] Feature Book chapter `ai-web-chat`
+- [x] First vertical slice: conversations list, start/continue, Claude streaming block-level, tool and
+      reasoning blocks, stop, pause/resume, history in SQLite, works under a sub-path
+- [x] Port upstream CLI-compatibility fixes into the core (upstream 1.21–1.37)
+- [x] History store for evaluation: tool output cut to its first 2,000 characters, per-turn metrics
+      (model, tokens, cost, duration, outcome), archive instead of delete, paged message loading
+- [x] Auth: signed links only → `2026/11/2026-11-03_chat-hub-multi-server.md`; the Laravel side is a guide for
+      the app's agent (`src/php-fpm-claude-gamma/claude-defaults/skills/agent-chat-integration`), installed in the beta image
+- [ ] Image integration → own variant `fpm-claude-gamma`, `2026/11/2026-11-06_fpm-claude-gamma.md`
+- [x] In-process HTTP MCP for Claude with `send_file` → attachment stored with the conversation
+- [x] Token-level streaming (`--include-partial-messages` + `stream_event` deltas)
+- [x] Turn markers: show "stopped" on interrupted turns, errors inline
+- [x] Attachments from the user (upload into the conversation, passed to Claude)
+- [x] UI density: 16 px message text on a 26 px line, tighter prose spacing (`app.config` prose), 16 px phone gutters
+- [x] Quiet header (status dot beside the title, archive as an icon button) and a hover
+  footer per message (copy + clock time)
+- [x] Flatter composer (pill shape kept, light shadow, less padding)
+- [x] User name: enforced "Your name" modal, `?n=<base64url>` signs in and locks it
+  (`chat-user-name-locked`), "Your name" in Settings, creator shown in the sidebar. Laravel side:
+  `rtrim(strtr(base64_encode($name), '+/', '-_'), '=')`; `a=` carries the picture URL the same way
+- [x] Users: `users` table (unique name), `messages.sender_id` / `conversations.creator_id`; the browser keeps
+  `chat-user-id` (legacy `chat-user-name` cookies sign in once). A known name signs in as that user,
+  renaming refuses a taken name (409). Migration 0006 backfilled users from the old name columns, 0007
+  dropped them. Claude's prompt starts with `<from>Name</from>` on the first message and on every
+  sender change (compared by user id with the last queued or stored user message)
+- [x] One user directory: messages carry only `senderId`, summaries only `creatorId`; the client keeps
+  `useUsers` (`GET /api/users`) and the list event stream pushes `user` / `agents` changes live
+- [x] Denser sidebar: two-line entries (title; Working/Active/Paused from `sessionState` · relative
+  last activity), account card at the bottom with one line per usage meter
+- [ ] Multi-bot conversations → own plan `2026/11/2026-11-02_chat-participants-and-agents.md`
+- [ ] opencode backend selectable per conversation
+- [ ] Extract lean core: drop Mattermost/Slack, onboarding, auto-update, commands, bug report,
+      sticky message; worktree disabled
+- [ ] Prompt fragment rewrite (`CLAUDE.threads.md` drops Mattermost/`react_to_post`), docs, CHANGELOG
+
+## State
+
+
+- The chat itself moved to its own repo `~/repos/orbit-agent-chat` on 2026-11-06, with its history, Feature Book and
+  plans; this file covers the claude-threads fork side only.
+- `src/claude-threads/` = vendored fork (core + Mattermost bridge), configs as in the fork.
+- `src/agent-chat/` = the Nuxt 4 app, its own package: `app/` (Nuxt UI frontend), `server/` (API,
+  SSE, runtime, SQLite), `shared/types/conversation.ts` (message format shared by both sides). It
+  reaches the fork through the alias `#claude-threads` → `../claude-threads/src`; only
+  `claude/cli` is imported. The fork needs its own `bun install` for the modules that file pulls in.
+- The web runtime drives `ClaudeCli` from `src/claude/cli.ts` directly, one process per conversation,
+  in `bypass` permission mode with the chat MCP. Claude stream-json events are mapped to AI SDK
+  `UIMessage` parts (`server/utils/claude-event-mapper.ts`): text, reasoning, `dynamic-tool`.
+  Subagent sidechains are skipped. Text and reasoning stream token by token: a `content_block_start`
+  opens a live part that only lives in memory and reaches the browser as `delta` events; the full
+  `assistant` event for that block replaces it and is what gets stored. A stopped turn keeps the
+  live text as a finished part. Tool calls appear live as `input-streaming` from their block start.
+  `ClaudeCli` gained `includePartialMessages` for this.
+- An answer renders as a thinking box, a working box, then the answer text (`ChatActivityBox` is the
+  shared frame: open while the answer is being produced, collapsed to its header row once done,
+  toggled by clicking the header). Thinking: one item per thinking block in a scroll area that follows the newest
+  unless the reader scrolled up. Working: one truncated line per tool call (tool name + the call's
+  `description`, else its command/path) with ✓/✗/spinner, the last 5 visible and earlier ones behind
+  "Show N earlier steps"; each line expands to its command (Bash `command`, else
+  path/pattern/url) and output; while Claude works the newest call shows that command box already.
+  After sending, the page stays at the bottom; with the person's "Move sent message to top" setting the sent
+  message moves to the top instead and the answer grows below. Once that pin is over, a reader at the bottom
+  is carried along as new content arrives (several agents answer in a row), one who scrolled up is left alone.
+  An agent answer directly after another one gets extra space above (`mt-6`) so authors stay apart.
+  Because the window scrolls, `UChatMessages`' own scroll features are off (they assume an inner
+  scroll container): the page keeps a chat pinned to the bottom while it renders, aligns a sent
+  message under the header, sizes the answer spacer (`--last-message-height`) from the viewport, and
+  shows its own "Jump to latest" button above the composer. Claude runs with `--thinking-display summarized`,
+  otherwise Claude Code omits the thinking text (Opus 5.5 sends none).
+- History: `chat.sqlite` in `NUXT_DATA_DIR` (default `~/.config/agent-chat`), WAL mode, migrations in
+  `server/database/migrations` (copied into `.output/server/migrations` at build, applied on start).
+  Tool output is cut to its first 2,000 chars. Each turn's assistant message carries the metrics
+  columns (`server/utils/turn-metrics.ts`, from the result event's `model_usage_since_last_result`;
+  `null` where Claude reports nothing, e.g. interrupted turns). A turn without any output still gets
+  an assistant message with empty parts to carry its metrics; the UI hides those unless the turn was
+  stopped or failed. A failed turn stores its error (`error_message`: the result text, else a fallback;
+  "Claude exited unexpectedly." when the process dies); outcome and error reach the UI as message
+  metadata and render as a "Stopped" line or a red "Failed" note under the answer.
+- Account card at the bottom of the sidebar: email and organization from `claude auth status`
+  (read once per server start), session (5 h) and weekly usage from the `rate_limit_event` Claude
+  sends with every turn (`unifiedWindows`). The last usage is kept in `<data dir>/usage.json`, so it
+  shows the last known state until the next turn (a window whose reset has passed is greyed out). Live updates ride the sidebar's `/api/events` stream. Below the card a settings menu
+  holds the appearance choice (light, dark, system).
+- Chat MCP: `server/api/mcp/[id].post.ts` speaks MCP over plain JSON HTTP (`server/utils/chat-mcp.ts`,
+  hand-rolled: initialize, tools/list, tools/call, ping). Each conversation runtime has a random bearer
+  token; its MCP config goes to `<data dir>/mcp/<id>.json` (0600, keeps the token out of `ps`) and is
+  passed as `--mcp-config`. The URL is the local origin of the request (`localServerOrigin`: socket
+  port, else the request's port in dev). `send_file` copies the file to `<data dir>/files/<id>/`
+  (2 GB cap) and adds an AI SDK `file` part; `/api/conversations/:id/files/:name` serves it with a
+  `sandbox` CSP. Consecutive images in an answer form one group
+  (`answerSegments`): a single image opens the lightbox, several render as a gallery. Other files
+  render as a download tile.
+- `app/gallery/` is a copy of the user's `jonaaix/laravel-islands-gallery` (Vue, MIT), kept in the
+  repo's layout so updates can be pulled over. Local changes: `IconButton.vue` replaces the Islands
+  helper of the same name, `il-*` tokens became Nuxt UI tokens.
+- Conversations are archived (`archived_at`), never deleted; archived ones are read-only (409 on
+  send) and listed under `/archived`. A chat opens with its last 50 messages, older pages load
+  when scrolling near the top (`GET /api/conversations/:id/messages?before=`).
+- Session lifecycle: a session pauses after 30 minutes without any CLI event, never during a turn or
+  while background tasks run (tracked from `background_tasks_changed`; listed with description and
+  elapsed time in a box pinned above the composer). Output Claude produces without a user message
+  (its report after a background task) opens a turn of its own. The sidebar marks online sessions.
+  Both event streams reload their state after a reconnect (a dev server reload pauses all sessions).
+- Message actions: copy (text parts only) on every message; selecting text in the timeline offers
+  "Quote", which appends a Markdown quote to the composer; the composer overlays quote lines with a
+  bar (mirror div over a transparent textarea). All Markdown keeps single line breaks (`breaks()` in `markdownPlugins`), as the terminal shows them;
+  past 25 lines they collapse to 15 (`ChatClampedContent`, measured from the line height).
+  Expanded working steps highlight their code lazily (`useCodeTokens`, shared shiki highlighter);
+  paths inside the working folder are shown relative to it.
+- Answer sections: an assistant text part is split at bar/title/bar markers (`splitTextSections`);
+  sections render as a heading with a top border, lone bars are dropped, a "❓" section is parsed
+  (`parseQuestionSection`) and renders as `ChatQuestionCard`; "🔑" and "🚀" sections render as
+  cards (`ChatSectionCard`, the frame all cards share; `ChatNextStepCard` adds "Accept" → "ok"). The page provides which message is answerable
+  (last one, finished, not archived) and the composer hook (`useQuestionAnswers`); picks write
+  one line per question ("44a", remark may follow) at the top of the composer; the leading answer
+  block is read back by `readAnswerBlock` (also the old "14a, 15: b" list form), so the input is the
+  only state and remarks survive later picks. Once a later user message exists, the card collapses to the options that message chose ("ok" = recommendations).
+- User attachments: picked, dropped or pasted files upload at once (`PUT /api/uploads`, streamed to
+  `<data dir>/uploads/`, 2 GB cap, cleared on start); on send they move into the conversation's file
+  folder and Claude gets the bridge's path list ahead of the text, never inline content. The image's
+  nginx must allow 2 GB request bodies.
+- Header is one row: title left, "Pause session" and "Archive" right; a sent message is aligned and
+  held for 2 s at header height + 16 px (also given to `UChatMessages` as scroll margin).
+- Session titles: a new conversation is named after the first 60 characters of its first message,
+  Markdown markers stripped (`titleFromPrompt`). Headless Claude Code writes no `ai-title`, so on the third user message the
+  runtime sends the CLI's `generate_session_title` control request (`persist: true`, the user
+  texts as description) through `ClaudeCli.sendControlRequest`; the matching `control_response`
+  sets the conversation title (`title` event + list event). Renaming (`POST .../rename`, header
+  `ChatTitleEditor`) sets `title_renamed`, which skips that request and drops a pending answer;
+  the name goes to Claude Code as `rename_session`, and again on every agent start.
+- Queued messages: the CLI runs with `--replay-user-messages`; a message sent while a turn runs (or
+  others wait) is written to stdin with its own `uuid` and kept in the runtime queue (status event,
+  `ChatQueuedMessages`). Its replay echo marks the moment Claude took it up: the current assistant
+  block is closed, the user message is appended, and the turn continues in a new block. Pause/exit
+  moves the queue into the timeline and resends it on the next agent start (memory only).
+- Database startup (`useDatabase`): pending migrations → `VACUUM INTO <data dir>/backups/chat-<time>.sqlite`
+  first (newest 5 kept); a database whose last migration is newer than this build's → refuse to start.
+- Runtime config via env: `NUXT_WORKING_DIR` (default `<data dir>/workspace`, created on demand),
+  `NUXT_DATA_DIR`, `NUXT_CLAUDE_MODEL`, `NUXT_APP_BASE_URL` (sub-path for the iframe). Paths are
+  resolved in `server/utils/paths.ts`.
+- Scripts in `src/agent-chat`: `dev`, `build`, `preview`, `typecheck`, `db:generate`.
+- The beta image still runs the Mattermost bridge; the web app is not wired into the image yet.
+- Core carries the upstream CLI fixes: modern task/tool_result/rate-limit events, decision bridge
+  (`src/mcp/decision-bridge.ts`, `MessageManager.handleBridgeRequest` → `resolveBridgePlan` /
+  `resolveBridgeQuestion`; no event fires on arrival yet), compaction/auth_status, three-tier version
+  check, lifecycle fixes, `turn:complete` on `MessageManager.events`. Every Claude session runs with
+  claude.ai connectors disabled (`claudeAiConnectors: true` per platform opts back in).
+  Not ported: operator-declared MCP servers / strict MCP config, platform rendering of turn markers.
+- Core tests: 3023 pass, 0 fail.
+
+## Decisions
+
+- Chat key: without `NUXT_CHAT_KEY` the chat creates one on first start in `<data dir>/chat-key` (mode 600) and
+  keeps it; the Laravel app reads that file (user, 254a). The app calls the chat at `http://localhost:3000` inside
+  the container (`AGENT_CHAT_INTERNAL_URL` overrides it); the browser uses the public `AGENT_CHAT_URL` (user).
+
+- Thought and Worked (`ChatThinkingBlock`, `ChatWorkingBlock`) are plain lines without frame or
+  background (`ChatActivityBox` `plain`, 28 px rows, no gap), aligned with the answer text; background
+  tasks and waiting messages keep the framed box.
+- "Pause session" stays a button with its label in the header.
+- Agents and avatars: see `2026/11/2026-11-02_chat-participants-and-agents.md`.
+- The UI is grayscale with black as the accent (white in dark mode): `primary` is `neutral` and
+  `--ui-primary` is pinned to neutral-900 / neutral-50 in `main.css`.
+- Nuxt UI scales radii from `--ui-radius` (0.5rem), so `rounded-xl` is 24 px here, not Tailwind's 12 px;
+  every card-like surface (cards, framed activity boxes, attachments) uses `rounded-md` (12 px); the
+  composer stays a pill, and the user bubble is filled `bg-accented/50` (a very light grey, as in ChatGPT)
+  with 18 px, `py-2` and no ring so it never reads as a card.
+- All relevant code lives in this repo; the fork is copied, not referenced. Only `fpm-claude-beta`
+  gets the web UI for now.
+- Nuxt 4 + Nuxt UI (MIT since v4, chat + dashboard components) over hand-built Vue on laravel-islands
+  helpers: a completely new app in its own stack. Heroicons through `@iconify-json/heroicons`, every
+  Nuxt UI icon remapped in `app.config.ts`; `icon.fallbackToApi: false` so the iframe never calls
+  out to Iconify. Markdown via `@comark/nuxt`. `ai` is used for its `UIMessage` types only.
+- Next.js rejected: React rules out reusing Vue knowledge and helpers; long-lived child processes and
+  live connections need a custom server outside its model.
+- Look follows Claude.ai / ChatGPT on the user's call: fully rounded buttons, inputs and badges
+  (deliberately rounder than the project design system's pills), doubled `--ui-radius`, Geist
+  and JetBrains Mono for code, answer code blocks at 12px
+  (both self-hosted by `@nuxt/fonts`, bundled with Nuxt UI), a 52rem reading column via `--ui-container`,
+  no hard lines, tool calls in one working box per answer as in Mattermost, thinking in its own box (user's call). Theme overrides live in `app.config.ts`.
+  The browser window is the page's scroll container (native scrollbar over the full height): the
+  dashboard layout is unpinned in `app.config.ts`, sidebar and navbar stick to the top, the composer
+  to the bottom; slim scrollbars only inside the activity boxes.
+  Controls are 36px like the project design system: buttons and dropdown menus default to Nuxt UI
+  size `lg`, sidebar links get `py-2`. Edit/MultiEdit calls show a line diff (`app/utils/line-diff.ts`),
+  Write calls the first 20 lines of the new file (`ChatToolInput`).
+  The composer (`ChatComposer`, used on the start page and in a chat) follows ChatGPT's: 56px pill,
+  10px inset, 16px text, grows to 10 rows, the 36px send/stop circle sits at the bottom and is
+  disabled while empty. Add-file and dictation join with their features; no model picker per
+  conversation.
+  Code blocks are highlighted by `shiki` through comark's plugin (`app/utils/markdown-plugins.ts`):
+  GitHub Light / Material Palenight (dark colours switched via `--shiki-dark` in `main.css`; Material
+  Lighter was too pale), on a light grey page with white cards and composer, comark's
+  default languages plus Laravel-relevant ones; embedded languages (Vue, Blade, HTML) come with them.
+  Sent non-image files render as an attachment card (`ChatFileAttachment`: type icon, name, type and
+  size from `providerMetadata.agentChat.size`, download button). Clicking a card opens a preview panel
+  (`ChatFilePreview`) for code and text files (highlighted; Markdown rendered; up to 1 MB); other
+  cards only download via their button.
+  Icons are served by the app itself (`icon.provider: 'server'`): no request leaves the app.
+- SPA (`ssr: false`): the chat is fully client-driven and runs inside an iframe.
+- SSE + REST instead of WebSockets: Nitro WebSockets are still experimental; SSE reconnects by itself
+  and passes nginx without upgrade handling.
+- SQLite stays, evaluated against "many large chats": one writer process, WAL, indexed
+  `(conversation_id, seq)`, capped tool output, files on disk rather than in the DB. Postgres in the
+  container would add a daemon for no gain at this write rate; the Laravel app's database would couple
+  the chat to the app it may have to repair.
+- The chat app is its own package next to the fork, not inside it: two apps stay apart and the fork
+  keeps its own configs, so upstream fixes can still be ported. Alias instead of a package
+  dependency: no build step or exports map for one imported file.
+- Lean core over a fake `web` platform behind `PlatformClient`: the platform interface is
+  post/reaction-shaped. The web app taps `ClaudeEvent` directly. Core stays in `src/` and is cut down
+  later; the Mattermost bridge keeps working until then.
+- The app's data lives in `~/.config/agent-chat`, never in `/app` (the Laravel project) and apart
+  from `~/.claude` (Claude Code's own) and `~/.config/claude-threads` (the fork's, going away); in the
+  container it sits in the persisted home volume. `/app` is only where Claude works. Without a
+  configured working dir Claude starts in an empty sandbox folder, never in the app's own code.
+- One SQLite file, not one per conversation: lookups go through the `(conversation_id, seq)` index
+  and stay independent of file size (simulated year of 365 chats × 500 turns: 3.3 GB, last 50
+  messages in 0.3 ms); per-chat files would need a central list anyway and complicate migrations,
+  search and backup. The bottleneck is the browser rendering a whole long chat, hence paged loading.
+- History is permanent because the development process gets evaluated after the app is finished.
+  Claude's own transcripts are no substitute (deleted after 30 days by default). Conversations are
+  archived, never deleted.
+- No `auto_vacuum`: nothing is ever deleted, and pages freed by rewritten rows are reused.
+- Tool output is stored as its first 2,000 characters plus success/error — Mattermost level plus the
+  reason a call failed (same simulation: 1.9 GB instead of 3.3 GB). Tool input, including the full
+  content of edits, stays complete.
+- The Laravel side of signing in is not shipped as code: each app's agent writes it from the guide the beta
+  image installs as a skill, because every app has its own users, layout and routes.
+- No permission prompts: Claude runs in `bypass` on purpose, so work is never held up by approvals
+  (user's call). The container is the sandbox; access to the chat is what needs protecting.
+- Questions and plans stay in chat mode: `AskUserQuestion`, `EnterPlanMode` and `ExitPlanMode` are
+  disallowed, so Claude asks and plans in plain text and the user answers with the next message.
+  Answer buttons come from reading that text, not from a tool: no tokens, and in projects without
+  the lettered question format they simply do not appear.
+- No appended system prompt for web sessions: tokens go to coding. What Claude must know about the
+  chat sits in the chat MCP's tool descriptions (`send_file`: the user reads a browser and sees no
+  files or terminal output).
+- Multi-bot and the opencode backend stay; Claude Code comes first.
+- Worktree code stays in the repo but is disabled.
+
+## Open
+
+- Nothing.

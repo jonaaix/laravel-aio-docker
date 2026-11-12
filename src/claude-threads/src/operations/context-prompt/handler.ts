@@ -1,0 +1,630 @@
+/**
+ * Thread context prompt module
+ *
+ * Handles offering users the option to include previous thread context
+ * when a session restarts (via !cd, worktree creation, or mid-thread @mention).
+ */
+
+import type { Session } from '../../session/types.js';
+import type { ThreadMessage, PlatformFile } from '../../platform/index.js';
+import type { PendingContextPrompt as ExecutorPendingContextPrompt, ContextPromptFile } from '../executors/types.js';
+import { postSkippedFilesFeedback, type BuiltMessageContent } from '../streaming/handler.js';
+import { NUMBER_EMOJIS, DENIAL_EMOJIS, getNumberEmojiIndex, isDenialEmoji } from '../../utils/emoji.js';
+import { withErrorHandling } from '../../utils/error-handler/index.js';
+import { updateLastMessage } from '../post-helpers/index.js';
+import { createLogger } from '../../utils/logger.js';
+import { createSessionLog } from '../../utils/session-log.js';
+
+const log = createLogger('context');
+const sessionLog = createSessionLog(log);
+
+// Context timeout in milliseconds (30 seconds)
+export const CONTEXT_PROMPT_TIMEOUT_MS = 30000;
+
+// Context options: last N messages
+export const CONTEXT_OPTIONS = [3, 5, 10] as const;
+
+// ---------------------------------------------------------------------------
+// Helper Functions for MessageManager Integration
+// ---------------------------------------------------------------------------
+
+/**
+ * Module-level map for storing context prompt timeouts.
+ * Keyed by sessionId since timeouts are not stored in MessageManager.
+ */
+const contextPromptTimeouts: Map<string, ReturnType<typeof setTimeout>> = new Map();
+
+/**
+ * Module-level map for storing original PlatformFiles for context prompts.
+ * MessageManager only stores simplified ContextPromptFile (id, name), but
+ * we need the full PlatformFile for buildMessageContent.
+ */
+const contextPromptFiles: Map<string, PlatformFile[]> = new Map();
+
+/**
+ * Convert PlatformFile[] to ContextPromptFile[] for storage in MessageManager.
+ * Only stores the essential fields needed for later retrieval.
+ */
+function toContextPromptFiles(files: PlatformFile[] | undefined): ContextPromptFile[] | undefined {
+  if (!files || files.length === 0) return undefined;
+  return files.map(f => ({ id: f.id, name: f.name }));
+}
+
+/**
+ * Get the pending context prompt from MessageManager.
+ * Returns null if not found or MessageManager not available.
+ */
+function getPendingContextPromptFromManager(session: Session): (ExecutorPendingContextPrompt & { timeoutId?: ReturnType<typeof setTimeout> }) | null {
+  const prompt = session.messageManager?.getPendingContextPrompt();
+  if (!prompt) return null;
+  // Note: timeoutId is managed locally (not stored in MessageManager)
+  const timeoutId = contextPromptTimeouts.get(session.sessionId);
+  return { ...prompt, timeoutId };
+}
+
+/**
+ * Set the pending context prompt in MessageManager.
+ * The timeoutId and original files are stored locally.
+ */
+function setPendingContextPromptInManager(session: Session, prompt: PendingContextPrompt): void {
+  if (session.messageManager) {
+    // Store in MessageManager (without timeoutId - that's handled locally)
+    const { timeoutId, queuedFiles, ...rest } = prompt;
+    session.messageManager.setPendingContextPrompt({
+      ...rest,
+      queuedFiles: toContextPromptFiles(queuedFiles),
+    });
+    // Store timeout locally
+    if (timeoutId) {
+      contextPromptTimeouts.set(session.sessionId, timeoutId);
+    }
+    // Store original files locally for later use
+    if (queuedFiles && queuedFiles.length > 0) {
+      contextPromptFiles.set(session.sessionId, queuedFiles);
+    }
+  }
+}
+
+/**
+ * Clear the pending context prompt from MessageManager and local storage.
+ */
+function clearPendingContextPromptInManager(session: Session): void {
+  session.messageManager?.clearPendingContextPrompt();
+  const timeoutId = contextPromptTimeouts.get(session.sessionId);
+  if (timeoutId) {
+    clearTimeout(timeoutId);
+    contextPromptTimeouts.delete(session.sessionId);
+  }
+  contextPromptFiles.delete(session.sessionId);
+}
+
+/**
+ * Get the original PlatformFiles for a session's context prompt.
+ */
+function getContextPromptFilesForSession(session: Session): PlatformFile[] | undefined {
+  return contextPromptFiles.get(session.sessionId);
+}
+
+/**
+ * Pending context prompt state
+ */
+export interface PendingContextPrompt {
+  postId: string;
+  queuedPrompt: string;       // The prompt to send after decision
+  queuedFiles?: PlatformFile[]; // Files attached to the queued prompt (for images)
+  threadMessageCount: number; // Total messages in thread before this point
+  createdAt: number;          // Timestamp for timeout tracking
+  timeoutId?: ReturnType<typeof setTimeout>; // Reference to timeout for cleanup
+  availableOptions: number[]; // The actual options shown (e.g., [3, 5, 8] for 8 messages)
+}
+
+// ---------------------------------------------------------------------------
+// Context prompt functions
+// ---------------------------------------------------------------------------
+
+/**
+ * Check if we should prompt for context.
+ * Returns the number of messages available, or 0 if we shouldn't prompt.
+ */
+export async function getThreadContextCount(
+  session: Session,
+  excludePostId?: string
+): Promise<number> {
+  try {
+    const messages = await session.platform.getThreadHistory(
+      session.threadId,
+      { excludeBotMessages: true }
+    );
+
+    // Filter out the current post if specified
+    const relevantMessages = excludePostId
+      ? messages.filter(m => m.id !== excludePostId)
+      : messages;
+
+    return relevantMessages.length;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Get the valid context options based on available message count.
+ * Only returns options that are <= messageCount.
+ */
+export function getValidContextOptions(messageCount: number): number[] {
+  return CONTEXT_OPTIONS.filter(opt => opt <= messageCount);
+}
+
+/**
+ * Post the context prompt to the user.
+ * Returns the pending context prompt state.
+ */
+export async function postContextPrompt(
+  session: Session,
+  queuedPrompt: string,
+  queuedFiles: PlatformFile[] | undefined,
+  messageCount: number,
+  registerPost: (postId: string, threadId: string) => void,
+  onTimeout: () => void
+): Promise<PendingContextPrompt> {
+  // Filter options to only those <= messageCount
+  const validOptions = getValidContextOptions(messageCount);
+
+  // Build message with only valid options
+  let optionsText = '';
+  const reactionOptions: string[] = [];
+
+  for (let i = 0; i < validOptions.length; i++) {
+    const opt = validOptions[i];
+    const emoji = ['1️⃣', '2️⃣', '3️⃣'][i];
+    optionsText += `${emoji} Last ${opt} messages\n`;
+    reactionOptions.push(NUMBER_EMOJIS[i]);
+  }
+
+  // Add "All messages" option if messageCount > largest option shown
+  // or if no options are valid (messageCount < smallest option)
+  if (validOptions.length === 0 || messageCount > validOptions[validOptions.length - 1]) {
+    const nextIndex = validOptions.length;
+    if (nextIndex < 3) {
+      const emoji = ['1️⃣', '2️⃣', '3️⃣'][nextIndex];
+      optionsText += `${emoji} All ${messageCount} messages\n`;
+      reactionOptions.push(NUMBER_EMOJIS[nextIndex]);
+    }
+  }
+
+  // Add no context option
+  optionsText += `❌ No context (default after 30s)`;
+  reactionOptions.push(DENIAL_EMOJIS[0]);
+
+  const formatter = session.platform.getFormatter();
+  const message =
+    `🧵 ${formatter.formatBold('Include thread context?')}\n` +
+    `This thread has ${messageCount} message${messageCount === 1 ? '' : 's'} before this point.\n` +
+    `React to include previous messages, or continue without context.\n\n` +
+    optionsText;
+
+  const post = await session.platform.createInteractivePost(
+    message,
+    reactionOptions,
+    session.threadId
+  );
+
+  // Register for reaction routing
+  registerPost(post.id, session.threadId);
+  // Track for jump-to-bottom links
+  updateLastMessage(session, post);
+
+  // Set up timeout
+  const timeoutId = setTimeout(onTimeout, CONTEXT_PROMPT_TIMEOUT_MS);
+
+  // Build the list of available options that were shown
+  // This includes the valid CONTEXT_OPTIONS plus potentially "all messages"
+  const availableOptions = [...validOptions];
+  if (validOptions.length === 0 || messageCount > validOptions[validOptions.length - 1]) {
+    if (validOptions.length < 3) {
+      availableOptions.push(messageCount); // "All X messages" option
+    }
+  }
+
+  return {
+    postId: post.id,
+    queuedPrompt,
+    queuedFiles,
+    threadMessageCount: messageCount,
+    createdAt: Date.now(),
+    timeoutId,
+    availableOptions,
+  };
+}
+
+/**
+ * Handle a reaction on the context prompt.
+ * Returns the number of messages to include, or null if not a valid reaction.
+ * Returns 0 for "no context" selection.
+ *
+ * @param emojiName - The emoji that was reacted with
+ * @param availableOptions - The options that were shown in the prompt
+ */
+export function getContextSelectionFromReaction(
+  emojiName: string,
+  availableOptions: number[]
+): number | null {
+  // Check for number emoji (1, 2, 3)
+  const numberIndex = getNumberEmojiIndex(emojiName);
+  if (numberIndex >= 0 && numberIndex < availableOptions.length) {
+    return availableOptions[numberIndex];
+  }
+
+  // Check for "no context" / denial emoji
+  if (isDenialEmoji(emojiName)) {
+    return 0;
+  }
+
+  // Also accept 'x' emoji as "no context"
+  if (emojiName === 'x') {
+    return 0;
+  }
+
+  return null; // Not a valid context selection reaction
+}
+
+/**
+ * Get thread messages for context.
+ */
+export async function getThreadMessagesForContext(
+  session: Session,
+  limit: number,
+  excludePostId?: string
+): Promise<ThreadMessage[]> {
+  const messages = await session.platform.getThreadHistory(
+    session.threadId,
+    { limit, excludeBotMessages: true }
+  );
+
+  // Filter out the current post if specified
+  return excludePostId
+    ? messages.filter(m => m.id !== excludePostId)
+    : messages;
+}
+
+/**
+ * Format thread messages as context for Claude.
+ * @param messages - Thread messages to include
+ * @param previousWorkSummary - Optional summary of work done before directory change
+ */
+export function formatContextForClaude(messages: ThreadMessage[], previousWorkSummary?: string): string {
+  const lines: string[] = [];
+
+  // Include previous work summary if available (from directory change)
+  if (previousWorkSummary) {
+    lines.push('[Summary of previous work (before directory change):]');
+    lines.push('');
+    lines.push(previousWorkSummary);
+    lines.push('');
+    lines.push('---');
+    lines.push('');
+  }
+
+  if (messages.length > 0) {
+    lines.push('[Previous conversation in this thread:]');
+    lines.push('');
+
+    for (const msg of messages) {
+      // Truncate very long messages
+      const content = msg.message.length > 500
+        ? msg.message.substring(0, 500) + '...'
+        : msg.message;
+      lines.push(`@${msg.username}: ${content}`);
+    }
+
+    lines.push('');
+    lines.push('---');
+    lines.push('');
+  }
+
+  if (lines.length > 0) {
+    lines.push('[Current request:]');
+  }
+
+  return lines.join('\n');
+}
+
+// ---------------------------------------------------------------------------
+// Multi-bot handoff: "missed messages" delta
+// ---------------------------------------------------------------------------
+
+/** Max number of missed messages fed to a bot on a single handoff (30–50 window). */
+export const DELTA_MSG_CAP = 40;
+/**
+ * Per-message truncation for the missed-messages block. A bot receiving a
+ * handoff must NOT silently get a truncated version of what was said — losing
+ * the tail of a real message means it acts on partial context. Set generously
+ * so realistic messages pass through whole; only genuinely huge pastes get cut.
+ * (Deliberately larger than formatContextForClaude's 500-char preview cap —
+ * that's a lightweight "here's the gist" prompt, this is the bot's actual
+ * working context.)
+ */
+export const DELTA_TRUNC = 10000;
+/**
+ * Hard total-character backstop for one delta block — a safety valve against a
+ * pathological flood (dozens of huge messages), NOT a routine truncator. Sized
+ * so a normal handoff never hits it: ~40 typical messages or a few full-length
+ * ones (~7–8k tokens worst case). Raise together with DELTA_TRUNC.
+ */
+export const DELTA_TOTAL_CHARS = 30000;
+
+/**
+ * Compute the messages a bot MISSED while it did not hold the baton — everything
+ * after its `lastSeenPostId`, excluding the triggering post (sent as the real
+ * prompt) and this bot's own posts (already in its context). Capped to the
+ * newest `cap` messages.
+ *
+ * @param history      Thread history (chronological, fetched with excludeBotMessages:false).
+ * @param lastSeenPostId  Newest post already in this bot's context; undefined or
+ *                        trimmed out of `history` → the whole (capped) window.
+ * @param ownBotUsername  This bot's username, to drop its own posts.
+ * @param triggerPostId   The @mention post being handled now (excluded).
+ */
+export function computeMissedDelta(
+  history: ThreadMessage[],
+  lastSeenPostId: string | undefined,
+  ownBotUsername: string,
+  triggerPostId?: string,
+  cap: number = DELTA_MSG_CAP
+): ThreadMessage[] {
+  let start = 0;
+  if (lastSeenPostId) {
+    const idx = history.findIndex(m => m.id === lastSeenPostId);
+    if (idx >= 0) start = idx + 1; // idx < 0 → marker scrolled out → whole window
+  }
+  const own = ownBotUsername.toLowerCase();
+  const delta = history
+    .slice(start)
+    .filter(m =>
+      m.id !== triggerPostId &&
+      m.username.toLowerCase() !== own &&
+      // Only real messages: human posts (no kind) and bots' actual answers
+      // ('content'). Drop working/tool/status/system posts so a peer gets the
+      // clean conversation, not the noise (kind comes from platform metadata).
+      (m.kind === undefined || m.kind === 'content')
+    );
+  return delta.length > cap ? delta.slice(delta.length - cap) : delta;
+}
+
+/**
+ * Format missed messages as a self-contained, attributed context block to
+ * prepend to a newly-addressed bot's prompt. Other assistants appear as
+ * `@name` like any participant. Respects DELTA_TOTAL_CHARS. Returns '' when
+ * there is nothing to inject.
+ */
+export function formatMissedMessagesForClaude(
+  messages: ThreadMessage[],
+  attachmentPaths?: Map<string, string>,
+): string {
+  if (messages.length === 0) return '';
+  const lines: string[] = [
+    '[Messages you missed while another assistant was active. Each line is '
+      + 'attributed to its author; other assistants appear as @name like any '
+      + 'participant. Attachments are given as a local file path (Read it) when '
+      + 'available, otherwise a URL. Use these only as context for the request '
+      + 'that follows:]',
+    '',
+  ];
+  let budget = DELTA_TOTAL_CHARS;
+  for (const msg of messages) {
+    let content = msg.message.length > DELTA_TRUNC
+      ? msg.message.substring(0, DELTA_TRUNC) + '…'
+      : msg.message;
+    if (content.length > budget) {
+      content = content.substring(0, Math.max(0, budget)) + '…';
+    }
+    let line = `@${msg.username}: ${content}`;
+    // Reference attachments so the bot can look at them (e.g. a screenshot a
+    // peer posted). Prefer a local path (downloaded into this session's upload
+    // dir) — an agent like opencode can Read that, but can't authenticate to a
+    // platform file URL. Fall back to the URL when no local copy is available.
+    if (msg.files && msg.files.length > 0) {
+      const rendered = msg.files.map(f => `${f.name} → ${attachmentPaths?.get(f.id) ?? f.url}`);
+      line += ` [attachments: ${rendered.join(', ')}]`;
+    }
+    budget -= line.length;
+    lines.push(line);
+    if (budget <= 0) {
+      lines.push('… (older missed messages omitted)');
+      break;
+    }
+  }
+  lines.push('', '---', '', '[Current request:]');
+  return lines.join('\n');
+}
+
+/**
+ * Update the context prompt post to show the user's selection.
+ */
+export async function updateContextPromptPost(
+  session: Session,
+  postId: string,
+  selection: number | 'timeout' | 'skip',
+  username?: string
+): Promise<void> {
+  const formatter = session.platform.getFormatter();
+  let message: string;
+
+  if (selection === 'timeout') {
+    message = '⏱️ Continuing without context (no response)';
+  } else if (selection === 'skip' || selection === 0) {
+    message = username
+      ? `✅ Continuing without context (skipped by ${formatter.formatUserMention(username)})`
+      : '✅ Continuing without context';
+  } else {
+    message = username
+      ? `✅ Including last ${selection} messages (selected by ${formatter.formatUserMention(username)})`
+      : `✅ Including last ${selection} messages`;
+  }
+
+  await withErrorHandling(
+    () => session.platform.updatePost(postId, message),
+    { action: 'Update context prompt post', session }
+  );
+}
+
+// =============================================================================
+// High-level Context Prompt Handling
+// =============================================================================
+
+/**
+ * Context for handling context prompts.
+ */
+export interface ContextPromptHandler {
+  registerPost: (postId: string, threadId: string) => void;
+  startTyping: (session: Session) => void;
+  persistSession: (session: Session) => void;
+  injectMetadataReminder: (message: string, session: Session) => string;
+  buildMessageContent: (text: string, session: Session, files?: PlatformFile[]) => Promise<BuiltMessageContent>;
+}
+
+/**
+ * Handle context prompt timeout.
+ */
+export async function handleContextPromptTimeout(
+  session: Session,
+  ctx: ContextPromptHandler
+): Promise<void> {
+  // Get pending context prompt from MessageManager
+  const pending = getPendingContextPromptFromManager(session);
+  if (!pending) return;
+
+  // Update the post to show timeout
+  await updateContextPromptPost(session, pending.postId, 'timeout');
+
+  // Get the queued prompt and files
+  let queuedPrompt = pending.queuedPrompt;
+  // Get original PlatformFiles from local storage (MessageManager only stores simplified refs)
+  const queuedFiles = getContextPromptFilesForSession(session);
+
+  // Clear pending context prompt (MessageManager and local storage)
+  clearPendingContextPromptInManager(session);
+
+  // Get any previous work summary (from directory change)
+  // Even on timeout, we should include the work summary as it's valuable context
+  const previousWorkSummary = session.previousWorkSummary;
+  // Clear it after use - it's a one-time context transfer
+  session.previousWorkSummary = undefined;
+
+  // If we have a work summary, include it even though user didn't select thread context
+  if (previousWorkSummary) {
+    const contextPrefix = formatContextForClaude([], previousWorkSummary);
+    queuedPrompt = contextPrefix + queuedPrompt;
+    sessionLog(session).debug(`🧵 Including work summary despite timeout`);
+  }
+
+  // Increment message counter
+  session.messageCount++;
+
+  // Inject metadata reminder periodically
+  const messageToSend = ctx.injectMetadataReminder(queuedPrompt, session);
+
+  // Build content with files (images)
+  const { content, skipped } = await ctx.buildMessageContent(messageToSend, session, queuedFiles);
+
+  // Send the message without context
+  if (session.claude.isRunning()) {
+    session.claude.sendMessage(content);
+    ctx.startTyping(session);
+  }
+
+  // Surface any skipped attachments to the user
+  await postSkippedFilesFeedback(session.platform, session.threadId, skipped);
+
+  // Persist updated state
+  ctx.persistSession(session);
+
+  sessionLog(session).debug(`🧵 Context prompt timed out, continuing without thread context`);
+}
+
+/**
+ * Offer context prompt after a session restart or mid-thread start.
+ * If there's thread history, posts the context prompt and queues the message.
+ * If no history, sends the message immediately.
+ * Returns true if context prompt was posted, false if message was sent directly.
+ */
+export async function offerContextPrompt(
+  session: Session,
+  queuedPrompt: string,
+  queuedFiles: PlatformFile[] | undefined,
+  ctx: ContextPromptHandler,
+  excludePostId?: string
+): Promise<boolean> {
+  // Get thread history count (exclude bot messages and the triggering message)
+  const messageCount = await getThreadContextCount(session, excludePostId);
+
+  if (messageCount === 0) {
+    // No previous messages - but check for work summary from directory change
+    const previousWorkSummary = session.previousWorkSummary;
+    // Clear it after use - it's a one-time context transfer
+    session.previousWorkSummary = undefined;
+
+    session.messageCount++;
+    let messageToSend = queuedPrompt;
+    if (previousWorkSummary) {
+      const contextPrefix = formatContextForClaude([], previousWorkSummary);
+      messageToSend = contextPrefix + queuedPrompt;
+      sessionLog(session).debug(`🧵 Including work summary (no thread messages)`);
+    }
+    messageToSend = ctx.injectMetadataReminder(messageToSend, session);
+    const { content, skipped } = await ctx.buildMessageContent(messageToSend, session, queuedFiles);
+    if (session.claude.isRunning()) {
+      session.claude.sendMessage(content);
+      ctx.startTyping(session);
+    }
+    await postSkippedFilesFeedback(session.platform, session.threadId, skipped);
+    return false;
+  }
+
+  if (messageCount === 1) {
+    // Only one message (the thread starter) - auto-include without asking
+    const messages = await getThreadMessagesForContext(session, 1, excludePostId);
+
+    // Get any previous work summary (from directory change)
+    const previousWorkSummary = session.previousWorkSummary;
+    // Clear it after use - it's a one-time context transfer
+    session.previousWorkSummary = undefined;
+
+    let messageToSend = queuedPrompt;
+    if (messages.length > 0 || previousWorkSummary) {
+      const contextPrefix = formatContextForClaude(messages, previousWorkSummary);
+      messageToSend = contextPrefix + queuedPrompt;
+    }
+
+    session.messageCount++;
+    messageToSend = ctx.injectMetadataReminder(messageToSend, session);
+    const { content, skipped } = await ctx.buildMessageContent(messageToSend, session, queuedFiles);
+    if (session.claude.isRunning()) {
+      session.claude.sendMessage(content);
+      ctx.startTyping(session);
+    }
+    await postSkippedFilesFeedback(session.platform, session.threadId, skipped);
+
+    sessionLog(session).debug(`🧵 Auto-included 1 message as context (thread starter)${previousWorkSummary ? ' + work summary' : ''}`);
+
+    return false;
+  }
+
+  // Post context prompt - files will be stored with the pending prompt
+  const pending = await postContextPrompt(
+    session,
+    queuedPrompt,
+    queuedFiles,
+    messageCount,
+    ctx.registerPost,
+    () => handleContextPromptTimeout(session, ctx)
+  );
+
+  // Store in MessageManager (timeoutId and files stored locally)
+  setPendingContextPromptInManager(session, pending);
+  ctx.persistSession(session);
+
+  sessionLog(session).debug(`🧵 Context prompt posted (${messageCount} messages available)`);
+
+  return true;
+}

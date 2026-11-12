@@ -7,7 +7,8 @@
 # AI feature toggles. All opt-in and NOT tied to ENV_DEV. Canonical names:
 # ENABLE_CLAUDE_THREADS (the claude-threads bridge), ENABLE_AI_NONTECH_MODE,
 # ENABLE_AI_SOFTDEV_MODE. The legacy DEV_ENABLE_CLAUDE_* names stay as hidden aliases.
-_ai_threads_enabled() { [ "$ENABLE_CLAUDE_THREADS" = "true" ]     || [ "$DEV_ENABLE_CLAUDE_THREADS" = "true" ]; }
+# The gamma image ships the agent chat instead of claude-threads, so the toggle has nothing to start there.
+_ai_threads_enabled() { [ "$IMAGE_GAMMA" != "1" ] && { [ "$ENABLE_CLAUDE_THREADS" = "true" ] || [ "$DEV_ENABLE_CLAUDE_THREADS" = "true" ]; }; }
 _ai_nontech_enabled() { [ "$ENABLE_AI_NONTECH_MODE" = "true" ] || [ "$DEV_ENABLE_CLAUDE_NONTECH_MODE" = "true" ]; }
 _ai_softdev_enabled() { [ "$ENABLE_AI_SOFTDEV_MODE" = "true" ] || [ "$DEV_ENABLE_CLAUDE_SOFTDEV_MODE" = "true" ]; }
 
@@ -74,6 +75,10 @@ claude_init() {
    # overwrite — that would wipe user-added permissions, hooks, plugin toggles etc.
    node /scripts/merge-settings.js
    cp /opt/claude-defaults/CLAUDE.md /home/laravel/.claude/CLAUDE.md
+   if [ -f /opt/claude-defaults/AGENTS.md ]; then
+      mkdir -p /home/laravel/.codex
+      cp /opt/claude-defaults/AGENTS.md /home/laravel/.codex/AGENTS.md
+   fi
 
    if _ai_threads_enabled; then
       _claude_append CLAUDE.threads.md
@@ -84,6 +89,13 @@ claude_init() {
 
    _ai_nontech_enabled && _claude_append CLAUDE.nontech.md
    _ai_softdev_enabled && _claude_append CLAUDE.softdev.md
+
+   # Only the gamma image serves the agent chat, so only there the agent learns how to connect the app to it.
+   if [ "$IMAGE_GAMMA" = "1" ] && [ -d /opt/claude-defaults/skills/agent-chat-integration ]; then
+      mkdir -p /home/laravel/.claude/skills
+      rm -rf /home/laravel/.claude/skills/agent-chat-integration
+      cp -r /opt/claude-defaults/skills/agent-chat-integration /home/laravel/.claude/skills/
+   fi
 
    # Layer a user-supplied persona on top, if one is mounted. Appended LAST so it takes
    # precedence over the shipped defaults — this is how an operator tailors a single

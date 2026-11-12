@@ -1,0 +1,740 @@
+import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, unlinkSync, statSync } from 'fs';
+import { join } from 'path';
+import { tmpdir } from 'os';
+import { SessionStore, PersistedSession } from './session-store.js';
+
+describe('SessionStore', () => {
+  let store: SessionStore;
+
+  // Helper to create a test session
+  function createTestSession(overrides: Partial<PersistedSession> = {}): PersistedSession {
+    return {
+      platformId: 'test-platform',
+      threadId: 'thread-123',
+      claudeSessionId: 'uuid-456',
+      startedBy: 'testuser',
+      startedAt: new Date().toISOString(),
+      lastActivityAt: new Date().toISOString(),
+      sessionNumber: 1,
+      workingDir: '/tmp/test',
+      planApproved: false,
+      sessionAllowedUsers: ['testuser'],
+      forceInteractivePermissions: false,
+      respondOnlyWhenMentioned: false,
+      sessionStartPostId: 'post-789',
+      tasksPostId: null,
+      lastTasksContent: null,
+      ...overrides,
+    };
+  }
+
+  beforeEach(() => {
+    store = new SessionStore();
+    store.clear(); // Start with clean state
+  });
+
+  afterEach(() => {
+    store.clear();
+  });
+
+  describe('save and load', () => {
+    it('saves and loads a session', () => {
+      const session = createTestSession();
+      const sessionId = `${session.platformId}:${session.threadId}`;
+
+      store.save(sessionId, session);
+      const loaded = store.load();
+
+      expect(loaded.size).toBe(1);
+      expect(loaded.get(sessionId)).toEqual(session);
+    });
+
+    it('loads a pre-#402 record that lacks respondOnlyWhenMentioned (backward compat)', () => {
+      // Simulate an old sessions.json written before the field existed: the
+      // key is simply absent. The store must load it without crashing; resume
+      // (lifecycle.ts) then defaults the in-memory flag to false via `?? false`.
+      const session = createTestSession();
+      delete (session as Partial<PersistedSession>).respondOnlyWhenMentioned;
+      const sessionId = `${session.platformId}:${session.threadId}`;
+
+      store.save(sessionId, session);
+      const loaded = store.load().get(sessionId);
+
+      expect(loaded).toBeDefined();
+      expect(loaded?.respondOnlyWhenMentioned).toBeUndefined();
+    });
+
+    it('saves multiple sessions', () => {
+      const session1 = createTestSession({ threadId: 'thread-1' });
+      const session2 = createTestSession({ threadId: 'thread-2' });
+
+      store.save('test-platform:thread-1', session1);
+      store.save('test-platform:thread-2', session2);
+
+      const loaded = store.load();
+      expect(loaded.size).toBe(2);
+    });
+  });
+
+  describe('remove', () => {
+    it('removes a session', () => {
+      const session = createTestSession();
+      const sessionId = `${session.platformId}:${session.threadId}`;
+
+      store.save(sessionId, session);
+      expect(store.load().size).toBe(1);
+
+      store.remove(sessionId);
+      expect(store.load().size).toBe(0);
+    });
+  });
+
+  describe('findByThread', () => {
+    it('finds a session by platform and thread ID', () => {
+      const session = createTestSession({
+        platformId: 'mattermost-main',
+        threadId: 'thread-abc',
+      });
+      store.save('mattermost-main:thread-abc', session);
+
+      const found = store.findByThread('mattermost-main', 'thread-abc');
+      expect(found).toEqual(session);
+    });
+
+    it('returns undefined for non-existent session', () => {
+      const found = store.findByThread('nonexistent', 'thread-xyz');
+      expect(found).toBeUndefined();
+    });
+
+    it('does not find session from different platform', () => {
+      const session = createTestSession({
+        platformId: 'mattermost-main',
+        threadId: 'thread-abc',
+      });
+      store.save('mattermost-main:thread-abc', session);
+
+      const found = store.findByThread('slack-main', 'thread-abc');
+      expect(found).toBeUndefined();
+    });
+  });
+
+  describe('findByPostId', () => {
+    it('finds a session by lifecyclePostId', () => {
+      const session = createTestSession({
+        platformId: 'mattermost-main',
+        threadId: 'thread-abc',
+        lifecyclePostId: 'timeout-post-123',
+      });
+      store.save('mattermost-main:thread-abc', session);
+
+      const found = store.findByPostId('mattermost-main', 'timeout-post-123');
+      expect(found).toEqual(session);
+    });
+
+    it('finds a session by sessionStartPostId', () => {
+      const session = createTestSession({
+        platformId: 'mattermost-main',
+        threadId: 'thread-abc',
+        sessionStartPostId: 'start-post-456',
+      });
+      store.save('mattermost-main:thread-abc', session);
+
+      const found = store.findByPostId('mattermost-main', 'start-post-456');
+      expect(found).toEqual(session);
+    });
+
+    it('returns undefined for non-existent post ID', () => {
+      const session = createTestSession({
+        platformId: 'mattermost-main',
+        threadId: 'thread-abc',
+        lifecyclePostId: 'timeout-post-123',
+      });
+      store.save('mattermost-main:thread-abc', session);
+
+      const found = store.findByPostId('mattermost-main', 'other-post-789');
+      expect(found).toBeUndefined();
+    });
+
+    it('does not find session from different platform', () => {
+      const session = createTestSession({
+        platformId: 'mattermost-main',
+        threadId: 'thread-abc',
+        lifecyclePostId: 'timeout-post-123',
+      });
+      store.save('mattermost-main:thread-abc', session);
+
+      const found = store.findByPostId('slack-main', 'timeout-post-123');
+      expect(found).toBeUndefined();
+    });
+
+    it('finds session when both lifecyclePostId and sessionStartPostId are set', () => {
+      const session = createTestSession({
+        platformId: 'mattermost-main',
+        threadId: 'thread-abc',
+        sessionStartPostId: 'start-post-456',
+        lifecyclePostId: 'timeout-post-123',
+      });
+      store.save('mattermost-main:thread-abc', session);
+
+      // Should find by either
+      expect(store.findByPostId('mattermost-main', 'timeout-post-123')).toEqual(session);
+      expect(store.findByPostId('mattermost-main', 'start-post-456')).toEqual(session);
+    });
+  });
+
+  describe('findByThreadIdAnyState', () => {
+    it('finds an active (not soft-deleted) session by threadId', () => {
+      const session = createTestSession({
+        platformId: 'mattermost-main',
+        threadId: 'thread-xyz',
+      });
+      store.save('mattermost-main:thread-xyz', session);
+
+      const found = store.findByThreadIdAnyState('thread-xyz');
+      expect(found).toEqual(session);
+    });
+
+    it('scopes by platformId — multi-bot threads persist one session per bot', () => {
+      // Regression: two bots share one thread; the unscoped lookup returned
+      // whichever came first, so bot B resumed/cancelled bot A's session and
+      // bot A's message got delivered into bot B's model.
+      const tarek = createTestSession({ platformId: 'mattermost', threadId: 'thread-xyz' });
+      const dave = createTestSession({ platformId: 'mattermost-2', threadId: 'thread-xyz' });
+      store.save('mattermost:thread-xyz', tarek);
+      store.save('mattermost-2:thread-xyz', dave);
+
+      expect(store.findByThreadIdAnyState('thread-xyz', 'mattermost')?.platformId).toBe('mattermost');
+      expect(store.findByThreadIdAnyState('thread-xyz', 'mattermost-2')?.platformId).toBe('mattermost-2');
+      expect(store.findByThreadIdAnyState('thread-xyz', 'slack-x')).toBeUndefined();
+      // Unscoped stays permissive (single-bot callers).
+      expect(store.findByThreadIdAnyState('thread-xyz')).toBeDefined();
+    });
+
+    it('still finds a session after softDelete (unlike load())', () => {
+      // Regression: the plain-reply resume path (message-handler.ts:198) must
+      // see soft-deleted paused sessions so the user can continue them when
+      // cleanStale() at bot startup has tagged them stale. Matches the 🔄
+      // reaction resume path (which uses findByPostId on raw data).
+      const session = createTestSession({
+        platformId: 'mattermost-main',
+        threadId: 'thread-xyz',
+        isPaused: true,
+      });
+      const sessionId = 'mattermost-main:thread-xyz';
+      store.save(sessionId, session);
+      store.softDelete(sessionId);
+
+      // load() hides it — that's by design for auto-resume on startup.
+      expect(store.load().size).toBe(0);
+      // But our lookup still resolves it so a user reply can resume.
+      const found = store.findByThreadIdAnyState('thread-xyz');
+      expect(found).toBeDefined();
+      expect(found?.threadId).toBe('thread-xyz');
+      expect(found?.cleanedAt).toBeDefined();
+    });
+
+    it('returns undefined for unknown threadId', () => {
+      const session = createTestSession({ threadId: 'thread-a' });
+      store.save(`${session.platformId}:${session.threadId}`, session);
+      expect(store.findByThreadIdAnyState('thread-b')).toBeUndefined();
+    });
+
+    it('searches across platforms (returns first match)', () => {
+      const mm = createTestSession({ platformId: 'mattermost-main', threadId: 'shared-id' });
+      store.save('mattermost-main:shared-id', mm);
+      const found = store.findByThreadIdAnyState('shared-id');
+      expect(found?.platformId).toBe('mattermost-main');
+    });
+  });
+
+  describe('softDelete', () => {
+    it('marks a session as cleaned but keeps it', () => {
+      const session = createTestSession();
+      const sessionId = `${session.platformId}:${session.threadId}`;
+
+      store.save(sessionId, session);
+      expect(store.load().size).toBe(1);
+
+      store.softDelete(sessionId);
+
+      // Should not appear in load() (active sessions)
+      expect(store.load().size).toBe(0);
+
+      // But should appear in getHistory()
+      const history = store.getHistory('test-platform');
+      expect(history.length).toBe(1);
+      expect(history[0].cleanedAt).toBeDefined();
+    });
+  });
+
+  describe('cleanStale', () => {
+    it('soft-deletes sessions older than maxAgeMs', () => {
+      const oldSession = createTestSession({
+        threadId: 'old-thread',
+        lastActivityAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+      });
+      const newSession = createTestSession({
+        threadId: 'new-thread',
+        lastActivityAt: new Date().toISOString(),
+      });
+
+      store.save('test-platform:old-thread', oldSession);
+      store.save('test-platform:new-thread', newSession);
+
+      const staleIds = store.cleanStale(60 * 60 * 1000); // 1 hour
+
+      expect(staleIds).toContain('test-platform:old-thread');
+      expect(staleIds).not.toContain('test-platform:new-thread');
+
+      // Only new session should be in active sessions
+      expect(store.load().size).toBe(1);
+
+      // Old session should be in history
+      const history = store.getHistory('test-platform');
+      expect(history.length).toBe(1);
+      expect(history[0].threadId).toBe('old-thread');
+    });
+
+    it('skips already soft-deleted sessions', () => {
+      const session = createTestSession({
+        threadId: 'old-thread',
+        lastActivityAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+      });
+
+      store.save('test-platform:old-thread', session);
+      store.softDelete('test-platform:old-thread');
+
+      // Should not soft-delete again
+      const staleIds = store.cleanStale(60 * 60 * 1000);
+      expect(staleIds.length).toBe(0);
+    });
+  });
+
+  describe('getHistory', () => {
+    it('returns soft-deleted sessions for a platform', () => {
+      const session1 = createTestSession({ threadId: 'thread-1' });
+      const session2 = createTestSession({ threadId: 'thread-2' });
+
+      store.save('test-platform:thread-1', session1);
+      store.save('test-platform:thread-2', session2);
+
+      store.softDelete('test-platform:thread-1');
+
+      const history = store.getHistory('test-platform');
+      expect(history.length).toBe(1);
+      expect(history[0].threadId).toBe('thread-1');
+    });
+
+    it('sorts by cleanedAt descending (most recent first)', async () => {
+      const session1 = createTestSession({ threadId: 'thread-1' });
+      const session2 = createTestSession({ threadId: 'thread-2' });
+
+      store.save('test-platform:thread-1', session1);
+      store.save('test-platform:thread-2', session2);
+
+      store.softDelete('test-platform:thread-1');
+      // Small delay to ensure different cleanedAt timestamps
+      await new Promise(resolve => setTimeout(resolve, 10));
+      store.softDelete('test-platform:thread-2');
+
+      const history = store.getHistory('test-platform');
+      expect(history.length).toBe(2);
+      expect(history[0].threadId).toBe('thread-2'); // Most recently cleaned
+      expect(history[1].threadId).toBe('thread-1');
+    });
+
+    it('only returns sessions for the specified platform', () => {
+      const session1 = createTestSession({ platformId: 'platform-a', threadId: 'thread-1' });
+      const session2 = createTestSession({ platformId: 'platform-b', threadId: 'thread-2' });
+
+      store.save('platform-a:thread-1', session1);
+      store.save('platform-b:thread-2', session2);
+
+      store.softDelete('platform-a:thread-1');
+      store.softDelete('platform-b:thread-2');
+
+      const historyA = store.getHistory('platform-a');
+      expect(historyA.length).toBe(1);
+      expect(historyA[0].threadId).toBe('thread-1');
+
+      const historyB = store.getHistory('platform-b');
+      expect(historyB.length).toBe(1);
+      expect(historyB[0].threadId).toBe('thread-2');
+    });
+
+    it('includes timed-out sessions (with lifecyclePostId but no cleanedAt)', () => {
+      const timedOutSession = createTestSession({
+        threadId: 'timed-out-thread',
+        lifecyclePostId: 'timeout-post-123',
+        // No cleanedAt - session timed out but wasn't soft-deleted
+      });
+
+      store.save('test-platform:timed-out-thread', timedOutSession);
+
+      // Should appear in history when activeSessions excludes it
+      const history = store.getHistory('test-platform', new Set());
+      expect(history.length).toBe(1);
+      expect(history[0].threadId).toBe('timed-out-thread');
+      expect(history[0].lifecyclePostId).toBe('timeout-post-123');
+    });
+
+    it('excludes timed-out sessions that are currently active', () => {
+      const timedOutSession = createTestSession({
+        threadId: 'timed-out-thread',
+        lifecyclePostId: 'timeout-post-123',
+      });
+
+      store.save('test-platform:timed-out-thread', timedOutSession);
+
+      // Should NOT appear if the session is active
+      const activeSessions = new Set(['test-platform:timed-out-thread']);
+      const history = store.getHistory('test-platform', activeSessions);
+      expect(history.length).toBe(0);
+    });
+
+    it('does not include timed-out sessions if activeSessions param is not provided', () => {
+      const timedOutSession = createTestSession({
+        threadId: 'timed-out-thread',
+        lifecyclePostId: 'timeout-post-123',
+      });
+
+      store.save('test-platform:timed-out-thread', timedOutSession);
+
+      // Without activeSessions param, timed-out sessions should NOT appear
+      // (backward compatibility - only soft-deleted sessions)
+      const history = store.getHistory('test-platform');
+      expect(history.length).toBe(0);
+    });
+
+    it('sorts timed-out and completed sessions together by most recent activity', async () => {
+      // Completed session (with cleanedAt)
+      const completedSession = createTestSession({
+        threadId: 'completed-thread',
+        lastActivityAt: new Date(Date.now() - 5000).toISOString(), // 5 seconds ago
+      });
+      store.save('test-platform:completed-thread', completedSession);
+      store.softDelete('test-platform:completed-thread');
+
+      // Small delay
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // Timed-out session (more recent)
+      const timedOutSession = createTestSession({
+        threadId: 'timed-out-thread',
+        lifecyclePostId: 'timeout-post-123',
+        lastActivityAt: new Date().toISOString(), // now
+      });
+      store.save('test-platform:timed-out-thread', timedOutSession);
+
+      const history = store.getHistory('test-platform', new Set());
+      expect(history.length).toBe(2);
+      // Timed-out session should be first (more recent lastActivityAt)
+      expect(history[0].threadId).toBe('timed-out-thread');
+      expect(history[1].threadId).toBe('completed-thread');
+    });
+  });
+
+  describe('cleanHistory', () => {
+    it('permanently removes soft-deleted sessions older than retention period', () => {
+      const oldTime = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(); // 4 days ago
+      const session = createTestSession({
+        threadId: 'old-thread',
+        cleanedAt: oldTime,
+      });
+
+      store.save('test-platform:old-thread', session);
+
+      // Clean history with 3-day retention
+      const removedCount = store.cleanHistory(3 * 24 * 60 * 60 * 1000);
+
+      expect(removedCount).toBe(1);
+      expect(store.getHistory('test-platform').length).toBe(0);
+    });
+
+    it('keeps recent soft-deleted sessions', () => {
+      const recentTime = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(); // 1 day ago
+      const session = createTestSession({
+        threadId: 'recent-thread',
+        cleanedAt: recentTime,
+      });
+
+      store.save('test-platform:recent-thread', session);
+
+      // Clean history with 3-day retention
+      const removedCount = store.cleanHistory(3 * 24 * 60 * 60 * 1000);
+
+      expect(removedCount).toBe(0);
+      expect(store.getHistory('test-platform').length).toBe(1);
+    });
+
+    it('does not affect active sessions', () => {
+      const session = createTestSession({ threadId: 'active-thread' });
+
+      store.save('test-platform:active-thread', session);
+
+      // Clean history
+      const removedCount = store.cleanHistory(0); // Would remove everything if it was in history
+
+      expect(removedCount).toBe(0);
+      expect(store.load().size).toBe(1);
+    });
+  });
+
+  describe('clear', () => {
+    it('removes all sessions', () => {
+      store.save('test-platform:thread-1', createTestSession({ threadId: 'thread-1' }));
+      store.save('test-platform:thread-2', createTestSession({ threadId: 'thread-2' }));
+
+      expect(store.load().size).toBe(2);
+
+      store.clear();
+
+      expect(store.load().size).toBe(0);
+    });
+  });
+
+  describe('malformed sessions file (#258)', () => {
+    let tempDir: string;
+    let tempFile: string;
+    let tempStore: SessionStore;
+
+    beforeEach(() => {
+      tempDir = join(tmpdir(), `session-store-test-${Date.now()}`);
+      mkdirSync(tempDir, { recursive: true });
+      tempFile = join(tempDir, 'sessions.json');
+    });
+
+    afterEach(() => {
+      if (existsSync(tempFile)) {
+        unlinkSync(tempFile);
+      }
+    });
+
+    it('load() handles {} file content gracefully', () => {
+      writeFileSync(tempFile, '{}');
+      tempStore = new SessionStore(tempFile);
+
+      const sessions = tempStore.load();
+      expect(sessions.size).toBe(0);
+    });
+
+    it('cleanStale() does not crash with empty/malformed sessions file', () => {
+      writeFileSync(tempFile, '{}');
+      tempStore = new SessionStore(tempFile);
+
+      // Should not throw
+      const staleIds = tempStore.cleanStale(60 * 60 * 1000);
+      expect(staleIds).toEqual([]);
+    });
+
+    it('cleanHistory() does not crash with empty/malformed sessions file', () => {
+      writeFileSync(tempFile, '{}');
+      tempStore = new SessionStore(tempFile);
+
+      const removedCount = tempStore.cleanHistory();
+      expect(removedCount).toBe(0);
+    });
+
+    it('getHistory() does not crash with empty/malformed sessions file', () => {
+      writeFileSync(tempFile, '{}');
+      tempStore = new SessionStore(tempFile);
+
+      const history = tempStore.getHistory('test-platform');
+      expect(history).toEqual([]);
+    });
+
+    it('handles file with sessions set to null', () => {
+      writeFileSync(tempFile, '{"version": 2, "sessions": null}');
+      tempStore = new SessionStore(tempFile);
+
+      const sessions = tempStore.load();
+      expect(sessions.size).toBe(0);
+    });
+
+    it('handles file with missing version', () => {
+      writeFileSync(tempFile, '{"sessions": {}}');
+      tempStore = new SessionStore(tempFile);
+
+      // Should not crash - version gets set to current
+      const sessions = tempStore.load();
+      expect(sessions.size).toBe(0);
+    });
+
+    it('load() handles correct version but missing sessions field', () => {
+      writeFileSync(tempFile, '{"version": 2}');
+      tempStore = new SessionStore(tempFile);
+
+      const sessions = tempStore.load();
+      expect(sessions.size).toBe(0);
+    });
+
+    it('save() -> load() round-trip recovers after file corruption', () => {
+      // Start with a corrupted/empty file
+      writeFileSync(tempFile, '{}');
+      tempStore = new SessionStore(tempFile);
+
+      // Save a session on top of the corrupted file
+      const session = createTestSession({ threadId: 'recovered-thread' });
+      tempStore.save('test-platform:recovered-thread', session);
+
+      // Load should recover the saved session
+      const loaded = tempStore.load();
+      expect(loaded.size).toBe(1);
+      expect(loaded.get('test-platform:recovered-thread')).toEqual(session);
+    });
+
+    it('a degraded read refuses the next write instead of wiping all sessions', () => {
+      tempStore = new SessionStore(tempFile);
+      const session = createTestSession();
+      tempStore.save(`${session.platformId}:${session.threadId}`, session);
+
+      writeFileSync(tempFile, '{not json');
+      const another = createTestSession({ threadId: 'thread-other' });
+      tempStore.save(`${another.platformId}:${another.threadId}`, another);
+      expect(readFileSync(tempFile, 'utf-8')).toBe('{not json');
+
+      writeFileSync(tempFile, JSON.stringify({ version: 1, sessions: {} }));
+      tempStore.save(`${another.platformId}:${another.threadId}`, another);
+      expect(tempStore.load().size).toBe(1);
+    });
+
+    it('an empty file is a writable empty store, not a degraded read', () => {
+      writeFileSync(tempFile, '');
+      tempStore = new SessionStore(tempFile);
+      expect(tempStore.load().size).toBe(0);
+
+      const session = createTestSession();
+      tempStore.save(`${session.platformId}:${session.threadId}`, session);
+      expect(tempStore.load().size).toBe(1);
+
+      writeFileSync(tempFile, '  \n\t\n');
+      expect(tempStore.load().size).toBe(0);
+      tempStore.save(`${session.platformId}:${session.threadId}`, session);
+      expect(tempStore.load().size).toBe(1);
+    });
+
+    it('findByThread() returns undefined with malformed file', () => {
+      writeFileSync(tempFile, '{}');
+      tempStore = new SessionStore(tempFile);
+
+      const found = tempStore.findByThread('test-platform', 'thread-123');
+      expect(found).toBeUndefined();
+    });
+
+    it('findByPostId() returns undefined with malformed file', () => {
+      writeFileSync(tempFile, '{}');
+      tempStore = new SessionStore(tempFile);
+
+      const found = tempStore.findByPostId('test-platform', 'post-123');
+      expect(found).toBeUndefined();
+    });
+  });
+
+  // ===========================================================================
+  // File permissions — sessions.json contains session metadata (threads,
+  // post ids, working dirs, optional allow-lists). Not literal secrets, but
+  // owner-only mode is the documented expectation (CLAUDE.md "Data Retention
+  // & Security"). The write path uses the atomic temp-file → rename pattern
+  // with `{ mode: 0o600 }` on write, then a defensive chmod after rename.
+  // ===========================================================================
+  describe('file permissions', () => {
+    it('writes sessions.json with mode 0600 (owner rw only)', () => {
+      // Unix-only: mode bits are meaningful. On Windows, fs mode is emulated
+      // and this assertion would be noise.
+      if (process.platform === 'win32') return;
+
+      const tempFile = join(tmpdir(), `session-store-perms-${Date.now()}.json`);
+      const tempStore = new SessionStore(tempFile);
+      try {
+        const session: PersistedSession = {
+          platformId: 'test-platform',
+          threadId: 'thread-perm',
+          claudeSessionId: 'uuid-perm',
+          startedBy: 'testuser',
+          startedAt: new Date().toISOString(),
+          lastActivityAt: new Date().toISOString(),
+          sessionNumber: 1,
+          workingDir: '/tmp',
+          planApproved: false,
+          sessionAllowedUsers: ['testuser'],
+          forceInteractivePermissions: false,
+          respondOnlyWhenMentioned: false,
+          sessionStartPostId: 'post-1',
+          tasksPostId: null,
+          lastTasksContent: null,
+        };
+        tempStore.save('test-platform:thread-perm', session);
+
+        const mode = statSync(tempFile).mode & 0o777;
+        expect(mode).toBe(0o600);
+      } finally {
+        if (existsSync(tempFile)) unlinkSync(tempFile);
+      }
+    });
+  });
+
+  describe('threadCoordination (multi-bot baton)', () => {
+    let tempFile: string;
+    let tempStore: SessionStore;
+
+    beforeEach(() => {
+      tempFile = join(tmpdir(), `session-store-coord-${Date.now()}-${Math.floor(performance.now())}.json`);
+      tempStore = new SessionStore(tempFile);
+    });
+
+    afterEach(() => {
+      if (existsSync(tempFile)) unlinkSync(tempFile);
+    });
+
+    it('defaults to an empty map when no coordination is persisted', () => {
+      expect(tempStore.getThreadCoordination().size).toBe(0);
+    });
+
+    it('round-trips baton state through save/load', () => {
+      tempStore.saveThreadCoordination('thread-1', {
+        mainBot: 'bot-a',
+        batonHolder: 'bot-b',
+        participants: ['bot-a', 'bot-b'],
+        updatedAt: 12345,
+      });
+
+      // Fresh store instance reads from disk (survives "restart").
+      const reloaded = new SessionStore(tempFile);
+      const coord = reloaded.getThreadCoordination().get('thread-1');
+      expect(coord).toEqual({
+        mainBot: 'bot-a',
+        batonHolder: 'bot-b',
+        participants: ['bot-a', 'bot-b'],
+        updatedAt: 12345,
+      });
+    });
+
+    it('removeThreadCoordination deletes one thread entry', () => {
+      tempStore.saveThreadCoordination('thread-1', { mainBot: 'a', batonHolder: 'a', participants: ['a'], updatedAt: 1 });
+      tempStore.saveThreadCoordination('thread-2', { mainBot: 'b', batonHolder: 'b', participants: ['b'], updatedAt: 2 });
+      tempStore.removeThreadCoordination('thread-1');
+      const all = tempStore.getThreadCoordination();
+      expect(all.has('thread-1')).toBe(false);
+      expect(all.has('thread-2')).toBe(true);
+    });
+
+    it('clear() preserves baton coordination (like sticky post ids)', () => {
+      tempStore.saveThreadCoordination('thread-1', { mainBot: 'a', batonHolder: 'a', participants: ['a'], updatedAt: 1 });
+      tempStore.save('p:thread-1', createTestSession({ platformId: 'p', threadId: 'thread-1' }));
+      tempStore.clear();
+      expect(tempStore.load().size).toBe(0);
+      expect(tempStore.getThreadCoordination().has('thread-1')).toBe(true);
+    });
+
+    it('old sessions.json without the key loads with baton defaults (backward compat)', () => {
+      writeFileSync(tempFile, JSON.stringify({ version: 2, sessions: {} }));
+      const legacy = new SessionStore(tempFile);
+      expect(legacy.getThreadCoordination().size).toBe(0);
+      // And it can adopt coordination going forward.
+      legacy.saveThreadCoordination('t', { mainBot: 'a', batonHolder: 'a', participants: ['a'], updatedAt: 1 });
+      expect(legacy.getThreadCoordination().get('t')?.batonHolder).toBe('a');
+    });
+  });
+
+});

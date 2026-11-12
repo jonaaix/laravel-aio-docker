@@ -76,6 +76,14 @@ supervisor_add_claude_threads_if_enabled() {
    _supervisor_append "claude-threads.conf"
 }
 
+# Agent chat — only in fpm-claude-gamma (IMAGE_GAMMA=1), opt-in via ENABLE_AGENT_CHAT.
+supervisor_add_agent_chat_if_enabled() {
+   [ "$IMAGE_GAMMA" = "1" ] || return 0
+   [ "$ENABLE_AGENT_CHAT" = "true" ] || return 0
+   log_step "Adding agent chat..."
+   _supervisor_append "agent-chat.conf"
+}
+
 supervisor_add_vite_dev_if_enabled() {
    if [ "$DEV_NPM_RUN_DEV" != "true" ] || [ "$ENV_DEV" != "true" ]; then
       return 0

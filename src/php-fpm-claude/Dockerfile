@@ -194,6 +194,11 @@ RUN printf '%s\n' \
     > /usr/local/share/container-bin/ll \
  && chmod +x /usr/local/share/container-bin/ll
 
+# Agents reach for the Playwright CLI by habit; in here it cannot start a browser, so these names point them to the MCP tools.
+COPY ./src/shared/container-bin/playwright-guard /usr/local/share/container-bin/playwright-cli
+RUN chmod +x /usr/local/share/container-bin/playwright-cli \
+ && ln -sf playwright-cli /usr/local/share/container-bin/playwright
+
 # Prepare environment for Claude
 ENV HOME=/home/laravel
 ENV SHELL=/bin/bash
@@ -222,19 +227,18 @@ RUN echo "npm-global cache key: ${CACHEBUST_NPM_GLOBAL}" \
  && npm install -g @playwright/mcp@latest @upstash/context7-mcp@latest @openai/codex@latest \
  && if [ -z "$CLAUDE_THREADS_BETA" ]; then npm install -g claude-threads@latest; fi
 
-# BETA variant (CLAUDE_THREADS_BETA=1): build claude-threads from the feature branch
-# (jonaaix/claude-threads @ feature/opencode-support) with bun into a self-contained node
-# bundle, link it globally via npm, and add the opencode CLI the branch integrates with.
-# The package version is pinned to 999.0.0 before building, so claude-threads' own
-# auto-updater always sees the npm release as older and never replaces this branch build
-# with `npm i -g` — no user-config changes needed, and switching back to the plain
-# fpm-claude image cleanly leaves the beta. Busts on CACHEBUST_NPM_GLOBAL so every build
-# re-pulls the branch. No-op for the official fpm-claude image.
+# BETA variant (CLAUDE_THREADS_BETA=1): build claude-threads from the in-repo fork
+# (src/claude-threads) with bun into a self-contained node bundle, link it globally via npm,
+# and add the opencode CLI the fork integrates with. The package version is pinned to
+# 999.0.0 before building, so claude-threads' own auto-updater always sees the npm release
+# as older and never replaces this build with `npm i -g` — no user-config changes needed,
+# and switching back to the plain fpm-claude image cleanly leaves the beta. Busts on
+# CACHEBUST_NPM_GLOBAL so every build refreshes opencode. The source is copied for both
+# variants (Docker has no conditional COPY); the official fpm-claude image never builds it.
+COPY --chown=laravel:laravel ./src/claude-threads /tmp/claude-threads-src
 RUN if [ -n "$CLAUDE_THREADS_BETA" ]; then \
       echo "claude-threads beta cache key: ${CACHEBUST_NPM_GLOBAL}" \
    && curl -fsSL https://bun.sh/install | bash \
-   && git clone --depth 1 -b feature/opencode-support \
-        https://github.com/jonaaix/claude-threads.git /tmp/claude-threads-src \
    && cd /tmp/claude-threads-src \
    && node -e "const f='package.json',fs=require('fs');const p=JSON.parse(fs.readFileSync(f));p.version='999.0.0';fs.writeFileSync(f,JSON.stringify(p,null,2))" \
    && export PATH="$HOME/.bun/bin:$PATH" HUSKY=0 \
@@ -243,8 +247,9 @@ RUN if [ -n "$CLAUDE_THREADS_BETA" ]; then \
    && npm pack --ignore-scripts \
    && npm install -g --ignore-scripts /tmp/claude-threads-src/claude-threads-*.tgz \
    && npm install -g opencode-ai@latest \
-   && cd / && rm -rf /tmp/claude-threads-src; \
-    fi
+   && cd /; \
+    fi; \
+    rm -rf /tmp/claude-threads-src
 
 # Marks this as the beta build (empty for the official fpm-claude image). The entrypoint
 # banner reads it to print "LARAVEL AIO BETA".

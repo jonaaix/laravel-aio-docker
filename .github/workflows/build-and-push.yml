@@ -27,6 +27,10 @@ on:
                 description: 'Build FPM Claude Beta (claude-threads from feature branch)'
                 type: boolean
                 default: true
+            build_fpm_claude_gamma:
+                description: 'Build FPM Claude Gamma (beta with the agent chat)'
+                type: boolean
+                default: true
             build_frankenphp:
                 description: 'Build FrankenPHP'
                 type: boolean
@@ -103,6 +107,10 @@ jobs:
 
                     if [[ "${{ inputs.build_fpm_claude_beta }}" == "true" ]]; then
                         variants+=("fpm-claude-beta")
+                    fi
+
+                    if [[ "${{ inputs.build_fpm_claude_gamma }}" == "true" ]]; then
+                        variants+=("fpm-claude-gamma")
                     fi
 
                     # Convert bash array to JSON using jq for safety

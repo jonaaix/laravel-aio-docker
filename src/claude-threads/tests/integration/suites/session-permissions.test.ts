@@ -1,0 +1,226 @@
+/**
+ * Session Permissions Integration Tests
+ *
+ * Tests the tool_use flow display when Claude performs actions.
+ *
+ * NOTE: Full permission approval/denial testing requires the real MCP permission server,
+ * which doesn't work with the mock CLI. These tests verify that tool_use events are
+ * properly displayed to users, but don't test the actual approval/denial flow.
+ * The approval/denial flow is tested in unit tests for the MCP permission server.
+ *
+ * Parameterized to run against both Mattermost and Slack platforms.
+ */
+
+import { describe, it, expect, beforeAll, afterAll, afterEach } from 'bun:test';
+import { loadConfig } from '../setup/config.js';
+import {
+  initIsolatedTestContext,
+  initAdminApi,
+  startSession,
+  waitForBotResponse,
+  waitForSessionEnded,
+  getThreadPosts,
+  getPlatformBotOptions,
+  type TestSessionContext,
+} from '../helpers/session-helpers.js';
+import { startTestBot, type TestBot } from '../helpers/bot-starter.js';
+import { type PlatformType, MattermostTestApi } from '../fixtures/platform-test-api.js';
+
+// Skip if not running integration tests
+const SKIP = !process.env.INTEGRATION_TEST;
+
+// Determine which platforms to test based on environment
+const TEST_PLATFORMS = (process.env.TEST_PLATFORMS || 'mattermost').split(',') as PlatformType[];
+
+describe.skipIf(SKIP)('Session Permissions', () => {
+  describe.each(TEST_PLATFORMS)('%s platform', (platformType) => {
+    let config: ReturnType<typeof loadConfig>;
+    let ctx: TestSessionContext;
+    let adminApi: MattermostTestApi | null = null;
+    let cleanupContext: () => Promise<void> = async () => {};
+    let bot: TestBot;
+    const testThreadIds: string[] = [];
+
+    beforeAll(async () => {
+      config = loadConfig();
+      // Isolated channel per suite so concurrent suites don't cross-talk
+      // (sticky storms / thread write races) in the shared config channel.
+      ({ ctx, cleanup: cleanupContext } = await initIsolatedTestContext(platformType));
+
+      // Admin API only available for Mattermost
+      if (platformType === 'mattermost') {
+        adminApi = initAdminApi();
+      }
+    });
+
+    afterAll(async () => {
+      if (bot) {
+        await bot.stop();
+      }
+
+      // Clean up test threads (Mattermost only with admin API)
+      if (adminApi) {
+        for (const threadId of testThreadIds) {
+          try {
+            await adminApi.deletePost(threadId);
+          } catch {
+            // Ignore cleanup errors
+          }
+        }
+      }
+
+      // Remove the isolated channel.
+      await cleanupContext();
+    });
+
+    afterEach(async () => {
+      if (bot) {
+        await bot.stop();
+      }
+      await new Promise((r) => setTimeout(r, 200));
+    });
+
+    // The permission-request mock scenario takes ~750ms of internal mock delay,
+    // then ~4 sequential bot posts, each subject to Mattermost's 500-retry
+    // budget (up to 3.5s per recovered post). Saw a 60s timeout in CI; 90s
+    // gives more breathing room while staying well under the 120s test cap.
+    // Local stays at 30s.
+    const responseTimeout = process.env.CI ? 90000 : 30000;
+
+    // Get the bot username based on platform
+    const getBotUsername = () => {
+      if (platformType === 'mattermost') {
+        return bot?.botUsername ?? (bot?.botUsername ?? config.mattermost.bot.username);
+      }
+      // Slack uses a different format
+      return config.slack?.botUsername || 'claude-test-bot';
+    };
+
+    describe('Tool Use Display', () => {
+      it('should display tool_use information when Claude uses a tool', async () => {
+        // Start bot - skipPermissions allows tool execution without prompts
+        bot = await startTestBot(getPlatformBotOptions(platformType, {
+          scenario: 'permission-request',
+          skipPermissions: true,
+          debug: process.env.DEBUG === '1',
+        }, ctx));
+
+        const rootPost = await startSession(ctx, 'Write a file for me', getBotUsername());
+        testThreadIds.push(rootPost.id);
+
+        // Wait for bot to respond with tool_use content
+        // The mock scenario emits: assistant (with tool_use) -> tool_result -> assistant (done) -> result
+        // Wait for the completion message to appear (not just a post count)
+        // The mock scenario posts: header, tool_use content, then "Done! I've written..."
+        // With CI POST /posts retries, posts can be delayed, so wait for actual content.
+        await waitForBotResponse(ctx, rootPost.id, {
+          timeout: responseTimeout,
+          pattern: /Done|written/i,
+        });
+
+        // Wait for session to end (result event)
+        await waitForSessionEnded(bot.sessionManager, rootPost.id, { timeout: 10000 });
+
+        const allPosts = await getThreadPosts(ctx, rootPost.id);
+        const botPosts = allPosts.filter((p) => ctx.botUserIds.includes(p.userId));
+
+        // Verify we have meaningful responses
+        expect(botPosts.length).toBeGreaterThanOrEqual(2);
+
+        // Check that tool use was displayed (Write tool)
+        const hasToolContent = botPosts.some((p) =>
+          p.message.includes('Write') || p.message.includes('write') || p.message.includes('file')
+        );
+        expect(hasToolContent).toBe(true);
+      });
+
+      it('should show tool name and action in tool_use posts', async () => {
+        bot = await startTestBot(getPlatformBotOptions(platformType, {
+          scenario: 'permission-request',
+          skipPermissions: true,
+          debug: process.env.DEBUG === '1',
+        }, ctx));
+
+        const rootPost = await startSession(ctx, 'Create a test file', getBotUsername());
+        testThreadIds.push(rootPost.id);
+
+        // Wait for the write action to appear in bot posts
+        await waitForBotResponse(ctx, rootPost.id, {
+          timeout: responseTimeout,
+          pattern: /write|file/i,
+        });
+
+        // Wait for session to end
+        await waitForSessionEnded(bot.sessionManager, rootPost.id, { timeout: 10000 });
+
+        const allPosts = await getThreadPosts(ctx, rootPost.id);
+        const botPosts = allPosts.filter((p) => ctx.botUserIds.includes(p.userId));
+
+        // With the permission-request scenario, we should see:
+        // - Session header
+        // - "I'll write that to a file for you" + Write tool info
+        // - "Done! I've written the content..."
+        expect(botPosts.length).toBeGreaterThanOrEqual(2);
+      });
+    });
+
+    describe('Skip Permissions Mode', () => {
+      it('should auto-approve when skipPermissions is true', async () => {
+        bot = await startTestBot(getPlatformBotOptions(platformType, {
+          scenario: 'permission-request',
+          skipPermissions: true, // Skip prompts
+          debug: process.env.DEBUG === '1',
+        }, ctx));
+
+        const rootPost = await startSession(ctx, 'Write without asking', getBotUsername());
+        testThreadIds.push(rootPost.id);
+
+        // Wait for the completion message (not just a post count).
+        // With CI POST /posts retries, posts can be delayed.
+        await waitForBotResponse(ctx, rootPost.id, {
+          timeout: responseTimeout,
+          pattern: /done|written|success/i,
+        });
+
+        // Wait for session to end
+        await waitForSessionEnded(bot.sessionManager, rootPost.id, { timeout: 10000 });
+
+        // Session should be ended (no pending permission prompts blocking)
+        expect(bot.sessionManager.isInSessionThread(rootPost.id)).toBe(false);
+      });
+    });
+
+    describe('Permission Prompt Mode', () => {
+      // Note: Full permission prompt testing requires the real MCP permission server.
+      // The mock CLI doesn't support MCP, so we can only test that enabling
+      // skipPermissions: false doesn't break the bot.
+
+      it('should handle permission mode without crashing', async () => {
+        // Start bot with interactive permissions enabled
+        // Note: With mock CLI, this won't actually show prompts, but shouldn't crash
+        bot = await startTestBot(getPlatformBotOptions(platformType, {
+          scenario: 'permission-request',
+          skipPermissions: false, // Enable permission mode
+          debug: process.env.DEBUG === '1',
+        }, ctx));
+
+        const rootPost = await startSession(ctx, 'Test permission mode', getBotUsername());
+        testThreadIds.push(rootPost.id);
+
+        // Wait for any bot response
+        const responses = await waitForBotResponse(ctx, rootPost.id, {
+          timeout: responseTimeout,
+          minResponses: 1,
+        });
+
+        // Should at least get a session header
+        expect(responses.length).toBeGreaterThanOrEqual(1);
+
+        // Bot should have created posts without crashing
+        const allPosts = await getThreadPosts(ctx, rootPost.id);
+        const botPosts = allPosts.filter((p) => ctx.botUserIds.includes(p.userId));
+        expect(botPosts.length).toBeGreaterThanOrEqual(1);
+      });
+    });
+  });
+});

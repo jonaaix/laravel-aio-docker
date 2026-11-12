@@ -44,6 +44,19 @@ BANNER
 BANNER
       variant_label="${IMAGE_VARIANT} BETA"
    fi
+   # Gamma build (fpm-claude-gamma) — the agent chat variant.
+   if [ "$IMAGE_GAMMA" = "1" ]; then
+      cat <<'BANNER'
+ ██████╗  █████╗ ███╗   ███╗███╗   ███╗ █████╗
+██╔════╝ ██╔══██╗████╗ ████║████╗ ████║██╔══██╗
+██║  ███╗███████║██╔████╔██║██╔████╔██║███████║
+██║   ██║██╔══██║██║╚██╔╝██║██║╚██╔╝██║██╔══██║
+╚██████╔╝██║  ██║██║ ╚═╝ ██║██║ ╚═╝ ██║██║  ██║
+ ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝
+
+BANNER
+      variant_label="${IMAGE_VARIANT} GAMMA"
+   fi
 
    log_info "User: $(whoami), UID: $(id -u)"
    log_info "Image variant: ${variant_label} (runtime: ${PHP_RUNTIME_CONFIG:-unknown})"

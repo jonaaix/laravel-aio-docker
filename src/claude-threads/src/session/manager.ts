@@ -1,0 +1,2226 @@
+/**
+ * SessionManager - Orchestrates Claude Code sessions across chat platforms
+ *
+ * This is the main coordinator that delegates to specialized modules:
+ * - lifecycle.ts: Session start, resume, exit
+ * - streaming.ts: Message streaming and flushing
+ * - operations/events: Claude event handling
+ * - operations/commands: User commands (!cd, !invite, etc.)
+ * - operations/worktree: Git worktree management
+ *
+ * User reactions are handled via MessageManager.handleReaction() which routes
+ * to the appropriate executor (QuestionApprovalExecutor, TaskListExecutor, etc.)
+ */
+
+import { EventEmitter } from 'events';
+import { ClaudeEvent } from '../claude/cli.js';
+import type { PlatformClient, PlatformUser, PlatformPost, PlatformFile } from '../platform/index.js';
+import { SessionStore, PersistedSession, PersistedContextPrompt } from '../persistence/session-store.js';
+import type { PersistedTrackedTask } from '../operations/task-tracker.js';
+import type { AgentBackend } from '../agent/backend.js';
+import { GitHubEmailsStore } from '../persistence/github-emails-store.js';
+import { WorktreeMode, type LimitsConfig, type ResolvedLimits, type ClaudeAccount, type PermissionMode, type OverheadVisibility, type PlatformOverhead, type AgentBackendKind, type WorkingBlockMode, type WriteScopeMode, DEFAULT_OVERHEAD_VISIBILITY, DEFAULT_AGENT_BACKEND, DEFAULT_MAX_BOT_HANDOFFS, resolveLimits, effectivePermissionMode } from '../config/index.js';
+import { AccountPool } from '../claude/account-pool.js';
+import { probeClaudeAiConnectors } from '../claude/connector-probe.js';
+import type { SessionInfo } from '../ui/types.js';
+import { CleanupScheduler } from '../cleanup/index.js';
+import { SessionMonitor } from '../operations/monitor/index.js';
+
+// Import extracted modules
+import * as streaming from '../operations/streaming/index.js';
+import * as events from '../operations/events/index.js';
+import * as commands from '../operations/commands/index.js';
+import * as lifecycle from './lifecycle.js';
+import { chatPlatformPromptFor } from './lifecycle.js';
+import type { PeerBotInfo } from '../commands/system-prompt-generator.js';
+import { handleMessage } from '../message-handler.js';
+import * as worktreeModule from '../operations/worktree/index.js';
+import * as contextPrompt from '../operations/context-prompt/index.js';
+import * as stickyMessage from '../operations/sticky-message/index.js';
+import * as plugin from '../operations/plugin/index.js';
+import type { Session, InitialSessionOptions, ThreadCoordination } from './types.js';
+import { SessionRegistry } from './registry.js';
+import * as reactionRouter from './reaction-router.js';
+import { post } from '../operations/post-helpers/index.js';
+import { createLogger } from '../utils/logger.js';
+
+const log = createLogger('manager');
+
+/**
+ * Whether two platforms sit in the SAME chat channel (→ they're peer bots).
+ * Compares server URL + channelId, but NORMALIZES the URL (strips trailing
+ * slashes, lowercases) so a cosmetic config difference like
+ * `https://chat.example.com` vs `https://chat.example.com/` doesn't silently
+ * break peer detection — which would disable every multi-bot behavior (baton
+ * peer-scoping, header hiding, auto-seeded handoff context, peer descriptions).
+ */
+function sameChannel(
+  a: { url?: string; channelId?: string },
+  b: { url?: string; channelId?: string },
+): boolean {
+  const normUrl = (u: string | undefined) => (u ?? '').replace(/\/+$/, '').toLowerCase();
+  return normUrl(a.url) === normUrl(b.url) && a.channelId === b.channelId;
+}
+
+// Import unified context
+import {
+  type SessionContext,
+  type SessionConfig,
+  type SessionState,
+  type SessionOperations,
+  createSessionContext,
+} from '../operations/session-context/index.js';
+
+// Import constants for internal use
+import { getSessionStatus } from './types.js';
+
+/**
+ * SessionManager - Main orchestrator for Claude Code sessions
+ *
+ * Emits events:
+ * - 'session:add' (session: SessionInfo) - New session started
+ * - 'session:update' (sessionId: string, updates: Partial<SessionInfo>) - Session state changed
+ * - 'session:remove' (sessionId: string) - Session ended
+ */
+export class SessionManager extends EventEmitter {
+  // Platform management
+  private platforms: Map<string, PlatformClient> = new Map();
+  private workingDir: string;
+  /** Effective permission mode. Mutated via `setPermissionMode`. */
+  private permissionMode: PermissionMode;
+  private chromeEnabled: boolean;
+  private worktreeMode: WorktreeMode;
+  /** Config default for the per-session "respond only when @mentioned" toggle (#402). */
+  private respondOnlyWhenMentioned: boolean;
+  private threadLogsEnabled: boolean;
+  private threadLogsRetentionDays: number;
+  // Resolved limits configuration
+  private readonly limits: ResolvedLimits;
+  // Debug is a getter so it reads current process.env.DEBUG (can be toggled at runtime)
+  private get debug(): boolean {
+    return process.env.DEBUG === '1' || process.argv.includes('--debug');
+  }
+
+  // Session registry - tracks active sessions and post mappings
+  public readonly registry!: SessionRegistry;
+
+  // Worktree reference counting
+  // Key: worktreePath, Value: Set of sessionIds using that worktree
+  private worktreeUsers: Map<string, Set<string>> = new Map();
+
+  // Persistence (accessed via registry.getSessionStore())
+  private sessionStore!: SessionStore;
+  // Per-user GitHub noreply emails (registered via !github-email)
+  private githubEmailsStore!: GitHubEmailsStore;
+
+  // Bot→bot handoff post-lookup retry. The author's handoff message may not be
+  // persisted on the platform yet at `result` time (createPost is async), so
+  // dispatchBotHandoff re-fetches the thread a few times before giving up.
+  // Tunable so tests can drop the delay to zero.
+  private handoffLookupAttempts = 4;
+  private handoffLookupDelayMs = 250;
+
+  // Background tasks
+  private sessionMonitor: SessionMonitor | null = null;       // Idle timeout + sticky refresh (1 min)
+  private backgroundCleanup: CleanupScheduler | null = null;  // Logs + worktrees cleanup (1 hour)
+
+  // Shutdown flag
+  private isShuttingDown = false;
+
+  // Sticky message customization
+  private customDescription?: string;
+  private customFooter?: string;
+
+  // Per-platform overhead visibility (sessionHeader / stickyMessage modes)
+  private platformOverhead: Map<string, PlatformOverhead> = new Map();
+
+  // Per-platform agent backend (claude | opencode). Read at session start to
+  // decide which backend to spawn. Defaults to claude for unregistered ids.
+  private platformAgent: Map<string, AgentBackendKind> = new Map();
+
+  // Per-platform model override (e.g. "sonnet"), passed to the Claude CLI as
+  // --model. Undefined → backend default.
+  private platformModel: Map<string, string | undefined> = new Map();
+
+  // Per-platform bot specialization (config `description`). Surfaced to peer
+  // bots' system prompts so they know when to hand off to which peer.
+  private platformDescription: Map<string, string | undefined> = new Map();
+
+  // Per-platform working-directory override (config `workingDir`). New sessions
+  // start here instead of the global workingDir. Undefined → global default.
+  private platformWorkingDir: Map<string, string | undefined> = new Map();
+  private platformWorkingBlock: Map<string, WorkingBlockMode | undefined> = new Map();
+  // Per-platform write scope (opencode backend). Undefined → unrestricted.
+  private platformWriteScope: Map<string, WriteScopeMode | undefined> = new Map();
+
+  // Multi-bot baton ("Stab") coordination, keyed by raw threadId. The single
+  // in-process source of truth for "which bot may answer in this thread". All N
+  // peer clients share this one manager, so this map is shared by every peer.
+  // Rehydrated from the session store in initialize(); persisted on transfer.
+  private threadCoordination: Map<string, ThreadCoordination> = new Map();
+
+  // Cap on consecutive bot-to-bot handoffs per user impulse (0 = unlimited).
+  // See Config.maxBotHandoffs. Set in the constructor.
+  private maxBotHandoffs: number = DEFAULT_MAX_BOT_HANDOFFS;
+
+
+  // Auto-update manager (set via setAutoUpdateManager)
+  private autoUpdateManager: commands.AutoUpdateManagerInterface | null = null;
+
+  // Claude account pool (single-account mode when empty)
+  private readonly accountPool: AccountPool;
+
+  constructor(
+    workingDir: string,
+    /**
+     * Permission mode. Accepts either the new `PermissionMode` string OR the
+     * legacy `skipPermissions: boolean` for backward compatibility:
+     * - `true`  → 'bypass'
+     * - `false` → 'default'
+     * - omitted → 'default'
+     */
+    permissionModeOrSkipFlag: PermissionMode | boolean = 'default',
+    chromeEnabled = false,
+    worktreeMode: WorktreeMode = 'prompt',
+    sessionsPath?: string,
+    threadLogsEnabled = true,
+    threadLogsRetentionDays = 30,
+    limits?: LimitsConfig,
+    claudeAccounts?: ClaudeAccount[],
+    respondOnlyWhenMentioned = false,
+    maxBotHandoffs: number = DEFAULT_MAX_BOT_HANDOFFS
+  ) {
+    super();
+    this.maxBotHandoffs = maxBotHandoffs;
+    this.workingDir = workingDir;
+    this.permissionMode =
+      typeof permissionModeOrSkipFlag === 'boolean'
+        ? (permissionModeOrSkipFlag ? 'bypass' : 'default')
+        : permissionModeOrSkipFlag;
+    this.chromeEnabled = chromeEnabled;
+    this.worktreeMode = worktreeMode;
+    this.respondOnlyWhenMentioned = respondOnlyWhenMentioned;
+    this.threadLogsEnabled = threadLogsEnabled;
+    this.threadLogsRetentionDays = threadLogsRetentionDays;
+    this.limits = resolveLimits(limits);
+    this.sessionStore = new SessionStore(sessionsPath);
+    this.githubEmailsStore = new GitHubEmailsStore();
+    this.registry = new SessionRegistry(this.sessionStore);
+    this.accountPool = new AccountPool(claudeAccounts);
+
+    // Create background tasks (started in initialize())
+    this.sessionMonitor = new SessionMonitor({
+      sessionTimeoutMs: this.limits.sessionTimeoutMinutes * 60 * 1000,
+      sessionWarningMs: this.limits.sessionWarningMinutes * 60 * 1000,
+      getContext: () => this.getContext(),
+      getSessionCount: () => this.registry.size,
+      updateStickyMessage: () => this.updateStickyMessage(),
+    });
+
+    this.backgroundCleanup = new CleanupScheduler({
+      sessionStore: this.sessionStore,
+      threadLogsEnabled: this.threadLogsEnabled,
+      logRetentionDays: this.threadLogsRetentionDays,
+      intervalMs: this.limits.cleanupIntervalMinutes * 60 * 1000,
+      maxWorktreeAgeMs: this.limits.maxWorktreeAgeHours * 60 * 60 * 1000,
+      cleanupWorktrees: this.limits.cleanupWorktrees,
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Platform Management
+  // ---------------------------------------------------------------------------
+
+  addPlatform(
+    platformId: string,
+    client: PlatformClient,
+    overhead?: Partial<PlatformOverhead>,
+    agent?: AgentBackendKind,
+    model?: string,
+    description?: string,
+    workingDir?: string,
+    workingBlock?: WorkingBlockMode,
+    writeScope?: WriteScopeMode
+  ): void {
+    this.platforms.set(platformId, client);
+    this.platformOverhead.set(platformId, {
+      sessionHeader: overhead?.sessionHeader ?? DEFAULT_OVERHEAD_VISIBILITY,
+      stickyMessage: overhead?.stickyMessage ?? DEFAULT_OVERHEAD_VISIBILITY,
+    });
+    this.platformAgent.set(platformId, agent ?? DEFAULT_AGENT_BACKEND);
+    this.platformModel.set(platformId, model);
+    this.platformDescription.set(platformId, description);
+    this.platformWorkingDir.set(platformId, workingDir);
+    this.platformWorkingBlock.set(platformId, workingBlock);
+    this.platformWriteScope.set(platformId, writeScope);
+    client.on('message', (post, user) => this.handleMessage(platformId, post, user));
+    client.on('reaction', (reaction, user) => {
+      if (user) {
+        this.handleReaction(platformId, reaction.postId, reaction.emojiName, user.username, 'added');
+      }
+    });
+    client.on('reaction_removed', (reaction, user) => {
+      if (user) {
+        this.handleReaction(platformId, reaction.postId, reaction.emojiName, user.username, 'removed');
+      }
+    });
+    // Bump sticky message to bottom when someone posts in the channel.
+    // Hidden-sticky platforms skip the bump so we don't pay the cost for
+    // nothing (the hidden-mode short-circuit in updateStickyMessageImpl would
+    // bail anyway, but markNeedsBump leaves stale state otherwise).
+    client.on('channel_post', () => {
+      if (this.platformOverhead.get(platformId)?.stickyMessage === 'hidden') {
+        return;
+      }
+      stickyMessage.markNeedsBump(platformId);
+      this.updateStickyMessage();
+    });
+    log.info(`📡 Platform "${platformId}" registered`);
+  }
+
+  /**
+   * True if any registered bot OTHER than `platformId`'s is @mentioned in the
+   * message. Each platform client applies its own mention format, so we ask
+   * them directly rather than parse text (works for Mattermost and Slack).
+   */
+  otherBotMentioned(message: string, platformId: string): boolean {
+    for (const [pid, client] of this.platforms) {
+      if (pid === platformId) continue;
+      if (client.isBotMentioned(message)) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Bot names of OTHER registered platforms that share this platform's channel.
+   * Injected into the system prompt so a bot knows which peers it can hand off
+   * to (via `@name`). Matches on server URL + channelId so bots in different
+   * channels/servers aren't treated as peers.
+   */
+  getPeerBotNames(platformId: string): string[] {
+    return this.getPeerBots(platformId).map(p => p.name);
+  }
+
+  /**
+   * Peer bots (name + optional specialization) sharing this platform's channel.
+   * The `description` comes from each peer's config and is injected into this
+   * bot's system prompt so it knows when to hand off to which peer.
+   */
+  getPeerBots(platformId: string): PeerBotInfo[] {
+    const self = this.platforms.get(platformId);
+    if (!self) return [];
+    const selfCfg = self.getMcpConfig();
+    const peers: PeerBotInfo[] = [];
+    for (const [pid, client] of this.platforms) {
+      if (pid === platformId) continue;
+      if (sameChannel(client.getMcpConfig(), selfCfg)) {
+        peers.push({
+          name: client.getBotName(),
+          description: this.platformDescription.get(pid),
+          unrestricted: this.platformWriteScope.get(pid) === 'unrestricted',
+        });
+      }
+    }
+    return peers;
+  }
+
+  /** True if `username` is the bot account of any registered platform. */
+  isBotUsername(username: string): boolean {
+    const u = username.toLowerCase();
+    for (const client of this.platforms.values()) {
+      if (client.getBotName().toLowerCase() === u) return true;
+    }
+    return false;
+  }
+
+  /**
+   * The bot (platformId) that currently holds the floor in a thread: the one
+   * whose session most recently ANSWERED (its `lastAddressedAt` is refreshed on
+   * each `result` event, and set at session creation). Derived from persisted
+   * state, so it's correct after a restart. Undefined when no bot has a session
+   * in the thread.
+   */
+  getActiveBotForThread(threadId: string): string | undefined {
+    let floor: Session | undefined;
+    for (const session of this.registry.findAllByThreadId(threadId)) {
+      if (!floor || (session.lastAddressedAt ?? 0) > (floor.lastAddressedAt ?? 0)) {
+        floor = session;
+      }
+    }
+    return floor?.platformId;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Multi-bot baton ("Stab") coordination
+  // ---------------------------------------------------------------------------
+
+  /**
+   * The platformId of the bot addressed by an @mention in `message`, scoped to
+   * the channel-peers of `platformId` (same match as getPeerBotNames: server URL
+   * + channelId) PLUS self, which is checked FIRST — so "@me and @peer" resolves
+   * to me (I keep/claim the baton). Returns undefined for a plain message or an
+   * @mention of a human. On multiple peer mentions, returns the first match in
+   * iteration order (deterministic across all N peer invocations of the gate).
+   */
+  resolveMentionedBot(message: string, platformId: string): string | undefined {
+    const self = this.platforms.get(platformId);
+    if (!self) return undefined;
+    const selfCfg = self.getMcpConfig();
+    // Among the candidates (self + channel-peers), the bot whose @mention appears
+    // EARLIEST in the message wins — so when several bots are mentioned in one
+    // message, exactly one takes the baton, and every bot's handler computes the
+    // same winner (same message + same candidate set → deterministic). Ties (same
+    // index) fall to registration order.
+    let winner: string | undefined;
+    let bestIndex = Infinity;
+    for (const [pid, client] of this.platforms) {
+      if (pid !== platformId && !sameChannel(client.getMcpConfig(), selfCfg)) continue;
+      const idx = client.mentionIndex(message);
+      if (idx >= 0 && idx < bestIndex) {
+        bestIndex = idx;
+        winner = pid;
+      }
+    }
+    return winner;
+  }
+
+  /**
+   * The peer a bot hands the baton to, extracted from its OWN output. A handoff
+   * happens ONLY via the explicit sentence `@<name> it's your turn.` — in any
+   * spelling (`it's` / `it’s` / `its` / `it is`, case-insensitive, any trailing
+   * punctuation), name and phrase on one line. A bare `@name` elsewhere does NOT
+   * hand off, so bots can reference each other in prose without dropping the
+   * baton. Returns undefined when the named target isn't a channel-peer (e.g. the
+   * user, or self) → no bot→bot handoff (control stays / goes to the user). On
+   * several turn-signals, the last one wins.
+   */
+  resolveHandoffTarget(text: string, platformId: string): string | undefined {
+    const re = /@([\w.-]+)[^\n@]*?\bit(?:['’]s|s|\s+is)\s+your\s+turn\b/gi;
+    let target: string | undefined;
+    for (const m of text.matchAll(re)) {
+      const resolved = this.resolveMentionedBot(`@${m[1]}`, platformId);
+      if (resolved && resolved !== platformId) target = resolved; // latest peer wins
+    }
+    return target;
+  }
+
+  /** The platformId currently holding the baton in a thread, if known. */
+  getBatonHolder(threadId: string): string | undefined {
+    return this.threadCoordination.get(threadId)?.batonHolder;
+  }
+
+  /**
+   * Fire a bot→bot handoff at the END of the author's turn (called from the
+   * author's `result` event). The author signalled a peer @mention in its own
+   * output during the turn; now that it's finished, hand the baton over and
+   * deliver the author's handoff message into the peer's session via the normal
+   * receipt path (so delta-context, permalink, and new/paused/active-session
+   * handling are all identical to a received message). Honors the loop cap.
+   *
+   * Delivering here — in-process at turn end — rather than reacting when the peer
+   * receives the message over the websocket avoids the timing race (the author's
+   * local `result` fires before the peer's network receipt) and makes the
+   * @mention's position within the turn irrelevant.
+   */
+  async dispatchBotHandoff(threadId: string, fromPlatformId: string, toPlatformId: string): Promise<void> {
+    const authorClient = this.platforms.get(fromPlatformId);
+    const peerClient = this.platforms.get(toPlatformId);
+    if (!authorClient || !peerClient) return;
+
+    // Loop budget: too many consecutive bot→bot rounds → pause and hand back to
+    // the user. Reset happens on the next human message (noteUserActivity).
+    if (this.botHandoffLimitReached(threadId)) {
+      await authorClient.createPost(
+        `↩️ Paused the bot-to-bot exchange after ${this.maxBotHandoffs} rounds — reply to keep it going.`,
+        threadId,
+      ).catch(() => {});
+      return;
+    }
+
+    // Find the author's actual handoff post (its id gives the peer a permalink,
+    // identical to a received message). Newest matching post wins.
+    //
+    // Race guard: the handoff post may not be persisted on the platform yet at
+    // `result` time (createPost is async), so re-fetch a few times before giving
+    // up — otherwise the handoff is silently dropped and the peer never picks up.
+    const authorBot = authorClient.getBotName().toLowerCase();
+    let handoff: { id: string; username: string; message: string; createAt?: number } | undefined;
+    for (let attempt = 0; attempt < this.handoffLookupAttempts && !handoff; attempt++) {
+      if (attempt > 0) await new Promise((r) => setTimeout(r, this.handoffLookupDelayMs));
+      const history = await peerClient.getThreadHistory(threadId, { excludeBotMessages: false });
+      for (const m of history) {
+        if (m.username.toLowerCase() === authorBot && peerClient.isBotMentioned(m.message)) {
+          handoff = m;
+        }
+      }
+    }
+    if (!handoff) {
+      log.warn(
+        `handoff dropped: no post from @${authorBot} mentioning ${toPlatformId} in thread ${threadId.substring(0, 8)}… after ${this.handoffLookupAttempts} attempts`,
+      );
+      return;
+    }
+    log.debug(`dispatching handoff ${fromPlatformId} → ${toPlatformId} (post ${handoff.id.substring(0, 8)}…)`);
+
+    this.transferBaton(threadId, toPlatformId, { byBot: true });
+
+    // Replay the author's handoff message into the peer's session through the
+    // normal handler (dispatchedHandoff bypasses the receipt gate).
+    const post: PlatformPost = {
+      id: handoff.id,
+      platformId: toPlatformId,
+      channelId: peerClient.getMcpConfig().channelId,
+      userId: handoff.username,
+      message: handoff.message,
+      rootId: threadId,
+      createAt: handoff.createAt,
+    };
+    const authorUser: PlatformUser = {
+      id: handoff.username,
+      username: authorClient.getBotName(),
+      displayName: authorClient.displayName,
+    };
+    await handleMessage(peerClient, this, post, authorUser, {
+      platformId: toPlatformId,
+      dispatchedHandoff: true,
+    });
+  }
+
+  /**
+   * Move the baton to `toPlatformId` (at @mention time). Idempotent: when the
+   * holder is unchanged this only records participation and does NOT write, so
+   * the N peer clients that all receive the same post produce at most one
+   * sessions.json write per actual transfer. Sets `mainBot` on first touch.
+   *
+   * `opts.byBot` marks a bot→bot handoff: it bumps the consecutive-hop counter
+   * (the loop budget) exactly once per real transfer (the counter rides on the
+   * holder-changed path, which only the first of the N peer calls takes).
+   */
+  transferBaton(threadId: string, toPlatformId: string, opts?: { byBot?: boolean }): void {
+    const existing = this.threadCoordination.get(threadId);
+    if (existing && existing.batonHolder === toPlatformId) {
+      // No change → no write. Just make sure participation is recorded.
+      if (!existing.participants.has(toPlatformId)) {
+        existing.participants.add(toPlatformId);
+        this.saveThreadCoordination(threadId);
+      }
+      return;
+    }
+    const coord: ThreadCoordination = existing ?? {
+      threadId,
+      mainBot: toPlatformId,
+      batonHolder: toPlatformId,
+      participants: new Set<string>(),
+      updatedAt: 0,
+      botHops: 0,
+    };
+    coord.batonHolder = toPlatformId;
+    coord.participants.add(toPlatformId);
+    coord.updatedAt = Date.now();
+    if (opts?.byBot) coord.botHops = (coord.botHops ?? 0) + 1;
+    this.threadCoordination.set(threadId, coord);
+    this.saveThreadCoordination(threadId);
+  }
+
+  /** Consecutive bot→bot handoffs in this thread since the last human message. */
+  getBotHops(threadId: string): number {
+    return this.threadCoordination.get(threadId)?.botHops ?? 0;
+  }
+
+  /**
+   * True when the bot-to-bot exchange has reached the configured cap and should
+   * pause (control returns to the user). Always false when the cap is disabled
+   * (`maxBotHandoffs <= 0`) or no coordination exists yet.
+   */
+  botHandoffLimitReached(threadId: string): boolean {
+    if (this.maxBotHandoffs <= 0) return false;
+    return this.getBotHops(threadId) >= this.maxBotHandoffs;
+  }
+
+  /** The configured consecutive bot-to-bot handoff cap (0 = unlimited). */
+  getMaxBotHandoffs(): number {
+    return this.maxBotHandoffs;
+  }
+
+  /**
+   * Record human activity in a thread: resets the bot→bot hop budget so a fresh
+   * user impulse gives the bots a full new round of autonomous exchange. Called
+   * for every human message. Idempotent — only writes when the counter changes.
+   */
+  noteUserActivity(threadId: string): void {
+    const coord = this.threadCoordination.get(threadId);
+    if (coord && (coord.botHops ?? 0) !== 0) {
+      coord.botHops = 0;
+      this.saveThreadCoordination(threadId);
+    }
+  }
+
+  /** Persist one thread's baton state to the session store. */
+  private saveThreadCoordination(threadId: string): void {
+    const coord = this.threadCoordination.get(threadId);
+    if (!coord) return;
+    this.sessionStore.saveThreadCoordination(threadId, {
+      mainBot: coord.mainBot,
+      batonHolder: coord.batonHolder,
+      participants: [...coord.participants],
+      updatedAt: coord.updatedAt,
+      botHops: coord.botHops,
+    });
+  }
+
+  /**
+   * Backward-compat seed: threads created before the explicit baton have no
+   * coordination entry. On first need, derive the holder from the legacy floor
+   * (max `lastAddressedAt`) and adopt it as explicit state. Returns the holder,
+   * or undefined when no bot has a session in the thread.
+   */
+  seedBatonFromFloor(threadId: string): string | undefined {
+    if (this.threadCoordination.has(threadId)) return this.getBatonHolder(threadId);
+    const floor = this.getActiveBotForThread(threadId);
+    if (floor) this.transferBaton(threadId, floor);
+    return floor;
+  }
+
+  /**
+   * True when `platformId` shares its channel with at least one peer bot. Used
+   * to gate multi-bot behaviors (auto delta-context injection) so single-bot
+   * channels are entirely unaffected.
+   */
+  peerBotsPresent(platformId: string): boolean {
+    return this.getPeerBotNames(platformId).length > 0;
+  }
+
+  removePlatform(platformId: string): void {
+    this.platforms.delete(platformId);
+    this.platformOverhead.delete(platformId);
+    this.platformAgent.delete(platformId);
+    this.platformModel.delete(platformId);
+    this.platformDescription.delete(platformId);
+    this.platformWorkingDir.delete(platformId);
+    this.platformWorkingBlock.delete(platformId);
+    this.platformWriteScope.delete(platformId);
+    stickyMessage.clearHiddenCleanupTracking(platformId);
+  }
+
+  /**
+   * Set the auto-update manager for update commands.
+   */
+  setAutoUpdateManager(manager: typeof this.autoUpdateManager): void {
+    this.autoUpdateManager = manager;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Worktree Reference Counting
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Register a session as using a worktree.
+   * Called when a session creates or joins a worktree.
+   */
+  private registerWorktreeUser(worktreePath: string, sessionId: string): void {
+    if (!this.worktreeUsers.has(worktreePath)) {
+      this.worktreeUsers.set(worktreePath, new Set());
+    }
+    const users = this.worktreeUsers.get(worktreePath);
+    if (users) {
+      users.add(sessionId);
+    }
+    log.debug(`Registered session ${sessionId.substring(0, 20)} as worktree user for ${worktreePath}`);
+  }
+
+  /**
+   * Unregister a session from using a worktree.
+   * Called when a session ends or switches worktrees.
+   */
+  private unregisterWorktreeUser(worktreePath: string, sessionId: string): void {
+    const users = this.worktreeUsers.get(worktreePath);
+    if (users) {
+      users.delete(sessionId);
+      if (users.size === 0) {
+        this.worktreeUsers.delete(worktreePath);
+      }
+    }
+  }
+
+  /**
+   * Check if other sessions are using a worktree (besides the given session).
+   * Used by cleanupWorktree to determine if safe to delete.
+   */
+  hasOtherSessionsUsingWorktree(worktreePath: string, excludeSessionId: string): boolean {
+    const users = this.worktreeUsers.get(worktreePath);
+    if (!users) return false;
+    // Check if any session other than excludeSessionId is using this worktree
+    return Array.from(users).some(id => id !== excludeSessionId);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Unified Context Builder
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Build the unified SessionContext that all modules receive.
+   * This replaces the previous 4 separate context builders.
+   *
+   * Made public to allow direct access from message-handler.ts,
+   * enabling elimination of thin wrapper methods.
+   */
+  getContext(): SessionContext {
+    const config: SessionConfig = {
+      workingDir: this.workingDir,
+      permissionMode: this.permissionMode,
+      chromeEnabled: this.chromeEnabled,
+      respondOnlyWhenMentioned: this.respondOnlyWhenMentioned,
+      debug: this.debug,
+      maxSessions: this.limits.maxSessions,
+      threadLogsEnabled: this.threadLogsEnabled,
+      threadLogsRetentionDays: this.threadLogsRetentionDays,
+      permissionTimeoutMs: this.limits.permissionTimeoutSeconds * 1000,
+      flushDelayMs: this.limits.flushDelayMs,
+    };
+
+    const state: SessionState = {
+      sessions: this.registry.getSessions(),
+      postIndex: this.registry.getPostIndex(),
+      platforms: this.platforms,
+      sessionStore: this.sessionStore,
+      githubEmailsStore: this.githubEmailsStore,
+      isShuttingDown: this.isShuttingDown,
+    };
+
+    const ops: SessionOperations = {
+      // Session lookup
+      getSessionId: (pid, tid) => this.getSessionId(pid, tid),
+      findSessionByThreadId: (tid) => this.findSessionByThreadId(tid),
+
+      // Post management
+      registerPost: (pid, tid) => this.registerPost(pid, tid),
+
+      // Streaming & content (inlined - no wrapper methods needed)
+      flush: async (s) => {
+        // Delegate to MessageManager (source of truth for content flushing)
+        if (s.messageManager) {
+          await s.messageManager.flush();
+        }
+      },
+      startTyping: (s) => this.startTyping(s),
+      stopTyping: (s) => this.stopTyping(s),
+      buildMessageContent: (t, p, uploadDir, f) => streaming.buildMessageContent(t, p, uploadDir, f, this.debug),
+
+      // Persistence
+      persistSession: (s) => this.persistSession(s),
+      unpersistSession: (sid) => this.unpersistSession(sid),
+
+      // UI updates
+      updateSessionHeader: (s) => this.updateSessionHeader(s),
+      updateStickyMessage: () => this.updateStickyMessage(),
+
+      // Event handling
+      handleEvent: (sid, e) => this.handleEvent(sid, e),
+      handleExit: (sid, code, source) => this.handleExit(sid, code, source),
+
+      // Session lifecycle
+      killSession: (tid) => this.killSession(tid),
+
+      // Worktree
+      shouldPromptForWorktree: (s) => this.shouldPromptForWorktree(s),
+      postWorktreePrompt: (s, r) => this.postWorktreePrompt(s, r),
+      registerWorktreeUser: (path, sid) => this.registerWorktreeUser(path, sid),
+      unregisterWorktreeUser: (path, sid) => this.unregisterWorktreeUser(path, sid),
+      hasOtherSessionsUsingWorktree: (path, sid) => this.hasOtherSessionsUsingWorktree(path, sid),
+      switchToWorktree: (tid, path, user) => this.switchToWorktree(tid, path, user),
+
+      // Update operations
+      forceUpdate: () => this.autoUpdateManager?.forceUpdate() ?? Promise.resolve(),
+      deferUpdate: (min) => this.autoUpdateManager?.deferUpdate(min),
+
+      // Bug report operations
+      handleBugReportApproval: (s, approved, user) => commands.handleBugReportApproval(s, approved, user),
+
+      // Context prompt (inlined - no wrapper method needed)
+      offerContextPrompt: (s, q, f, e) => contextPrompt.offerContextPrompt(s, q, f, this.getContextPromptHandler(), e),
+
+      // UI event emission
+      emitSessionAdd: (s) => this.emitSessionAdd(s),
+      emitSessionUpdate: (sid, u) => this.emitSessionUpdate(sid, u),
+      emitSessionRemove: (sid) => this.emitSessionRemove(sid),
+
+      // Claude account pool (null when single-account mode)
+      acquireClaudeAccount: (preferredId, threadId) => this.accountPool.acquire(preferredId, threadId),
+      getClaudeAccount: (id) => this.accountPool.get(id),
+      releaseClaudeAccount: (id) => this.accountPool.release(id),
+      markClaudeAccountCooling: (id, untilMs) => this.accountPool.markCooling(id, untilMs),
+      getClaudeAccountPoolStatus: () => this.accountPool.status(),
+
+      getPlatformOverhead: (pid) => this.platformOverhead.get(pid) ?? {
+        sessionHeader: DEFAULT_OVERHEAD_VISIBILITY,
+        stickyMessage: DEFAULT_OVERHEAD_VISIBILITY,
+      },
+
+      getPlatformAgent: (pid) => this.platformAgent.get(pid) ?? DEFAULT_AGENT_BACKEND,
+
+      getPlatformModel: (pid) => this.platformModel.get(pid),
+
+      getPlatformWorkingDir: (pid) => this.platformWorkingDir.get(pid),
+
+      getPlatformWorkingBlock: (pid) => this.platformWorkingBlock.get(pid),
+
+      getPlatformWriteScope: (pid) => this.platformWriteScope.get(pid),
+
+      getPeerBotNames: (pid) => this.getPeerBotNames(pid),
+
+      getPeerBots: (pid) => this.getPeerBots(pid),
+
+      resolveMentionedBot: (message, pid) => this.resolveMentionedBot(message, pid),
+
+      resolveHandoffTarget: (text, pid) => this.resolveHandoffTarget(text, pid),
+
+      dispatchBotHandoff: (threadId, fromPid, toPid) => this.dispatchBotHandoff(threadId, fromPid, toPid),
+    };
+
+    return createSessionContext(config, state, ops);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Session ID and Post Index
+  // ---------------------------------------------------------------------------
+
+  private getSessionId(platformId: string, threadId: string): string {
+    return `${platformId}:${threadId}`;
+  }
+
+  // ---------------------------------------------------------------------------
+  // UI Event Emission
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Convert internal Session to SessionInfo for UI.
+   */
+  private toSessionInfo(session: Session): SessionInfo {
+    return {
+      id: session.sessionId,
+      threadId: session.threadId,
+      startedBy: session.startedBy,
+      displayName: session.startedByDisplayName,
+      status: getSessionStatus(session),
+      workingDir: session.workingDir,
+      sessionNumber: session.sessionNumber,
+      worktreeBranch: session.worktreeInfo?.branch,
+      // Platform information
+      platformType: session.platform.platformType as 'mattermost' | 'slack',
+      platformDisplayName: session.platform.displayName,
+      // Rich metadata
+      title: session.sessionTitle,
+      description: session.sessionDescription,
+      lastActivity: session.lastActivityAt,
+      // Typing indicator state
+      isTyping: session.timers.typingTimer !== null,
+    };
+  }
+
+  /**
+   * Emit session:add event with session info for UI.
+   */
+  emitSessionAdd(session: Session): void {
+    this.emit('session:add', this.toSessionInfo(session));
+  }
+
+  /**
+   * Emit session:update event with partial updates for UI.
+   */
+  emitSessionUpdate(sessionId: string, updates: Partial<SessionInfo>): void {
+    this.emit('session:update', sessionId, updates);
+  }
+
+  /**
+   * Emit session:remove event for UI.
+   */
+  emitSessionRemove(sessionId: string): void {
+    this.emit('session:remove', sessionId);
+  }
+
+  private registerPost(postId: string, threadId: string): void {
+    this.registry.registerPost(postId, threadId);
+  }
+
+  private getSessionByPost(postId: string): Session | undefined {
+    return this.registry.findByPost(postId);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Message Handling
+  // ---------------------------------------------------------------------------
+
+  private async handleMessage(_platformId: string, _post: PlatformPost, _user: PlatformUser | null): Promise<void> {
+    // Message handling is done by the platform client routing to startSession/sendFollowUp
+    // This is just a placeholder for the event subscription
+  }
+
+  // ---------------------------------------------------------------------------
+  // Reaction Handling
+  //
+  // Delegated to `reaction-router.ts`. The router handles:
+  // - emoji normalization (`thumbsup` vs `+1`)
+  // - resume-from-reaction for timed-out sessions
+  // - allowlist check + audit log
+  // - session-level reactions (cancel, escape, worktree, bug report)
+  // - MessageManager delegation for executor-owned reactions
+  // ---------------------------------------------------------------------------
+
+  private async handleReaction(
+    platformId: string,
+    postId: string,
+    emojiName: string,
+    username: string,
+    action: 'added' | 'removed',
+  ): Promise<void> {
+    await reactionRouter.handleReaction(
+      this.getReactionRouterDeps(),
+      platformId,
+      postId,
+      emojiName,
+      username,
+      action,
+    );
+  }
+
+  private getReactionRouterDeps(): reactionRouter.ReactionRouterDeps {
+    return {
+      registry: this.registry,
+      sessionStore: this.sessionStore,
+      platforms: this.platforms,
+      limits: this.limits,
+      getContext: () => this.getContext(),
+      getContextPromptHandler: () => this.getContextPromptHandler(),
+      persistSession: (s) => this.persistSession(s),
+      createAndSwitchToWorktree: (tid, branch, user) =>
+        this.createAndSwitchToWorktree(tid, branch, user),
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Context Prompt Handling
+  // ---------------------------------------------------------------------------
+
+  private getContextPromptHandler(): contextPrompt.ContextPromptHandler {
+    return {
+      registerPost: (pid, tid) => this.registerPost(pid, tid),
+      startTyping: (s) => this.startTyping(s),
+      persistSession: (s) => this.persistSession(s),
+      injectMetadataReminder: (msg, session) => lifecycle.maybeInjectMetadataReminder(msg, session),
+      buildMessageContent: (text, session, files) => {
+        const uploadDir = streaming.getSessionUploadDir(session.platformId, session.threadId);
+        return streaming.buildMessageContent(text, session.platform, uploadDir, files, this.debug);
+      },
+    };
+  }
+
+  // Note: offerContextPrompt() has been inlined directly in getContext().ops
+
+  /**
+   * Check if session has a pending context prompt.
+   */
+  hasPendingContextPrompt(threadId: string): boolean {
+    const session = this.findSessionByThreadId(threadId);
+    return session?.messageManager?.hasPendingContextPrompt() ?? false;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Event Handling (delegates to MessageManager)
+  // ---------------------------------------------------------------------------
+
+  private handleEvent(sessionId: string, event: ClaudeEvent): void {
+    const session = this.registry.get(sessionId);
+    if (!session || !session.messageManager) return;
+
+    // Pre-processing: session-specific side effects
+    events.handleEventPreProcessing(session, event, this.getContext());
+
+    // Main event handling via MessageManager
+    const mainHandling = session.messageManager.handleEvent(event);
+
+    // Post-processing: session-specific side effects
+    events.handleEventPostProcessing(session, event, this.getContext(), mainHandling);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Exit Handling (delegates to lifecycle module)
+  // ---------------------------------------------------------------------------
+
+  private async handleExit(sessionId: string, code: number, source?: AgentBackend): Promise<void> {
+    await lifecycle.handleExit(sessionId, code, this.getContext(), source);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Streaming utilities
+  // ---------------------------------------------------------------------------
+  // Note: flush(), buildMessageContent(), and bumpTasksToBottom() have been
+  // inlined directly in getContext().ops to eliminate thin wrapper methods.
+  // Only startTyping() and stopTyping() remain as they have meaningful UI logic.
+
+  private startTyping(session: Session): void {
+    const wasTyping = session.timers.typingTimer !== null;
+    streaming.startTyping(session);
+    // Emit UI update if typing state changed
+    if (!wasTyping && session.timers.typingTimer !== null) {
+      this.emitSessionUpdate(session.sessionId, { isTyping: true });
+    }
+  }
+
+  private stopTyping(session: Session): void {
+    const wasTyping = session.timers.typingTimer !== null;
+    streaming.stopTyping(session);
+    // Emit UI update if typing state changed
+    if (wasTyping && session.timers.typingTimer === null) {
+      this.emitSessionUpdate(session.sessionId, { isTyping: false });
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Worktree utilities
+  // ---------------------------------------------------------------------------
+
+  private async shouldPromptForWorktree(session: Session): Promise<string | null> {
+    return worktreeModule.shouldPromptForWorktree(
+      session,
+      this.worktreeMode,
+      (repoRoot, excludeId) => this.hasOtherSessionInRepo(repoRoot, excludeId)
+    );
+  }
+
+  private hasOtherSessionInRepo(repoRoot: string, excludeThreadId: string): boolean {
+    for (const session of this.registry.getAll()) {
+      // Skip the session we're checking from (compare raw threadIds)
+      if (session.threadId === excludeThreadId) continue;
+      if (session.workingDir === repoRoot) return true;
+      if (session.worktreeInfo?.repoRoot === repoRoot) return true;
+    }
+    return false;
+  }
+
+  private async postWorktreePrompt(session: Session, reason: string): Promise<void> {
+    await worktreeModule.postWorktreePrompt(session, reason, (pid, tid) => this.registerPost(pid, tid));
+    this.stopTyping(session);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Persistence
+  // ---------------------------------------------------------------------------
+
+  private static readonly MAX_PERSISTED_TEXT = 100_000;
+
+  private static capPersistedText(value: string | undefined | null): string | undefined {
+    if (value === undefined || value === null) return undefined;
+    if (value.length <= SessionManager.MAX_PERSISTED_TEXT) return value;
+    return value.slice(0, SessionManager.MAX_PERSISTED_TEXT) + '…[truncated]';
+  }
+
+  private persistSession(session: Session): void {
+    try {
+      this.persistSessionUnsafe(session);
+    } catch (err) {
+      log.error(`Failed to persist session ${session.sessionId}: ${err}`);
+    }
+  }
+
+  private persistSessionUnsafe(session: Session): void {
+    // Aggregate every executor's persistable state in one call. Byte-parity
+    // with the pre-PR-3 writer is guarded by the snapshot tests in
+    // `manager.test.ts` — adding a field here without updating the snapshot
+    // expected-keys set will fail CI.
+    let taskListSnapshot:
+      | { postId: string | null; content: string | null; isMinimized: boolean; isCompleted: boolean }
+      | undefined;
+    let contextPromptSnapshot: PersistedContextPrompt | undefined;
+    let taskTrackerSnapshot: PersistedTrackedTask[] | undefined;
+
+    if (session.messageManager) {
+      const serialized = session.messageManager.serialize();
+      taskListSnapshot = serialized.taskList;
+      taskTrackerSnapshot = serialized.taskTracker;
+      if (serialized.contextPrompt) {
+        contextPromptSnapshot = serialized.contextPrompt;
+      }
+    }
+
+    const state: PersistedSession = {
+      platformId: session.platformId,
+      threadId: session.threadId,
+      claudeSessionId: session.claudeSessionId,
+      startedBy: session.startedBy,
+      startedByDisplayName: session.startedByDisplayName,
+      startedAt: session.startedAt.toISOString(),
+      lastActivityAt: session.lastActivityAt.toISOString(),
+      sessionNumber: session.sessionNumber,
+      workingDir: session.workingDir,
+      planApproved: session.planApproved,
+      sessionAllowedUsers: [...session.sessionAllowedUsers],
+      forceInteractivePermissions: session.forceInteractivePermissions,
+      respondOnlyWhenMentioned: session.respondOnlyWhenMentioned,
+      sessionStartPostId: session.sessionStartPostId,
+      // Task state from MessageManager serialize() (single source of truth).
+      tasksPostId: taskListSnapshot?.postId ?? null,
+      lastTasksContent: SessionManager.capPersistedText(taskListSnapshot?.content) ?? null,
+      tasksCompleted: taskListSnapshot?.isCompleted ?? false,
+      tasksMinimized: taskListSnapshot?.isMinimized ?? false,
+      taskTrackerState: taskTrackerSnapshot,
+      worktreeInfo: session.worktreeInfo,
+      isWorktreeOwner: session.isWorktreeOwner,
+      pendingWorktreePrompt: session.pendingWorktreePrompt,
+      worktreePromptDisabled: session.worktreePromptDisabled,
+      queuedPrompt: SessionManager.capPersistedText(session.queuedPrompt),
+      queuedFiles: session.queuedFiles,
+      firstPrompt: SessionManager.capPersistedText(session.firstPrompt),
+      pendingContextPrompt: contextPromptSnapshot,
+      needsContextPromptOnNextMessage: session.needsContextPromptOnNextMessage,
+      lifecyclePostId: session.lifecyclePostId,
+      isPaused: session.lifecycle.state === 'paused' || session.lifecycle.state === 'interrupted',
+      sessionTitle: session.sessionTitle,
+      sessionDescription: session.sessionDescription,
+      sessionTags: session.sessionTags,
+      pullRequestUrl: session.pullRequestUrl,
+      messageCount: session.messageCount,
+      resumeFailCount: session.lifecycle.resumeFailCount,
+      claudeAccountId: session.claudeAccountId,
+      sessionHeaderMode: session.sessionHeaderMode,
+      agentBackend: session.agentBackend,
+      opencodeSessionId: session.opencodeSessionId,
+      lastAddressedAt: session.lastAddressedAt,
+      lastSeenPostId: session.lastSeenPostId,
+    };
+    this.sessionStore.save(session.sessionId, state);
+  }
+
+  private unpersistSession(sessionId: string): void {
+    // Soft-delete instead of hard delete - keeps session in history for display
+    this.sessionStore.softDelete(sessionId);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Session Header
+  // ---------------------------------------------------------------------------
+
+  private async updateSessionHeader(session: Session): Promise<void> {
+    await commands.updateSessionHeader(session, this.getContext());
+    // Also emit UI update for fields that may have changed (worktree, directory, etc.)
+    this.emitSessionUpdate(session.sessionId, {
+      workingDir: session.workingDir,
+      worktreeBranch: session.worktreeInfo?.branch,
+      title: session.sessionTitle,
+      description: session.sessionDescription,
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Sticky Channel Message
+  // ---------------------------------------------------------------------------
+
+  private async updateStickyMessage(): Promise<void> {
+    const overheadByPlatform = new Map<string, OverheadVisibility>();
+    for (const [platformId, overhead] of this.platformOverhead) {
+      overheadByPlatform.set(platformId, overhead.stickyMessage);
+    }
+    await stickyMessage.updateAllStickyMessages(
+      this.platforms,
+      this.registry.getSessions(),
+      {
+        maxSessions: this.limits.maxSessions,
+        chromeEnabled: this.chromeEnabled,
+        permissionMode: this.permissionMode,
+        worktreeMode: this.worktreeMode,
+        workingDir: this.workingDir,
+        debug: this.debug,
+        description: this.customDescription,
+        footer: this.customFooter,
+        accountPoolStatus: this.accountPool.isEmpty ? undefined : this.accountPool.status(),
+      },
+      overheadByPlatform,
+    );
+  }
+
+  /**
+   * Public method to trigger sticky message update.
+   * Called when runtime settings change via keyboard toggles.
+   */
+  async updateAllStickyMessages(): Promise<void> {
+    await this.updateStickyMessage();
+  }
+
+  async noticeClaudeAiConnectors(): Promise<void> {
+    const claudePlatforms = [...this.platforms.entries()]
+      .filter(([id]) => (this.platformAgent.get(id) ?? DEFAULT_AGENT_BACKEND) === 'claude');
+    if (claudePlatforms.length === 0) return;
+    try {
+      const accounts: Array<ClaudeAccount | undefined> = this.accountPool.isEmpty ? [undefined] : [...this.accountPool.all];
+      const found = new Set<string>();
+      await Promise.all(accounts.map(async (account) => {
+        for (const name of await probeClaudeAiConnectors(account) ?? []) found.add(name);
+      }));
+      if (found.size === 0) return;
+      const names = [...found].sort().join(', ');
+      const allowedOn = claudePlatforms
+        .filter(([, client]) => client.getMcpConfig().claudeAiConnectors === true)
+        .map(([id]) => id);
+      if (allowedOn.length > 0) {
+        log.info(`claude.ai connectors (${names}) are available to sessions on: ${allowedOn.join(', ')}`);
+        return;
+      }
+      log.warn(
+        `This Claude account has claude.ai connectors (${names}). Sessions do not get them. ` +
+        `To let a platform's sessions use them, set claudeAiConnectors: true on that platform in config.yaml ` +
+        `(everyone on its allowedUsers gets them).`,
+      );
+    } catch (err) {
+      log.debug(`Connector notice skipped: ${err}`);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Runtime settings (called from keyboard toggles or config)
+  // ---------------------------------------------------------------------------
+
+  /** Set custom description and footer for the sticky channel message. */
+  setStickyMessageCustomization(description?: string, footer?: string): void {
+    this.customDescription = description;
+    this.customFooter = footer;
+  }
+
+  /**
+   * Set the effective permission mode.
+   */
+  setPermissionMode(mode: PermissionMode): void {
+    this.permissionMode = mode;
+  }
+
+  /**
+   * @deprecated Use `setPermissionMode` instead. Kept so the headless/UI
+   * toggle entry points don't need to change in lockstep. Maps
+   * `true → 'bypass'`, `false → 'default'`; the `'auto'` mode must be set
+   * via `setPermissionMode`.
+   */
+  setSkipPermissions(value: boolean): void {
+    this.permissionMode = value ? 'bypass' : 'default';
+  }
+
+  /** Read the effective permission mode (for UI + event payloads). */
+  getPermissionMode(): PermissionMode {
+    return this.permissionMode;
+  }
+
+  setChromeEnabled(value: boolean): void {
+    this.chromeEnabled = value;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Platform Toggle Support
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Pause all active sessions for a platform.
+   * Called when a platform is disabled via keyboard toggle.
+   * Sessions are persisted and can be resumed when platform is re-enabled.
+   */
+  async pauseSessionsForPlatform(platformId: string): Promise<void> {
+    // Mark platform as paused in sticky message module
+    stickyMessage.setPlatformPaused(platformId, true);
+
+    const sessionsToKill: Session[] = [];
+
+    for (const session of this.registry.getAll()) {
+      if (session.platformId === platformId) {
+        sessionsToKill.push(session);
+      }
+    }
+
+    if (sessionsToKill.length === 0) {
+      log.info(`No active sessions to pause for platform ${platformId}`);
+      // Still update sticky message to show paused state
+      await this.updateStickyMessage();
+      return;
+    }
+
+    log.info(`⏸️ Pausing ${sessionsToKill.length} session(s) for platform ${platformId}`);
+
+    for (const session of sessionsToKill) {
+      try {
+        const fmt = session.platform.getFormatter();
+        const pauseMessage = `⏸️ ${fmt.formatBold('Platform disabled')} - session paused. Re-enable platform to resume.`;
+
+        // Update or create lifecycle post
+        if (session.lifecyclePostId) {
+          await session.platform.updatePost(session.lifecyclePostId, pauseMessage);
+        } else {
+          const post = await session.platform.createPost(pauseMessage, session.threadId);
+          session.lifecyclePostId = post.id;
+        }
+
+        // Stop typing indicator
+        this.stopTyping(session);
+
+        // Persist session state for later resume
+        this.persistSession(session);
+
+        // Kill the Claude CLI process
+        session.claude.kill();
+
+        // Remove from active sessions (but keep persisted)
+        this.registry.unregister(session.sessionId);
+
+        // Emit UI update
+        this.emitSessionRemove(session.sessionId);
+
+        log.info(`⏸️ Paused session ${session.threadId.substring(0, 8)}`);
+      } catch (err) {
+        log.warn(`Failed to pause session ${session.threadId}: ${err}`);
+      }
+    }
+
+    // Clear post index entries for paused sessions
+    for (const session of sessionsToKill) {
+      this.registry.clearPostsForThread(session.threadId);
+    }
+
+    // Update sticky message to show paused state
+    await this.updateStickyMessage();
+  }
+
+  /**
+   * Resume all paused sessions for a platform.
+   * Called when a platform is re-enabled via keyboard toggle.
+   */
+  async resumePausedSessionsForPlatform(platformId: string): Promise<void> {
+    // Mark platform as active (not paused) in sticky message module
+    stickyMessage.setPlatformPaused(platformId, false);
+    const persisted = this.sessionStore.load();
+    const sessionsToResume: PersistedSession[] = [];
+
+    for (const state of persisted.values()) {
+      // Only resume sessions for this platform
+      if (state.platformId !== platformId) continue;
+
+      // Skip sessions that are already active
+      const sessionId = `${state.platformId}:${state.threadId}`;
+      if (this.registry.hasById(sessionId)) continue;
+
+      sessionsToResume.push(state);
+    }
+
+    if (sessionsToResume.length === 0) {
+      log.info(`No paused sessions to resume for platform ${platformId}`);
+      // Still update sticky message to clear paused state
+      await this.updateStickyMessage();
+      return;
+    }
+
+    log.info(`▶️ Resuming ${sessionsToResume.length} paused session(s) for platform ${platformId}`);
+
+    for (const state of sessionsToResume) {
+      try {
+        await lifecycle.resumeSession(state, this.getContext(), 'platform-enabled');
+        log.info(`▶️ Resumed session ${state.threadId.substring(0, 8)}`);
+      } catch (err) {
+        log.warn(`Failed to resume session ${state.threadId}: ${err}`);
+      }
+    }
+
+    // Update sticky message to clear paused state (sessions trigger their own updates)
+    await this.updateStickyMessage();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Public API
+  // ---------------------------------------------------------------------------
+
+  async initialize(): Promise<void> {
+    // Initialize sticky message module with session store for persistence
+    stickyMessage.initialize(this.sessionStore);
+
+    // Start background tasks
+    this.sessionMonitor?.start();
+    this.backgroundCleanup?.start();
+
+    // Clean up stale sessions that timed out while bot was down
+    // Use 2x timeout to be generous (bot might have been down for a while)
+    const sessionTimeoutMs = this.limits.sessionTimeoutMinutes * 60 * 1000;
+    const staleIds = this.sessionStore.cleanStale(sessionTimeoutMs * 2);
+    if (staleIds.length > 0) {
+      log.info(`🧹 Soft-deleted ${staleIds.length} stale session(s) (kept for history)`);
+    }
+
+    // Permanently remove old history entries (older than 3 days by default)
+    const removedCount = this.sessionStore.cleanHistory();
+    if (removedCount > 0) {
+      log.info(`🗑️ Permanently removed ${removedCount} old session(s) from history`);
+    }
+
+    const persisted = this.sessionStore.load();
+    log.info(`📂 Loaded ${persisted.size} session(s) from persistence`);
+
+    // Rehydrate multi-bot baton state, then reconcile it with the persisted
+    // sessions so the baton survives a restart (no "ambiguous, please @mention"
+    // regression) without leaking entries for threads that no longer exist.
+    this.rehydrateThreadCoordination(persisted);
+
+    // Gather session header and task list post IDs by platform (to exclude from sticky cleanup)
+    // These are pinned posts that belong to active sessions and should NOT be deleted
+    const excludePostIdsByPlatform = new Map<string, Set<string>>();
+    for (const session of persisted.values()) {
+      const platformId = session.platformId;
+      let excludeSet = excludePostIdsByPlatform.get(platformId);
+      if (!excludeSet) {
+        excludeSet = new Set();
+        excludePostIdsByPlatform.set(platformId, excludeSet);
+      }
+      // Exclude session header posts
+      if (session.sessionStartPostId) {
+        excludeSet.add(session.sessionStartPostId);
+      }
+      // Exclude task list posts
+      if (session.tasksPostId) {
+        excludeSet.add(session.tasksPostId);
+      }
+    }
+
+    // Clean up old sticky messages from the bot (from failed/crashed runs)
+    // Run in background - no need to block startup. forceRun=true bypasses throttle.
+    // Pass session header and task list post IDs to exclude them from cleanup.
+    for (const platform of this.platforms.values()) {
+      const excludePostIds = excludePostIdsByPlatform.get(platform.platformId);
+      platform.getBotUser().then(botUser => {
+        stickyMessage.cleanupOldStickyMessages(platform, botUser.id, true, excludePostIds).catch(err => {
+          log.warn(`Failed to cleanup old sticky messages for ${platform.platformId}: ${err}`);
+        });
+      }).catch(err => {
+        log.warn(`Failed to get bot user for cleanup on ${platform.platformId}: ${err}`);
+      });
+    }
+
+    if (persisted.size > 0) {
+      // Split sessions into active (to resume) and paused (to skip)
+      // Sessions with isPaused=true were already paused (timeout/interrupt) before bot restart
+      const activeToResume: PersistedSession[] = [];
+      const pausedToSkip: PersistedSession[] = [];
+
+      for (const state of persisted.values()) {
+        if (state.isPaused) {
+          // Session was paused (timeout or interrupt) - don't auto-resume
+          pausedToSkip.push(state);
+        } else {
+          // Session was active when bot shut down - resume it
+          activeToResume.push(state);
+        }
+      }
+
+      if (pausedToSkip.length > 0) {
+        log.info(`⏸️ ${pausedToSkip.length} session(s) remain paused (waiting for user message)`);
+      }
+
+      if (activeToResume.length > 0) {
+        log.info(`🔄 Attempting to resume ${activeToResume.length} active session(s)...`);
+        for (const state of activeToResume) {
+          await lifecycle.resumeSession(state, this.getContext(), 'boot');
+        }
+      }
+    }
+
+    // Refresh sticky message to reflect current state (even if no sessions)
+    await this.updateStickyMessage();
+  }
+
+  /**
+   * Rebuild the in-memory baton map from persistence on startup and reconcile
+   * it with the sessions that actually exist:
+   *   1. Load persisted coordination (participants back into a Set).
+   *   2. Seed any threadId that has persisted sessions but no coordination
+   *      entry, choosing the platformId with the max `lastAddressedAt` (the
+   *      legacy floor) as the holder.
+   *   3. Prune coordination entries whose threadId has no persisted session.
+   */
+  private rehydrateThreadCoordination(persisted: Map<string, PersistedSession>): void {
+    // 1. Load persisted coordination.
+    this.threadCoordination = new Map();
+    for (const [threadId, c] of this.sessionStore.getThreadCoordination()) {
+      this.threadCoordination.set(threadId, {
+        threadId,
+        mainBot: c.mainBot,
+        batonHolder: c.batonHolder,
+        participants: new Set(c.participants ?? []),
+        updatedAt: c.updatedAt ?? 0,
+        botHops: c.botHops ?? 0,
+      });
+    }
+
+    // Group persisted sessions by raw threadId → { platformId: lastAddressedAt }.
+    const floorByThread = new Map<string, { platformId: string; at: number }>();
+    for (const state of persisted.values()) {
+      const at = state.lastAddressedAt ?? 0;
+      const best = floorByThread.get(state.threadId);
+      if (!best || at > best.at) {
+        floorByThread.set(state.threadId, { platformId: state.platformId, at });
+      }
+    }
+
+    // 2. Seed gaps from the derived floor.
+    for (const [threadId, best] of floorByThread) {
+      if (!this.threadCoordination.has(threadId)) {
+        this.transferBaton(threadId, best.platformId);
+      }
+    }
+
+    // 3. Prune entries whose thread has no persisted session anymore.
+    for (const threadId of [...this.threadCoordination.keys()]) {
+      if (!floorByThread.has(threadId)) {
+        this.threadCoordination.delete(threadId);
+        this.sessionStore.removeThreadCoordination(threadId);
+      }
+    }
+  }
+
+  async startSession(
+    options: { prompt: string; files?: PlatformFile[]; skipWorktreePrompt?: boolean },
+    username: string,
+    replyToPostId?: string,
+    platformId: string = 'default',
+    displayName?: string,
+    triggeringPostId?: string,  // The actual message that triggered the session (for context exclusion)
+    initialOptions?: InitialSessionOptions
+  ): Promise<void> {
+    await lifecycle.startSession(options, username, displayName, replyToPostId, platformId, this.getContext(), triggeringPostId, initialOptions);
+  }
+
+  // Helper to find session by threadId (sessions are keyed by composite platformId:threadId).
+  //
+  // CRITICAL for multi-bot channels: pass `platformId` whenever the caller knows
+  // it. Several bots share one raw threadId, so the unscoped lookup returns an
+  // ARBITRARY bot's session (whichever was created first). That misrouted a
+  // handoff a bot forwarded into a PEER's session back into its OWN — producing
+  // an infinite self-echo loop. With `platformId`, the lookup is scoped to the
+  // right bot. The unscoped fallback is kept for legacy single-bot call sites.
+  private findSessionByThreadId(threadId: string, platformId?: string): Session | undefined {
+    if (platformId) {
+      return this.registry.find(platformId, threadId);
+    }
+    for (const session of this.registry.getAll()) {
+      if (session.threadId === threadId) {
+        return session;
+      }
+    }
+    return undefined;
+  }
+
+
+  async sendFollowUp(threadId: string, message: string, files?: PlatformFile[], username?: string, displayName?: string, options?: { system?: boolean; triggeringPostId?: string; platformId?: string }): Promise<void> {
+    const session = this.findSessionByThreadId(threadId, options?.platformId);
+    if (!session || !session.claude.isRunning()) return;
+    await lifecycle.sendFollowUp(session, message, files, this.getContext(), username, displayName, options);
+  }
+
+  isSessionActive(): boolean {
+    return this.registry.size > 0;
+  }
+
+  /**
+   * Check if a thread has an active session.
+   * Delegates to registry.findByThreadId() internally.
+   */
+  isInSessionThread(threadRoot: string): boolean {
+    const session = this.registry.findByThreadId(threadRoot);
+    return session !== undefined && session.claude.isRunning();
+  }
+
+  /**
+   * Check if a thread has a paused (persisted but not active) session.
+   * Delegates to registry.getPersistedByThreadId() internally.
+   */
+  hasPausedSession(threadId: string): boolean {
+    // If there's an active session, it's not paused
+    if (this.registry.findByThreadId(threadId)) return false;
+    // Check for persisted session
+    return this.registry.getPersistedByThreadId(threadId) !== undefined;
+  }
+
+  async resumePausedSession(threadId: string, message: string, files: PlatformFile[] | undefined, username: string, platformId?: string, triggeringPostId?: string): Promise<void> {
+    await lifecycle.resumePausedSession(threadId, message, files, this.getContext(), username, platformId, triggeringPostId);
+  }
+
+  getPersistedSession(threadId: string, platformId?: string): PersistedSession | undefined {
+    return this.registry.getPersistedByThreadId(threadId, platformId);
+  }
+
+  /**
+   * Cancel a paused (persisted but not active) session by soft-deleting it.
+   * Used when !stop is issued in a thread with a paused session.
+   */
+  cancelPausedSession(threadId: string, platformId?: string): void {
+    const persisted = this.registry.getPersistedByThreadId(threadId, platformId);
+    if (persisted) {
+      const sessionId = `${persisted.platformId}:${persisted.threadId}`;
+      this.sessionStore.softDelete(sessionId);
+    }
+  }
+
+  async killSession(threadId: string, unpersist = true): Promise<void> {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return;
+    await lifecycle.killSession(session, unpersist, this.getContext());
+  }
+
+  async killAllSessions(): Promise<void> {
+    await lifecycle.killAllSessions(this.getContext());
+  }
+
+  // Commands
+  async cancelSession(threadId: string, username: string, platformId?: string): Promise<void> {
+    const session = this.findSessionByThreadId(threadId, platformId);
+    if (!session) return;
+    await commands.cancelSession(session, username, this.getContext());
+  }
+
+  async pauseSession(threadId: string, username: string, platformId?: string): Promise<void> {
+    const session = this.findSessionByThreadId(threadId, platformId);
+    if (!session) return;
+    await commands.pauseSession(session, username, this.getContext());
+  }
+
+  async interruptSession(threadId: string, username: string, platformId?: string): Promise<void> {
+    const session = this.findSessionByThreadId(threadId, platformId);
+    if (!session) return;
+    await commands.interruptSession(session, username);
+  }
+
+  async approvePendingPlan(threadId: string, username: string): Promise<void> {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return;
+    await commands.approvePendingPlan(session, username, this.getContext());
+  }
+
+  async changeDirectory(threadId: string, newDir: string, username: string): Promise<void> {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return;
+    await commands.changeDirectory(session, newDir, username, this.getContext());
+  }
+
+  async inviteUser(threadId: string, invitedUser: string, invitedBy: string): Promise<void> {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return;
+    await commands.inviteUser(session, invitedUser, invitedBy, this.getContext());
+  }
+
+  async kickUser(threadId: string, kickedUser: string, kickedBy: string): Promise<void> {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return;
+    await commands.kickUser(session, kickedUser, kickedBy, this.getContext());
+  }
+
+  async setGitHubEmail(
+    threadId: string,
+    username: string,
+    arg: string | undefined,
+  ): Promise<void> {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return;
+    await commands.setGitHubEmail(session, username, arg, this.getContext());
+  }
+
+  /**
+   * Toggle "respond only when @mentioned" (quiet mode) for a session (#402).
+   * `arg` accepts `on`/`off`; anything else toggles the current value.
+   */
+  async setRespondOnlyWhenMentioned(
+    threadId: string,
+    username: string,
+    arg: string | undefined,
+  ): Promise<void> {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return;
+    await commands.setRespondOnlyWhenMentioned(session, username, arg, this.getContext());
+  }
+
+  /**
+   * Change the permission mode of an active session. Respawns Claude with the
+   * new mode. Session owner or a globally-allowed user only.
+   */
+  async setSessionPermissionMode(
+    threadId: string,
+    username: string,
+    mode: PermissionMode,
+  ): Promise<void> {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return;
+    await commands.setSessionPermissionMode(session, username, mode, this.getContext());
+  }
+
+  /**
+   * @deprecated Use `setSessionPermissionMode(threadId, username, 'default')`.
+   * Kept so the `commands/executor.ts` legacy call path keeps working.
+   */
+  async enableInteractivePermissions(threadId: string, username: string): Promise<void> {
+    await this.setSessionPermissionMode(threadId, username, 'default');
+  }
+
+  async reportBug(threadId: string, description: string | undefined, username: string, files?: PlatformFile[]): Promise<void> {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return;
+    await commands.reportBug(session, description, username, this.getContext(), undefined, files);
+  }
+
+  async showUpdateStatus(threadId: string, _username: string): Promise<void> {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return;
+    await commands.showUpdateStatus(session, this.autoUpdateManager, this.getContext());
+  }
+
+  /**
+   * Show update status without an active session.
+   * Used when !update is the first message (no session exists yet).
+   */
+  async showUpdateStatusWithoutSession(
+    platformId: string,
+    threadId: string
+  ): Promise<void> {
+    const platform = this.platforms.get(platformId);
+    if (!platform) return;
+
+    const formatter = platform.getFormatter();
+
+    if (!this.autoUpdateManager) {
+      await platform.createPost(`ℹ️ Auto-update is not available`, threadId);
+      return;
+    }
+
+    if (!this.autoUpdateManager.isEnabled()) {
+      await platform.createPost(`ℹ️ Auto-update is disabled in configuration`, threadId);
+      return;
+    }
+
+    // Check for new updates
+    const updateInfo = await this.autoUpdateManager.checkNow();
+
+    if (!updateInfo || !updateInfo.available) {
+      await platform.createPost(`✅ ${formatter.formatBold('Up to date')} - no updates available`, threadId);
+      return;
+    }
+
+    const scheduledAt = this.autoUpdateManager.getScheduledRestartAt();
+    const config = this.autoUpdateManager.getConfig();
+
+    let statusLine: string;
+    if (scheduledAt) {
+      const secondsRemaining = Math.max(0, Math.round((scheduledAt.getTime() - Date.now()) / 1000));
+      statusLine = `Restarting in ${secondsRemaining} seconds`;
+    } else {
+      statusLine = `Mode: ${config.autoRestartMode}`;
+    }
+
+    const message =
+      `🔄 ${formatter.formatBold('Update available')}\n\n` +
+      `Current: v${updateInfo.currentVersion}\n` +
+      `Latest: v${updateInfo.latestVersion}\n` +
+      `${statusLine}\n\n` +
+      `Start a session to use ${formatter.formatCode('!update now')} or ${formatter.formatCode('!update defer')}`;
+
+    await platform.createPost(message, threadId);
+  }
+
+  async forceUpdateNow(threadId: string, username: string): Promise<void> {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return;
+    await commands.forceUpdateNow(session, username, this.autoUpdateManager);
+  }
+
+  async deferUpdate(threadId: string, username: string): Promise<void> {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return;
+    await commands.deferUpdate(session, username, this.autoUpdateManager);
+  }
+
+  // Plugin commands
+  async pluginList(threadId: string): Promise<void> {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return;
+    await plugin.handlePluginList(session);
+  }
+
+  async pluginInstall(threadId: string, pluginName: string, username: string): Promise<void> {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return;
+    await plugin.handlePluginInstall(session, pluginName, username, this.getContext());
+  }
+
+  async pluginUninstall(threadId: string, pluginName: string, username: string): Promise<void> {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return;
+    await plugin.handlePluginUninstall(session, pluginName, username, this.getContext());
+  }
+
+  /**
+   * Whether a session's tool-uses will trigger permission prompts. True for
+   * `default` and `auto` modes (both consult the MCP server for at least
+   * some tool-uses), false for `bypass`. Respects per-session overrides.
+   */
+  isSessionInteractive(threadId: string): boolean {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return this.permissionMode !== 'bypass';
+    const effective = effectivePermissionMode({
+      override: session.permissionModeOverride,
+      sessionHasInteractiveOverride: session.forceInteractivePermissions,
+      botWideMode: this.permissionMode,
+    });
+    return effective !== 'bypass';
+  }
+
+  async requestMessageApproval(threadId: string, username: string, message: string): Promise<void> {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return;
+    await commands.requestMessageApproval(session, username, message, this.getContext());
+  }
+
+  // Worktree commands
+  async handleWorktreeBranchResponse(threadId: string, branchName: string, username: string, responsePostId: string): Promise<boolean> {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return false;
+    return worktreeModule.handleWorktreeBranchResponse(
+      session,
+      branchName,
+      username,
+      responsePostId,
+      (tid, branch, user) => this.createAndSwitchToWorktree(tid, branch, user)
+    );
+  }
+
+  async handleWorktreeSkip(threadId: string, username: string): Promise<void> {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return;
+    await worktreeModule.handleWorktreeSkip(
+      session,
+      username,
+      (s) => this.persistSession(s),
+      (s, q) => contextPrompt.offerContextPrompt(s, q, undefined, this.getContextPromptHandler())
+    );
+  }
+
+  async createAndSwitchToWorktree(threadId: string, branch: string, username: string): Promise<void> {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return;
+    await worktreeModule.createAndSwitchToWorktree(session, branch, username, {
+      permissionMode: this.permissionMode,
+      chromeEnabled: this.chromeEnabled,
+      worktreeMode: this.worktreeMode,
+      permissionTimeoutMs: this.limits.permissionTimeoutSeconds * 1000,
+      handleEvent: (tid, e) => this.handleEvent(tid, e),
+      handleExit: (tid, code, source) => this.handleExit(tid, code, source),
+      updateSessionHeader: (s) => this.updateSessionHeader(s),
+      flush: async (s) => {
+        if (s.messageManager) {
+          await s.messageManager.flush();
+        }
+      },
+      persistSession: (s) => this.persistSession(s),
+      startTyping: (s) => this.startTyping(s),
+      stopTyping: (s) => this.stopTyping(s),
+      offerContextPrompt: (s, q, f, e) => contextPrompt.offerContextPrompt(s, q, f, this.getContextPromptHandler(), e),
+      buildMessageContent: (text, s, files) => {
+        const uploadDir = streaming.getSessionUploadDir(s.platformId, s.threadId);
+        return streaming.buildMessageContent(text, s.platform, uploadDir, files, this.debug);
+      },
+      generateWorkSummary: (s) => commands.generateWorkSummary(s),
+      getThreadMessagesForContext: (s, limit, excludePostId) => contextPrompt.getThreadMessagesForContext(s, limit, excludePostId),
+      formatContextForClaude: (messages, summary) => contextPrompt.formatContextForClaude(messages, summary),
+      appendSystemPrompt: chatPlatformPromptFor(this.getContext(), session.platformId),
+      writeConfined: this.platformWriteScope.get(session.platformId) !== 'unrestricted',
+      githubEmailsStore: this.githubEmailsStore,
+      registerPost: (postId, tid) => this.registerPost(postId, tid),
+      updateStickyMessage: () => this.updateStickyMessage(),
+      registerWorktreeUser: (path, sid) => this.registerWorktreeUser(path, sid),
+    });
+  }
+
+  async switchToWorktree(threadId: string, branchOrPath: string, username: string): Promise<void> {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return;
+    await worktreeModule.switchToWorktree(
+      session,
+      branchOrPath,
+      username,
+      (tid, dir, user) => this.changeDirectory(tid, dir, user)
+    );
+  }
+
+  async listWorktreesCommand(threadId: string, _username: string): Promise<void> {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return;
+    await worktreeModule.listWorktreesCommand(session);
+  }
+
+  /**
+   * List worktrees without an active session.
+   * Used when !worktree list is used in a first message (no session exists yet).
+   */
+  async listWorktreesWithoutSession(platformId: string, threadId: string): Promise<void> {
+    const platform = this.platforms.get(platformId);
+    if (!platform) return;
+
+    const formatter = platform.getFormatter();
+
+    // Use the default working directory since there's no session
+    const message = await worktreeModule.buildWorktreeListMessageFromDir(
+      this.workingDir,
+      formatter,
+      this.workingDir
+    );
+
+    if (message === null) {
+      await platform.createPost(`❌ Current directory is not a git repository`, threadId);
+      return;
+    }
+
+    await platform.createPost(message, threadId);
+  }
+
+  /**
+   * Switch to a worktree without an active session.
+   * Used when !worktree switch is used in a first message without additional prompt.
+   */
+  async switchToWorktreeWithoutSession(
+    platformId: string,
+    threadId: string,
+    branchOrPath: string
+  ): Promise<void> {
+    const platform = this.platforms.get(platformId);
+    if (!platform) return;
+
+    const formatter = platform.getFormatter();
+
+    // Find the worktree
+    const { listWorktrees, getRepositoryRoot, isGitRepository } = await import('../git/worktree.js');
+
+    const isRepo = await isGitRepository(this.workingDir);
+    if (!isRepo) {
+      await platform.createPost(`❌ Current directory is not a git repository`, threadId);
+      return;
+    }
+
+    const repoRoot = await getRepositoryRoot(this.workingDir);
+    const worktrees = await listWorktrees(repoRoot);
+
+    // Find matching worktree
+    const target = worktrees.find(
+      (wt: { branch: string; path: string }) => wt.branch === branchOrPath || wt.path === branchOrPath || wt.path.endsWith(`/${branchOrPath}`)
+    );
+
+    if (!target) {
+      await platform.createPost(
+        `❌ No worktree found for ${formatter.formatCode(branchOrPath)}`,
+        threadId
+      );
+      return;
+    }
+
+    await platform.createPost(
+      `✅ Switched to worktree ${formatter.formatCode(target.branch)} at ${formatter.formatCode(target.path)}\n\nMention me to start a session in this worktree.`,
+      threadId
+    );
+  }
+
+  async removeWorktreeCommand(threadId: string, branchOrPath: string, username: string): Promise<void> {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return;
+    await worktreeModule.removeWorktreeCommand(session, branchOrPath, username);
+  }
+
+  async disableWorktreePrompt(threadId: string, username: string): Promise<void> {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return;
+    await worktreeModule.disableWorktreePrompt(session, username, (s) => this.persistSession(s));
+  }
+
+  async cleanupWorktreeCommand(threadId: string, username: string): Promise<void> {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return;
+    await worktreeModule.cleanupWorktreeCommand(
+      session,
+      username,
+      (path, sid) => this.hasOtherSessionsUsingWorktree(path, sid),
+      (tid, path, user) => this.changeDirectory(tid, path, user)
+    );
+  }
+
+  hasPendingWorktreePrompt(threadId: string): boolean {
+    const session = this.findSessionByThreadId(threadId);
+    return session?.pendingWorktreePrompt === true;
+  }
+
+  // Missing public methods needed by index.ts
+  getActiveThreadIds(): string[] {
+    // Return raw threadIds (not composite sessionIds) for posting to chat
+    return [...this.registry.getAll()].map(s => s.threadId);
+  }
+
+  /**
+   * Get the session start post ID for a thread.
+   *
+   * This is the post where:
+   * - The bot's initial response was posted (containing the session header)
+   * - Reactions are tracked for session control (cancel, interrupt, etc.)
+   *
+   * Checks both active sessions and persisted sessions.
+   *
+   * @param threadId - The thread ID to look up
+   * @returns The post ID where the session started, or undefined if not found
+   */
+  getSessionStartPostId(threadId: string): string | undefined {
+    // First check active sessions
+    const session = this.findSessionByThreadId(threadId);
+    if (session?.sessionStartPostId) {
+      return session.sessionStartPostId;
+    }
+    // Then check persisted sessions (for resume scenarios)
+    const persisted = this.registry.getPersistedByThreadId(threadId);
+    return persisted?.sessionStartPostId ?? undefined;
+  }
+
+  /**
+   * Post shutdown messages to all active sessions and persist the post IDs.
+   * This allows the resume to update the same post instead of creating a new one.
+   */
+  async postShutdownMessages(): Promise<void> {
+    for (const session of this.registry.getAll()) {
+      try {
+        const fmt = session.platform.getFormatter();
+        const shutdownMessage = `⏸️ ${fmt.formatBold('Bot shutting down')} - session will resume on restart`;
+
+        if (session.lifecyclePostId) {
+          // Update existing timeout/warning post
+          await session.platform.updatePost(session.lifecyclePostId, shutdownMessage);
+        } else {
+          // Create new shutdown post and store the ID
+          const post = await session.platform.createPost(shutdownMessage, session.threadId);
+          session.lifecyclePostId = post.id;
+        }
+        // Persist so resume can find the post ID
+        this.persistSession(session);
+      } catch {
+        // Ignore errors, we're shutting down
+      }
+    }
+  }
+
+  isUserAllowedInSession(threadId: string, username: string): boolean {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) {
+      // Check persisted session
+      const persisted = this.getPersistedSession(threadId);
+      if (persisted) {
+        return persisted.sessionAllowedUsers.includes(username) ||
+               this.platforms.get(persisted.platformId)?.isUserAllowed(username) || false;
+      }
+      return false;
+    }
+    return session.sessionAllowedUsers.has(username) || session.platform.isUserAllowed(username);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Side Conversation Tracking
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Add a side conversation to a session.
+   * Side conversations are messages from approved users that are directed at other users (not the bot).
+   * They are included as context with the next message sent to Claude.
+   */
+  addSideConversation(threadId: string, conv: import('./types.js').SideConversation): void {
+    const session = this.findSessionByThreadId(threadId);
+    if (!session) return;
+
+    // Initialize array if needed
+    if (!session.pendingSideConversations) {
+      session.pendingSideConversations = [];
+    }
+
+    // Add the conversation
+    session.pendingSideConversations.push(conv);
+
+    // Apply limits
+    this.applySideConversationLimits(session);
+  }
+
+  /**
+   * Apply limits to side conversations to prevent unbounded growth.
+   */
+  private applySideConversationLimits(session: Session): void {
+    const MAX_COUNT = 5;
+    const MAX_TOTAL_CHARS = 2000;
+    const MAX_AGE_MS = 30 * 60 * 1000; // 30 minutes
+
+    const now = Date.now();
+    let convs = session.pendingSideConversations || [];
+
+    // Filter by age
+    convs = convs.filter(c => now - c.timestamp.getTime() < MAX_AGE_MS);
+
+    // Keep only most recent N
+    if (convs.length > MAX_COUNT) {
+      convs = convs.slice(-MAX_COUNT);
+    }
+
+    // Enforce character limit (keep most recent that fit)
+    let totalChars = 0;
+    const limited: import('./types.js').SideConversation[] = [];
+    for (const c of [...convs].reverse()) {
+      if (totalChars + c.message.length <= MAX_TOTAL_CHARS) {
+        limited.unshift(c);
+        totalChars += c.message.length;
+      }
+    }
+
+    session.pendingSideConversations = limited;
+  }
+
+  async startSessionWithWorktree(
+    options: { prompt: string; files?: PlatformFile[] },
+    branch: string,
+    username: string,
+    replyToPostId?: string,
+    platformId: string = 'default',
+    displayName?: string,
+    triggeringPostId?: string,  // The actual message that triggered the session (for context exclusion)
+    initialOptions?: InitialSessionOptions
+  ): Promise<void> {
+    // Start normal session first, but skip worktree prompt since branch is already specified
+    await this.startSession({ ...options, skipWorktreePrompt: true }, username, replyToPostId, platformId, displayName, triggeringPostId, initialOptions);
+
+    // Then switch to or create worktree
+    const threadId = replyToPostId || '';
+    const session = this.registry.find(platformId, threadId);
+    if (session) {
+      if (initialOptions?.switchToExisting) {
+        // Switch to existing worktree (from !worktree switch)
+        await this.switchToWorktree(session.threadId, branch, username);
+      } else {
+        // Create new worktree (from !worktree branch-name)
+        await this.createAndSwitchToWorktree(session.threadId, branch, username);
+      }
+    }
+  }
+
+  setShuttingDown(): void {
+    this.isShuttingDown = true;
+    // Update sticky message module to show shutdown state
+    stickyMessage.setShuttingDown(true);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Auto-update support methods
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Get session activity info for auto-update scheduling.
+   * Returns the number of active sessions, last activity time, and busy state.
+   */
+  getActivityInfo(): { activeSessionCount: number; lastActivityAt: Date | null; anySessionBusy: boolean } {
+    const sessions = [...this.registry.getAll()];
+
+    if (sessions.length === 0) {
+      return {
+        activeSessionCount: 0,
+        lastActivityAt: null,
+        anySessionBusy: false,
+      };
+    }
+
+    // Find the most recent activity across all sessions
+    let lastActivity: Date | null = null;
+    let anyBusy = false;
+
+    for (const session of sessions) {
+      if (!lastActivity || session.lastActivityAt > lastActivity) {
+        lastActivity = session.lastActivityAt;
+      }
+      // A session is "busy" if it's typing (Claude is processing)
+      if (session.timers.typingTimer !== null) {
+        anyBusy = true;
+      }
+    }
+
+    return {
+      activeSessionCount: sessions.length,
+      lastActivityAt: lastActivity,
+      anySessionBusy: anyBusy,
+    };
+  }
+
+  /**
+   * Broadcast a message to all active sessions.
+   * Used for update notifications.
+   * @param messageBuilder - Function that takes a formatter and returns the formatted message
+   */
+  async broadcastToAll(messageBuilder: (formatter: import('../platform/formatter.js').PlatformFormatter) => string): Promise<void> {
+    for (const session of this.registry.getAll()) {
+      try {
+        const formatter = session.platform.getFormatter();
+        const message = messageBuilder(formatter);
+        await post(session, 'info', message);
+      } catch (err) {
+        log.warn(`Failed to broadcast to session ${session.threadId}: ${err}`);
+      }
+    }
+  }
+
+  /**
+   * Post update approval request to specific threads (for 'ask' mode).
+   * Returns the post IDs for reaction tracking.
+   */
+  async postUpdateAskMessage(threadIds: string[], version: string): Promise<void> {
+    for (const threadId of threadIds) {
+      const session = this.findSessionByThreadId(threadId);
+      if (!session) continue;
+
+      try {
+        const fmt = session.platform.getFormatter();
+        const message =
+          `🔄 ${fmt.formatBold('Update available:')} v${version}\n\n` +
+          `React: 👍 to update now | 👎 to defer for 1 hour\n` +
+          fmt.formatItalic('Update will proceed automatically after timeout if no response');
+
+        const post = await session.platform.createInteractivePost(
+          message,
+          ['👍', '👎'],
+          session.threadId
+        );
+
+        // Store pending update prompt for reaction handling
+        session.messageManager?.setPendingUpdatePrompt({ postId: post.id });
+        this.registerPost(post.id, session.threadId);
+      } catch (err) {
+        log.warn(`Failed to post ask message to ${threadId}: ${err}`);
+      }
+    }
+  }
+
+  // Shutdown
+  async shutdown(message?: string): Promise<void> {
+    this.isShuttingDown = true;
+
+    // Stop background tasks
+    this.sessionMonitor?.stop();
+    this.backgroundCleanup?.stop();
+
+    // Post shutdown message to all active sessions
+    if (message) {
+      for (const session of this.registry.getAll()) {
+        try {
+          await post(session, 'info', message);
+        } catch {
+          // Ignore
+        }
+      }
+    }
+
+    // Persist and kill all sessions for later resume
+    for (const session of this.registry.getAll()) {
+      this.stopTyping(session);
+      this.persistSession(session);
+      session.claude.kill();
+    }
+    this.registry.clear();
+  }
+}

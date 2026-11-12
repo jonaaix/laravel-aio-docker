@@ -1,0 +1,1927 @@
+import prompts from 'prompts';
+import { existsSync, readFileSync } from 'fs';
+import { join, dirname } from 'path';
+import { spawn } from 'child_process';
+import yaml from 'js-yaml';
+import { fileURLToPath } from 'url';
+import {
+  CONFIG_PATH,
+  saveConfig,
+  LIMITS_DEFAULTS,
+  resolvePermissionMode,
+  permissionModeDisplay,
+  type Config,
+  type PlatformInstanceConfig,
+  type MattermostPlatformConfig,
+  type SlackPlatformConfig,
+  type LimitsConfig,
+  type PermissionMode,
+  type OverheadVisibility,
+  type AgentBackendKind,
+  DEFAULT_OVERHEAD_VISIBILITY,
+  DEFAULT_AGENT_BACKEND,
+} from './config/index.js';
+import { bold, dim, green } from './utils/colors.js';
+import { validateClaudeCli } from './claude/version-check.js';
+
+/**
+ * Common choices list for the three-way permission-mode picker, reused by
+ * both the Mattermost and Slack platform flows. `auto` is the recommended
+ * default — Claude's classifier handles low-risk tool-uses so operators
+ * aren't desensitized by prompt fatigue, while high-risk tool-uses still
+ * fall through to human approval via the MCP server.
+ */
+const PERMISSION_MODE_CHOICES = [
+  {
+    title: 'Auto (recommended)',
+    value: 'auto' as PermissionMode,
+    description: 'Classifier auto-approves low-risk; high-risk tools still prompt via reactions',
+  },
+  {
+    title: 'Default',
+    value: 'default' as PermissionMode,
+    description: 'Every tool-use prompts — strictest mode, can be noisy for everyday work',
+  },
+  {
+    title: 'Bypass',
+    value: 'bypass' as PermissionMode,
+    description: 'No prompts, all tools allowed — use only in trusted environments',
+  },
+];
+
+function permissionModeChoiceIndex(mode: PermissionMode): number {
+  return PERMISSION_MODE_CHOICES.findIndex((c) => c.value === mode);
+}
+
+/**
+ * Agent-backend picker, reused by both platform flows. `claude` is the default
+ * (unchanged behavior). opencode is configured entirely outside claude-threads
+ * — its auth and default model live in the host's opencode config (`opencode
+ * auth login` / opencode.json) — so this only selects which backend to spawn.
+ */
+const AGENT_BACKEND_CHOICES = [
+  {
+    title: 'Claude Code (default)',
+    value: 'claude' as AgentBackendKind,
+    description: 'The Claude Code CLI — full feature support',
+  },
+  {
+    title: 'opencode',
+    value: 'opencode' as AgentBackendKind,
+    description: 'The opencode agent — requires the `opencode` binary + its own auth/model config on this host',
+  },
+];
+
+function agentBackendChoiceIndex(kind: AgentBackendKind): number {
+  return AGENT_BACKEND_CHOICES.findIndex((c) => c.value === kind);
+}
+
+/**
+ * Optional per-platform model override. The accepted format depends on the
+ * chosen backend, so the help text adapts: opencode wants `provider/model`
+ * (like `opencode.json`), Claude wants a short name or model id. Empty → the
+ * backend's own default. Shared by the Mattermost and Slack wizards.
+ */
+async function promptForModel(agentBackend: AgentBackendKind, initial: string): Promise<string> {
+  console.log('');
+  if (agentBackend === 'opencode') {
+    console.log(dim('  Model (optional): opencode\'s "provider/model" notation — the same as'));
+    console.log(dim('  opencode.json, e.g. "anthropic/claude-sonnet-4-5" or'));
+    console.log(dim('  "openrouter/anthropic/claude-3.5-sonnet". Empty → opencode.json default.'));
+  } else {
+    console.log(dim('  Model (optional): a short name like "sonnet"/"opus" or a full model id.'));
+    console.log(dim('  Empty → the backend default.'));
+  }
+  const { model } = await prompts({
+    type: 'text',
+    name: 'model',
+    message: 'Model',
+    initial,
+  }, { onCancel });
+  return (model || '').trim();
+}
+
+/**
+ * Optional per-bot working directory. Empty → the global `workingDir`. Set a
+ * separate directory when this bot needs its own repo / `CLAUDE.md` / persona
+ * (several bots in one process each get their own dir this way). Shared by the
+ * Mattermost and Slack wizards.
+ */
+async function promptForWorkingDir(initial: string): Promise<string> {
+  console.log('');
+  console.log(dim("  Working directory (optional): this bot's own dir — its own repo /"));
+  console.log(dim('  CLAUDE.md / persona. Empty → the global default workingDir.'));
+  const { workingDir } = await prompts({
+    type: 'text',
+    name: 'workingDir',
+    message: 'Working directory',
+    initial,
+  }, { onCancel });
+  return (workingDir || '').trim();
+}
+
+/**
+ * One picker drives both `sessionHeader` and `stickyMessage` per platform —
+ * the common case is "I want the bot to be more / less chatty in this
+ * channel," not "make the per-thread header `minimal` but the channel
+ * sticky `hidden`." Power users who want different values per surface can
+ * still set them in YAML directly.
+ */
+const OVERHEAD_VISIBILITY_CHOICES = [
+  {
+    title: 'Full (default)',
+    value: 'full' as OverheadVisibility,
+    description: 'Per-thread session header + channel sticky with active-sessions list',
+  },
+  {
+    title: 'Minimal',
+    value: 'minimal' as OverheadVisibility,
+    description: 'One-line status bar only — drops the table and sessions list',
+  },
+  {
+    title: 'Hidden',
+    value: 'hidden' as OverheadVisibility,
+    description: 'No header post, no sticky — Claude\'s reply is the first message in the thread',
+  },
+];
+
+function overheadVisibilityChoiceIndex(mode: OverheadVisibility): number {
+  return OVERHEAD_VISIBILITY_CHOICES.findIndex((c) => c.value === mode);
+}
+
+// Get the path to the Slack app manifest file
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SLACK_MANIFEST_PATH = join(__dirname, '..', 'docs', 'slack-app-manifest.yaml');
+
+const onCancel = () => {
+  console.log('');
+  console.log(dim('  Setup cancelled.'));
+  process.exit(0);
+};
+
+/**
+ * Copy text to clipboard (cross-platform)
+ * Returns true if successful, false otherwise
+ */
+async function copyToClipboard(text: string): Promise<boolean> {
+  const platform = process.platform;
+
+  const runCommand = (cmd: string, args: string[]): Promise<boolean> => {
+    return new Promise((resolve) => {
+      try {
+        const proc = spawn(cmd, args, { stdio: ['pipe', 'ignore', 'ignore'] });
+        proc.stdin?.write(text);
+        proc.stdin?.end();
+        proc.on('close', (code) => resolve(code === 0));
+        proc.on('error', () => resolve(false));
+      } catch {
+        resolve(false);
+      }
+    });
+  };
+
+  if (platform === 'darwin') {
+    return runCommand('pbcopy', []);
+  } else if (platform === 'win32') {
+    return runCommand('clip', []);
+  } else {
+    // Linux - try xclip first, fall back to xsel
+    const success = await runCommand('xclip', ['-selection', 'clipboard']);
+    if (success) return true;
+    return runCommand('xsel', ['--clipboard', '--input']);
+  }
+}
+
+/**
+ * Show platform-specific setup instructions
+ */
+async function showPlatformInstructions(platformType: 'mattermost' | 'slack'): Promise<void> {
+  if (platformType === 'mattermost') {
+    console.log('');
+    console.log(bold('  📋 Mattermost Setup - What You\'ll Need:'));
+    console.log('');
+    console.log(dim('  1. Bot Token:'));
+    console.log(dim('     • Go to Main Menu → Integrations → Bot Accounts'));
+    console.log(dim('     • Click "Add Bot Account"'));
+    console.log(dim('     • Give it a username (e.g., claude-bot) and display name'));
+    console.log(dim('     • Enable "post:all" permission'));
+    console.log(dim('     • Copy the generated token'));
+    console.log('');
+    console.log(dim('  2. Channel ID:'));
+    console.log(dim('     • Open the channel where the bot should listen'));
+    console.log(dim('     • Click the channel name → "View Info"'));
+    console.log(dim('     • Copy the ID from the URL (26-character string)'));
+    console.log('');
+    console.log(dim('  3. Add bot to channel:'));
+    console.log(dim('     • In the channel, type: /invite @your-bot-name'));
+    console.log('');
+  } else {
+    // Read manifest from file (single source of truth)
+    let manifest: string;
+    try {
+      manifest = readFileSync(SLACK_MANIFEST_PATH, 'utf-8');
+    } catch {
+      // Fallback if file not found (shouldn't happen in normal installs)
+      console.log('');
+      console.log(dim('  ⚠️  Could not find Slack manifest file.'));
+      console.log(dim('  📖 For manual setup instructions:'));
+      console.log(dim('     https://github.com/anneschuth/claude-threads/blob/main/SETUP_GUIDE.md'));
+      console.log('');
+      return;
+    }
+
+    console.log('');
+    console.log(bold('  📋 Slack Setup - What You\'ll Need:'));
+    console.log('');
+    console.log(dim('  Easiest: Use the App Manifest'));
+    console.log(dim('  ─────────────────────────────'));
+    console.log(dim('  1. Go to https://api.slack.com/apps'));
+    console.log(dim('  2. Click "Create New App" → "From an app manifest"'));
+    console.log(dim('  3. Select your workspace'));
+    console.log(dim('  4. Switch to the "YAML" tab (important!)'));
+    console.log(dim('  5. Paste the manifest'));
+    console.log(dim('  6. Click "Create" and "Install to Workspace"'));
+    console.log('');
+    console.log(dim('  Then get your tokens:'));
+    console.log(dim('  ─────────────────────'));
+    console.log(dim('  • Bot Token: OAuth & Permissions → Bot User OAuth Token (xoxb-...)'));
+    console.log(dim('  • App Token: Basic Information → App-Level Tokens → Generate'));
+    console.log(dim('    (add "connections:write" scope, copy the xapp-... token)'));
+    console.log('');
+    console.log(dim('  Finally:'));
+    console.log(dim('  ────────'));
+    console.log(dim('  • Channel ID: Right-click channel → View details → Copy ID (starts with C)'));
+    console.log(dim('  • Add bot: In the channel, type /invite @claude-bot'));
+    console.log('');
+
+    // Offer to copy manifest to clipboard
+    const { copyManifest } = await prompts({
+      type: 'confirm',
+      name: 'copyManifest',
+      message: 'Copy Slack app manifest to clipboard?',
+      initial: true,
+    }, { onCancel });
+
+    if (copyManifest) {
+      const copied = await copyToClipboard(manifest);
+      if (copied) {
+        console.log(green('  ✓ Manifest copied to clipboard!'));
+        console.log(dim('    Paste it at: https://api.slack.com/apps → Create New App → From manifest → YAML tab'));
+      } else {
+        // Fallback: show the manifest
+        console.log('');
+        console.log(dim('  Could not copy to clipboard. Here\'s the manifest:'));
+        console.log('');
+        console.log(dim('  ───────────────────────────────────────'));
+        for (const line of manifest.split('\n')) {
+          console.log(dim(`  ${line}`));
+        }
+        console.log(dim('  ───────────────────────────────────────'));
+      }
+    } else {
+      console.log(dim('  📖 For the full manifest and manual setup instructions:'));
+      console.log(dim('     https://github.com/anneschuth/claude-threads/blob/main/SETUP_GUIDE.md'));
+    }
+    console.log('');
+  }
+}
+
+/**
+ * Derive a nice display name from a Mattermost server URL
+ * Extracts the first subdomain and converts it to title case.
+ *
+ * Examples:
+ *   https://acme-corp.mattermost.com → "Acme Corp"
+ *   https://team-chat.example.com → "Team Chat"
+ *   https://digilab.overheid.nl → "Digilab"
+ *
+ * @internal Exported for testing
+ */
+export function deriveDisplayName(url: string): string {
+  try {
+    const hostname = new URL(url).hostname;
+    // Get first part before first dot (e.g., "acme-corp" from "acme-corp.mattermost.com")
+    const firstPart = hostname.split('.')[0];
+    // Split on hyphens/underscores, capitalize each word
+    const words = firstPart.split(/[-_]/);
+    const titleCase = words.map(word =>
+      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    ).join(' ');
+    return titleCase;
+  } catch {
+    // If URL parsing fails, return generic default
+    return 'Mattermost';
+  }
+}
+
+export async function runOnboarding(reconfigure = false): Promise<void> {
+  console.log('');
+  console.log(bold('  claude-threads setup'));
+  console.log(dim('  ─────────────────────────────────'));
+  console.log('');
+
+  // Load existing config if reconfiguring
+  let existingConfig: Config | null = null;
+  if (reconfigure && existsSync(CONFIG_PATH)) {
+    try {
+      const content = readFileSync(CONFIG_PATH, 'utf-8');
+      existingConfig = yaml.load(content) as Config;
+      console.log(dim('  Reconfiguring existing setup.'));
+    } catch {
+      console.log(dim('  Could not load existing config, starting fresh.'));
+    }
+  }
+
+  // If reconfiguring with existing config, use the improved reconfigure flow
+  if (reconfigure && existingConfig) {
+    await runReconfigureFlow(existingConfig);
+    return;
+  }
+
+  // First-time setup: show welcome and prerequisites
+  console.log('  Welcome! Let\'s configure claude-threads.');
+  console.log('');
+  console.log(dim('  This wizard will guide you through:'));
+  console.log(dim('    1. Global settings (working directory, Chrome, git)'));
+  console.log(dim('    2. Platform setup (Mattermost/Slack bot credentials)'));
+  console.log(dim('    3. Credential validation and testing'));
+  console.log('');
+
+  // Validate Claude CLI before continuing
+  console.log(dim('  Checking prerequisites...'));
+  const claudeCheck = validateClaudeCli();
+
+  if (!claudeCheck.installed) {
+    console.log('');
+    console.log(dim('  ❌ Claude Code CLI not found'));
+    console.log('');
+    if (claudeCheck.error) {
+      console.log(dim(`  Error: ${claudeCheck.error}`));
+      console.log('');
+    }
+
+    // Show debugging info
+    console.log(dim('  Debug info:'));
+    const pathDirs = (process.env.PATH || '').split(':').slice(0, 5);
+    console.log(dim(`    PATH (first 5 dirs): ${pathDirs.join(':')}`));
+    console.log('');
+
+    console.log(dim('  Solutions:'));
+    console.log('');
+    console.log(dim('  1. Install Claude Code CLI:'));
+    console.log(dim('     npm install -g @anthropic-ai/claude-code'));
+    console.log('');
+    console.log(dim('  2. If already installed, find it and set CLAUDE_PATH:'));
+    console.log(dim('     # Find where it is:'));
+    console.log(dim('     which claude'));
+    console.log(dim('     # Or search common locations:'));
+    console.log(dim('     ls ~/.local/bin/claude ~/.bun/bin/claude /usr/local/bin/claude 2>/dev/null'));
+    console.log(dim('     # Then run with the path:'));
+    console.log(dim('     CLAUDE_PATH=/path/to/claude claude-threads'));
+    console.log('');
+    console.log(dim('  3. Add Claude\'s directory to PATH in your shell config'));
+    console.log('');
+    process.exit(1);
+  }
+
+  if (!claudeCheck.compatible) {
+    console.log('');
+    console.log(dim(`  ⚠️  ${claudeCheck.message}`));
+    console.log('');
+
+    const { continueAnyway } = await prompts({
+      type: 'confirm',
+      name: 'continueAnyway',
+      message: 'Continue anyway? (may not work correctly)',
+      initial: false,
+    }, { onCancel });
+
+    if (!continueAnyway) {
+      console.log('');
+      console.log(dim('  Setup cancelled.'));
+      process.exit(0);
+    }
+  } else if (claudeCheck.status === 'untested') {
+    console.log('');
+    console.log(dim(`  ⚠️  ${claudeCheck.message}`));
+  } else if (!claudeCheck.version) {
+    // Version unknown - Claude is installed but we couldn't parse the version
+    console.log(dim('  ⚠️  Claude Code CLI found but version could not be determined'));
+    if (claudeCheck.rawOutput) {
+      console.log(dim(`  Output from "claude --version": ${claudeCheck.rawOutput}`));
+    }
+    console.log(dim('  This may work fine - Claude was installed in a non-standard way.'));
+  } else {
+    console.log(dim(`  ✓ Claude Code CLI ${claudeCheck.version}`));
+  }
+
+  console.log('');
+  console.log(dim('  📖 Need help creating a bot?'));
+  console.log(dim('     ' + 'https://github.com/anneschuth/claude-threads/blob/main/SETUP_GUIDE.md'));
+  console.log(dim('  ⏱️  Estimated time: 10-15 minutes per platform'));
+  console.log('');
+
+  const { ready } = await prompts({
+    type: 'confirm',
+    name: 'ready',
+    message: 'Ready to begin?',
+    initial: true,
+  }, { onCancel });
+
+  if (!ready) {
+    console.log('');
+    console.log(dim('  Setup cancelled. Run `claude-threads` when ready.'));
+    process.exit(0);
+  }
+
+  console.log('');
+
+  // Step 1: Global settings
+  const globalSettings = await prompts([
+    {
+      type: 'text',
+      name: 'workingDir',
+      message: 'Default working directory',
+      initial: existingConfig?.workingDir || process.cwd(),
+      hint: 'Where Claude Code runs by default',
+    },
+    {
+      type: 'confirm',
+      name: 'chrome',
+      message: 'Enable Chrome integration?',
+      initial: existingConfig?.chrome || false,
+      hint: 'Control Chrome browser for web tasks (requires Claude in Chrome extension)',
+    },
+    {
+      type: 'select',
+      name: 'worktreeMode',
+      message: 'Git worktree mode',
+      choices: [
+        { title: 'Prompt', value: 'prompt', description: 'Ask when starting each session' },
+        { title: 'Off', value: 'off', description: 'Never create worktrees (work on current branch)' },
+        { title: 'Require', value: 'require', description: 'Always require branch name before starting' },
+      ],
+      initial: existingConfig?.worktreeMode === 'off' ? 1 :
+               existingConfig?.worktreeMode === 'require' ? 2 : 0,
+    },
+    {
+      type: 'confirm',
+      name: 'respondOnlyWhenMentioned',
+      message: 'Respond only when @mentioned?',
+      initial: existingConfig?.respondOnlyWhenMentioned || false,
+      hint: 'New threads start in quiet mode; users can still toggle per-thread with !mentions',
+    },
+  ], { onCancel });
+
+  const config: Config = {
+    version: 2,
+    ...globalSettings,
+    platforms: [],
+  };
+
+  // Keep the config clean: this field defaults to false, so only persist the
+  // opt-in. Mirrors how keepAlive is only written when disabled.
+  if (!config.respondOnlyWhenMentioned) {
+    delete config.respondOnlyWhenMentioned;
+  }
+
+  // Step 2: Add platforms (loop)
+  console.log('');
+  console.log(bold('  Platform Setup'));
+  console.log('');
+  console.log(dim('  💡 Tip: You can add more platforms later with --setup'));
+  console.log('');
+
+  let platformNumber = 1;
+  let addMore = true;
+
+  while (addMore) {
+    const isFirst = platformNumber === 1;
+
+    // Ask what platform type
+    const { platformType } = await prompts({
+      type: 'select',
+      name: 'platformType',
+      message: isFirst ? 'First platform' : `Platform #${platformNumber}`,
+      choices: [
+        { title: 'Slack', value: 'slack' },
+        { title: 'Mattermost', value: 'mattermost' },
+        ...(isFirst ? [] : [{ title: '(Done - finish setup)', value: 'done' }]),
+      ],
+      initial: 0,
+    }, { onCancel });
+
+    if (platformType === 'done') {
+      break;
+    }
+
+    // Show platform-specific setup instructions
+    await showPlatformInstructions(platformType);
+
+    // Get platform ID (auto-generate for first of each type, ask only for duplicates)
+    const typeCount = config.platforms.filter(p => p.type === platformType).length + 1;
+    let platformId: string;
+
+    if (typeCount === 1) {
+      // First of this type - just use the type name
+      platformId = platformType;
+    } else {
+      // Multiple of same type - ask for a unique ID
+      const result = await prompts({
+        type: 'text',
+        name: 'platformId',
+        message: 'Platform ID',
+        initial: `${platformType}-${typeCount}`,
+        hint: 'You have multiple ' + platformType + ' platforms - give this one a unique ID',
+        validate: (v: string) => {
+          if (!v.match(/^[a-z0-9-]+$/)) return 'Use lowercase letters, numbers, hyphens only';
+          if (config.platforms.some(p => p.id === v)) return 'ID already in use';
+          return true;
+        },
+      }, { onCancel });
+      platformId = result.platformId;
+    }
+
+    // Configure the platform (will ask for displayName with smart defaults)
+    let platform: PlatformInstanceConfig;
+    if (platformType === 'mattermost') {
+      platform = await setupMattermostPlatform(platformId, undefined);
+    } else {
+      platform = await setupSlackPlatform(platformId, undefined);
+    }
+    config.platforms.push(platform);
+
+    console.log(green(`  ✓ Added ${platform.displayName}`));
+    console.log('');
+
+    // Ask to add more (after first one)
+    if (platformNumber === 1) {
+      const { addAnother } = await prompts({
+        type: 'confirm',
+        name: 'addAnother',
+        message: 'Add another platform?',
+        initial: false,
+      }, { onCancel });
+
+      addMore = addAnother;
+    }
+
+    platformNumber++;
+  }
+
+  // Validate at least one platform
+  if (config.platforms.length === 0) {
+    console.log('');
+    console.log(dim('  ⚠️  No platforms configured. Setup cancelled.'));
+    process.exit(1);
+  }
+
+  // Show summary and confirm
+  await showConfigSummary(config);
+
+  // Save config
+  saveConfig(config);
+
+  console.log('');
+  console.log(green('  ✓ Configuration saved securely!'));
+  console.log(dim(`    ${CONFIG_PATH}`));
+  console.log(dim('    (file permissions set to owner-only for token security)'));
+  console.log('');
+  console.log(bold('  🎉 Setup complete!'));
+  console.log('');
+  console.log(dim('  Next steps:'));
+  console.log(dim('    1. claude-threads will start automatically'));
+  console.log(dim('    2. In your chat platform, @mention the bot:'));
+  console.log(dim('       @botname write "hello world" to test.txt'));
+  console.log(dim('    3. The bot will create a thread and stream Claude\'s response'));
+  console.log('');
+  console.log(dim('  Useful commands (send in a thread):'));
+  console.log(dim('    !help              - Show all commands'));
+  console.log(dim('    !permissions       - Toggle permission mode'));
+  console.log(dim('    !cd /path          - Change working directory'));
+  console.log(dim('    !stop              - End session'));
+  console.log('');
+  console.log(dim('  Troubleshooting:'));
+  console.log(dim('    • Run with debug logs: DEBUG=1 claude-threads'));
+  console.log(dim('    • Reconfigure anytime: claude-threads --setup'));
+  console.log(dim('    • Setup guide:'));
+  console.log(dim('      https://github.com/anneschuth/claude-threads/blob/main/SETUP_GUIDE.md'));
+  console.log('');
+  console.log(dim('  Starting claude-threads...'));
+  console.log('');
+}
+
+// ============================================================================
+// Reconfigure Flow - Improved UX for editing existing config
+// ============================================================================
+
+async function runReconfigureFlow(existingConfig: Config): Promise<void> {
+  let config = { ...existingConfig, platforms: [...existingConfig.platforms] };
+  while (true) {
+    console.log('');
+    console.log(bold('  What would you like to reconfigure?'));
+    console.log('');
+
+    // Build choices menu
+    const choices: Array<{ title: string; value: string; description?: string }> = [
+      {
+        title: 'Global settings',
+        value: 'global',
+        description: `workingDir, chrome, worktreeMode, mentions`
+      },
+    ];
+
+    // Add existing platforms
+    for (let i = 0; i < config.platforms.length; i++) {
+      const platform = config.platforms[i];
+      choices.push({
+        title: `${platform.displayName} (${platform.type})`,
+        value: `platform-${i}`,
+        description: `Edit or remove this platform`,
+      });
+    }
+
+    // Add new/done options
+    choices.push(
+      { title: '+ Add new platform', value: 'add-new' },
+      { title: '⚙️ Advanced settings', value: 'advanced', description: 'Timeouts, limits, cleanup' },
+      { title: '✓ Done (save and exit)', value: 'done' }
+    );
+
+    const { action } = await prompts({
+      type: 'select',
+      name: 'action',
+      message: 'Select what to reconfigure',
+      choices,
+    }, { onCancel });
+
+    if (action === 'done') {
+      break;
+    }
+
+    if (action === 'global') {
+      // Reconfigure global settings
+      const globalSettings = await prompts([
+        {
+          type: 'text',
+          name: 'workingDir',
+          message: 'Default working directory',
+          initial: config.workingDir,
+          hint: 'Where Claude Code runs by default',
+        },
+        {
+          type: 'confirm',
+          name: 'chrome',
+          message: 'Enable Chrome integration?',
+          initial: config.chrome,
+          hint: 'Control Chrome browser for web tasks (requires Claude in Chrome extension)',
+        },
+        {
+          type: 'select',
+          name: 'worktreeMode',
+          message: 'Git worktree mode',
+          choices: [
+            { title: 'Prompt', value: 'prompt', description: 'Ask when starting each session' },
+            { title: 'Off', value: 'off', description: 'Never create worktrees (work on current branch)' },
+            { title: 'Require', value: 'require', description: 'Always require branch name before starting' },
+          ],
+          initial: config.worktreeMode === 'off' ? 1 :
+                   config.worktreeMode === 'require' ? 2 : 0,
+        },
+        {
+          type: 'confirm',
+          name: 'respondOnlyWhenMentioned',
+          message: 'Respond only when @mentioned?',
+          initial: config.respondOnlyWhenMentioned || false,
+          hint: 'New threads start in quiet mode; users can still toggle per-thread with !mentions',
+        },
+      ], { onCancel });
+
+      config = { ...config, ...globalSettings };
+      // Only persist the opt-in (default is false), same as keepAlive.
+      if (!config.respondOnlyWhenMentioned) {
+        delete config.respondOnlyWhenMentioned;
+      }
+      console.log(green('  ✓ Global settings updated'));
+    } else if (action === 'add-new') {
+      // Add new platform
+      console.log('');
+      console.log(dim('  Adding new platform...'));
+
+      const { platformType } = await prompts({
+        type: 'select',
+        name: 'platformType',
+        message: 'Platform type',
+        choices: [
+          { title: 'Slack', value: 'slack' },
+          { title: 'Mattermost', value: 'mattermost' },
+        ],
+      }, { onCancel });
+
+      // Show platform-specific setup instructions
+      await showPlatformInstructions(platformType);
+
+      const typeCount = config.platforms.filter(p => p.type === platformType).length + 1;
+      const suggestedId = typeCount === 1 ? platformType : `${platformType}-${typeCount}`;
+
+      const { platformId } = await prompts({
+        type: 'text',
+        name: 'platformId',
+        message: 'Platform ID',
+        initial: suggestedId,
+        hint: 'Unique identifier (e.g., mattermost-main, slack-eng)',
+        validate: (v: string) => {
+          if (!v.match(/^[a-z0-9-]+$/)) return 'Use lowercase letters, numbers, hyphens only';
+          if (config.platforms.some(p => p.id === v)) return 'ID already in use';
+          return true;
+        },
+      }, { onCancel });
+
+      let newPlatform: PlatformInstanceConfig;
+      if (platformType === 'mattermost') {
+        newPlatform = await setupMattermostPlatform(platformId, undefined);
+      } else {
+        newPlatform = await setupSlackPlatform(platformId, undefined);
+      }
+
+      config.platforms.push(newPlatform);
+      console.log(green(`  ✓ Added ${newPlatform.displayName}`));
+    } else if (action === 'advanced') {
+      // Configure advanced settings (limits, timeouts, cleanup, thread logs, keepAlive)
+      const advancedResult = await configureAdvancedSettings({
+        limits: config.limits,
+        threadLogsEnabled: config.threadLogs?.enabled,
+        threadLogsRetentionDays: config.threadLogs?.retentionDays,
+        keepAlive: config.keepAlive,
+      });
+
+      // Update limits
+      config.limits = advancedResult.limits;
+
+      // Update threadLogs (only if non-default values)
+      if (advancedResult.threadLogsEnabled === false || advancedResult.threadLogsRetentionDays !== undefined) {
+        config.threadLogs = {
+          ...config.threadLogs,
+          enabled: advancedResult.threadLogsEnabled ?? config.threadLogs?.enabled,
+          retentionDays: advancedResult.threadLogsRetentionDays ?? config.threadLogs?.retentionDays,
+        };
+        // Clean up undefined values
+        if (config.threadLogs.enabled === undefined) delete config.threadLogs.enabled;
+        if (config.threadLogs.retentionDays === undefined) delete config.threadLogs.retentionDays;
+        // Remove section if empty
+        if (Object.keys(config.threadLogs).length === 0) {
+          delete config.threadLogs;
+        }
+      }
+
+      // Update keepAlive (only save if disabled, default is true)
+      if (advancedResult.keepAlive === false) {
+        config.keepAlive = false;
+      } else {
+        delete config.keepAlive;
+      }
+
+      console.log(green('  ✓ Advanced settings updated'));
+    } else if (action.startsWith('platform-')) {
+      // Edit or remove existing platform
+      const platformIndex = parseInt(action.replace('platform-', ''));
+      const platform = config.platforms[platformIndex];
+
+      console.log('');
+      const { platformAction } = await prompts({
+        type: 'select',
+        name: 'platformAction',
+        message: `${platform.displayName} (${platform.type})`,
+        choices: [
+          { title: 'Edit configuration', value: 'edit' },
+          { title: 'Remove this platform', value: 'remove' },
+          { title: '← Back', value: 'back' },
+        ],
+      }, { onCancel });
+
+      if (platformAction === 'remove') {
+        const { confirmRemove } = await prompts({
+          type: 'confirm',
+          name: 'confirmRemove',
+          message: `Remove ${platform.displayName}?`,
+          initial: false,
+        }, { onCancel });
+
+        if (confirmRemove) {
+          config.platforms.splice(platformIndex, 1);
+          console.log(green(`  ✓ Removed ${platform.displayName}`));
+        }
+      } else if (platformAction === 'edit') {
+        let updatedPlatform: PlatformInstanceConfig;
+        if (platform.type === 'mattermost') {
+          updatedPlatform = await setupMattermostPlatform(
+            platform.id,
+            platform as MattermostPlatformConfig
+          );
+        } else {
+          updatedPlatform = await setupSlackPlatform(
+            platform.id,
+            platform as SlackPlatformConfig
+          );
+        }
+        config.platforms[platformIndex] = updatedPlatform;
+        console.log(green(`  ✓ Updated ${updatedPlatform.displayName}`));
+      }
+    }
+  }
+
+  // Validate at least one platform
+  if (config.platforms.length === 0) {
+    console.log('');
+    console.log(dim('  ⚠️  No platforms configured. At least one platform is required.'));
+    console.log(dim('  Setup cancelled.'));
+    process.exit(1);
+  }
+
+  // Show summary and confirm
+  await showConfigSummary(config);
+
+  // Save config
+  saveConfig(config);
+
+  console.log('');
+  console.log(green('  ✓ Configuration updated securely!'));
+  console.log(dim(`    ${CONFIG_PATH}`));
+  console.log(dim('    (file permissions set to owner-only for token security)'));
+  console.log('');
+  console.log(dim('  Restart claude-threads to apply changes.'));
+  console.log('');
+}
+
+// ============================================================================
+// Configuration Summary
+// ============================================================================
+
+async function showConfigSummary(config: Config): Promise<void> {
+  console.log('');
+  console.log(bold('  Configuration Summary'));
+  console.log(dim('  ─────────────────────────────────────────────────────'));
+  console.log('');
+  console.log(dim('  Global Settings:'));
+  console.log(dim(`    Working Directory: ${config.workingDir}`));
+  console.log(dim(`    Chrome Integration: ${config.chrome ? 'Enabled' : 'Disabled'}`));
+  console.log(dim(`    Worktree Mode: ${config.worktreeMode}`));
+  console.log(dim(`    Respond Only When Mentioned: ${config.respondOnlyWhenMentioned ? 'Enabled' : 'Disabled'}`));
+  console.log('');
+  console.log(dim(`  Platforms (${config.platforms.length}):`));
+  for (const platform of config.platforms) {
+    console.log('');
+    console.log(dim(`    ${platform.displayName} (${platform.type})`));
+    console.log(dim(`      ID: ${platform.id}`));
+
+    if (platform.type === 'mattermost') {
+      const mm = platform as MattermostPlatformConfig;
+      console.log(dim(`      Server: ${mm.url}`));
+      console.log(dim(`      Channel: ${mm.channelId}`));
+      console.log(dim(`      Bot: @${mm.botName}`));
+
+      const allowedUsers = mm.allowedUsers.length > 0
+        ? mm.allowedUsers.join(', ')
+        : 'ANYONE (⚠️  no restrictions)';
+      console.log(dim(`      Allowed Users: ${allowedUsers}`));
+      console.log(dim(`      Permission Mode: ${permissionModeDisplay(resolvePermissionMode({ permissionMode: mm.permissionMode, skipPermissions: mm.skipPermissions })).chip}`));
+    } else {
+      const slack = platform as SlackPlatformConfig;
+      console.log(dim(`      Channel: ${slack.channelId}`));
+      console.log(dim(`      Bot: @${slack.botName}`));
+
+      const allowedUsers = slack.allowedUsers.length > 0
+        ? slack.allowedUsers.join(', ')
+        : 'ANYONE (⚠️  no restrictions)';
+      console.log(dim(`      Allowed Users: ${allowedUsers}`));
+      console.log(dim(`      Permission Mode: ${permissionModeDisplay(resolvePermissionMode({ permissionMode: slack.permissionMode, skipPermissions: slack.skipPermissions })).chip}`));
+    }
+  }
+
+  // Show advanced settings if any are configured
+  const hasAdvancedSettings = config.limits || config.threadLogs || config.keepAlive === false;
+  if (hasAdvancedSettings) {
+    console.log('');
+    console.log(dim('  Advanced Settings:'));
+
+    if (config.limits) {
+      if (config.limits.maxSessions !== undefined) {
+        console.log(dim(`    Max Sessions: ${config.limits.maxSessions}`));
+      }
+      if (config.limits.sessionTimeoutMinutes !== undefined) {
+        console.log(dim(`    Session Timeout: ${config.limits.sessionTimeoutMinutes} min`));
+      }
+      if (config.limits.sessionWarningMinutes !== undefined) {
+        console.log(dim(`    Warning Before Timeout: ${config.limits.sessionWarningMinutes} min`));
+      }
+      if (config.limits.permissionTimeoutSeconds !== undefined) {
+        console.log(dim(`    Permission Timeout: ${config.limits.permissionTimeoutSeconds} sec`));
+      }
+      if (config.limits.cleanupIntervalMinutes !== undefined) {
+        console.log(dim(`    Cleanup Interval: ${config.limits.cleanupIntervalMinutes} min`));
+      }
+      if (config.limits.cleanupWorktrees !== undefined) {
+        console.log(dim(`    Cleanup Worktrees: ${config.limits.cleanupWorktrees ? 'Yes' : 'No'}`));
+      }
+      if (config.limits.maxWorktreeAgeHours !== undefined) {
+        console.log(dim(`    Max Worktree Age: ${config.limits.maxWorktreeAgeHours} hours`));
+      }
+    }
+
+    if (config.threadLogs) {
+      if (config.threadLogs.enabled === false) {
+        console.log(dim('    Thread Logging: Disabled'));
+      } else if (config.threadLogs.retentionDays !== undefined) {
+        console.log(dim(`    Log Retention: ${config.threadLogs.retentionDays} days`));
+      }
+    }
+
+    if (config.keepAlive === false) {
+      console.log(dim('    Keep Alive: Disabled'));
+    }
+  }
+
+  console.log('');
+  console.log(dim('  ─────────────────────────────────────────────────────'));
+  console.log('');
+
+  const { confirm } = await prompts({
+    type: 'confirm',
+    name: 'confirm',
+    message: 'Save this configuration?',
+    initial: true,
+  }, { onCancel });
+
+  if (!confirm) {
+    console.log('');
+    console.log(dim('  Setup cancelled.'));
+    process.exit(0);
+  }
+}
+
+// ============================================================================
+// Advanced Settings Configuration
+// ============================================================================
+
+interface AdvancedSettingsInput {
+  limits?: LimitsConfig;
+  threadLogsEnabled?: boolean;
+  threadLogsRetentionDays?: number;
+  keepAlive?: boolean;
+}
+
+interface AdvancedSettingsOutput {
+  limits?: LimitsConfig;
+  threadLogsEnabled?: boolean;
+  threadLogsRetentionDays?: number;
+  keepAlive?: boolean;
+}
+
+async function configureAdvancedSettings(existing: AdvancedSettingsInput): Promise<AdvancedSettingsOutput> {
+  console.log('');
+  console.log(bold('  Advanced Settings'));
+  console.log(dim('  ─────────────────────────────────────────────────────'));
+  console.log('');
+  console.log(dim('  These settings have sensible defaults. Only change if needed.'));
+  console.log(dim('  Press Enter to keep current/default values.'));
+  console.log('');
+
+  // Session settings
+  console.log(dim('  Session Limits:'));
+  const sessionSettings = await prompts([
+    {
+      type: 'number',
+      name: 'maxSessions',
+      message: 'Max concurrent sessions',
+      initial: existing.limits?.maxSessions ?? LIMITS_DEFAULTS.maxSessions,
+      min: 1,
+      max: 50,
+      hint: `default: ${LIMITS_DEFAULTS.maxSessions}`,
+    },
+    {
+      type: 'number',
+      name: 'sessionTimeoutMinutes',
+      message: 'Session idle timeout (minutes)',
+      initial: existing.limits?.sessionTimeoutMinutes ?? LIMITS_DEFAULTS.sessionTimeoutMinutes,
+      min: 1,
+      max: 1440,
+      hint: `default: ${LIMITS_DEFAULTS.sessionTimeoutMinutes}`,
+    },
+    {
+      type: 'number',
+      name: 'sessionWarningMinutes',
+      message: 'Warn before timeout (minutes)',
+      initial: existing.limits?.sessionWarningMinutes ?? LIMITS_DEFAULTS.sessionWarningMinutes,
+      min: 1,
+      max: 30,
+      hint: `default: ${LIMITS_DEFAULTS.sessionWarningMinutes}`,
+    },
+    {
+      type: 'number',
+      name: 'permissionTimeoutSeconds',
+      message: 'Permission approval timeout (seconds)',
+      initial: existing.limits?.permissionTimeoutSeconds ?? LIMITS_DEFAULTS.permissionTimeoutSeconds,
+      min: 30,
+      max: 600,
+      hint: `default: ${LIMITS_DEFAULTS.permissionTimeoutSeconds}`,
+    },
+    {
+      type: 'confirm',
+      name: 'keepAlive',
+      message: 'Prevent system sleep while sessions active?',
+      initial: existing.keepAlive !== false,
+      hint: 'default: yes',
+    },
+  ], { onCancel });
+
+  // Cleanup settings
+  console.log('');
+  console.log(dim('  Cleanup Settings:'));
+  const cleanupSettings = await prompts([
+    {
+      type: 'number',
+      name: 'cleanupIntervalMinutes',
+      message: 'Background cleanup interval (minutes)',
+      initial: existing.limits?.cleanupIntervalMinutes ?? LIMITS_DEFAULTS.cleanupIntervalMinutes,
+      min: 5,
+      max: 1440,
+      hint: `default: ${LIMITS_DEFAULTS.cleanupIntervalMinutes}`,
+    },
+    {
+      type: 'confirm',
+      name: 'cleanupWorktrees',
+      message: 'Auto-cleanup orphaned worktrees?',
+      initial: existing.limits?.cleanupWorktrees ?? LIMITS_DEFAULTS.cleanupWorktrees,
+      hint: `default: ${LIMITS_DEFAULTS.cleanupWorktrees ? 'yes' : 'no'}`,
+    },
+    {
+      type: (prev) => prev === true ? 'number' : null,
+      name: 'maxWorktreeAgeHours',
+      message: 'Max worktree age before cleanup (hours)',
+      initial: existing.limits?.maxWorktreeAgeHours ?? LIMITS_DEFAULTS.maxWorktreeAgeHours,
+      min: 1,
+      max: 168,
+      hint: `default: ${LIMITS_DEFAULTS.maxWorktreeAgeHours}`,
+    },
+    {
+      type: 'confirm',
+      name: 'threadLogsEnabled',
+      message: 'Enable thread logging?',
+      initial: existing.threadLogsEnabled ?? true,
+      hint: 'Logs conversation history to disk',
+    },
+    {
+      type: (prev) => prev === true ? 'number' : null,
+      name: 'threadLogsRetentionDays',
+      message: 'Log retention (days)',
+      initial: existing.threadLogsRetentionDays ?? 30,
+      min: 1,
+      max: 365,
+      hint: 'default: 30',
+    },
+  ], { onCancel });
+
+  // Build limits object, only including values that differ from defaults
+  const limits: LimitsConfig = {};
+
+  if (sessionSettings.maxSessions !== LIMITS_DEFAULTS.maxSessions) {
+    limits.maxSessions = sessionSettings.maxSessions;
+  }
+  if (sessionSettings.sessionTimeoutMinutes !== LIMITS_DEFAULTS.sessionTimeoutMinutes) {
+    limits.sessionTimeoutMinutes = sessionSettings.sessionTimeoutMinutes;
+  }
+  if (sessionSettings.sessionWarningMinutes !== LIMITS_DEFAULTS.sessionWarningMinutes) {
+    limits.sessionWarningMinutes = sessionSettings.sessionWarningMinutes;
+  }
+  if (sessionSettings.permissionTimeoutSeconds !== LIMITS_DEFAULTS.permissionTimeoutSeconds) {
+    limits.permissionTimeoutSeconds = sessionSettings.permissionTimeoutSeconds;
+  }
+  if (cleanupSettings.cleanupIntervalMinutes !== LIMITS_DEFAULTS.cleanupIntervalMinutes) {
+    limits.cleanupIntervalMinutes = cleanupSettings.cleanupIntervalMinutes;
+  }
+  if (cleanupSettings.cleanupWorktrees !== LIMITS_DEFAULTS.cleanupWorktrees) {
+    limits.cleanupWorktrees = cleanupSettings.cleanupWorktrees;
+  }
+  // Only save maxWorktreeAgeHours if worktree cleanup is enabled
+  if (cleanupSettings.cleanupWorktrees && cleanupSettings.maxWorktreeAgeHours !== LIMITS_DEFAULTS.maxWorktreeAgeHours) {
+    limits.maxWorktreeAgeHours = cleanupSettings.maxWorktreeAgeHours;
+  }
+
+  return {
+    limits: Object.keys(limits).length > 0 ? limits : undefined,
+    threadLogsEnabled: cleanupSettings.threadLogsEnabled === false ? false : undefined,
+    threadLogsRetentionDays: cleanupSettings.threadLogsEnabled && cleanupSettings.threadLogsRetentionDays !== 30
+      ? cleanupSettings.threadLogsRetentionDays
+      : undefined,
+    // Only save keepAlive if disabled (default is true)
+    keepAlive: sessionSettings.keepAlive === false ? false : undefined,
+  };
+}
+
+// ============================================================================
+// Platform Setup Functions
+// ============================================================================
+
+async function setupMattermostPlatform(
+  id: string,
+  existing?: PlatformInstanceConfig
+): Promise<MattermostPlatformConfig> {
+  const existingMattermost = existing?.type === 'mattermost' ? existing as MattermostPlatformConfig : undefined;
+
+  // Track last entered values for prefilling on retry
+  let lastUrl = existingMattermost?.url || 'https://chat.example.com';
+  let lastDisplayName = existingMattermost?.displayName || '';
+  let lastToken = existingMattermost?.token || '';
+  let lastChannelId = existingMattermost?.channelId || '';
+  let lastBotName = existingMattermost?.botName || 'claude-code';
+  let lastDescription = existingMattermost?.description || '';
+  let lastModel = typeof existingMattermost?.model === 'string' ? existingMattermost.model : '';
+  let lastWorkingDir = typeof existingMattermost?.workingDir === 'string' ? existingMattermost.workingDir : '';
+  let lastAllowedUsers = existingMattermost?.allowedUsers?.join(',') || '';
+  // New configs default to `auto` (the onboarding recommendation). Existing
+  // configs keep whatever they had — never silently change an operator's
+  // permission posture during reconfigure.
+  let lastPermissionMode: PermissionMode = existingMattermost
+    ? resolvePermissionMode({
+        permissionMode: existingMattermost.permissionMode,
+        skipPermissions: existingMattermost.skipPermissions,
+      })
+    : 'auto';
+  // Agent backend. New configs default to claude; reconfigure keeps the
+  // existing choice so we never silently switch an operator's backend.
+  let agentBackend: AgentBackendKind = existingMattermost?.agent ?? DEFAULT_AGENT_BACKEND;
+  // Detect a split config (sessionHeader and stickyMessage set to different
+  // values). The wizard's single-pick UX cannot represent that — silently
+  // collapsing it would be data loss. Skip the prompt entirely in that case
+  // and preserve the original values verbatim. Power users with split
+  // configs already know how to edit YAML.
+  const existingHeader = existingMattermost?.sessionHeader as OverheadVisibility | undefined;
+  const existingSticky = existingMattermost?.stickyMessage as OverheadVisibility | undefined;
+  const hasSplitVerbosity =
+    existingHeader !== undefined &&
+    existingSticky !== undefined &&
+    existingHeader !== existingSticky;
+  // Channel verbosity defaults to whatever the existing config used (or
+  // `'full'` if both are unset). Keeps reconfigure non-surprising.
+  let lastChannelVerbosity: OverheadVisibility =
+    existingHeader ?? existingSticky ?? DEFAULT_OVERHEAD_VISIBILITY;
+
+  // Main loop - allows retrying when validation fails
+  while (true) {
+    console.log('');
+    console.log(dim('  Now enter your Mattermost credentials:'));
+    console.log('');
+
+    // Collect settings one by one with visible hints
+    const { url } = await prompts({
+      type: 'text',
+      name: 'url',
+      message: 'Server URL (e.g., https://chat.company.com)',
+      initial: lastUrl,
+      validate: (v: string) => {
+        if (!v.startsWith('http')) return 'Must start with http:// or https://';
+        try {
+          new URL(v);
+          return true;
+        } catch {
+          return 'Invalid URL format';
+        }
+      },
+    }, { onCancel });
+
+    const { displayName } = await prompts({
+      type: 'text',
+      name: 'displayName',
+      message: 'Display name',
+      initial: lastDisplayName || deriveDisplayName(url),
+    }, { onCancel });
+
+    if (!lastToken) {
+      console.log('');
+      console.log(dim('  Bot Token: Main Menu → Integrations → Bot Accounts → Create'));
+    }
+    const { token } = await prompts({
+      type: 'password',
+      name: 'token',
+      message: lastToken ? 'Bot token' : 'Paste it here',
+      initial: lastToken,
+      validate: (v: string) => {
+        if (!v && lastToken) return true;
+        return v.length > 0 ? true : 'Token is required';
+      },
+    }, { onCancel });
+
+    if (!lastChannelId) {
+      console.log('');
+      console.log(dim('  Channel ID: Click channel name → View Info → copy ID from URL'));
+    }
+    const { channelId } = await prompts({
+      type: 'text',
+      name: 'channelId',
+      message: lastChannelId ? 'Channel ID' : 'Paste it here',
+      initial: lastChannelId,
+      validate: (v: string) => v.length > 0 ? true : 'Channel ID is required',
+    }, { onCancel });
+
+    console.log('');
+    const { botName } = await prompts({
+      type: 'text',
+      name: 'botName',
+      message: 'Bot username (the one you created)',
+      initial: lastBotName,
+    }, { onCancel });
+
+    console.log('');
+    console.log(dim('  Specialization (optional): a short role like "Mixpanel analytics" or'));
+    console.log(dim('  "infra & deploys". Shown to OTHER bots in the same channel so they know'));
+    console.log(dim('  when to hand off to this one. Leave empty if not running multiple bots.'));
+    const { description } = await prompts({
+      type: 'text',
+      name: 'description',
+      message: 'Bot specialization',
+      initial: lastDescription,
+    }, { onCancel });
+
+    const basicSettings = { url, displayName, token, channelId, botName, description: (description || '').trim() };
+
+    // Use existing token if user left it empty
+    const finalToken = basicSettings.token || lastToken;
+    if (!finalToken) {
+      console.log('');
+      console.log(dim('  ⚠️  Token is required. Setup cancelled.'));
+      process.exit(1);
+    }
+
+    // Now handle allowed users with loop for re-entry
+    let allowedUsers: string[] = [];
+    let allowedUsersConfirmed = false;
+
+    while (!allowedUsersConfirmed) {
+      console.log('');
+      console.log(dim('  Who can use the bot? Enter usernames separated by commas.'));
+      console.log(dim('  Leave empty to allow anyone (you\'ll be asked to confirm).'));
+      const { allowedUsersInput } = await prompts({
+        type: 'text',
+        name: 'allowedUsersInput',
+        message: 'Allowed usernames',
+        initial: lastAllowedUsers,
+      }, { onCancel });
+
+      allowedUsers = allowedUsersInput?.split(',').map((u: string) => u.trim()).filter((u: string) => u) || [];
+
+      // If empty, confirm they really want to allow anyone
+      if (allowedUsers.length === 0) {
+        console.log('');
+        const { confirmOpen } = await prompts({
+          type: 'confirm',
+          name: 'confirmOpen',
+          message: '⚠️  Allow ANYONE in the channel to use the bot?',
+          initial: false,
+        }, { onCancel });
+
+        if (confirmOpen) {
+          allowedUsersConfirmed = true;
+        } else {
+          console.log('');
+          console.log(dim('  Let\'s add some allowed usernames.'));
+          // Loop continues - will re-prompt for usernames
+        }
+      } else {
+        allowedUsersConfirmed = true;
+      }
+    }
+
+    // Choose the agent backend first — permission mode below only applies to
+    // Claude (opencode manages permissions itself, outside claude-threads).
+    const { agent } = await prompts({
+      type: 'select',
+      name: 'agent',
+      message: 'Which agent backend should this platform use?',
+      choices: AGENT_BACKEND_CHOICES,
+      initial: agentBackendChoiceIndex(agentBackend),
+    }, { onCancel });
+    agentBackend = agent;
+
+    // Optional model override for the chosen backend.
+    lastModel = await promptForModel(agentBackend, lastModel);
+
+    // Optional per-bot working directory (own repo / CLAUDE.md / persona).
+    lastWorkingDir = await promptForWorkingDir(lastWorkingDir);
+
+    // Now ask about permission mode (after user access is settled).
+    // Applies to the Claude backend only; opencode ignores it.
+    const { permissionMode } = await prompts({
+      type: 'select',
+      name: 'permissionMode',
+      message: 'Permission mode for Claude tool-uses?',
+      choices: PERMISSION_MODE_CHOICES,
+      initial: permissionModeChoiceIndex(lastPermissionMode),
+    }, { onCancel });
+
+    // Channel verbosity (sessionHeader + stickyMessage). One prompt drives both
+    // — separating them is rare and the YAML is right there for the few who
+    // want different values per surface. Skip the prompt entirely when the
+    // existing config has split values, to avoid silently collapsing them.
+    let channelVerbosity: OverheadVisibility = lastChannelVerbosity;
+    if (hasSplitVerbosity) {
+      console.log('');
+      console.log(dim(
+        `  Channel verbosity: keeping split values from current config ` +
+        `(sessionHeader=${existingHeader}, stickyMessage=${existingSticky}). ` +
+        `Edit YAML directly to change.`
+      ));
+    } else {
+      const result = await prompts({
+        type: 'select',
+        name: 'channelVerbosity',
+        message: 'How verbose should the bot be in this channel?',
+        choices: OVERHEAD_VISIBILITY_CHOICES,
+        initial: overheadVisibilityChoiceIndex(lastChannelVerbosity),
+      }, { onCancel });
+      channelVerbosity = result.channelVerbosity;
+    }
+
+    // Save entered values for potential retry
+    lastUrl = basicSettings.url;
+    lastDisplayName = basicSettings.displayName;
+    lastToken = finalToken;
+    lastChannelId = basicSettings.channelId;
+    lastBotName = basicSettings.botName;
+    lastDescription = basicSettings.description;
+    lastAllowedUsers = allowedUsers.join(',');
+    lastPermissionMode = permissionMode;
+    lastChannelVerbosity = channelVerbosity;
+
+    // Validate credentials
+    console.log('');
+    console.log(dim('  Validating credentials...'));
+    const validationResult = await validateMattermostCredentials(
+      basicSettings.url,
+      finalToken,
+      basicSettings.channelId
+    );
+
+    if (!validationResult.success) {
+      console.log('');
+      console.log(dim(`  ❌ Validation failed: ${validationResult.error}`));
+      console.log('');
+      console.log(dim('  Troubleshooting tips:'));
+      if (validationResult.error?.includes('401') || validationResult.error?.includes('auth')) {
+        console.log(dim('    • Check that the bot token is correct'));
+        console.log(dim('    • Verify the token is for this Mattermost instance'));
+        console.log(dim('    • Try creating a new bot and token'));
+      } else if (validationResult.error?.includes('channel') || validationResult.error?.includes('403')) {
+        console.log(dim('    • Verify the channel ID is correct'));
+        console.log(dim('    • Add the bot to the channel (@botname)'));
+        console.log(dim('    • Check bot has "Post:All" permission'));
+      } else {
+        console.log(dim('    • Check server URL is accessible'));
+        console.log(dim('    • Verify network connectivity'));
+      }
+      console.log('');
+
+      const { action } = await prompts({
+        type: 'select',
+        name: 'action',
+        message: 'What would you like to do?',
+        choices: [
+          { title: 'Re-enter credentials', value: 'retry' },
+          { title: 'Save anyway (may not work)', value: 'save' },
+          { title: 'Cancel setup', value: 'cancel' },
+        ],
+      }, { onCancel });
+
+      if (action === 'retry') {
+        console.log('');
+        console.log(dim('  Let\'s try again...'));
+        continue; // Loop back to re-enter credentials
+      } else if (action === 'cancel') {
+        console.log('');
+        console.log(dim('  Setup cancelled.'));
+        process.exit(1);
+      }
+      // action === 'save' falls through to return
+    } else {
+      console.log(green('  ✓ Credentials validated successfully!'));
+      if (validationResult.botUsername) {
+        console.log(dim(`    Bot: @${validationResult.botUsername}`));
+      }
+      if (validationResult.channelName) {
+        console.log(dim(`    Channel: ${validationResult.channelName}`));
+      }
+    }
+
+    return {
+      id,
+      type: 'mattermost',
+      displayName: basicSettings.displayName,
+      url: basicSettings.url,
+      token: finalToken,
+      channelId: basicSettings.channelId,
+      botName: basicSettings.botName,
+      allowedUsers,
+      permissionMode: lastPermissionMode,
+      // Only written when set — keeps single-bot configs minimal.
+      ...(lastDescription ? { description: lastDescription } : {}),
+      // Only written when non-default so Claude configs stay minimal.
+      ...(agentBackend !== DEFAULT_AGENT_BACKEND ? { agent: agentBackend } : {}),
+      // Only written when set — keeps configs minimal.
+      ...(lastModel ? { model: lastModel } : {}),
+      ...(lastWorkingDir ? { workingDir: lastWorkingDir } : {}),
+      // Verbosity persistence:
+      //  - Split config (user had different values per surface, prompt was
+      //    skipped): preserve both originals verbatim.
+      //  - User picked default: omit both fields, keeps generated YAML minimal.
+      //  - User picked non-default: write both with the same value.
+      ...(hasSplitVerbosity
+        ? { sessionHeader: existingHeader, stickyMessage: existingSticky }
+        : lastChannelVerbosity !== DEFAULT_OVERHEAD_VISIBILITY
+          ? { sessionHeader: lastChannelVerbosity, stickyMessage: lastChannelVerbosity }
+          : {}),
+    };
+  }
+}
+
+// ============================================================================
+// Credential Validation Functions
+// ============================================================================
+
+/**
+ * Result of credential validation
+ * @internal Exported for testing
+ */
+export interface ValidationResult {
+  success: boolean;
+  error?: string;
+  botUsername?: string;
+  channelName?: string;
+  teamName?: string;
+}
+
+/**
+ * Validate Mattermost credentials by making test API calls
+ * @internal Exported for testing
+ */
+export async function validateMattermostCredentials(
+  url: string,
+  token: string,
+  channelId: string
+): Promise<ValidationResult> {
+  try {
+    // Test 1: Get bot user info (validates token and server URL)
+    const userResponse = await fetch(`${url}/api/v4/users/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!userResponse.ok) {
+      const errorText = await userResponse.text();
+      if (userResponse.status === 401) {
+        return { success: false, error: 'Invalid token or unauthorized' };
+      }
+      return { success: false, error: `Server error ${userResponse.status}: ${errorText}` };
+    }
+
+    const userData = await userResponse.json();
+    const botUsername = userData.username;
+
+    // Test 2: Get channel info (validates channel ID and bot access)
+    const channelResponse = await fetch(`${url}/api/v4/channels/${channelId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!channelResponse.ok) {
+      if (channelResponse.status === 403) {
+        return {
+          success: false,
+          error: 'Cannot access channel (bot may not be a member)',
+        };
+      }
+      if (channelResponse.status === 404) {
+        return {
+          success: false,
+          error: 'Channel not found (check channel ID)',
+        };
+      }
+      return { success: false, error: `Channel access error: ${channelResponse.status}` };
+    }
+
+    const channelData = await channelResponse.json();
+    const channelName = channelData.display_name || channelData.name;
+
+    return {
+      success: true,
+      botUsername,
+      channelName,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Network error or invalid URL',
+    };
+  }
+}
+
+/**
+ * Validate Slack credentials by making test API calls
+ * @internal Exported for testing
+ */
+export async function validateSlackCredentials(
+  botToken: string,
+  appToken: string,
+  channelId: string
+): Promise<ValidationResult> {
+  try {
+    // Test 1: Validate bot token and get bot info
+    const authResponse = await fetch('https://slack.com/api/auth.test', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${botToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!authResponse.ok) {
+      return { success: false, error: `HTTP error ${authResponse.status}` };
+    }
+
+    const authData = await authResponse.json();
+    if (!authData.ok) {
+      return { success: false, error: `Auth failed: ${authData.error}` };
+    }
+
+    const botUsername = authData.user;
+    const teamName = authData.team;
+
+    // Test 2: Validate app token by checking Socket Mode is enabled
+    // We can't fully validate Socket Mode without connecting, but we can check the token format
+    if (!appToken.startsWith('xapp-')) {
+      return { success: false, error: 'App token must start with xapp-' };
+    }
+
+    // Test 3: Check bot can access the channel
+    const channelResponse = await fetch(
+      `https://slack.com/api/conversations.info?channel=${channelId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${botToken}`,
+        },
+      }
+    );
+
+    if (!channelResponse.ok) {
+      return { success: false, error: `Cannot check channel: HTTP ${channelResponse.status}` };
+    }
+
+    const channelData = await channelResponse.json();
+    if (!channelData.ok) {
+      if (channelData.error === 'channel_not_found') {
+        return { success: false, error: 'Channel not found (check channel ID or invite bot)' };
+      }
+      if (channelData.error === 'missing_scope') {
+        return { success: false, error: 'Missing OAuth scope: channels:read' };
+      }
+      return { success: false, error: `Channel error: ${channelData.error}` };
+    }
+
+    return {
+      success: true,
+      botUsername,
+      teamName,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Network error',
+    };
+  }
+}
+
+// ============================================================================
+// Platform Setup Functions
+// ============================================================================
+
+async function setupSlackPlatform(
+  id: string,
+  existing?: PlatformInstanceConfig
+): Promise<SlackPlatformConfig> {
+  const existingSlack = existing?.type === 'slack' ? existing as SlackPlatformConfig : undefined;
+
+  // Track last entered values for prefilling on retry
+  let lastDisplayName = existingSlack?.displayName || 'Slack';
+  let lastBotToken = existingSlack?.botToken || '';
+  let lastAppToken = existingSlack?.appToken || '';
+  let lastChannelId = existingSlack?.channelId || '';
+  let lastBotName = existingSlack?.botName || 'claude';
+  let lastDescription = existingSlack?.description || '';
+  let lastModel = typeof existingSlack?.model === 'string' ? existingSlack.model : '';
+  let lastWorkingDir = typeof existingSlack?.workingDir === 'string' ? existingSlack.workingDir : '';
+  let lastAllowedUsers = existingSlack?.allowedUsers?.join(',') || '';
+  let lastPermissionMode: PermissionMode = existingSlack
+    ? resolvePermissionMode({
+        permissionMode: existingSlack.permissionMode,
+        skipPermissions: existingSlack.skipPermissions,
+      })
+    : 'auto';
+  // Agent backend — see setupMattermostPlatform. Keeps the existing choice on
+  // reconfigure; defaults to claude for new configs.
+  let agentBackend: AgentBackendKind = existingSlack?.agent ?? DEFAULT_AGENT_BACKEND;
+  // See setupMattermostPlatform for the rationale on split-config detection
+  // — the wizard's single-pick UX cannot represent split values, so we
+  // detect and skip rather than silently collapsing them.
+  const existingHeader = existingSlack?.sessionHeader as OverheadVisibility | undefined;
+  const existingSticky = existingSlack?.stickyMessage as OverheadVisibility | undefined;
+  const hasSplitVerbosity =
+    existingHeader !== undefined &&
+    existingSticky !== undefined &&
+    existingHeader !== existingSticky;
+  let lastChannelVerbosity: OverheadVisibility =
+    existingHeader ?? existingSticky ?? DEFAULT_OVERHEAD_VISIBILITY;
+
+  // Main loop - allows retrying when validation fails
+  while (true) {
+    console.log('');
+    console.log(dim('  Now enter your Slack credentials:'));
+    console.log('');
+
+    // Collect settings one by one with visible hints printed before each prompt
+    const { displayName } = await prompts({
+      type: 'text',
+      name: 'displayName',
+      message: 'Display name',
+      initial: lastDisplayName,
+    }, { onCancel });
+
+    if (!lastBotToken) {
+      console.log('');
+      console.log(dim('  Bot Token: OAuth & Permissions → Bot User OAuth Token'));
+    }
+    const { botToken } = await prompts({
+      type: 'password',
+      name: 'botToken',
+      message: lastBotToken ? 'Bot Token (xoxb-...)' : 'Paste it here',
+      initial: lastBotToken,
+      validate: (v: string) => {
+        if (!v && lastBotToken) return true;
+        if (!v) return 'Bot token is required';
+        return v.startsWith('xoxb-') ? true : 'Must start with xoxb-';
+      },
+    }, { onCancel });
+
+    if (!lastAppToken) {
+      console.log('');
+      console.log(dim('  App Token: Basic Information → App-Level Tokens → Generate'));
+      console.log(dim('             (create with "connections:write" scope)'));
+    }
+    const { appToken } = await prompts({
+      type: 'password',
+      name: 'appToken',
+      message: lastAppToken ? 'App Token (xapp-...)' : 'Paste it here',
+      initial: lastAppToken,
+      validate: (v: string) => {
+        if (!v && lastAppToken) return true;
+        if (!v) return 'App token is required';
+        return v.startsWith('xapp-') ? true : 'Must start with xapp-';
+      },
+    }, { onCancel });
+
+    if (!lastChannelId) {
+      console.log('');
+      console.log(dim('  Channel ID: Right-click channel → View details → Copy ID at bottom'));
+    }
+    const { channelId } = await prompts({
+      type: 'text',
+      name: 'channelId',
+      message: lastChannelId ? 'Channel ID (C...)' : 'Paste it here',
+      initial: lastChannelId,
+      validate: (v: string) => {
+        if (!v) return 'Channel ID is required';
+        if (!v.startsWith('C') && !v.startsWith('G')) return 'Should start with C (public) or G (private)';
+        return true;
+      },
+    }, { onCancel });
+
+    console.log('');
+    const { botName } = await prompts({
+      type: 'text',
+      name: 'botName',
+      message: 'Bot username (for display)',
+      initial: lastBotName,
+    }, { onCancel });
+
+    console.log('');
+    console.log(dim('  Specialization (optional): a short role like "Mixpanel analytics" or'));
+    console.log(dim('  "infra & deploys". Shown to OTHER bots in the same channel so they know'));
+    console.log(dim('  when to hand off to this one. Leave empty if not running multiple bots.'));
+    const { description } = await prompts({
+      type: 'text',
+      name: 'description',
+      message: 'Bot specialization',
+      initial: lastDescription,
+    }, { onCancel });
+
+    const basicSettings = { displayName, botToken, appToken, channelId, botName, description: (description || '').trim() };
+
+    // Use existing tokens if user left them empty
+    const finalBotToken = basicSettings.botToken || lastBotToken;
+    const finalAppToken = basicSettings.appToken || lastAppToken;
+
+    if (!finalBotToken || !finalAppToken) {
+      console.log('');
+      console.log(dim('  ⚠️  Both tokens are required. Setup cancelled.'));
+      process.exit(1);
+    }
+
+    // Now handle allowed users with loop for re-entry
+    let allowedUsers: string[] = [];
+    let allowedUsersConfirmed = false;
+
+    while (!allowedUsersConfirmed) {
+      console.log('');
+      console.log(dim('  Who can use the bot? Enter Slack usernames separated by commas.'));
+      console.log(dim('  Leave empty to allow anyone (you\'ll be asked to confirm).'));
+      const { allowedUsersInput } = await prompts({
+        type: 'text',
+        name: 'allowedUsersInput',
+        message: 'Allowed usernames',
+        initial: lastAllowedUsers,
+      }, { onCancel });
+
+      allowedUsers = allowedUsersInput?.split(',').map((u: string) => u.trim()).filter((u: string) => u) || [];
+
+      // If empty, confirm they really want to allow anyone
+      if (allowedUsers.length === 0) {
+        console.log('');
+        const { confirmOpen } = await prompts({
+          type: 'confirm',
+          name: 'confirmOpen',
+          message: '⚠️  Allow ANYONE in the channel to use the bot?',
+          initial: false,
+        }, { onCancel });
+
+        if (confirmOpen) {
+          allowedUsersConfirmed = true;
+        } else {
+          console.log('');
+          console.log(dim('  Let\'s add some allowed usernames.'));
+          // Loop continues - will re-prompt for usernames
+        }
+      } else {
+        allowedUsersConfirmed = true;
+      }
+    }
+
+    // Choose the agent backend first — permission mode below only applies to
+    // Claude (opencode manages permissions itself, outside claude-threads).
+    const { agent } = await prompts({
+      type: 'select',
+      name: 'agent',
+      message: 'Which agent backend should this platform use?',
+      choices: AGENT_BACKEND_CHOICES,
+      initial: agentBackendChoiceIndex(agentBackend),
+    }, { onCancel });
+    agentBackend = agent;
+
+    // Optional model override for the chosen backend.
+    lastModel = await promptForModel(agentBackend, lastModel);
+
+    // Optional per-bot working directory (own repo / CLAUDE.md / persona).
+    lastWorkingDir = await promptForWorkingDir(lastWorkingDir);
+
+    // Now ask about permission mode (after user access is settled).
+    // Applies to the Claude backend only; opencode ignores it.
+    const { permissionMode } = await prompts({
+      type: 'select',
+      name: 'permissionMode',
+      message: 'Permission mode for Claude tool-uses?',
+      choices: PERMISSION_MODE_CHOICES,
+      initial: permissionModeChoiceIndex(lastPermissionMode),
+    }, { onCancel });
+
+    // Channel verbosity (sessionHeader + stickyMessage). Same prompt as
+    // Mattermost — see OVERHEAD_VISIBILITY_CHOICES for the rationale.
+    let channelVerbosity: OverheadVisibility = lastChannelVerbosity;
+    if (hasSplitVerbosity) {
+      console.log('');
+      console.log(dim(
+        `  Channel verbosity: keeping split values from current config ` +
+        `(sessionHeader=${existingHeader}, stickyMessage=${existingSticky}). ` +
+        `Edit YAML directly to change.`
+      ));
+    } else {
+      const result = await prompts({
+        type: 'select',
+        name: 'channelVerbosity',
+        message: 'How verbose should the bot be in this channel?',
+        choices: OVERHEAD_VISIBILITY_CHOICES,
+        initial: overheadVisibilityChoiceIndex(lastChannelVerbosity),
+      }, { onCancel });
+      channelVerbosity = result.channelVerbosity;
+    }
+
+    // Save entered values for potential retry
+    lastDisplayName = basicSettings.displayName;
+    lastBotToken = finalBotToken;
+    lastAppToken = finalAppToken;
+    lastChannelId = basicSettings.channelId;
+    lastBotName = basicSettings.botName;
+    lastDescription = basicSettings.description;
+    lastAllowedUsers = allowedUsers.join(',');
+    lastPermissionMode = permissionMode;
+    lastChannelVerbosity = channelVerbosity;
+
+    // Validate credentials
+    console.log('');
+    console.log(dim('  Validating credentials...'));
+    const validationResult = await validateSlackCredentials(
+      finalBotToken,
+      finalAppToken,
+      basicSettings.channelId
+    );
+
+    if (!validationResult.success) {
+      console.log('');
+      console.log(dim(`  ❌ Validation failed: ${validationResult.error}`));
+      console.log('');
+      console.log(dim('  Troubleshooting tips:'));
+      if (validationResult.error?.includes('invalid_auth') || validationResult.error?.includes('token')) {
+        console.log(dim('    • Verify bot token starts with xoxb-'));
+        console.log(dim('    • Verify app token starts with xapp-'));
+        console.log(dim('    • Reinstall app to workspace if needed'));
+      } else if (validationResult.error?.includes('Socket Mode')) {
+        console.log(dim('    • Enable Socket Mode in app settings'));
+        console.log(dim('    • Generate app-level token with connections:write scope'));
+      } else if (validationResult.error?.includes('missing_scope')) {
+        console.log(dim('    • Add required OAuth scopes'));
+        console.log(dim('    • Reinstall app after adding scopes'));
+      } else if (validationResult.error?.includes('channel')) {
+        console.log(dim('    • Invite bot to channel: /invite @botname'));
+        console.log(dim('    • Verify channel ID is correct'));
+      } else {
+        console.log(dim('    • Check network connectivity'));
+        console.log(dim('    • Troubleshooting guide:'));
+        console.log(dim('      https://github.com/anneschuth/claude-threads/blob/main/SETUP_GUIDE.md'));
+      }
+      console.log('');
+
+      const { action } = await prompts({
+        type: 'select',
+        name: 'action',
+        message: 'What would you like to do?',
+        choices: [
+          { title: 'Re-enter credentials', value: 'retry' },
+          { title: 'Save anyway (may not work)', value: 'save' },
+          { title: 'Cancel setup', value: 'cancel' },
+        ],
+      }, { onCancel });
+
+      if (action === 'retry') {
+        console.log('');
+        console.log(dim('  Let\'s try again...'));
+        continue; // Loop back to re-enter credentials
+      } else if (action === 'cancel') {
+        console.log('');
+        console.log(dim('  Setup cancelled.'));
+        process.exit(1);
+      }
+      // action === 'save' falls through to return
+    } else {
+      console.log(green('  ✓ Credentials validated successfully!'));
+      if (validationResult.botUsername) {
+        console.log(dim(`    Bot: @${validationResult.botUsername}`));
+      }
+      if (validationResult.teamName) {
+        console.log(dim(`    Team: ${validationResult.teamName}`));
+      }
+    }
+
+    return {
+      id,
+      type: 'slack',
+      displayName: basicSettings.displayName,
+      botToken: finalBotToken,
+      appToken: finalAppToken,
+      channelId: basicSettings.channelId,
+      botName: basicSettings.botName,
+      allowedUsers,
+      permissionMode: lastPermissionMode,
+      // Only written when set — keeps single-bot configs minimal.
+      ...(lastDescription ? { description: lastDescription } : {}),
+      // Only written when non-default so Claude configs stay minimal.
+      ...(agentBackend !== DEFAULT_AGENT_BACKEND ? { agent: agentBackend } : {}),
+      // Only written when set — keeps configs minimal.
+      ...(lastModel ? { model: lastModel } : {}),
+      ...(lastWorkingDir ? { workingDir: lastWorkingDir } : {}),
+      // Same persistence rules as Mattermost (split → preserve, default →
+      // omit, non-default → write both with same value).
+      ...(hasSplitVerbosity
+        ? { sessionHeader: existingHeader, stickyMessage: existingSticky }
+        : lastChannelVerbosity !== DEFAULT_OVERHEAD_VISIBILITY
+          ? { sessionHeader: lastChannelVerbosity, stickyMessage: lastChannelVerbosity }
+          : {}),
+    };
+  }
+}

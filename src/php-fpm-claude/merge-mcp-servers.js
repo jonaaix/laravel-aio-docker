@@ -16,4 +16,5 @@ if (!current.projects['']) current.projects[''] = {};
 if (!current.projects[''].mcpServers) current.projects[''].mcpServers = {};
 
 Object.assign(current.projects[''].mcpServers, defServers);
+current.mcpServers = { ...(current.mcpServers || {}), ...(defaults?.mcpServers || {}) };
 fs.writeFileSync(currentPath, JSON.stringify(current, null, 2));

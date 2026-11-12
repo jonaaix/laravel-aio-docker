@@ -1,0 +1,139 @@
+{
+  "name": "claude-threads",
+  "version": "1.17.3",
+  "description": "Share Claude Code sessions live in a Mattermost channel with interactive features",
+  "main": "dist/index.js",
+  "type": "module",
+  "bin": {
+    "claude-threads": "./dist/index.js",
+    "claude-threads-mcp": "./dist/mcp/mcp-server.js",
+    "claude-threads-daemon": "./bin/claude-threads-daemon"
+  },
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target node && bun build src/mcp/mcp-server.ts --outdir dist/mcp --target node && bun build src/statusline/writer.ts --outdir dist/statusline --target node",
+    "start": "bun dist/index.js",
+    "test": "bun test src/",
+    "test:watch": "bun test src/ --watch",
+    "test:coverage": "bun test src/ --coverage",
+    "test:integration:setup": "docker compose -f tests/integration/docker/docker-compose.yml up -d && bun run tests/integration/setup/wait-for-mattermost.ts && bun run tests/integration/setup/setup-mattermost.ts",
+    "test:integration:run": "INTEGRATION_TEST=1 bun test tests/integration/suites --timeout 120000",
+    "test:integration": "bun run test:integration:setup && bun run test:integration:run",
+    "test:integration:teardown": "docker compose -f tests/integration/docker/docker-compose.yml down -v",
+    "test:integration:clean": "bun run tests/integration/setup/teardown.ts",
+    "test:integration:slack:setup": "bun run tests/integration/fixtures/slack/mock-server.ts &",
+    "test:integration:slack:run": "TEST_PLATFORMS=slack INTEGRATION_TEST=1 bun test tests/integration/suites --timeout 120000",
+    "test:integration:slack:teardown": "pkill -f 'mock-server.ts' || true",
+    "test:integration:slack": "bun run test:integration:slack:teardown; bun run tests/integration/fixtures/slack/mock-server.ts & sleep 2 && TEST_PLATFORMS=slack INTEGRATION_TEST=1 bun test tests/integration/suites --timeout 120000; bun run test:integration:slack:teardown",
+    "test:integration:all": "bun run test:integration:setup && bun run tests/integration/fixtures/slack/mock-server.ts & sleep 2 && TEST_PLATFORMS=mattermost,slack INTEGRATION_TEST=1 bun test tests/integration/suites --timeout 120000; bun run test:integration:slack:teardown",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "realtest": "bun realtest/run.ts",
+    "realtest:preflight": "bun realtest/run.ts preflight",
+    "test:realtest:unit": "bun test realtest/lib/analysis.test.ts",
+    "typecheck": "tsc --noEmit",
+    "knip": "npx knip",
+    "prepare": "husky"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "mattermost",
+    "bot",
+    "ai",
+    "cli",
+    "anthropic",
+    "chat",
+    "bun"
+  ],
+  "author": "Anne Schuth",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anneschuth/claude-threads.git"
+  },
+  "bugs": {
+    "url": "https://github.com/anneschuth/claude-threads/issues"
+  },
+  "homepage": "https://github.com/anneschuth/claude-threads#readme",
+  "files": [
+    "dist",
+    "bin",
+    "docs",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "package.json"
+  ],
+  "dependencies": {
+    "@hono/node-server": "2.0.6",
+    "@inkjs/ui": "^2.0.0",
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "@opencode-ai/sdk": "1.18.3",
+    "@redactpii/node": "^1.0.16",
+    "cli-spinners": "^3.3.0",
+    "commander": "^14.0.2",
+    "diff": "^8.0.3",
+    "express-rate-limit": "^8.3.0",
+    "hono": "4.12.27",
+    "ink": "^6.6.0",
+    "ink-scroll-view": "^0.3.5",
+    "js-yaml": "^4.1.1",
+    "prompts": "^2.4.2",
+    "react": "^19.2.3",
+    "semver": "7.8.5",
+    "update-notifier": "^7.3.1",
+    "ws": "8.21.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/bun": "latest",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^26.0.1",
+    "@types/prompts": "^2.4.9",
+    "@types/react": "^19.2.7",
+    "@types/semver": "^7.7.1",
+    "@types/update-notifier": "^6.0.8",
+    "@types/ws": "^8.18.0",
+    "eslint": "^10.1.0",
+    "husky": "^9.1.7",
+    "ink-testing-library": "^4.0.0",
+    "lint-staged": "^17.0.4",
+    "prettier": "^3.4.2",
+    "typescript": "^6.0.2",
+    "typescript-eslint": "^8.57.2"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "bun": ">=1.2.21"
+  },
+  "lint-staged": {
+    "*.ts": "eslint --fix",
+    "*.test.ts": "bun test --bail",
+    "*.{ts,tsx}": "bash -c 'tsc --noEmit'",
+    "website/**/*.{html,css,js}": "prettier --write"
+  },
+  "overrides": {
+    "hono": "$hono",
+    "@hono/node-server": "$@hono/node-server",
+    "express-rate-limit": "$express-rate-limit",
+    "flatted": ">=3.4.0",
+    "picomatch": ">=2.3.2",
+    "path-to-regexp": ">=8.4.0",
+    "fast-uri": ">=3.1.2",
+    "ws": "$ws",
+    "shell-quote": ">=1.8.4"
+  },
+  "resolutions": {
+    "hono": "$hono",
+    "@hono/node-server": "$@hono/node-server",
+    "express-rate-limit": "$express-rate-limit",
+    "flatted": ">=3.4.0",
+    "picomatch": ">=2.3.2",
+    "path-to-regexp": ">=8.4.0",
+    "fast-uri": ">=3.1.2",
+    "ws": "$ws",
+    "shell-quote": ">=1.8.4"
+  }
+}
