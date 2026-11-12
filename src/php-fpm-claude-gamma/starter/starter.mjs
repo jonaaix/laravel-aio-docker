@@ -4,6 +4,8 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { compareVersions, fetchManifest, hasReleaseKey, installRelease, installedReleases, keepReleaseKey, lastVersion } from './releases.mjs';
 
+// Bun closes a request after 10 idle seconds by default; 255 is its maximum.
+const BUN_IDLE_TIMEOUT_SECONDS = '255';
 const dataDir = process.env.NUXT_DATA_DIR || join(homedir(), '.config', 'agent-chat');
 const bundledVersion = join(import.meta.dirname, 'version');
 const bundled = existsSync(bundledVersion) ? [{ version: readFileSync(bundledVersion, 'utf8').trim(), dir: import.meta.dirname }] : [];
@@ -40,11 +42,21 @@ async function chosenRelease() {
     }
 }
 
+// Releases built before the switch to Bun still need Node; the build names its runtime in nitro.json.
+function runtimeFor(release) {
+    try {
+        return JSON.parse(readFileSync(join(release.dir, 'nitro.json'), 'utf8')).preset === 'bun' ? process.env.ORBIT_BUN || 'bun' : process.execPath;
+    }
+    catch {
+        return process.execPath;
+    }
+}
+
 try {
     keepReleaseKey(dataDir);
     const release = await chosenRelease();
     console.log(`[starter] Starting Orbit ${release.version}`);
-    const server = spawn(process.execPath, [join(release.dir, 'server/index.mjs')], { stdio: 'inherit', env: { ...process.env, ORBIT_STARTER: '1' } });
+    const server = spawn(runtimeFor(release), [join(release.dir, 'server/index.mjs')], { stdio: 'inherit', env: { ...process.env, ORBIT_STARTER: '1', NITRO_BUN_IDLE_TIMEOUT: BUN_IDLE_TIMEOUT_SECONDS } });
     for (const signal of ['SIGTERM', 'SIGINT']) {
         process.on(signal, () => server.kill(signal));
     }
