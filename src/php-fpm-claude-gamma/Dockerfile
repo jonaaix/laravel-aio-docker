@@ -227,7 +227,7 @@ RUN curl -fsSL https://bun.sh/install | bash \
  && npm install -g opencode-ai@latest
 
 # The public image carries only the starter; it fetches the encrypted chat into the home directory and keeps it updated.
-COPY --chown=laravel:laravel --from=orbit-agent-chat server/starter/starter.mjs server/starter/releases.mjs /opt/agent-chat/
+COPY --chown=laravel:laravel ./src/php-fpm-claude-gamma/starter/ /opt/agent-chat/
 
 ENV IMAGE_GAMMA=1
 
