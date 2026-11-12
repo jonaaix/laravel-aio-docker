@@ -16,4 +16,4 @@ When claude-threads is enabled, screenshot-specific override rules may apply.
 
 ## Authenticated browser testing
 - For any task that needs an authenticated session (visiting `/admin/*`, `/dashboard`, `/settings/*`, etc.), use **your own dedicated user** — never log in as the project owner or any other real person. Reason: auth events, last-login timestamps, audit trails and the like must not pollute the real user's account.
-- The dedicated test user is `Claude Bot` with email `claude-bot@app.local`. Credentials are stored in your auto-memory system. If the user does not yet exist in the database, recreate it (verified email) and save the new password back to memory.
+- The dedicated test user is `Claude Bot` with email `claude-bot@app.local`. Its password is in `/home/laravel/.config/claude-bot/test-user-password`; never keep it under `~/.claude`, where reading it needs approval every time. If the file or the user is missing, recreate the user (verified email) and write the new password to that file.
