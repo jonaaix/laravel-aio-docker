@@ -24,11 +24,11 @@ on:
                 type: boolean
                 default: true
             build_fpm_claude_beta:
-                description: 'Build FPM Claude Beta (claude-threads from feature branch)'
+                description: 'Build FPM Claude Beta'
                 type: boolean
                 default: true
             build_fpm_claude_gamma:
-                description: 'Build FPM Claude Gamma (beta with the agent chat)'
+                description: 'Build FPM Claude Gamma'
                 type: boolean
                 default: true
             build_frankenphp:
@@ -60,67 +60,67 @@ jobs:
             php_versions: ${{ steps.set-matrix.outputs.php_versions }}
             variants: ${{ steps.set-matrix.outputs.variants }}
         steps:
-            -   name: Set matrix values
-                id: set-matrix
-                run: |
-                    # Build PHP versions array based on inputs
-                    php_versions=()
+            - name: Set matrix values
+              id: set-matrix
+              run: |
+                  # Build PHP versions array based on inputs
+                  php_versions=()
 
-                    if [[ "${{ inputs.build_php84 }}" == "true" ]]; then
-                        php_versions+=("8.4")
-                    fi
+                  if [[ "${{ inputs.build_php84 }}" == "true" ]]; then
+                      php_versions+=("8.4")
+                  fi
 
-                    if [[ "${{ inputs.build_php85 }}" == "true" ]]; then
-                        php_versions+=("8.5")
-                    fi
+                  if [[ "${{ inputs.build_php85 }}" == "true" ]]; then
+                      php_versions+=("8.5")
+                  fi
 
-                    if [ ${#php_versions[@]} -eq 0 ]; then
-                        echo "❌ Error: No PHP versions selected."
-                        exit 1
-                    fi
+                  if [ ${#php_versions[@]} -eq 0 ]; then
+                      echo "❌ Error: No PHP versions selected."
+                      exit 1
+                  fi
 
-                    PHP_JSON=$(printf '%s\n' "${php_versions[@]}" | jq -R . | jq -s -c .)
-                    echo "php_versions=${PHP_JSON}" >> $GITHUB_OUTPUT
+                  PHP_JSON=$(printf '%s\n' "${php_versions[@]}" | jq -R . | jq -s -c .)
+                  echo "php_versions=${PHP_JSON}" >> $GITHUB_OUTPUT
 
-                    # Build variants array based on inputs
-                    variants=()
+                  # Build variants array based on inputs
+                  variants=()
 
-                    if [[ "${{ inputs.build_fpm }}" == "true" ]]; then
-                        variants+=("fpm")
-                    fi
+                  if [[ "${{ inputs.build_fpm }}" == "true" ]]; then
+                      variants+=("fpm")
+                  fi
 
-                    if [[ "${{ inputs.build_frankenphp }}" == "true" ]]; then
-                        variants+=("frankenphp")
-                    fi
+                  if [[ "${{ inputs.build_frankenphp }}" == "true" ]]; then
+                      variants+=("frankenphp")
+                  fi
 
-                    if [[ "${{ inputs.build_roadrunner }}" == "true" ]]; then
-                        variants+=("roadrunner")
-                    fi
+                  if [[ "${{ inputs.build_roadrunner }}" == "true" ]]; then
+                      variants+=("roadrunner")
+                  fi
 
-                    if [[ "${{ inputs.build_openswoole }}" == "true" ]]; then
-                        variants+=("openswoole")
-                    fi
+                  if [[ "${{ inputs.build_openswoole }}" == "true" ]]; then
+                      variants+=("openswoole")
+                  fi
 
-                    if [[ "${{ inputs.build_fpm_claude }}" == "true" ]]; then
-                        variants+=("fpm-claude")
-                    fi
+                  if [[ "${{ inputs.build_fpm_claude }}" == "true" ]]; then
+                      variants+=("fpm-claude")
+                  fi
 
-                    if [[ "${{ inputs.build_fpm_claude_beta }}" == "true" ]]; then
-                        variants+=("fpm-claude-beta")
-                    fi
+                  if [[ "${{ inputs.build_fpm_claude_beta }}" == "true" ]]; then
+                      variants+=("fpm-claude-beta")
+                  fi
 
-                    if [[ "${{ inputs.build_fpm_claude_gamma }}" == "true" ]]; then
-                        variants+=("fpm-claude-gamma")
-                    fi
+                  if [[ "${{ inputs.build_fpm_claude_gamma }}" == "true" ]]; then
+                      variants+=("fpm-claude-gamma")
+                  fi
 
-                    # Convert bash array to JSON using jq for safety
-                    if [ ${#variants[@]} -eq 0 ]; then
-                        echo "❌ Error: No variants selected."
-                        exit 1
-                    fi
+                  # Convert bash array to JSON using jq for safety
+                  if [ ${#variants[@]} -eq 0 ]; then
+                      echo "❌ Error: No variants selected."
+                      exit 1
+                  fi
 
-                    JSON_OUTPUT=$(printf '%s\n' "${variants[@]}" | jq -R . | jq -s -c .)
-                    echo "variants=${JSON_OUTPUT}" >> $GITHUB_OUTPUT
+                  JSON_OUTPUT=$(printf '%s\n' "${variants[@]}" | jq -R . | jq -s -c .)
+                  echo "variants=${JSON_OUTPUT}" >> $GITHUB_OUTPUT
 
     build-and-push:
         name: Build Multi-Arch Images
@@ -132,95 +132,95 @@ jobs:
                 php_version: ${{ fromJson(needs.setup.outputs.php_versions) }}
                 variant: ${{ fromJson(needs.setup.outputs.variants) }}
         steps:
-            -   name: Checkout code
-                uses: actions/checkout@v5
+            - name: Checkout code
+              uses: actions/checkout@v5
 
-            -   name: Set up QEMU
-                uses: docker/setup-qemu-action@v4
-                with:
-                    platforms: linux/amd64,linux/arm64
+            - name: Set up QEMU
+              uses: docker/setup-qemu-action@v4
+              with:
+                  platforms: linux/amd64,linux/arm64
 
-            -   name: Set up Docker Buildx
-                uses: docker/setup-buildx-action@v4
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v4
 
-            -   name: Log in to GitHub Container Registry
-                uses: docker/login-action@v4
-                with:
-                    registry: ghcr.io
-                    username: ${{ github.actor }}
-                    password: ${{ secrets.GITHUB_TOKEN }}
+            - name: Log in to GitHub Container Registry
+              uses: docker/login-action@v4
+              with:
+                  registry: ghcr.io
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
 
-            -   name: Extract metadata (tags, labels) for Docker
-                id: meta
-                uses: docker/metadata-action@v6
-                with:
-                    images: ghcr.io/jonaaix/laravel-aio
-                    tags: |
-                        type=raw,value=${{ inputs.version_tag }}-php${{ matrix.php_version }}-${{ matrix.variant }}
+            - name: Extract metadata (tags, labels) for Docker
+              id: meta
+              uses: docker/metadata-action@v6
+              with:
+                  images: ghcr.io/jonaaix/laravel-aio
+                  tags: |
+                      type=raw,value=${{ inputs.version_tag }}-php${{ matrix.php_version }}-${{ matrix.variant }}
 
-            -   name: Build and push multi-arch image
-                uses: docker/build-push-action@v7
-                with:
-                    context: .
-                    # fpm-claude-beta reuses the fpm-claude Dockerfile, toggled by CLAUDE_THREADS_BETA.
-                    file: ${{ matrix.variant == 'fpm-claude-beta' && './src/php-fpm-claude/Dockerfile' || format('./src/php-{0}/Dockerfile', matrix.variant) }}
-                    platforms: linux/amd64,linux/arm64
-                    build-args: |
-                        INPUT_PHP=${{ matrix.php_version }}
-                        CACHEBUST_NPM_GLOBAL=${{ github.run_id }}-${{ github.run_attempt }}
-                        ${{ matrix.variant == 'fpm-claude-beta' && 'CLAUDE_THREADS_BETA=1' || '' }}
-                    tags: ${{ steps.meta.outputs.tags }}
-                    labels: ${{ steps.meta.outputs.labels }}
-                    push: true
-                    provenance: false
-                    sbom: false
-                    # Add explicit scope to isolate caches per variant
-                    cache-from: type=gha,scope=php${{ matrix.php_version }}-${{ matrix.variant }}
-                    cache-to: type=gha,mode=max,scope=php${{ matrix.php_version }}-${{ matrix.variant }}
+            - name: Build and push multi-arch image
+              uses: docker/build-push-action@v7
+              with:
+                  context: .
+                  # fpm-claude-beta reuses the fpm-claude Dockerfile, toggled by CLAUDE_THREADS_BETA.
+                  file: ${{ matrix.variant == 'fpm-claude-beta' && './src/php-fpm-claude/Dockerfile' || format('./src/php-{0}/Dockerfile', matrix.variant) }}
+                  platforms: linux/amd64,linux/arm64
+                  build-args: |
+                      INPUT_PHP=${{ matrix.php_version }}
+                      CACHEBUST_NPM_GLOBAL=${{ github.run_id }}-${{ github.run_attempt }}
+                      ${{ matrix.variant == 'fpm-claude-beta' && 'CLAUDE_THREADS_BETA=1' || '' }}
+                  tags: ${{ steps.meta.outputs.tags }}
+                  labels: ${{ steps.meta.outputs.labels }}
+                  push: true
+                  provenance: false
+                  sbom: false
+                  # Add explicit scope to isolate caches per variant
+                  cache-from: type=gha,scope=php${{ matrix.php_version }}-${{ matrix.variant }}
+                  cache-to: type=gha,mode=max,scope=php${{ matrix.php_version }}-${{ matrix.variant }}
 
     build-agent:
         name: Build Agent Image (PHP-agnostic)
         runs-on: ubuntu-latest
         if: ${{ inputs.build_ai_agent }}
         steps:
-            -   name: Checkout code
-                uses: actions/checkout@v5
+            - name: Checkout code
+              uses: actions/checkout@v5
 
-            -   name: Set up QEMU
-                uses: docker/setup-qemu-action@v4
-                with:
-                    platforms: linux/amd64,linux/arm64
+            - name: Set up QEMU
+              uses: docker/setup-qemu-action@v4
+              with:
+                  platforms: linux/amd64,linux/arm64
 
-            -   name: Set up Docker Buildx
-                uses: docker/setup-buildx-action@v4
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v4
 
-            -   name: Log in to GitHub Container Registry
-                uses: docker/login-action@v4
-                with:
-                    registry: ghcr.io
-                    username: ${{ github.actor }}
-                    password: ${{ secrets.GITHUB_TOKEN }}
+            - name: Log in to GitHub Container Registry
+              uses: docker/login-action@v4
+              with:
+                  registry: ghcr.io
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
 
-            -   name: Extract metadata (tags, labels) for Docker
-                id: meta
-                uses: docker/metadata-action@v6
-                with:
-                    images: ghcr.io/jonaaix/laravel-aio
-                    tags: |
-                        type=raw,value=${{ inputs.version_tag }}-ai-agent
+            - name: Extract metadata (tags, labels) for Docker
+              id: meta
+              uses: docker/metadata-action@v6
+              with:
+                  images: ghcr.io/jonaaix/laravel-aio
+                  tags: |
+                      type=raw,value=${{ inputs.version_tag }}-ai-agent
 
-            -   name: Build and push multi-arch image
-                uses: docker/build-push-action@v7
-                with:
-                    context: .
-                    file: ./src/ai-agent/Dockerfile
-                    platforms: linux/amd64,linux/arm64
-                    build-args: |
-                        CACHEBUST_NPM_GLOBAL=${{ github.run_id }}-${{ github.run_attempt }}
-                    tags: ${{ steps.meta.outputs.tags }}
-                    labels: ${{ steps.meta.outputs.labels }}
-                    push: true
-                    provenance: false
-                    sbom: false
-                    cache-from: type=gha,scope=ai-agent
-                    cache-to: type=gha,mode=max,scope=ai-agent
+            - name: Build and push multi-arch image
+              uses: docker/build-push-action@v7
+              with:
+                  context: .
+                  file: ./src/ai-agent/Dockerfile
+                  platforms: linux/amd64,linux/arm64
+                  build-args: |
+                      CACHEBUST_NPM_GLOBAL=${{ github.run_id }}-${{ github.run_attempt }}
+                  tags: ${{ steps.meta.outputs.tags }}
+                  labels: ${{ steps.meta.outputs.labels }}
+                  push: true
+                  provenance: false
+                  sbom: false
+                  cache-from: type=gha,scope=ai-agent
+                  cache-to: type=gha,mode=max,scope=ai-agent
