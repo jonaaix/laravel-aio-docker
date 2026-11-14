@@ -28,7 +28,7 @@ verify_laravel_app
 run_post_autoload_dump
 ensure_app_key
 create_cache_paths
-fix_permissions
+secure_passport_keys
 
 # Start PHP-FPM earlier to allow rendering of maintenance page (no-op on Octane variants)
 log_phase "🐘  PHP-FPM"
