@@ -1,4 +1,4 @@
-# Laravel application boot lifecycle: env, cache paths, permissions, composer,
+# Laravel application boot lifecycle: env, cache paths, Passport keys, composer,
 # npm, optimize, migrate, seed, maintenance mode.
 #
 # All Laravel-dependent functions self-gate on SKIP_LARAVEL_BOOT — when that env is
@@ -69,22 +69,10 @@ create_cache_paths() {
    log_ok "Cache and log paths created"
 }
 
-# Fix storage permissions
-fix_permissions() {
+secure_passport_keys() {
    [ "$SKIP_LARAVEL_BOOT" != "true" ] || return 0
-   log_info "Fixing storage and cache permissions to allow writing for www-data..."
-   chown -R "$USER:www-data" storage bootstrap/cache
-   find storage bootstrap/cache -type d -exec chmod 775 {} \;
-   find storage bootstrap/cache -type f -exec chmod 664 {} \;
-
    # Laravel Passport OAuth keys require 600 — Passport refuses keys with looser permissions.
    chmod 600 storage/oauth-*.key 2>/dev/null || true
-
-   if [ -f "database/database.sqlite" ]; then
-      chown "$USER:www-data" database/database.sqlite
-      chmod 664 database/database.sqlite
-   fi
-   log_ok "Permissions fixed"
 }
 
 # Enable maintenance mode if requested. Sets MAINTENANCE_MODE_ENABLED=true on success.
