@@ -108,7 +108,7 @@ RUN python3 -m venv "$VIRTUAL_ENV" \
  && "$VIRTUAL_ENV/bin/pip" install --no-cache-dir \
       csvkit pandas openpyxl requests python-dateutil tabulate matplotlib
 
-RUN curl -sS https://starship.rs/install.sh | sh -s -- -y -b /usr/local/bin
+RUN curl --retry 5 --retry-all-errors --retry-delay 3 -sS https://starship.rs/install.sh | sh -s -- -y -b /usr/local/bin
 
 # Create non-root user with UID 1000 to match host user. The node base image already
 # ships a `node` user/group at UID/GID 1000, so free that slot first.
@@ -197,7 +197,7 @@ RUN MCP=/opt/npm-global/lib/node_modules/@playwright/mcp \
  && node "$CORE/cli.js" install chromium
 
 # Install the Claude Code CLI
-RUN curl -fsSL https://claude.ai/install.sh | bash
+RUN curl --retry 5 --retry-all-errors --retry-delay 3 -fsSL https://claude.ai/install.sh | bash
 
 # Register the Playwright MCP server globally for all projects. Points at the shared HTTP
 # daemon supervisord brings up at boot (see src/shared/supervisor/playwright-mcp.conf) —

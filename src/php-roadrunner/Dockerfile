@@ -59,7 +59,7 @@ RUN apk update && apk add --no-cache \
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 # Starship prompt for interactive shells (laravel user)
-RUN curl -sS https://starship.rs/install.sh | sh -s -- -y -b /usr/local/bin
+RUN curl --retry 5 --retry-all-errors --retry-delay 3 -sS https://starship.rs/install.sh | sh -s -- -y -b /usr/local/bin
 
 RUN mkdir -p /home/laravel/.config \
  && printf '%s\n' \
@@ -96,7 +96,7 @@ COPY ./src/shared/supervisor/ /tmp/supervisor/
 RUN mkdir -p /etc/supervisor/conf.d/ && cp -n /tmp/supervisor/* /etc/supervisor/conf.d/ && rm -r /tmp/supervisor/
 
 # Download and install Supercronic
-RUN curl -sSL -o /usr/local/bin/supercronic https://github.com/aptible/supercronic/releases/latest/download/supercronic-linux-${TARGETARCH} \
+RUN curl --retry 5 --retry-all-errors --retry-delay 3 -sSL -o /usr/local/bin/supercronic https://github.com/aptible/supercronic/releases/latest/download/supercronic-linux-${TARGETARCH} \
  && chmod +x /usr/local/bin/supercronic
 # Configure Cron Jobs (if needed). You can add cron jobs by creating a crontab file and mounting it into the container.
 COPY ./src/shared/laravel-cron /etc/supercronic.txt

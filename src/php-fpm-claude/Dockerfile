@@ -50,7 +50,7 @@ RUN apt-get update \
 # PostgreSQL 18 client from PGDG (Debian's own postgresql-client is 17, which
 # mismatches PG18 servers: "pg_dump: server version mismatch")
 RUN install -d /usr/share/postgresql-common/pgdg \
- && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+ && curl --retry 5 --retry-all-errors --retry-delay 3 -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
       -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
  && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo $VERSION_CODENAME)-pgdg main" \
       > /etc/apt/sources.list.d/pgdg.list \
@@ -59,11 +59,11 @@ RUN install -d /usr/share/postgresql-common/pgdg \
  && rm -rf /var/lib/apt/lists/*
 
 # Node.js via NodeSource (Debian's apt nodejs is outdated)
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+RUN curl --retry 5 --retry-all-errors --retry-delay 3 -fsSL https://deb.nodesource.com/setup_22.x | bash - \
  && apt-get install -y --no-install-recommends nodejs \
  && rm -rf /var/lib/apt/lists/*
 
-RUN curl -sS https://starship.rs/install.sh | sh -s -- -y -b /usr/local/bin
+RUN curl --retry 5 --retry-all-errors --retry-delay 3 -sS https://starship.rs/install.sh | sh -s -- -y -b /usr/local/bin
 
 # Create non-root user with UID 1000 to match host user
 RUN groupadd -g 1000 laravel \
@@ -148,7 +148,7 @@ COPY ./src/shared/supervisor/ /tmp/supervisor/
 RUN mkdir -p /etc/supervisor/conf.d/ && cp -n /tmp/supervisor/* /etc/supervisor/conf.d/ && rm -r /tmp/supervisor/
 
 # Download and install Supercronic
-RUN curl -sSL -o /usr/local/bin/supercronic https://github.com/aptible/supercronic/releases/latest/download/supercronic-linux-${TARGETARCH} \
+RUN curl --retry 5 --retry-all-errors --retry-delay 3 -sSL -o /usr/local/bin/supercronic https://github.com/aptible/supercronic/releases/latest/download/supercronic-linux-${TARGETARCH} \
  && chmod +x /usr/local/bin/supercronic
 # Configure Cron Jobs (if needed). You can add cron jobs by creating a crontab file and mounting it into the container.
 COPY ./src/shared/laravel-cron /etc/supercronic.txt
@@ -238,7 +238,7 @@ RUN echo "npm-global cache key: ${CACHEBUST_NPM_GLOBAL}" \
 COPY --chown=laravel:laravel ./src/claude-threads /tmp/claude-threads-src
 RUN if [ -n "$CLAUDE_THREADS_BETA" ]; then \
       echo "claude-threads beta cache key: ${CACHEBUST_NPM_GLOBAL}" \
-   && curl -fsSL https://bun.sh/install | bash \
+   && curl --retry 5 --retry-all-errors --retry-delay 3 -fsSL https://bun.sh/install | bash \
    && cd /tmp/claude-threads-src \
    && node -e "const f='package.json',fs=require('fs');const p=JSON.parse(fs.readFileSync(f));p.version='999.0.0';fs.writeFileSync(f,JSON.stringify(p,null,2))" \
    && export PATH="$HOME/.bun/bin:$PATH" HUSKY=0 \
@@ -255,7 +255,7 @@ RUN if [ -n "$CLAUDE_THREADS_BETA" ]; then \
 # banner reads it to print "LARAVEL AIO BETA".
 ENV IMAGE_BETA=${CLAUDE_THREADS_BETA}
 
-RUN curl -fsSL https://claude.ai/install.sh | bash
+RUN curl --retry 5 --retry-all-errors --retry-delay 3 -fsSL https://claude.ai/install.sh | bash
 
 # Register MCP servers globally for all projects. Playwright talks HTTP to the shared
 # daemon supervisord brings up at boot (see src/shared/supervisor/playwright-mcp.conf):
