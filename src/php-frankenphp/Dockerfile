@@ -56,7 +56,7 @@ RUN apk update && apk add --no-cache \
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 # Starship prompt for interactive shells (laravel user)
-RUN curl --retry 5 --retry-all-errors --retry-delay 3 -sS https://starship.rs/install.sh | sh -s -- -y -b /usr/local/bin
+RUN curl --retry 5 --retry-all-errors --retry-delay 3 -fsS -o /tmp/installer.sh https://starship.rs/install.sh && sh /tmp/installer.sh -y -b /usr/local/bin && rm /tmp/installer.sh
 
 RUN mkdir -p /home/laravel/.config \
  && printf '%s\n' \

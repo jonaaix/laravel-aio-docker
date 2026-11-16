@@ -59,11 +59,11 @@ RUN install -d /usr/share/postgresql-common/pgdg \
  && rm -rf /var/lib/apt/lists/*
 
 # Node.js via NodeSource (Debian's apt nodejs is outdated)
-RUN curl --retry 5 --retry-all-errors --retry-delay 3 -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+RUN curl --retry 5 --retry-all-errors --retry-delay 3 -fsSL -o /tmp/installer.sh https://deb.nodesource.com/setup_22.x && bash /tmp/installer.sh && rm /tmp/installer.sh \
  && apt-get install -y --no-install-recommends nodejs \
  && rm -rf /var/lib/apt/lists/*
 
-RUN curl --retry 5 --retry-all-errors --retry-delay 3 -sS https://starship.rs/install.sh | sh -s -- -y -b /usr/local/bin
+RUN curl --retry 5 --retry-all-errors --retry-delay 3 -fsS -o /tmp/installer.sh https://starship.rs/install.sh && sh /tmp/installer.sh -y -b /usr/local/bin && rm /tmp/installer.sh
 
 # Create non-root user with UID 1000 to match host user
 RUN groupadd -g 1000 laravel \
@@ -238,7 +238,7 @@ RUN echo "npm-global cache key: ${CACHEBUST_NPM_GLOBAL}" \
 COPY --chown=laravel:laravel ./src/claude-threads /tmp/claude-threads-src
 RUN if [ -n "$CLAUDE_THREADS_BETA" ]; then \
       echo "claude-threads beta cache key: ${CACHEBUST_NPM_GLOBAL}" \
-   && curl --retry 5 --retry-all-errors --retry-delay 3 -fsSL https://bun.sh/install | bash \
+   && curl --retry 5 --retry-all-errors --retry-delay 3 -fsSL -o /tmp/installer.sh https://bun.sh/install && bash /tmp/installer.sh && rm /tmp/installer.sh \
    && cd /tmp/claude-threads-src \
    && node -e "const f='package.json',fs=require('fs');const p=JSON.parse(fs.readFileSync(f));p.version='999.0.0';fs.writeFileSync(f,JSON.stringify(p,null,2))" \
    && export PATH="$HOME/.bun/bin:$PATH" HUSKY=0 \
@@ -255,7 +255,7 @@ RUN if [ -n "$CLAUDE_THREADS_BETA" ]; then \
 # banner reads it to print "LARAVEL AIO BETA".
 ENV IMAGE_BETA=${CLAUDE_THREADS_BETA}
 
-RUN curl --retry 5 --retry-all-errors --retry-delay 3 -fsSL https://claude.ai/install.sh | bash
+RUN curl --retry 5 --retry-all-errors --retry-delay 3 -fsSL -o /tmp/installer.sh https://claude.ai/install.sh && bash /tmp/installer.sh && rm /tmp/installer.sh
 
 # Register MCP servers globally for all projects. Playwright talks HTTP to the shared
 # daemon supervisord brings up at boot (see src/shared/supervisor/playwright-mcp.conf):
