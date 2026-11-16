@@ -50,7 +50,7 @@ RUN apt-get update \
 # PostgreSQL 18 client from PGDG (Debian's own postgresql-client is 17, which
 # mismatches PG18 servers: "pg_dump: server version mismatch")
 RUN install -d /usr/share/postgresql-common/pgdg \
- && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+ && curl --retry 5 --retry-all-errors --retry-delay 3 -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
       -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
  && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo $VERSION_CODENAME)-pgdg main" \
       > /etc/apt/sources.list.d/pgdg.list \
@@ -59,14 +59,14 @@ RUN install -d /usr/share/postgresql-common/pgdg \
  && rm -rf /var/lib/apt/lists/*
 
 # Node.js via NodeSource (Debian's apt nodejs is outdated)
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+RUN curl --retry 5 --retry-all-errors --retry-delay 3 -fsSL -o /tmp/installer.sh https://deb.nodesource.com/setup_22.x && bash /tmp/installer.sh && rm /tmp/installer.sh \
  && apt-get install -y --no-install-recommends nodejs \
  && rm -rf /var/lib/apt/lists/*
 
-RUN curl -sS https://starship.rs/install.sh | sh -s -- -y -b /usr/local/bin
+RUN curl --retry 5 --retry-all-errors --retry-delay 3 -fsS -o /tmp/installer.sh https://starship.rs/install.sh && sh /tmp/installer.sh -y -b /usr/local/bin && rm /tmp/installer.sh
 
 # Orbit's server runs on Bun; it lives outside the persisted home so every container gets the image's version.
-RUN curl -fsSL https://bun.sh/install | BUN_INSTALL=/opt/bun bash \
+RUN curl --retry 5 --retry-all-errors --retry-delay 3 -fsSL -o /tmp/installer.sh https://bun.sh/install && BUN_INSTALL=/opt/bun bash /tmp/installer.sh && rm /tmp/installer.sh \
  && ln -s /opt/bun/bin/bun /usr/local/bin/bun
 ENV ORBIT_BUN=/opt/bun/bin/bun
 
@@ -154,7 +154,7 @@ COPY ./src/php-fpm-claude-gamma/agent-chat.conf /tmp/supervisor/agent-chat.conf
 RUN mkdir -p /etc/supervisor/conf.d/ && cp -n /tmp/supervisor/* /etc/supervisor/conf.d/ && rm -r /tmp/supervisor/
 
 # Download and install Supercronic
-RUN curl -sSL -o /usr/local/bin/supercronic https://github.com/aptible/supercronic/releases/latest/download/supercronic-linux-${TARGETARCH} \
+RUN curl --retry 5 --retry-all-errors --retry-delay 3 -sSL -o /usr/local/bin/supercronic https://github.com/aptible/supercronic/releases/latest/download/supercronic-linux-${TARGETARCH} \
  && chmod +x /usr/local/bin/supercronic
 # Configure Cron Jobs (if needed). You can add cron jobs by creating a crontab file and mounting it into the container.
 COPY ./src/shared/laravel-cron /etc/supercronic.txt
@@ -228,7 +228,7 @@ ARG CACHEBUST_NPM_GLOBAL=initial
 RUN echo "npm-global cache key: ${CACHEBUST_NPM_GLOBAL}" \
  && npm install -g @playwright/mcp@latest @upstash/context7-mcp@latest @openai/codex@latest
 
-RUN curl -fsSL https://bun.sh/install | bash \
+RUN curl --retry 5 --retry-all-errors --retry-delay 3 -fsSL -o /tmp/installer.sh https://bun.sh/install && bash /tmp/installer.sh && rm /tmp/installer.sh \
  && npm install -g opencode-ai@latest
 
 # The public image carries only the starter; it fetches the encrypted chat into the home directory and keeps it updated.
@@ -236,7 +236,7 @@ COPY --chown=laravel:laravel ./src/php-fpm-claude-gamma/starter/ /opt/agent-chat
 
 ENV IMAGE_GAMMA=1
 
-RUN curl -fsSL https://claude.ai/install.sh | bash
+RUN curl --retry 5 --retry-all-errors --retry-delay 3 -fsSL -o /tmp/installer.sh https://claude.ai/install.sh && bash /tmp/installer.sh && rm /tmp/installer.sh
 
 # Register MCP servers globally for all projects. Playwright talks HTTP to the shared
 # daemon supervisord brings up at boot (see src/shared/supervisor/playwright-mcp.conf):
